@@ -15,6 +15,7 @@ This document describes the complete user experience for Finora V1 in Markdown. 
 | **Plain English** | "Income" / "Expense", never "Credit" / "Debit". |
 | **Defaults that work** | New account = Cash. New expense = most recent category. |
 | **Reversible** | Every entry can be edited or deleted. |
+| **Debts connect, never couple** | A debt and its payment transactions are linked but each can be edited or deleted independently. Deleting a debt soft-archives — its history stays. |
 | **No setup wall** | Onboarding is one screen, one number. |
 | **Offline always** | No feature needs internet. |
 
@@ -32,16 +33,17 @@ A mobile-first app. Bottom bar has five destinations; one is the **+ Add** actio
 │              [ Active Screen ]              │
 │                                             │
 ├─────────────────────────────────────────────┤
-│   Home    Txns     [+]    Goals    Settings │
+│  Home  Txns  [+]  Goals  Debts  Settings    │
 └─────────────────────────────────────────────┘
 ```
 
 | Tab | Purpose |
 |---|---|
-| **Home** | This month's totals, account balances, active goals, recent activity. |
+| **Home** | This month's totals, account balances, active goals, debts summary, recent activity. |
 | **Txns** | Full searchable / filterable list of all transactions. |
 | **+ (Add)** | Centered floating button → quick-add menu (Income / Expense / Transfer). |
 | **Goals** | Savings goals list + create. |
+| **Debts** | Money I owe + money others owe me, list and detail. |
 | **Settings** | App PIN, Export, Import, Delete all data, About. |
 
 > The **+** is the most prominent thing on screen at all times. It is the only button that is allowed to be loud.
@@ -182,6 +184,69 @@ Each journey is a real session with a named protagonist and a single climax mome
 
 ---
 
+### Journey 11 — Create a debt (Rina, took a loan for a laptop)
+
+**Climax:** Rina records "I owe ৳ 50,000 to City Bank" in under a minute and the dashboard reflects it instantly.
+
+1. Rina taps **Debts** in the bottom bar. → Debts list, two sections: *I owe* (empty) and *Owed to me* (empty). One big **+ New debt** button.
+2. **Tap "+ New debt".** → Full-screen form. Direction picker at the top with two pills: **I owe** (selected) · **Owed to me**. Single tap to switch.
+3. Rina types: Name = "City Bank loan" · Total = 50,000 · Due date = next year (optional) · Person = "City Bank" (optional) · leaves Paid so far at 0.
+4. **Tap "Save".** → Debt appears under *I owe* with progress bar at 0% and "0 / ৳ 50,000".
+5. **Home updates:** new **Debts card** appears below Goals showing *"I owe ৳ 50,000 · Owed to me ৳ 0"*.
+
+> Form must validate: name required, total > 0, paid so far ≤ total. Errors are inline, not modal.
+
+---
+
+### Journey 12 — Pay toward a debt (Rina, mid-month installment)
+
+**Climax:** One action both reduces the debt AND records the cash outflow. No double entry.
+
+1. Rina taps **Debts** → **City Bank loan** → **+ Payment**.
+2. Bottom sheet: **Amount** input (focused, keyboard up) · **Account** picker (defaults to City Bank Salary).
+3. Rina types "5,000", confirms account, **Tap "Pay ৳ 5,000"**.
+4. App creates a regular **Expense** transaction tagged `linked_debt_id`. Account balance drops by ৳ 5,000. Debt's progress bar animates to 10%.
+5. Toast: *"৳ 5,000 paid toward City Bank loan."* Home card updates: *"I owe ৳ 45,000"*.
+
+> Alternative path: Rina can also reach this from the **Add Expense** flow. After picking category, a toggle **"Tag as debt payment →"** appears. Toggle on → pick which debt → fill the rest. Same outcome, fewer taps if she's already in the expense mindset.
+
+---
+
+### Journey 13 — Lend money to a friend (Rina, helping Sumi out)
+
+**Climax:** Rina's "Cash" goes down, and her "Owed to Me" goes up — in two visible steps that match how she actually handled the cash.
+
+1. Rina hands ৳ 5,000 cash to Sumi. She taps **+** → **Expense** → amount 5,000 → category Other → account Cash.
+2. Before saving, she sees the new toggle: **"Tag as debt payment →"**. She toggles it on.
+3. App prompts: **Pick an existing debt or create new.** She taps **+ New debt**.
+4. Direction picker defaults to **I owe**; she taps **Owed to me** to switch.
+5. Name = "Sumi loan" · Total = 5,000 · Paid so far = 0 · Person = "Sumi". Save.
+6. App creates the Expense with `linked_debt_id` AND the new debt. Account drops ৳ 5,000. Home card updates: *"Owed to me ৳ 5,000"*.
+
+---
+
+### Journey 14 — Receive a partial repayment (Rina, Sumi pays back ৳ 2,000)
+
+**Climax:** "Owed to me" drops by exactly what was repaid; no other number changes.
+
+1. Sumi pays Rina ৳ 2,000 in cash. Rina taps **+** → **Income** → amount 2,000 → category Gift (or Other).
+2. **Toggle "Tag as debt payment →"** on → picks "Sumi loan" from the list.
+3. Save. App creates Income with `linked_debt_id`. Cash account rises ৳ 2,000. Debt progress climbs to 40% (৳ 2,000 / ৳ 5,000).
+4. Home: *"Owed to me ৳ 3,000"*. Toast: *"৳ 2,000 received from Sumi."*
+
+---
+
+### Journey 15 — Debt auto-completes (Rina, final payment on City Bank loan)
+
+**Climax:** Rina sees her dashboard total drop, and the debt fades to muted "Paid off" without her doing anything extra.
+
+1. Rina makes the last ৳ 5,000 payment toward City Bank loan (now ৳ 45,000 of ৳ 50,000 paid).
+2. The debt card flips to "Paid off" badge, fades opacity to 60%, drops to the bottom of *I owe*.
+3. Toast: *"City Bank loan paid off. Nice."*
+4. Home card updates: *"I owe ৳ 0"*. The debts strip no longer shows it.
+
+---
+
 ## 3. Screen Inventory & Visual Skeletons
 
 Every screen below is reachable from a journey above. ASCII sketches show layout intent only.
@@ -229,12 +294,19 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 │  New phone    45%  ▰▰▰░  │
 │  Emergency    80%  ▰▰▰▰  │
 │                          │
+│  Debts                   │
+│  I owe      ৳ 25,000     │
+│  Owed to me ৳  8,000     │
+│  ─────────────────────── │
+│  City Bank  10%  ▰▱▱▱▱   │
+│  Sumi loan  40%  ▰▰▰▱▱   │
+│                          │
 │  Recent                  │
 │  Lunch · Food   -৳ 250   │
 │  Salary         +৳ 60K   │
 │                          │
 ├──────────────────────────┤
-│ Home Txns [+] Goals  ⚙   │
+│Home Txns[+]Goals Debts ⚙ │
 └──────────────────────────┘
 ```
 
@@ -325,6 +397,121 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 └──────────────────────────┘
 ```
 
+### 3.7 Debts List
+
+```
+┌──────────────────────────┐
+│  Debts         [+ New]   │
+│                          │
+│  I OWE                   │
+│  ──────────────────────  │
+│  City Bank loan          │
+│  ৳ 5,000 / ৳ 50,000  10% │
+│  ▰▱▱▱▱▱▱▱▱▱▱▱  by 2027  │
+│                          │
+│  Sumi loan   (Paid off)  │
+│  ৳ 5,000 / ৳ 5,000  100% │
+│  ▰▰▰▰▰▰▰▰▰▰▰▰  (muted)   │
+│                          │
+│  OWED TO ME              │
+│  ──────────────────────  │
+│  Friend loan             │
+│  ৳ 0 / ৳ 3,000     0%    │
+│  ▱▱▱▱▱▱▱▱▱▱▱▱            │
+│                          │
+├──────────────────────────┤
+│Home Txns[+]Goals Debts ⚙ │
+└──────────────────────────┘
+```
+
+### 3.8 Debt Detail
+
+```
+┌──────────────────────────┐
+│  ← City Bank loan        │
+│                          │
+│  Progress                │
+│  ৳ 5,000 / ৳ 50,000      │
+│  ▰▱▱▱▱▱▱▱▱▱▱▱  10%       │
+│                          │
+│  Remaining: ৳ 45,000     │
+│  Due: Mar 14, 2027       │
+│                          │
+│  [ + Payment ]           │
+│  [ Edit ]    [ Delete ]  │
+│                          │
+│  Recent payments         │
+│  ────────────────────    │
+│  Aug 13  -৳ 5,000        │
+│           City Bank Sal. │
+│  Aug 05  -৳ 0 (linked    │
+│           from goal —)   │
+│                          │
+└──────────────────────────┘
+```
+
+### 3.9 New Debt
+
+```
+┌──────────────────────────┐
+│  ← New debt              │
+│                          │
+│  Direction               │
+│  ┌──────────┐┌──────────┐│
+│  │ I owe    ││Owed to me││
+│  │  (●)     ││  ( )     ││
+│  └──────────┘└──────────┘│
+│                          │
+│  Name                    │
+│  [ City Bank loan     ]  │
+│                          │
+│  Total amount            │
+│  [ ৳ 50,000           ]  │
+│                          │
+│  Paid so far (optional)  │
+│  [ ৳ 0                ]  │
+│                          │
+│  Due date (optional)     │
+│  [ Mar 14, 2027       ]  │
+│                          │
+│  Person or institution   │
+│  [ City Bank          ]  │
+│                          │
+│  [ Save debt ]           │
+└──────────────────────────┘
+```
+
+### 3.10 Add Expense with debt toggle
+
+```
+┌──────────────────────────┐
+│  ← Add expense           │
+│                          │
+│  Amount                  │
+│  ┌──────────────────────┐│
+│  │ ৳ 5,000              ││
+│  └──────────────────────┘│
+│                          │
+│  Category  (Other ▾)     │
+│                          │
+│  ◯ Tag as debt payment → │
+│                          │
+│  Account                 │
+│  [ City Bank Salary  ▾ ] │
+│                          │
+│  [      Save       ]     │
+└──────────────────────────┘
+
+When toggle ON:
+
+│  ◉ Tag as debt payment → │
+│     Paying toward:        │
+│     ┌──────────────────┐ │
+│     │ City Bank loan  ▾ │ │
+│     │ + New debt        │ │
+│     └──────────────────┘ │
+```
+
 ---
 
 ## 4. Interaction Patterns (the small repeated gestures)
@@ -336,6 +523,7 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 | **Swipe left on a row** | Txns list | Reveals Edit (blue) + Delete (red) buttons. |
 | **Pull-to-refresh** | Txns list | No-op (data is local) but the gesture is honored with a 200 ms settle, no spinner. |
 | **Long-press a goal card** | Goals list / Home | Quick menu: Edit, Mark contribution, Delete. |
+| **Long-press a debt card** | Debts list / Home | Quick menu: Edit, Make payment, Delete (soft-archive). |
 | **Bottom sheet drag-down** | Quick-add sheet | Dismisses without action. |
 | **Inline save** | Edit forms | Save button stays disabled until valid. No "Save anyway" buttons. |
 
@@ -348,6 +536,7 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 | **Home (no transactions)** | A single inviting card: *"No transactions yet. Tap + to add your first."* |
 | **Txns (no transactions)** | Same text. Below it: a ghost row of the most common categories as one-tap shortcuts. |
 | **Goals (no goals)** | *"Save toward something. Tap + New Goal."* |
+| **Debts (no debts)** | *"Track what you owe and what's owed to you. Tap + New debt."* |
 | **Accounts (only Cash)** | No empty state shown — one default account is always present. |
 | **Settings** | Never empty. |
 
@@ -369,6 +558,13 @@ Every error tells the user **what** is wrong, **why** it matters, and **how to f
 | Import from newer version | *"This backup is from a newer version of Finora. Update the app to import it."* |
 | Delete account with entries | *"This account has 12 entries. Move or delete them first."* |
 | Delete all data (confirm) | *"This permanently deletes all your data on this device. This cannot be undone."* |
+| Debt name empty | *"Give this debt a name."* |
+| Debt total ≤ 0 | *"Enter a total amount greater than 0."* |
+| Debt paid > total | *"Paid so far can't be more than total."* |
+| Debt payment > remaining | *"This is more than what's left (৳ X). Reduce the amount."* |
+| Edit debt total below paid | *"Total (৳ X) is less than already paid (৳ Y). Reduce paid first or raise total."* |
+| Pay toward paid-off debt | *"This debt is fully paid. Unarchive it first if this is a mistake."* |
+| Delete debt with payments | *"This debt has N payment records. They'll stay in your transaction list."* |
 
 > Errors appear **inline**, next to the offending field. They never appear as modal dialogs during data entry. The only modal confirms are: **delete transaction**, **delete all data**, and **import replace**.
 
@@ -398,7 +594,9 @@ Every error tells the user **what** is wrong, **why** it matters, and **how to f
 | `color.muted` | `#8B949E` | Secondary text, labels |
 | `color.primary` | `#2DD4BF` | Income, primary buttons, focus rings |
 | `color.accent` | `#A78BFA` | Goals, tertiary highlights |
-| `color.danger` | `#F87171` | Expense, delete, errors |
+| `color.danger` | `#F87171` | Expense, delete, errors, "I owe" headline |
+| `color.debt.owed` | `#F87171` | Same as danger — used for "I owe" amounts |
+| `color.debt.receivable` | `#2DD4BF` | Same as primary — used for "Owed to me" amounts |
 | `radius.card` | `14px` | Cards, bottom sheet |
 | `radius.button` | `12px` | Buttons, inputs |
 | `radius.pill` | `999px` | Category pills, status badges |
@@ -419,6 +617,7 @@ These are deliberate non-features — their absence is the design:
 
 - ❌ Charts and graphs (totals in numbers are enough).
 - ❌ Financial Health score.
+- ❌ Debt interest / amortization / EMI schedules (V1 is record-only).
 - ❌ Notifications / reminders.
 - ❌ Onboarding animations longer than 200 ms.
 - ❌ Carousels, hero banners, splash videos.
@@ -434,7 +633,8 @@ The V1 UX is complete when:
 
 - [ ] A first-time user can complete **Journey 1 (First run)** in under 60 seconds unaided.
 - [ ] A first-time user can complete **Journey 2 (Quick expense)** in three taps, ≤ 15 seconds.
-- [ ] All ten journeys pass on a mid-range Android phone with no perceptible lag.
+- [ ] A first-time user can complete **Journey 11 (Create a debt)** and **Journey 12 (Pay toward a debt)** unaided.
+- [ ] All fifteen journeys pass on a mid-range Android phone with no perceptible lag.
 - [ ] Every screen has at most one primary action.
 - [ ] Every error message passes the what / why / how test.
 - [ ] Every state (empty, loading, error, success) has explicit copy.

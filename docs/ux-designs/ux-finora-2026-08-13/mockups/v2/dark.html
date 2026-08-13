@@ -217,6 +217,7 @@
     <a class="nav-item" data-goto="transactions"><span class="ic">⇄</span><span>Transactions</span></a>
     <a class="nav-item" data-goto="accounts"><span class="ic">◎</span><span>Accounts</span></a>
     <a class="nav-item" data-goto="goals"><span class="ic">★</span><span>Goals</span></a>
+    <a class="nav-item" data-goto="debts"><span class="ic">◐</span><span>Debts</span></a>
     <a class="nav-item" data-goto="settings"><span class="ic">⚙</span><span>Settings</span></a>
 
     <div class="nav-spacer"></div>
@@ -321,6 +322,41 @@
             <div class="bar"><div class="bar-fill" style="width:10%"></div></div>
             <div class="goal-meta"><span>৳ 10,000 / ৳ 100,000</span><span>~৳ 15,000 / mo</span></div>
           </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>Debts</h2>
+          <a class="link" data-goto="debts">All →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">I owe</div>
+            <div style="font-size:20px;font-weight:700;color:var(--danger);margin-top:4px;font-variant-numeric:tabular-nums">৳ 25,000</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">2 active</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Owed to me</div>
+            <div style="font-size:20px;font-weight:700;color:var(--primary);margin-top:4px;font-variant-numeric:tabular-nums">৳ 8,000</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">1 active</div>
+          </div>
+        </div>
+        <div data-goto="debt-detail" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600;font-size:14px">City Bank loan</div>
+            <div style="font-size:12px;color:var(--danger);font-weight:700">−৳ 45,000 left</div>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:10%;background:var(--danger)"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">৳ 5,000 of ৳ 50,000 · due Mar 14, 2027</div>
+        </div>
+        <div data-goto="debt-detail" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600;font-size:14px">Sumi loan</div>
+            <div style="font-size:12px;color:var(--primary);font-weight:700">+৳ 3,000 left</div>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:40%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">৳ 2,000 of ৳ 5,000 · Sumi</div>
         </div>
       </div>
 
@@ -959,6 +995,130 @@
         <div class="modal-actions">
           <button class="btn btn-ghost" data-goto="settings">Cancel</button>
           <button class="btn btn-danger" data-goto="onboarding">Delete everything</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DEBTS =================== -->
+    <section id="debts" class="screen">
+      <div class="topbar">
+        <div><h1>Debts</h1><div class="sub">2 I owe · 1 owed to me</div></div>
+        <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-debt">+ New debt</button></div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <h2>I owe</h2>
+        <div class="acct-row" data-goto="debt-detail" style="cursor:pointer">
+          <div class="acct"><div class="acct-icon" style="color:var(--danger);background:var(--danger-soft)">↓</div><div><div class="name">City Bank loan</div><div class="type">৳ 5,000 / ৳ 50,000 · by Mar 14, 2027</div></div></div>
+          <div class="row"><div class="balance" style="color:var(--danger)">−৳ 45,000</div><div class="goal-pct">10%</div></div>
+        </div>
+        <div class="bar" style="margin-top:0;margin-bottom:14px"><div class="bar-fill" style="width:10%;background:var(--danger)"></div></div>
+        <div class="acct-row" data-goto="debt-detail" style="cursor:pointer;opacity:.55">
+          <div class="acct"><div class="acct-icon" style="color:var(--muted);background:var(--surface-2)">✓</div><div><div class="name">Friend dinner split</div><div class="type">Paid off · Aug 5</div></div></div>
+          <div class="row"><span class="chip" style="background:var(--primary-soft);color:var(--primary)">Paid off</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Owed to me</h2>
+        <div class="acct-row" data-goto="debt-detail" style="cursor:pointer">
+          <div class="acct"><div class="acct-icon" style="color:var(--primary);background:var(--primary-soft)">↑</div><div><div class="name">Sumi loan</div><div class="type">৳ 2,000 / ৳ 5,000 · Sumi</div></div></div>
+          <div class="row"><div class="balance" style="color:var(--primary)">+৳ 3,000</div><div class="goal-pct">40%</div></div>
+        </div>
+        <div class="bar" style="margin-top:0"><div class="bar-fill" style="width:40%"></div></div>
+      </div>
+    </section>
+
+    <!-- =================== DEBT DETAIL =================== -->
+    <section id="debt-detail" class="screen">
+      <div class="topbar">
+        <div><h1>City Bank loan</h1><div class="sub">Debt · 10% complete</div></div>
+        <div class="topbar-actions"><button class="btn btn-danger" data-goto="delete-debt-confirm">🗑</button></div>
+      </div>
+
+      <div class="grid-mid">
+        <div class="card">
+          <h2>Progress</h2>
+          <div class="num" style="font-size:32px;font-weight:800;color:var(--danger)">৳ 5,000 <span style="color:var(--muted);font-size:16px">/ ৳ 50,000</span></div>
+          <div class="bar" style="margin-top:12px"><div class="bar-fill" style="width:10%;background:var(--danger)"></div></div>
+          <div class="goal-meta" style="margin-top:10px"><span>Started Aug 2026</span><span>due Mar 14, 2027</span></div>
+          <div class="helper" style="margin-top:12px">Remaining: <strong style="color:var(--ink)">৳ 45,000</strong></div>
+
+          <div style="display:flex;gap:10px;margin-top:18px">
+            <button class="btn btn-primary grow" style="justify-content:center">+ Payment</button>
+            <button class="btn btn-ghost">Edit</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Linked payments</h2>
+          <div class="tx">
+            <div class="tx-left"><div class="tx-ic out">↓</div><div><div class="tx-name">Installment</div><div class="tx-sub">Aug 13 · from City Bank Salary</div></div></div>
+            <div class="tx-amt">−৳ 5,000</div>
+          </div>
+          <div class="empty" style="padding:14px 0">
+            <div class="em" style="font-size:24px">↑</div>
+            <div class="title" style="font-size:13px">No earlier payments yet</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD DEBT =================== -->
+    <section id="add-debt" class="screen">
+      <div class="topbar"><div><h1>New debt</h1><div class="sub">Track what you owe or are owed</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Direction</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;margin-bottom:18px">
+          <div style="padding:14px;border:2px solid var(--primary);background:var(--primary-hi);border-radius:var(--r-card);cursor:pointer;text-align:center">
+            <div style="font-size:11px;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;font-weight:700">I owe</div>
+            <div style="font-size:20px;color:var(--danger);margin-top:4px">↓</div>
+          </div>
+          <div style="padding:14px;border:1px solid var(--border);background:var(--surface-2);border-radius:var(--r-card);cursor:pointer;text-align:center">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700">Owed to me</div>
+            <div style="font-size:20px;color:var(--primary);margin-top:4px">↑</div>
+          </div>
+        </div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Name</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px;margin-bottom:6px" value="City Bank loan">
+
+        <div class="row" style="margin-top:12px">
+          <div class="grow">
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Total amount</label>
+            <input class="num-input" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="৳ 50,000">
+          </div>
+          <div class="grow">
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Paid so far</label>
+            <input class="num-input" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="৳ 0">
+          </div>
+        </div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:12px;margin-bottom:6px">Due date (optional)</label>
+        <input type="date" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="2027-03-14">
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:12px;margin-bottom:6px">Person or institution (optional)</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="City Bank">
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px">
+          <button class="btn btn-ghost" data-goto="debts">Cancel</button>
+          <button class="btn btn-primary" data-goto="debts">Save debt</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DELETE DEBT CONFIRM =================== -->
+    <section id="delete-debt-confirm" class="screen">
+      <div class="topbar"><div><h1>Delete debt</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:420px;border-color:rgba(214,117,96,.4)">
+        <h3 style="color:var(--danger)">Delete this debt?</h3>
+        <p>This debt has <strong>1 payment record</strong>. It'll be archived and hidden from your list. The payment will stay in your transaction list.</p>
+        <div class="danger-text">This cannot be undone.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="debt-detail">Cancel</button>
+          <button class="btn btn-danger" data-goto="debts">Delete debt</button>
         </div>
       </div>
     </section>
