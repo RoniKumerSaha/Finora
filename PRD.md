@@ -17,32 +17,33 @@
 
 ## 1. Executive Summary
 
-**Finora** is a simple personal bookkeeping app for everyday people. It helps a user answer three questions and only three:
+**Finora** is a simple personal bookkeeping app for everyday people. It helps a user answer four questions and only four:
 
 1. **Where did my money come from?** (Income)
 2. **Where did my money go?** (Expenses)
 3. **What's still owed, in either direction?** (Debts — money I owe, money others owe me)
+4. **What is my money earning while I wait?** (Investments — interest-bearing deposits like DPS, FDR, savings certificates)
 
-That's it. Everything else in the app exists to support those three questions.
+That's it. Everything else in the app exists to support those four questions.
 
-The user records money in and money out, organized into simple **accounts** (Cash, Bank, Mobile Wallet, etc.) and **categories** (Food, Rent, Salary, etc.). The app shows running totals, monthly summaries, a list of savings goals, and a list of debts. All data lives on the user's device — no account, no cloud, no signup.
+The user records money in and money out, organized into simple **accounts** (Cash, Bank, Mobile Wallet, etc.) and **categories** (Food, Rent, Salary, etc.). The app shows running totals, monthly summaries, a list of savings goals, a list of debts, and a list of investments with their expected maturity payouts. All data lives on the user's device — no account, no cloud, no signup.
 
 ### One-sentence description
 
-A local-first bookkeeping app that lets anyone track income, expenses, and debts without learning accounting.
+A local-first bookkeeping app that lets anyone track income, expenses, debts, and interest-bearing deposits without learning accounting.
 
 ### What this app is NOT
 
 - Not a budget planner with recommendations
-- Not an investment tracker
+- Not a stock / mutual fund / crypto tracker
 - Not a financial-health scoring tool
 - Not a charting or analytics dashboard
 - Not a bank, broker, or accountant
 - Does not move money or connect to a bank
 
-> **In scope for V1:** Basic debt tracking — record a debt, mark payments toward it, see total owed / owed to you. No interest, no amortization, no payoff schedules.
+> **In scope for V1:** Basic debt tracking — record a debt, mark payments toward it, see total owed / owed to you. No interest, no amortization, no payoff schedules. Basic interest-bearing deposit tracking (DPS, FDR, savings certificates, term deposits) — record principal, rate, and term; app shows the calculated maturity value; user records the real payout as Income at maturity. No daily interest accrual; no price tracking.
 >
-> **Out of scope for V1:** Financial Health score, Charts, DPS/FDR projections, Investments, **advanced debt (interest rates, amortization, payoff schedules)**, Monthly Planning recommendations, Insights engine. Savings Goals and basic Debts ARE in scope (kept simple).
+> **Out of scope for V1:** Financial Health score, Charts, stocks/mutual funds/crypto, **advanced debt (interest rates, amortization, payoff schedules)**, Monthly Planning recommendations, Insights engine. Savings Goals, basic Debts, and basic Investments (interest-bearing deposits only) ARE in scope (kept simple).
 
 ---
 
@@ -111,8 +112,8 @@ A user should be able to:
 |---|---|---|
 | N1 | Financial Health score | Too abstract for novices; deferred to V2 |
 | N2 | Charts and graphs | Adds complexity; totals in numbers are sufficient for V1 |
-| N3 | DPS / FDR / investment product calculations | Not bookkeeping; deferred to V2 |
-| N4 | Investment tracking | Not bookkeeping; deferred to V2 |
+| N3 | Stocks, mutual funds, crypto, market-price investments | Out of scope for V1 — needs price tracking, gain/loss math, and a different mental model. Deferred to V2 |
+| N4 | Daily live interest accrual | Banks compound quarterly or at maturity, not daily — a daily display lies to the user. V1 shows the calculated maturity value, not a ticking balance |
 | N5 | Debt tracking with **interest and amortization** | Confusing for novices; basic record-only debt tracking is in V1, advanced math is deferred to V2 |
 | N6 | Monthly budget recommendations | Power-user feature; deferred to V2 |
 | N7 | Insights / trend analysis | Too analytical; deferred to V2 |
@@ -128,41 +129,48 @@ A user should be able to:
 
 | # | Module | V1 Scope |
 |---|---|---|
-| 1 | Dashboard | This month's totals + recent activity + debts summary |
-| 2 | Transactions | Income, Expense, Transfer (with optional debt-link tag) |
+| 1 | Dashboard | This month's totals + recent activity + debts summary + investments summary |
+| 2 | Transactions | Income, Expense, Transfer (with optional debt-link or investment-link tag) |
 | 3 | Accounts | Add, edit, list, see balance |
 | 4 | Categories | Pre-defined set; user can add/edit/disable |
 | 5 | Savings Goals | Target amount, target date, progress bar |
 | 6 | Debts | Record-only: total owed / owed to you, payments, auto-complete at 0. No interest math. |
-| 7 | Settings | Currency (locked to BDT in V1), app PIN (optional), export, import, delete all data |
+| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. |
+| 8 | Settings | Currency (locked to BDT in V1), theme (Dark/Light/Auto), app PIN (optional), export, import, delete all data |
 
-**Removed from V1 (compared to earlier draft):** DPS, FDR, Investments, advanced Debt (interest/amortization), Monthly Planning, Financial Health, Net Worth history, Charts, Insights.
+**Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Monthly Planning, Financial Health, Net Worth history, Charts, Insights, stocks/mutual funds/crypto.
 
 ---
 
 ## 7. Information Architecture
 
-### Primary Navigation (Bottom Bar)
+### Primary Navigation (Bottom Bar / Sidebar)
 
 - **Home** (Dashboard)
 - **Transactions** (list of all entries)
-- **Add** (big button, center) — quick add Income or Expense
+- **Add Transaction** (big button, center) — quick add Income or Expense
 - **Goals**
+- **Investments**
 - **Debts**
 - **Settings**
 
 ### Screens
 
-- **Dashboard:** Monthly totals, account balances, recent transactions.
+- **Dashboard:** Monthly totals, account balances, recent transactions, debts summary, investments summary.
 - **Transactions list:** All entries, sortable by date, filterable by type/account/category.
 - **Add transaction:** Amount → Type (Income/Expense) → Category → Account → Save.
 - **Accounts list:** Each account with its current balance.
 - **Account detail:** Balance + transaction history for that account.
 - **Goals list:** All goals with progress.
 - **Goal detail / create:** Name, target, deadline, current saved.
+- **Investments list:** Each active investment with name, calculated maturity value, and "matures in X days / matured N days ago". Sorted by soonest-to-mature first.
+- **Investment detail:** Full breakdown — name, institution, status badge, big maturity value, start/maturity dates, principal, rate, term, payout account, linked transactions. Actions: Edit, Roll over, Close.
+- **Add investment (3-step wizard):** Step 1 — Pick type (DPS / FDR / Other). Step 2 — Fill the fields (name, principal, rate, start date, term, payout account). Step 3 — Review calculated maturity value + Save.
+- **Maturity prompt:** Banner on an investment's detail screen when its maturity date is reached. Pre-fills an Income transaction on the linked account for the full payout amount.
+- **Roll-over:** Creates a new investment with same terms + 1 day after maturity date; old investment status becomes "rolled into X".
 - **Debts list:** Two sections — *I owe* and *Owed to me*. Each entry shows total, paid so far, progress bar.
 - **Debt detail / create:** Name, direction (I owe / Owed to me), total, paid so far (defaults to 0), optional due date, optional person/entity. Shows linked transactions.
-- **Settings:** App PIN, Export data, Import data, Delete all data, About.
+- **Settings:** Theme (Dark / Light / Auto), App PIN, Export data, Import data, Delete all data, About.
 
 ---
 
@@ -298,6 +306,51 @@ When the sum of linked transactions equals or exceeds the debt's total:
 - It moves to the bottom of its section (I owe / Owed to me), visually muted.
 - A toast: *"City Bank loan paid off. Nice."*
 - The dashboard *Total I owe* (or *Owed to Me*) drops to 0.
+
+### 8.16 Create an Investment (DPS / FDR / Other)
+
+1. Tap **Investments** in the sidebar → Investments list.
+2. Tap **+ New investment**.
+3. **Step 1:** Pick type — **DPS** (monthly deposit scheme) / **FDR** (fixed deposit receipt) / **Other** (savings certificates, term deposits, etc.).
+4. **Step 2:** Fill the fields — **name** (e.g. "DBBL 1-year FDR"), **principal** (৳100,000), **rate** (% per year, e.g. 9.0), **start date**, **term** (months, e.g. 12), **payout account** (where the maturity money will land). Optional: institution name, notes.
+5. **Step 3:** Review. App shows the calculated **maturity value** (e.g., ৳109,000 for 12 months at 9% simple interest). Tap **Save**.
+
+→ App creates the investment AND an **Expense** transaction on the payout account for the principal (account balance drops). The investment appears on the Investments list and on the Home Investments card.
+
+### 8.17 View an Investment and Its Maturity Countdown
+
+1. Open the **Investments** list.
+2. Each row shows: name, calculated maturity value, "Matures in X days" (or "Matured today" / "Matured N days ago" if past).
+3. Tap a row → investment detail. Big maturity value at the top, full breakdown below, linked transactions listed.
+
+→ The countdown is read directly from today's date vs. the maturity date (start date + term). No daily accrual.
+
+### 8.18 Maturity: Record the Payout
+
+When the maturity date arrives (or passes):
+
+1. The investment auto-flips to status **matured**.
+2. On the detail screen, a banner appears: *"Matured today — record the payout?"* (or *"Matured 3 days ago — record the payout?"* if late).
+3. Tap **Record payout** → app pre-fills an **Income** transaction on the payout account for the full calculated maturity value. User confirms or edits the amount (banks sometimes round or add a bonus).
+4. Tap **Save**.
+
+→ Account balance rises by the payout. Investment status becomes **closed**. Dashboard *Total invested* drops by the maturity value.
+
+### 8.19 Roll Over an Investment at Maturity
+
+1. On the detail screen of a **matured** investment, tap **Roll over**.
+2. App creates a new investment with: same name (with "(rolled over)" suffix if user wants), same principal, same rate, same term, same payout account, **start date = maturity date + 1 day**, **end date = new start + same term**.
+3. Old investment's status becomes **rolled-over** with a link "Rolled into <new investment name>". New investment appears at top of list.
+
+→ No money movement. The roll-over is a record-keeping step; the user is expected to either let the money stay at the bank or transfer it via a real Income transaction.
+
+### 8.20 Close an Investment Without Re-Opening
+
+1. On the detail screen, tap **Close**.
+2. App asks: *"Close this investment without recording a payout?"* (Use this if you cancelled or withdrew the money already.)
+3. Two buttons: **Cancel** | **Close investment**.
+
+→ Investment status becomes **closed**. It is hidden from the Home Investments card but stays in the Investments list under a "Closed" section.
 
 ---
 
@@ -478,13 +531,82 @@ A **debt** is a record with a total, a paid-so-far number, and a direction. The 
 - Linking a debt to a specific account (the link is at the transaction level, not the debt level).
 - Automatic monthly payment reminders.
 
-### 9.7 Local Data Storage
+### 9.8 Investments
+
+An **investment** is a record of money locked into an interest-bearing deposit. The app shows the calculated maturity value; it does **not** accrue interest daily or live, and it does **not** track market-price instruments (stocks, funds, crypto).
+
+**Type:**
+- `DPS` — Monthly Deposit Scheme. User enters monthly installment + months; app derives total principal = installment × months.
+- `FDR` — Fixed Deposit Receipt. User enters total principal; app does not assume installments.
+- `other` — Savings certificates, term deposits, or anything else interest-bearing. Same fields as FDR.
+
+**Fields (per investment):**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `name` | string | yes | Free text, e.g. "DBBL 1-year FDR" |
+| `type` | enum | yes | `dps` / `fdr` / `other` |
+| `principal` | number | yes | > 0, total amount locked |
+| `rate` | number | yes | Annual rate, % (e.g. 9.0). Simple, non-compounding display model |
+| `start_date` | date | yes | When the money was deposited |
+| `term_months` | integer | yes | > 0, in months |
+| `payout_account_id` | string | yes | The account the maturity money will land in |
+| `institution` | string | no | Bank / company name (e.g. "DBBL") |
+| `notes` | string | no | One line |
+| `status` | enum | yes | `active` / `matured` / `closed` / `rolled_over` |
+| `rolled_into_id` | string | no | Set when status = `rolled_over`, points to the new investment |
+| `created_at` | date | yes | Auto |
+
+**Calculations (display only, NOT live):**
+
+```
+Maturity date = start_date + term_months
+Maturity value = principal × (1 + rate/100 × term_months/12)
+```
+
+- The maturity value is **recalculated** whenever the user edits principal, rate, or term. It is **not** a balance that grows daily.
+- For DPS, `principal` is derived from `monthly_installment × term_months` and shown read-only after creation. User can change the installment or term to update.
+
+**Linked transactions (one-way link, account owns them):**
+
+- At creation, the app auto-creates an **Expense** transaction on the payout account for the principal amount. This is what makes the account balance drop.
+- At maturity (status = `matured`), the user records the real payout as an **Income** transaction on the payout account for the maturity value. This is what brings the money back.
+- Looking at an investment → Rina sees its linked transactions (the opening deposit expense + the closing payout income).
+- Looking at a transaction → a small "Investment: <name>" tag is shown if `linked_investment_id` is set.
+
+**Money does auto-move at creation.** The opening Expense transaction is what makes the balance reflect the locked-up money. At maturity, the user has to explicitly record the payout — the app does NOT auto-create the income transaction (banks may not have paid yet, or may pay a slightly different amount).
+
+**Status transitions:**
+
+| From | Event | To |
+|---|---|---|
+| `active` | Today >= maturity date | `matured` (auto) |
+| `matured` | User records payout Income | `closed` (auto) |
+| `matured` | User taps Roll over | `rolled_over` (old) + new `active` (new) |
+| `active` or `matured` | User taps Close + confirms | `closed` (manual) |
+
+**Dashboard role:**
+
+- An **Investments card** sits below the Debts card on Home.
+- One headline number: **Total invested:** ৳150,000 (rendered in accent/gold color).
+- Below: a horizontal strip of up to 2 investments closest to maturity, with name + "Matures in X days" / "Matured today" / "Matured N days ago".
+- Tap the card title → full Investments list. Tap any investment → investment detail.
+
+**V1 does NOT support:**
+- Daily interest accrual (the balance does not tick).
+- Compounding frequency other than simple (display only).
+- Pre-closure with adjusted interest.
+- Tax (TDS) tracking on interest income.
+- Stocks, mutual funds, crypto, or any market-price instrument.
+- Linking an investment to a specific *category* (the link is at the transaction level, not the investment level).
+
+### 9.9 Local Data Storage
 
 - All data is stored on the user's device.
 - The PRD does not mandate a specific storage technology; engineering may pick the appropriate local persistence layer.
 - The data model is designed so cloud sync can be added later without rewriting the bookkeeping logic.
 
-### 9.8 Data Export
+### 9.10 Data Export
 
 **Export format:** Single `.json` file containing:
 
@@ -492,12 +614,14 @@ A **debt** is a record with a total, a paid-so-far number, and a direction. The 
 - All categories (including user-added ones)
 - All transactions
 - All savings goals
+- All debts
+- All investments
 - App settings (PIN is **not** exported)
 - A version field (e.g., `"version": 1`)
 
 CSV export is **not required** for V1. JSON is sufficient and lossless.
 
-### 9.9 Data Import
+### 9.11 Data Import
 
 - User selects a `.json` file.
 - App validates the file: schema, version, required fields.
@@ -505,10 +629,10 @@ CSV export is **not required** for V1. JSON is sufficient and lossless.
 - On success, app asks for confirmation: *"This will replace all your current data. Continue?"*
 - On confirm, app wipes current data and loads the file.
 
-### 9.10 Data Deletion
+### 9.12 Data Deletion
 
 - Single button in Settings: **Delete all data**.
-- Confirmation: *"This permanently deletes all your transactions, accounts, and goals on this device. This cannot be undone."*
+- Confirmation: *"This permanently deletes all your transactions, accounts, goals, debts, and investments on this device. This cannot be undone."*
 - Buttons: **Cancel** | **Delete everything**.
 - The app does **not** require an export before deletion.
 
@@ -526,6 +650,8 @@ CSV export is **not required** for V1. JSON is sufficient and lossless.
 | R6 | Source of truth | The user's recorded transactions are the only thing that changes account balances |
 | R7 | Debt paid_so_far | `paid_so_far` = sum of linked transactions' amounts (Expense for `i_owe`, Income for `owed_to_me`) |
 | R8 | Debt completion | When `paid_so_far >= total`, debt is auto-completed and dashboard totals drop |
+| R9 | Investment maturity value | `maturity_value = principal × (1 + rate/100 × term_months/12)` — simple-interest display, recalculated on edit, not a live ticking balance |
+| R10 | Investment status | Auto-flips to `matured` when today >= maturity date; record-payout flips to `closed`; roll-over flips old to `rolled_over` and creates a new `active` |
 
 ---
 
@@ -552,6 +678,12 @@ Every error message must:
 | User edits a debt's total below `paid_so_far` | *"Total (৳ X) is less than already paid (৳ Y). Reduce paid first or raise total."* |
 | User adds a payment to a fully paid debt | *"This debt is fully paid. Unarchive it first if this is a mistake."* |
 | User deletes a debt with linked transactions | *"This debt has N payment records. They'll stay in your transaction list."* |
+| User creates an investment with no name | *"Give this investment a name."* |
+| User creates an investment with 0 or negative principal | *"Enter a principal greater than 0."* |
+| User creates an investment with a term of 0 months | *"Enter a term of at least 1 month."* |
+| User rolls over an investment that isn't matured yet | *"This investment hasn't matured yet. You can roll it over once it matures."* |
+| User records the payout on a closed or rolled-over investment | *"This investment is already closed. You can't record a payout."* |
+| User has no accounts when starting the Add Investment wizard | *"Add an account first — investments need a payout account."* |
 
 ---
 
@@ -565,6 +697,7 @@ Every error message must:
 | **Defaults that work** | New account = Cash. New expense = most recent category. |
 | **Reversible** | Edit or delete any transaction. |
 | **Debts connect, never couple** | A debt and its transactions are linked, but each can be edited independently. Deleting a debt doesn't erase its history. |
+| **Investments record, never guess** | Finora shows the calculated maturity value but does not accrue interest daily. The maturity value is honest math; the payout is real money and only happens when the bank pays it. |
 | **No setup walls** | Onboarding asks one question. Everything else is progressive. |
 | **Offline always** | No feature requires internet. |
 
@@ -615,6 +748,11 @@ Every error message must:
 - Goal calculations (remaining, required per month)
 - Debt `paid_so_far` derivation from linked transactions
 - Debt auto-completion at `paid_so_far >= total`
+- Investment maturity value: `principal × (1 + rate/100 × term_months/12)`
+- Investment maturity date: `start_date + term_months`
+- Investment auto-status flip to `matured` when today >= maturity date
+- Investment roll-over creates new active investment with same terms + 1 day after maturity date
+- Investment close: status becomes `closed`, hidden from Home Investments card
 - Import validation (good file, bad file, wrong version)
 
 ### 14.2 Integration Tests
@@ -629,6 +767,12 @@ Every error message must:
 - Edit a debt-linked transaction → debt `paid_so_far` re-derives
 - Delete a debt-linked transaction → debt `paid_so_far` decreases
 - Debt auto-completion → dashboard total drops
+- Create investment → linked Expense reduces payout account balance, Home Investments card updates
+- Edit investment principal/rate/term → maturity value recalculates
+- Investment crosses maturity date → status flips to `matured`, banner appears
+- Record payout on matured investment → linked Income increases payout account balance, status flips to `closed`, Home total drops
+- Roll-over matured investment → old becomes `rolled_over`, new active investment created with start_date = old.maturity_date + 1
+- Close investment without payout → status becomes `closed`, hidden from Home
 - Import → full state restored
 
 ### 14.3 End-to-End Scenarios (Minimum)
@@ -638,6 +782,7 @@ Every error message must:
 - Set up a goal and contribute to it
 - Record a debt (City Bank loan) and make 2 payments toward it; verify `paid_so_far` updates
 - Lend money to a friend (Sumi) and receive one partial repayment
+- Create an FDR (DBBL, 1-year, 9%), see the calculated maturity value on Home, wait for the maturity date, record the payout, see Home drop
 - Back up, delete all data, restore from backup
 
 ---
@@ -663,6 +808,14 @@ Every error message must:
 - Editing a debt's direction (e.g., I Owe → Owed to me): linked transactions flip from Expense → Income or vice-versa with explicit confirmation
 - Deleting a debt with linked transactions (soft-archive only; transactions stay)
 - Adding a payment to a soft-archived or paid-off debt (block unless explicitly unarchived)
+- Creating an investment with no accounts (block with clear error directing user to add one)
+- Investment start_date in the future (allowed — some people pre-plan)
+- Investment start_date equal to today (allowed)
+- Investment crosses maturity date while app is closed (status flips on next open, banner shows)
+- Recording a payout with an amount different from the calculated maturity value (allowed — bank may differ; show "Bank paid ৳X, expected ৳Y" for transparency)
+- Closing a matured investment without recording payout (allowed, with explicit confirmation)
+- Rolling over a non-matured investment (block with helpful error)
+- Investment with 0% rate (allowed — DPS schemes sometimes have 0% headline rate but include bonuses)
 
 ---
 
@@ -690,6 +843,7 @@ These belong in the technical specification phase and should not change product 
 | 5 | User is confused by accounting terms | All labels are plain English; no jargon without a one-line explanation |
 | 6 | User pays a debt but forgets to tag it | The "Tag as debt payment →" toggle is shown on every Expense and Income flow; debt completion status is visible on Home and the debt's own screen |
 | 7 | User records a debt twice (once as a debt, once as a normal expense) without linking | App surfaces "Linked to debt: <name>" tag on linked transactions so Rina can spot and fix mismatches |
+| 8 | User commits the calculated maturity value as the actual payout, then complains the bank paid a different amount | The "Record payout" flow always lets the user edit the amount before saving; the banner shows "Bank paid ৳X, expected ৳Y" when they differ |
 
 ---
 
@@ -699,8 +853,8 @@ These belong in the technical specification phase and should not change product 
 |---|---|
 | Insights | Spending by category breakdown, monthly comparison |
 | Planning | Budget recommendations, savings rate |
-| Investments | Simple investment tracking |
-| Financial products | DPS / FDR calculators |
+| Investments | Stocks, mutual funds, crypto, portfolio tracking with market prices |
+| Financial products | Compounding-frequency support, pre-closure interest, tax (TDS) tracking on interest income |
 | Debt (advanced) | Interest rates, EMI schedules, amortization tables, payoff-date calculation |
 | Net Worth | Aggregated asset/liability view |
 | Charts | Income vs expense trend, category charts |
@@ -722,6 +876,10 @@ These belong in the technical specification phase and should not change product 
 | Goal | A target amount of money you want to save by a certain date |
 | Debt | A record of money owed in either direction: I owe someone, or someone owes me |
 | Direction | Whether a debt is *I owe* (money out, eventually to be paid) or *Owed to me* (money lent, eventually to be returned) |
+| Investment | A record of interest-bearing money locked away: DPS, FDR, savings certificate, term deposit |
+| Maturity | The date on which an investment's principal + interest is paid out by the bank |
+| Payout | The income transaction recorded when the bank pays out a matured investment |
+| Rollover | Re-starting an investment with the same terms the day after it matures, to keep the money earning |
 | Balance | How much money is in an account right now |
 
 We deliberately do **not** use: credit, debit, ledger, amortization, allocation, surplus, net worth, asset, liability. If a V2 feature needs one, it will be introduced with a one-line explanation.
@@ -743,6 +901,14 @@ The MVP is complete when **all** of the following are true:
 - [ ] User can record a payment toward a debt, and the debt's `paid_so_far` updates.
 - [ ] Debt auto-completes when `paid_so_far >= total`.
 - [ ] Dashboard shows Total I owe and Owed to Me, plus a strip of active debts.
+- [ ] User can create an investment (DPS / FDR / Other) with name, principal, rate, start date, term, and payout account.
+- [ ] App shows the calculated maturity value on the Investments list and detail screen.
+- [ ] Account balance drops by the principal when an investment is created (linked Expense).
+- [ ] When the maturity date arrives, the investment auto-flips to "matured" with a banner prompting to record the payout.
+- [ ] User can record the payout as an Income on the payout account; investment status flips to "closed".
+- [ ] User can roll over a matured investment, creating a new active investment with same terms + 1 day.
+- [ ] User can close an investment without recording payout (with confirmation).
+- [ ] Dashboard shows Total invested, plus a strip of upcoming maturities.
 - [ ] User can export data to a `.json` file.
 - [ ] User can import data from a previously exported file.
 - [ ] User can delete all data with confirmation.

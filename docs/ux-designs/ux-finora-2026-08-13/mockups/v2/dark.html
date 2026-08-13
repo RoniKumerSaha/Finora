@@ -224,6 +224,7 @@
     <a class="nav-item" data-goto="transactions"><span class="ic">⇄</span><span>Transactions</span></a>
     <a class="nav-item" data-goto="accounts"><span class="ic">◎</span><span>Accounts</span></a>
     <a class="nav-item" data-goto="goals"><span class="ic">★</span><span>Goals</span></a>
+    <a class="nav-item" data-goto="investments"><span class="ic">🏦</span><span>Investments</span></a>
     <a class="nav-item" data-goto="debts"><span class="ic">◐</span><span>Debts</span></a>
     <a class="nav-item" data-goto="settings"><span class="ic">⚙</span><span>Settings</span></a>
 
@@ -369,6 +370,38 @@
 
       <div class="card">
         <div class="section-head">
+          <h2>Investments</h2>
+          <a class="link" data-goto="investments">All →</a>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Total invested</div>
+          <div style="font-size:26px;font-weight:800;color:var(--accent);margin-top:4px;font-variant-numeric:tabular-nums">৳ 160,000</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">across 2 active · 1 closed</div>
+        </div>
+        <div data-goto="investment-detail" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600;font-size:14px">🏦 DBBL 1-yr FDR</div>
+            <div style="font-size:12px;color:var(--accent);font-weight:700">Matures in 14 days</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums">Maturity value ৳ 109,000</div>
+            <div style="font-size:11px;color:var(--muted)">৳ 100,000 · 9% · 12 mo</div>
+          </div>
+        </div>
+        <div data-goto="investment-detail" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600;font-size:14px">📅 BRAC 5-yr DPS</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:700">Matures in 92 days</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums">Maturity value ৳ 84,000</div>
+            <div style="font-size:11px;color:var(--muted)">৳ 60,000 · 8% · 60 mo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
           <h2>Recent activity</h2>
           <a class="link" data-goto="transactions">View all →</a>
         </div>
@@ -504,6 +537,16 @@
           <div style="font-size:38px;color:var(--accent);margin-bottom:6px">⇄</div>
           <div style="font-weight:700;font-size:15px">Transfer</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px">Between your accounts</div>
+        </button>
+        <button class="card" data-goto="add-investment-1" style="text-align:center;cursor:pointer;border:1px solid var(--border)">
+          <div style="font-size:38px;color:var(--accent);margin-bottom:6px">🏦</div>
+          <div style="font-weight:700;font-size:15px">Investment</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">DPS, FDR, savings certificate</div>
+        </button>
+        <button class="card" data-goto="add-debt" style="text-align:center;cursor:pointer;border:1px solid var(--border)">
+          <div style="font-size:38px;color:var(--warn);margin-bottom:6px">📋</div>
+          <div style="font-weight:700;font-size:15px">Debt</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">I owe or owed to me</div>
         </button>
       </div>
     </section>
@@ -1145,6 +1188,342 @@
         <div class="modal-actions">
           <button class="btn btn-ghost" data-goto="debt-detail">Cancel</button>
           <button class="btn btn-danger" data-goto="debts">Delete debt</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== INVESTMENTS LIST =================== -->
+    <section id="investments" class="screen">
+      <div class="topbar">
+        <div><h1>Investments</h1><div class="sub">2 active · 1 closed</div></div>
+        <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-investment-1">+ New investment</button></div>
+      </div>
+
+      <div class="grid-mid">
+        <div class="card">
+          <div class="section-head"><h2>Active</h2></div>
+          <div data-goto="investment-detail" style="cursor:pointer;padding:12px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:600;font-size:14px">🏦 DBBL 1-yr FDR</div>
+              <span class="chip" style="background:var(--accent-soft);color:var(--accent)">Active</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:13px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums">Maturity ৳ 109,000</div>
+              <div style="font-size:12px;color:var(--muted)">Matures in 14 days</div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">৳ 100,000 · 9% · 12 mo · DBBL</div>
+          </div>
+          <div data-goto="investment-detail" style="cursor:pointer;padding:12px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:600;font-size:14px">📅 BRAC 5-yr DPS</div>
+              <span class="chip" style="background:var(--accent-soft);color:var(--accent)">Active</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:13px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums">Maturity ৳ 84,000</div>
+              <div style="font-size:12px;color:var(--muted)">Matures in 92 days</div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">৳ 60,000 · 8% · 60 mo · BRAC</div>
+          </div>
+          <div data-goto="investment-detail" style="cursor:pointer;padding:12px 0;opacity:.55">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-weight:600;font-size:14px">📜 SBL 6-mo savings cert.</div>
+              <span class="chip" style="background:var(--surface-2);color:var(--muted)">Closed</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:13px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums">Maturity ৳ 53,775</div>
+              <div style="font-size:12px;color:var(--muted)">Matured Jun 26</div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">৳ 50,000 · 7.5% · 6 mo · SBL</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Summary</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Total invested</div>
+              <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:4px;font-variant-numeric:tabular-nums">৳ 160,000</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Total to mature</div>
+              <div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px;font-variant-numeric:tabular-nums">৳ 193,000</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6">
+            <strong style="color:var(--ink)">How it works:</strong> The maturity value is calculated from principal, rate, and term — it doesn't tick up daily. When the bank pays out, record the payout as Income to bring the money back to your account.
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:18px">
+            <button class="btn btn-primary" data-goto="add-investment-1">+ New investment</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== INVESTMENT DETAIL (active) =================== -->
+    <section id="investment-detail" class="screen">
+      <div class="topbar">
+        <div><h1>DBBL 1-yr FDR</h1><div class="sub">FDR · Active · 9% annual</div></div>
+        <div class="topbar-actions"><button class="btn btn-ghost" data-goto="add-investment-1">Edit</button></div>
+      </div>
+
+      <div class="grid-mid">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="chip" style="background:var(--accent-soft);color:var(--accent)">🏦 FDR · Active</span>
+            <span style="font-size:11px;color:var(--muted)">Start 13 Aug 2026</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:10px">Maturity value</div>
+          <div style="font-size:42px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.1;margin-top:4px">৳ 109,000</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:8px">
+            Matures on <strong style="color:var(--ink)">13 Aug 2027</strong> · in <strong style="color:var(--ink)">365 days</strong>
+          </div>
+          <div class="helper" style="margin-top:10px">
+            100,000 × (1 + 9% × 12/12) = 109,000
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Details</h2>
+          <div class="kv"><div class="k">Principal</div><div class="v">৳ 100,000</div></div>
+          <div class="kv"><div class="k">Rate (annual)</div><div class="v">9.0%</div></div>
+          <div class="kv"><div class="k">Term</div><div class="v">12 months</div></div>
+          <div class="kv"><div class="k">Start date</div><div class="v">13 Aug 2026</div></div>
+          <div class="kv"><div class="k">Maturity date</div><div class="v">13 Aug 2027</div></div>
+          <div class="kv"><div class="k">Payout account</div><div class="v">Savings (Dutch-Bangla)</div></div>
+          <div class="kv"><div class="k">Institution</div><div class="v">Dutch-Bangla Bank</div></div>
+        </div>
+
+        <div class="card">
+          <h2>Linked transactions</h2>
+          <div class="tx">
+            <div class="tx-left"><div class="tx-ic out">↓</div><div><div class="tx-name">FDR opening deposit</div><div class="tx-sub">13 Aug 2026 · Savings (Dutch-Bangla)</div></div></div>
+            <div class="tx-amt">−৳ 100,000</div>
+          </div>
+          <div class="empty" style="padding:14px 0">
+            <div class="em" style="font-size:24px">↑</div>
+            <div class="title" style="font-size:13px">Payout will appear here at maturity</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:flex-end;gap:10px">
+            <button class="btn btn-ghost" data-goto="close-investment-confirm">Close</button>
+          </div>
+          <div class="helper" style="margin-top:10px">Roll over becomes available when the investment matures.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== INVESTMENT DETAIL (matured variant) =================== -->
+    <section id="investment-detail-matured" class="screen">
+      <div class="topbar">
+        <div><h1>DBBL 1-yr FDR</h1><div class="sub">FDR · Matured today</div></div>
+        <div class="topbar-actions"><button class="btn btn-ghost" data-goto="add-investment-1">Edit</button></div>
+      </div>
+
+      <div class="grid-mid">
+        <div class="card" style="border-color:rgba(244,184,96,.4);background:rgba(244,184,96,.06)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:28px">⚠</div>
+            <div>
+              <div style="font-weight:700;color:var(--warn)">Matured today</div>
+              <div style="font-size:13px;color:var(--ink);margin-top:2px">Did the bank pay you out?</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-primary grow" style="justify-content:center" data-goto="record-payout">Record payout</button>
+            <button class="btn btn-ghost" data-goto="rollover-confirm">Roll over</button>
+          </div>
+          <div class="helper" style="margin-top:10px">Expected payout ৳ 109,000. Edit the amount if the bank paid a different number.</div>
+        </div>
+
+        <div class="card">
+          <h2>Details</h2>
+          <div class="kv"><div class="k">Principal</div><div class="v">৳ 100,000</div></div>
+          <div class="kv"><div class="k">Rate (annual)</div><div class="v">9.0%</div></div>
+          <div class="kv"><div class="k">Term</div><div class="v">12 months</div></div>
+          <div class="kv"><div class="k">Maturity date</div><div class="v" style="color:var(--warn)">13 Aug 2026 (today)</div></div>
+          <div class="kv"><div class="k">Payout account</div><div class="v">Savings (Dutch-Bangla)</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD INVESTMENT - STEP 1 (type picker) =================== -->
+    <section id="add-investment-1" class="screen">
+      <div class="topbar">
+        <div><h1>New investment</h1><div class="sub">Step 1 of 3 — What kind?</div></div>
+      </div>
+
+      <div style="max-width:560px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div data-goto="add-investment-2" style="padding:22px 14px;border:2px solid var(--accent);background:var(--accent-soft);border-radius:var(--r-card);cursor:pointer;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">📅</div>
+            <div style="font-weight:700;font-size:15px">DPS</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Monthly deposit scheme</div>
+          </div>
+          <div data-goto="add-investment-2" style="padding:22px 14px;border:1px solid var(--border);background:var(--surface-2);border-radius:var(--r-card);cursor:pointer;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">🏦</div>
+            <div style="font-weight:700;font-size:15px">FDR</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Fixed deposit receipt</div>
+          </div>
+        </div>
+        <div data-goto="add-investment-2" style="padding:18px 14px;border:1px solid var(--border);background:var(--surface-2);border-radius:var(--r-card);cursor:pointer;text-align:center;max-width:280px">
+          <div style="font-size:30px;margin-bottom:4px">📜</div>
+          <div style="font-weight:700;font-size:14px">Other</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Term deposit, savings certificate</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="investments">Cancel</button>
+          <span style="font-size:12px;color:var(--muted);align-self:center">Tap a type to continue</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD INVESTMENT - STEP 2 (fields) =================== -->
+    <section id="add-investment-2" class="screen">
+      <div class="topbar">
+        <div><h1>New investment</h1><div class="sub">Step 2 of 3 — Fill the details · FDR selected</div></div>
+      </div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Name</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px;margin-bottom:14px" value="DBBL 1-yr FDR">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Principal (৳)</label>
+            <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px;font-variant-numeric:tabular-nums" value="100,000">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Annual rate (%)</label>
+            <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px;font-variant-numeric:tabular-nums" value="9">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Start date</label>
+            <input type="date" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="2026-08-13">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Term (months)</label>
+            <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px;font-variant-numeric:tabular-nums" value="12">
+          </div>
+        </div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Payout account</label>
+        <div style="background:var(--surface-2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;color:var(--ink)">Savings (Dutch-Bangla) ▾</div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Institution (optional)</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:9px;border-radius:8px" value="Dutch-Bangla Bank">
+
+        <div style="display:flex;justify-content:space-between;margin-top:22px">
+          <button class="btn btn-ghost" data-goto="add-investment-1">Back</button>
+          <button class="btn btn-primary" data-goto="add-investment-3">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD INVESTMENT - STEP 3 (review) =================== -->
+    <section id="add-investment-3" class="screen">
+      <div class="topbar">
+        <div><h1>New investment</h1><div class="sub">Step 3 of 3 — Review and save</div></div>
+      </div>
+
+      <div class="card" style="max-width:560px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+          <span class="chip" style="background:var(--accent-soft);color:var(--accent)">🏦 FDR</span>
+          <div style="font-weight:700;font-size:16px">DBBL 1-yr FDR</div>
+        </div>
+
+        <div class="kv"><div class="k">Principal</div><div class="v">৳ 100,000</div></div>
+        <div class="kv"><div class="k">Rate (annual)</div><div class="v">9.0%</div></div>
+        <div class="kv"><div class="k">Term</div><div class="v">12 months</div></div>
+        <div class="kv"><div class="k">Start date</div><div class="v">13 Aug 2026</div></div>
+        <div class="kv"><div class="k">Payout account</div><div class="v">Savings (Dutch-Bangla)</div></div>
+
+        <div style="margin-top:18px;padding:18px;background:var(--accent-soft);border:1px solid rgba(217,178,107,.4);border-radius:var(--r-card)">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Maturity value</div>
+          <div style="font-size:38px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;margin-top:4px">৳ 109,000</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:6px">Matures on <strong style="color:var(--ink)">13 Aug 2027</strong> (in 365 days)</div>
+        </div>
+
+        <div style="margin-top:18px;padding:12px;background:var(--surface-2);border-radius:8px;font-size:13px;color:var(--muted);line-height:1.5">
+          <strong style="color:var(--ink)">৳ 100,000</strong> will leave your <strong style="color:var(--ink)">Savings (Dutch-Bangla)</strong> account when you save.
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:22px">
+          <button class="btn btn-ghost" data-goto="add-investment-2">Back</button>
+          <button class="btn btn-primary" data-goto="investment-detail">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== RECORD PAYOUT =================== -->
+    <section id="record-payout" class="screen">
+      <div class="topbar">
+        <div><h1>Record payout</h1><div class="sub">DBBL 1-yr FDR · matured today</div></div>
+      </div>
+
+      <div class="card" style="max-width:560px">
+        <div style="padding:12px;background:var(--warn-soft);border-radius:8px;font-size:13px;color:var(--ink);margin-bottom:14px">
+          This will be added as <strong>Income</strong> on your Savings (Dutch-Bangla) account, tagged to this investment.
+        </div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Amount (৳)</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:12px;border-radius:8px;font-size:20px;font-variant-numeric:tabular-nums;font-weight:700" value="109,000">
+        <div class="helper" style="margin-top:6px;color:var(--warn)">Bank paid ৳ 109,000 · expected ৳ 109,000</div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Category</label>
+        <div style="background:var(--surface-2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;color:var(--ink)">Interest ▾</div>
+
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Account</label>
+        <div style="background:var(--surface-2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;color:var(--ink)">Savings (Dutch-Bangla) ▾</div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:22px">
+          <button class="btn btn-ghost" data-goto="investment-detail-matured">Cancel</button>
+          <button class="btn btn-primary" data-goto="investment-detail">Save payout</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ROLL-OVER CONFIRM =================== -->
+    <section id="rollover-confirm" class="screen">
+      <div class="topbar">
+        <div><h1>Roll over</h1><div class="sub">DBBL 1-yr FDR · matured today</div></div>
+      </div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:460px">
+        <h3>Roll over this FDR?</h3>
+        <p>Start a new 12-month FDR on <strong>14 Aug 2027</strong> with the same terms:</p>
+        <div style="margin-top:14px;padding:14px;background:var(--surface-2);border-radius:8px">
+          <div class="kv"><div class="k">Principal</div><div class="v">৳ 100,000</div></div>
+          <div class="kv"><div class="k">Rate (annual)</div><div class="v">9.0%</div></div>
+          <div class="kv"><div class="k">Term</div><div class="v">12 months</div></div>
+          <div class="kv"><div class="k">Account</div><div class="v">Savings (Dutch-Bangla)</div></div>
+        </div>
+        <p style="margin-top:14px;font-size:13px;color:var(--muted)">No money moves. The old investment will be marked "rolled over" and linked to the new one.</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="investment-detail-matured">Cancel</button>
+          <button class="btn btn-primary" data-goto="investments">Confirm roll-over</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== CLOSE INVESTMENT CONFIRM =================== -->
+    <section id="close-investment-confirm" class="screen">
+      <div class="topbar">
+        <div><h1>Close investment</h1></div>
+      </div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:440px;border-color:rgba(244,184,96,.4)">
+        <h3 style="color:var(--warn)">Close without recording payout?</h3>
+        <p>Use this if you've already withdrawn or cancelled this investment outside Finora.</p>
+        <div class="danger-text">The investment will be archived. You can still see it in the "Closed" section.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="investment-detail">Cancel</button>
+          <button class="btn btn-danger" data-goto="investments">Close investment</button>
         </div>
       </div>
     </section>

@@ -16,6 +16,7 @@ This document describes the complete user experience for Finora V1 in Markdown. 
 | **Defaults that work** | New account = Cash. New expense = most recent category. |
 | **Reversible** | Every entry can be edited or deleted. |
 | **Debts connect, never couple** | A debt and its payment transactions are linked but each can be edited or deleted independently. Deleting a debt soft-archives — its history stays. |
+| **Investments record, never guess** | Finora shows the calculated maturity value but does not accrue interest daily. The maturity value is honest math; the payout is real money and only happens when the bank pays it. |
 | **No setup wall** | Onboarding is one screen, one number. |
 | **Offline always** | No feature needs internet. |
 
@@ -33,18 +34,19 @@ A mobile-first app. Bottom bar has five destinations; one is the **+ Add** actio
 │              [ Active Screen ]              │
 │                                             │
 ├─────────────────────────────────────────────┤
-│  Home  Txns  [+]  Goals  Debts  Settings    │
+│  Home  Txns  [+]  Goals  Inv.  Debts  ...   │
 └─────────────────────────────────────────────┘
 ```
 
 | Tab | Purpose |
 |---|---|
-| **Home** | This month's totals, account balances, active goals, debts summary, recent activity. |
+| **Home** | This month's totals, account balances, active goals, debts summary, investments summary, recent activity. |
 | **Txns** | Full searchable / filterable list of all transactions. |
-| **+ (Add)** | Centered floating button → quick-add menu (Income / Expense / Transfer). |
+| **+ (Add)** | Centered floating button → quick-add menu (Income / Expense / Transfer / Investment / Debt). |
 | **Goals** | Savings goals list + create. |
+| **Investments** | Interest-bearing deposits list + detail + maturity. |
 | **Debts** | Money I owe + money others owe me, list and detail. |
-| **Settings** | App PIN, Export, Import, Delete all data, About. |
+| **Settings** | Theme (Dark / Light / Auto), App PIN, Export, Import, Delete all data, About. |
 
 > The **+** is the most prominent thing on screen at all times. It is the only button that is allowed to be loud.
 
@@ -245,6 +247,58 @@ Each journey is a real session with a named protagonist and a single climax mome
 3. Toast: *"City Bank loan paid off. Nice."*
 4. Home card updates: *"I owe ৳ 0"*. The debts strip no longer shows it.
 
+### Journey 16 — Open an FDR (Rina, 32, just put ৳100,000 in a 1-year deposit)
+
+**Climax:** Rina sees, on her dashboard and on the Investments list, the exact ৳109,000 she'll receive on maturity — without having to do any math.
+
+1. Rina opens the app, taps **Investments** → **+ New investment**.
+2. **Step 1:** She taps **FDR** (the icon shows a bank receipt).
+3. **Step 2:** She fills: name = *"DBBL 1-year FDR"*, principal = *100000*, rate = *9*, start date = today, term = *12 months*, payout account = her DBBL savings. Institution "Dutch-Bangla Bank". Save.
+4. **Step 3:** Review screen. App shows: *"Matures on 13 Aug 2027 · Maturity value ৳ 109,000"*. Big green **Save** button.
+5. Rina taps Save.
+6. App creates the investment AND an Expense transaction of ৳100,000 on DBBL savings (balance drops).
+7. Investments list shows her FDR at the top: "DBBL 1-year FDR · ৳ 109,000 · Matures in 365 days".
+8. Home Investments card: "Total invested ৳ 100,000 · Next maturity: DBBL FDR in 365 days".
+
+### Journey 17 — Watch the maturity countdown (Rina, 2 weeks from maturity)
+
+**Climax:** The Investments strip on Home shows her FDR is 14 days from payout — without opening the app at all.
+
+1. Rina glances at Home. The Investments card strip shows: *"DBBL FDR · ৳ 109,000 · Matures in 14 days"*.
+2. She taps the strip row → investment detail. Full breakdown: principal, rate, term, payout account, linked transactions (the opening expense + nothing yet on the closing side).
+3. She scrolls to the bottom: "Roll over" and "Close" buttons are visible but disabled (status is `active`, not `matured`).
+
+### Journey 18 — Maturity day: record the payout (Rina, the bank paid her today)
+
+**Climax:** Rina records the real bank payout in two taps and watches the money come back to her account.
+
+1. Rina opens the FDR detail. The status badge now reads **Matured**. A banner at the top says *"Matured today — record the payout?"* with a green **Record payout** button.
+2. She taps the button. The Add Income form opens, pre-filled: amount = ৳109,000, category = *Interest*, account = DBBL savings.
+3. Bank actually paid ৳109,235 (a small rounding bonus). Rina edits the amount.
+4. Taps Save.
+5. App creates the Income transaction. DBBL savings balance rises by ৳109,235. Investment status flips to `closed`. Home Investments card total drops to ৳0. The strip disappears.
+
+### Journey 19 — Roll over a maturing DPS (Rina, end of 5-year DPS)
+
+**Climax:** Rina rolls her maturing DPS into a fresh 5-year DPS without re-typing everything.
+
+1. Rina opens her "BRAC 5-year DPS" detail (status: matured).
+2. Taps **Roll over**.
+3. App shows a confirmation sheet: *"Start a new 5-year DPS on 14 Aug 2027, same principal (৳ 60,000), same rate (8%). Confirm?"*
+4. She taps **Confirm roll-over**.
+5. App creates a new investment: "BRAC 5-year DPS (rolled over)", start = 14 Aug 2027, term = 60 months, status = `active`.
+6. Old investment status flips to `rolled_over`. Its detail shows a small "Rolled into → BRAC 5-year DPS (rolled over)" tag.
+
+### Journey 20 — Close an investment early (Rina, cancelled an FDR)
+
+**Climax:** Rina closes the investment without polluting her transaction list with a phantom payout.
+
+1. Rina opens her FDR detail (status: active, 6 months into the term).
+2. Taps **Close**.
+3. App asks: *"Close this investment without recording a payout? Use this if you already withdrew the money."*
+4. She taps **Close investment**.
+5. Investment status becomes `closed`. Home Investments strip removes it. The investment stays visible under the "Closed" section at the bottom of the Investments list.
+
 ---
 
 ## 3. Screen Inventory & Visual Skeletons
@@ -301,6 +355,12 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 │  City Bank  10%  ▰▱▱▱▱   │
 │  Sumi loan  40%  ▰▰▰▱▱   │
 │                          │
+│  Investments             │
+│  Total invested ৳ 160,000│
+│  ─────────────────────── │
+│  DBBL FDR · ৳ 109K · 14d │
+│  BRAC DPS · ৳ 84K · 92d │
+│                          │
 │  Recent                  │
 │  Lunch · Food   -৳ 250   │
 │  Salary         +৳ 60K   │
@@ -325,6 +385,10 @@ Every screen below is reachable from a journey above. ASCII sketches show layout
 │  │      Transfer        ││
 │  │       ⇄              ││
 │  └──────────────────────┘│
+│  ┌──────────┐ ┌────────┐ │
+│  │Investment│ │  Debt  │ │
+│  │   🏦     │ │   📋   │ │
+│  └──────────┘ └────────┘ │
 │                          │
 │  [ Cancel ]              │
 └──────────────────────────┘
@@ -512,6 +576,207 @@ When toggle ON:
 │     └──────────────────┘ │
 ```
 
+### 3.11 Investments List
+
+```
+┌──────────────────────────┐
+│  ← Investments        ⋯  │
+│                          │
+│  Total invested           │
+│  ৳ 160,000 across 2       │
+│                          │
+│  �────────────────────┐  │
+│  │ 🏦 DBBL 1-yr FDR   │  │
+│  │ Maturity ৳ 109,000 │  │
+│  │ Matures in 14 days │  │
+│  └────────────────────┘  │
+│  ┌────────────────────┐  │
+│  │ 📅 BRAC 5-yr DPS   │  │
+│  │ Maturity ৳ 84,000  │  │
+│  │ Matures in 92 days │  │
+│  └────────────────────┘  │
+│                          │
+│  + New investment         │
+│                          │
+│  ── Closed ──             │
+│  SBL 6-mo · matured Jun 26│
+└──────────────────────────┘
+```
+
+**Behaviors:**
+
+- Rows sorted by soonest-to-mature first. Matured-but-not-closed show "Matured today" / "Matured N days ago" in `--warn`.
+- Tapping a row opens detail. Tap "+ New investment" → wizard.
+- Each row uses `--accent` (gold) for the maturity value to signal "future money".
+
+### 3.12 Investment Detail
+
+```
+┌──────────────────────────┐
+│  ← DBBL 1-yr FDR    ⋯   │
+│                          │
+│  ┌────────────────────┐  │
+│  │ 🏦 FDR · Active    │  │  ← status pill
+│  │                    │  │
+│  │ Maturity value     │  │
+│  │ ৳ 109,000          │  │  ← big, gold
+│  │ Matures on         │  │
+│  │ 13 Aug 2027        │  │
+│  │ (in 365 days)      │  │
+│  └────────────────────┘  │
+│                          │
+│  Principal        ৳100,000│
+│  Rate (annual)       9.0%│
+│  Term              12 mo │
+│  Start date  13 Aug 2026 │
+│  Payout account       DBBL│
+│  Institution  DBBL       │
+│                          │
+│  ── Linked transactions ─│
+│  � 13 Aug · DBBL savings │
+│     FDR opening deposit   │
+│                       -৳100,000│
+│                          │
+│  ───────────────────────  │
+│  [ Edit ]  [ Close ]      │
+└──────────────────────────┘
+```
+
+**Matured variant:** the top card swaps to a banner:
+
+```
+│  ┌────────────────────┐  │
+│  │ ⚠ Matured today    │  │
+│  │ Record the payout? │  │
+│  │ [ Record payout ]  │  │
+│  └────────────────────┘  │
+```
+
+And the action row becomes:
+
+```
+│  [ Roll over ]  [ Close ] │
+```
+
+**Rolled-over variant:** a small tag near the top reads "Rolled into → BRAC 5-yr DPS (rolled over)". All action buttons disabled.
+
+### 3.13 Add Investment Wizard
+
+**Step 1 — Pick type:**
+
+```
+┌──────────────────────────┐
+│  ← New investment    1/3 │
+│                          │
+│  What kind?              │
+│  ┌──────────┐ ┌────────┐ │
+│  │ 📅 DPS   │ │ 🏦 FDR │ │
+│  │ Monthly  │ │ One    │ │
+│  │ deposit  │ │ lump   │ │
+│  └──────────┘ └────────┘ │
+│  ┌────────────────────┐  │
+│  │ 📜 Other (term     │  │
+│  │   deposit / cert.) │  │
+│  └────────────────────┘  │
+│                          │
+│       [ Continue ]        │
+└──────────────────────────┘
+```
+
+**Step 2 — Fill fields (FDR example):**
+
+```
+┌──────────────────────────┐
+│  ← New investment    2/3 │
+│                          │
+│  Name                    │
+│  ┌────────────────────┐  │
+│  │ DBBL 1-yr FDR      │  │
+│  └────────────────────┘  │
+│  Principal (৳)           │
+│  ┌────────────────────┐  │
+│  │ 100000             │  │
+│  └────────────────────┘  │
+│  Annual rate (%)         │
+│  ┌────────────────────┐  │
+│  │ 9                  │  │
+│  └────────────────────┘  │
+│  Start date              │
+│  ┌────────────────────┐  │
+│  │ 13 Aug 2026        │  │
+│  └────────────────────┘  │
+│  Term (months)           │
+│  �────────────────────┐  │
+│  │ 12                 │  │
+│  └────────────────────┘  │
+│  Payout account          │
+│  ┌────────────────────┐  │
+│  │ DBBL Savings     ▾ │  │
+│  └────────────────────┘  │
+│  Institution (optional)  │
+│  ┌────────────────────┐  │
+│  │ Dutch-Bangla Bank  │  │
+│  └────────────────────┘  │
+│                          │
+│       [ Continue ]        │
+└──────────────────────────┘
+```
+
+DPS variant replaces "Principal" with "Monthly installment (৳)" + adds a small "Total to be deposited ৳ 60,000" derived line.
+
+**Step 3 — Review:**
+
+```
+┌──────────────────────────�
+│  ← New investment    3/3 │
+│                          │
+│  DBBL 1-yr FDR · FDR     │
+│                          │
+│  Principal       ৳100,000│
+│  Rate                9%  │
+│  Term              12 mo │
+│                          │
+│  ┌────────────────────┐  │
+│  │ Maturity value     │  │
+│  │ ৳ 109,000          │  │  ← calculated, big
+│  │                    │  │
+│  │ Matures on         │  │
+│  │ 13 Aug 2027        │  │
+│  │ (365 days)         │  │
+│  └────────────────────┘  │
+│                          │
+│  ৳100,000 will leave your │
+│  DBBL Savings account.   │
+│                          │
+│       [ Save ]            │
+└──────────────────────────┘
+```
+
+### 3.14 Maturity Prompt (inline on detail)
+
+When today >= maturity_date and status == `active`, the detail screen shows the banner in place of the maturity hero card (see §3.12 "Matured variant"). Tapping **Record payout** opens the Add Income flow with `amount = maturity_value`, `account = payout_account`, `category = Interest`, and a `linked_investment_id` set.
+
+If the user enters an amount different from the maturity value, a small line appears below the amount field: *"Bank paid ৳ X · expected ৳ Y"*.
+
+### 3.15 Roll-Over Confirm (sheet)
+
+```
+┌──────────────────────────┐
+│  Roll over               │
+│                          │
+│  Start a new 5-yr DPS    │
+│  on 14 Aug 2027 with     │
+│  same terms:             │
+│                          │
+│  Principal       ৳ 60,000│
+│  Rate                8%  │
+│  Term              60 mo │
+│  Account   BRAC Savings  │
+│                          │
+│  [ Cancel ] [ Confirm ]  │
+└──────────────────────────┘
+```
+
 ---
 
 ## 4. Interaction Patterns (the small repeated gestures)
@@ -565,6 +830,13 @@ Every error tells the user **what** is wrong, **why** it matters, and **how to f
 | Edit debt total below paid | *"Total (৳ X) is less than already paid (৳ Y). Reduce paid first or raise total."* |
 | Pay toward paid-off debt | *"This debt is fully paid. Unarchive it first if this is a mistake."* |
 | Delete debt with payments | *"This debt has N payment records. They'll stay in your transaction list."* |
+| Investment name empty | *"Give this investment a name."* |
+| Investment principal ≤ 0 | *"Enter a principal greater than 0."* |
+| Investment term ≤ 0 | *"Enter a term of at least 1 month."* |
+| Add Investment, no accounts | *"Add an account first — investments need a payout account."* |
+| Roll over non-matured | *"This investment hasn't matured yet. You can roll it over once it matures."* |
+| Record payout on closed | *"This investment is already closed. You can't record a payout."* |
+| Close matured investment (confirm) | *"Close this investment without recording a payout? Use this if you already withdrew the money."* |
 
 > Errors appear **inline**, next to the offending field. They never appear as modal dialogs during data entry. The only modal confirms are: **delete transaction**, **delete all data**, and **import replace**.
 
@@ -597,6 +869,8 @@ Every error tells the user **what** is wrong, **why** it matters, and **how to f
 | `color.danger` | `#F87171` | Expense, delete, errors, "I owe" headline |
 | `color.debt.owed` | `#F87171` | Same as danger — used for "I owe" amounts |
 | `color.debt.receivable` | `#2DD4BF` | Same as primary — used for "Owed to me" amounts |
+| `color.investment.maturity` | `#F4B860` | Gold — used for maturity value, "active" investment headlines |
+| `color.investment.matured` | `#F87171` | Same as danger — used for "Matured today/N days ago" status |
 | `radius.card` | `14px` | Cards, bottom sheet |
 | `radius.button` | `12px` | Buttons, inputs |
 | `radius.pill` | `999px` | Category pills, status badges |
