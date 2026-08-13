@@ -1,3 +1,10 @@
+/**
+ * AccountsListScreen — single-row account rows in a card.
+ *
+ * Visual target: docs/ux-designs/.../mockups/v2/dark.html#accounts
+ * Each row is a single flex row: icon + name/type on the left,
+ * balance + Edit on the right.
+ */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as accounts from '../domain/accounts';
@@ -5,6 +12,7 @@ import { accountBalance } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
+import { fmtBDT } from '../lib/format';
 
 export function AccountsListScreen() {
   const state = useStore(s => s.state);
@@ -37,40 +45,67 @@ export function AccountsListScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Accounts</h1>
-        <Link to="/accounts/add" className="bg-primary text-primary-on px-4 py-2 rounded-md">Add Account</Link>
-      </header>
-      {accs.length === 0 ? (
-        <div className="text-muted">No accounts yet.</div>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {accs.map(a => {
-            const bal = accountBalance(a, state.transactions);
-            return (
-              <li key={a.id} className="bg-surface border border-border rounded-md p-3 flex justify-between items-center">
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between gap-4">
-                    <span className="font-medium">{a.name}</span>
-                    <span>{fmtBDT(bal)}</span>
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight leading-none">Accounts</h1>
+          <div className="text-muted text-[13px] mt-1">{accs.length} total</div>
+        </div>
+        <Link to="/accounts/add" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
+          <span className="text-base leading-none">+</span>
+          <span>Add account</span>
+        </Link>
+      </div>
+
+      <section className="bg-surface border border-border rounded-card p-5 shadow-card">
+        {accs.length === 0 ? (
+          <div className="py-9 text-center text-muted">
+            <div className="text-base font-semibold text-ink">No accounts yet.</div>
+            <Link to="/accounts/add" className="inline-block mt-3 bg-primary text-primary-on px-4 py-2 rounded-btn text-sm font-semibold">
+              Add your first account
+            </Link>
+          </div>
+        ) : (
+          <div>
+            {accs.map(a => {
+              const bal = accountBalance(a, state.transactions);
+              return (
+                <div key={a.id} className="flex justify-between items-center py-3 border-b border-border last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-[34px] h-[34px] rounded-lg bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
+                      {(a.name.trim()[0] || '\u09F3').toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm leading-tight">{a.name}</div>
+                      <div className="text-xs text-muted leading-tight mt-0.5">
+                        {accountTypeLabel(a.type)} · opens at {fmtBDT(a.openingBalance)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted">{a.type} · opens at {fmtBDT(a.openingBalance)}</div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold tabular">{fmtBDT(bal)}</span>
+                    <Link to={`/accounts/${a.id}/edit`} className="text-primary font-semibold text-[13px] hover:underline">Edit</Link>
+                    <button type="button" onClick={() => onDelete(a)} className="text-danger font-semibold text-[13px] hover:underline">
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Link to={`/accounts/${a.id}/edit`} className="text-xs text-muted hover:text-ink">Edit</Link>
-                  <button type="button" onClick={() => onDelete(a)} className="text-xs text-danger hover:underline">Delete</button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
       {dialog}
     </div>
   );
 }
 
-function fmtBDT(n: number) {
-  return '৳' + (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+function accountTypeLabel(t: string): string {
+  switch (t) {
+    case 'cash': return 'Cash';
+    case 'bank': return 'Bank Account';
+    case 'mobile_wallet': return 'Mobile Wallet';
+    case 'card': return 'Card';
+    default: return 'Other';
+  }
 }

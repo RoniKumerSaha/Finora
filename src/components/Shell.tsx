@@ -1,37 +1,99 @@
 /**
- * Shell — sidebar + topbar + content area.
+ * Shell — sidebar + content area.
  *
- * AD-18: the 35 screens flow into <Outlet />. Sidebar nav lists the
- * main destinations; topbar shows the screen title and any contextual
- * actions (e.g. "Add" button on list screens).
+ * AD-18: the 35 screens flow into <Outlet />. The sidebar layout matches
+ * docs/ux-designs/.../mockups/v2/dark.html:
  *
- * TODO AD-18: full visual implementation matching docs/ux-designs/.../v2/.
- * For AD-15 this is a minimal stub so the router compiles.
+ *   ┌──────────────┐
+ *   │ ● Finora     │   ← brand row (border-b)
+ *   ├──────────────┤
+ *   │  Home        │
+ *   │  Transactions│
+ *   │  Accounts    │   ← nav-items grouped together
+ *   │  Goals       │
+ *   │  Investments │
+ *   │  Debts       │
+ *   │  Settings    │
+ *   │  (spacer)    │
+ *   │  [+ Add]     │   ← primary button pinned to bottom
+ *   └──────────────┘
+ *
+ * Active item uses the primary-soft background + primary text per the
+ * mockup. Items keep a fixed 36 px height and 8 px radius so the sidebar
+ * never reflows when a screen changes length.
  */
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+
+interface NavDef { to: string; label: string; icon: string }
+
+const NAV: NavDef[] = [
+  { to: '/home',         label: 'Home',         icon: '\u2302' }, // ⌂
+  { to: '/transactions', label: 'Transactions', icon: '\u21C4' }, // ⇄
+  { to: '/accounts',     label: 'Accounts',     icon: '\u25CE' }, // ◎
+  { to: '/goals',        label: 'Goals',        icon: '\u2605' }, // ★
+  { to: '/investments',  label: 'Investments',  icon: '\u{1F3E6}' }, // 🏦
+  { to: '/debts',        label: 'Debts',        icon: '\u25D0' }, // ◐
+  { to: '/settings',     label: 'Settings',     icon: '\u2699' }, // ⚙
+];
 
 export function Shell({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  // Hide the "Add Transaction" shortcut on the form screens where it'd
+  // duplicate the screen's own submit button.
+  const onForm = /\/add$|\/[a-z]+\/[a-z0-9-]+\/edit$/.test(location.pathname);
+
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-screen bg-bg text-ink">
-      <aside className="bg-surface border-r border-border p-6 flex flex-col gap-1 sticky top-0 h-screen">
-        <div className="font-semibold text-lg px-2 pb-4 border-b border-border mb-3">Finora</div>
-        <NavLink to="/home"         className={navClass}>Home</NavLink>
-        <NavLink to="/transactions" className={navClass}>Transactions</NavLink>
-        <NavLink to="/accounts"     className={navClass}>Accounts</NavLink>
-        <NavLink to="/goals"        className={navClass}>Goals</NavLink>
-        <NavLink to="/debts"        className={navClass}>Debts</NavLink>
-        <NavLink to="/investments"  className={navClass}>Investments</NavLink>
-        <NavLink to="/settings"     className={navClass + ' mt-auto'}>Settings</NavLink>
+      <aside className="bg-surface border-r border-border p-4 flex flex-col gap-1 sticky top-0 h-screen">
+        <div className="flex items-center gap-3 px-2 pb-3 mb-2 border-b border-border">
+          <div className="w-9 h-9 rounded-lg bg-primary text-primary-on grid place-items-center text-base font-bold">
+            F
+          </div>
+          <div className="text-base font-bold tracking-tight">
+            fin<span className="text-primary">ora</span>
+          </div>
+        </div>
+
+        <nav className="flex flex-col gap-1">
+          {NAV.map(n => <NavItem key={n.to} {...n} />)}
+        </nav>
+
+        <div className="flex-1" />
+
+        {!onForm && (
+          <NavLink
+            to="/transactions/add"
+            className="mt-2 inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90"
+          >
+            <span className="text-base leading-none">+</span>
+            <span>Add Transaction</span>
+          </NavLink>
+        )}
       </aside>
-      <main className="p-6 overflow-x-auto">{children}</main>
+
+      <main className="px-8 py-6 overflow-x-auto max-w-[1280px]">{children}</main>
     </div>
   );
 }
 
-function navClass({ isActive }: { isActive: boolean }) {
-  return [
-    'block px-3 py-2 rounded-md text-sm',
-    isActive ? 'bg-primary-soft text-ink font-medium' : 'text-muted hover:bg-surface-2',
-  ].join(' ');
+function NavItem({ to, label, icon }: NavDef) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          'flex items-center gap-3 px-3 py-2 rounded-md text-[13.5px] transition',
+          isActive
+            ? 'bg-primary-soft text-primary font-medium'
+            : 'text-muted hover:bg-surface-2 hover:text-ink font-medium',
+        ].join(' ')
+      }
+    >
+      <span className="w-[18px] inline-flex items-center justify-center text-[15px]" aria-hidden>
+        {icon}
+      </span>
+      <span>{label}</span>
+    </NavLink>
+  );
 }

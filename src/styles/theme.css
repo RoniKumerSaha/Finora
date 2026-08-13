@@ -37,7 +37,18 @@
 
   --radius-card: 12px;
   --radius-btn: 10px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.25);
+  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.4);
+
+  /* numeric fonts for amounts */
+  --font-numeric: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
+
+/* Tabular numerals on numbers everywhere — amount alignment matters
+   in dense lists. */
+.tabular { font-variant-numeric: tabular-nums; }
 
 [data-theme="dark"] {
   --bg:           #1E2A26;

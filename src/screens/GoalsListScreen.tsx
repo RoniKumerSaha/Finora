@@ -1,42 +1,65 @@
+/**
+ * GoalsListScreen — multi-column card grid matching the mockup.
+ *
+ * Visual target: docs/ux-designs/.../mockups/v2/dark.html#goals
+ * Each card: name + percent chip in a row, gradient bar, two-line
+ * meta (saved/target and by-date).
+ */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
+import { fmtBDT, fmtDate } from '../lib/format';
 
 export function GoalsListScreen() {
   const state = useStore(s => s.state);
   const gs = goals.list(state);
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Goals</h1>
-        <Link to="/goals/add" className="bg-primary text-primary-on px-4 py-2 rounded-md">Add Goal</Link>
-      </header>
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight leading-none">Goals</h1>
+          <div className="text-muted text-[13px] mt-1">{gs.length} total</div>
+        </div>
+        <Link to="/goals/add" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
+          <span className="text-base leading-none">+</span>
+          <span>New goal</span>
+        </Link>
+      </div>
+
       {gs.length === 0 ? (
-        <div className="text-muted">No goals yet.</div>
+        <section className="bg-surface border border-border rounded-card p-5 shadow-card">
+          <div className="py-9 text-center text-muted">
+            <div className="text-3xl opacity-60 mb-2">{'\u2605'}</div>
+            <div className="text-base font-semibold text-ink">Save toward something</div>
+            <p className="mt-2 text-sm">Set a target amount and a date. We'll tell you how much to save each month.</p>
+            <Link to="/goals/add" className="inline-block mt-3 bg-primary text-primary-on px-4 py-2 rounded-btn text-sm font-semibold">
+              + New goal
+            </Link>
+          </div>
+        </section>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[14px]">
           {gs.map(g => {
             const pct = Math.min(100, Math.round(((Number(g.saved) || 0) / (Number(g.target) || 1)) * 100));
             return (
-              <li key={g.id} className="bg-surface border border-border rounded-md p-3">
-                <div className="flex justify-between">
-                  <span className="font-medium">{g.name}</span>
+              <section key={g.id} className="bg-surface border border-border rounded-card p-5 shadow-card">
+                <div className="flex justify-between items-center">
+                  <div className="font-semibold">{g.name}</div>
+                  <div className="text-[11px] text-primary font-bold bg-primary-soft px-2 py-0.5 rounded-pill">{pct}%</div>
+                </div>
+                <div className="mt-2.5 h-2 bg-surface-2 rounded-pill overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-primary to-accent rounded-pill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="flex justify-between text-xs text-muted mt-1.5">
                   <span>{fmtBDT(g.saved || 0)} / {fmtBDT(g.target)}</span>
+                  <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
                 </div>
-                <div className="h-1.5 bg-surface-2 rounded-full mt-2 overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="text-xs text-muted mt-2">Target {g.targetDate}</div>
-              </li>
+              </section>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );
-}
-
-function fmtBDT(n: number) {
-  return '৳' + (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
