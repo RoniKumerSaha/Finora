@@ -1,16 +1,24 @@
 /**
  * HomeScreen — top-level dashboard.
  *
- * Visual target: docs/ux-designs/.../mockups/v2/dark.html#home.
- * Layout:
- *   [demo banner if not onboarded]
+ * Visual target: docs/ux-designs/.../mockups/v1/index.html#home
+ *
+ * Layout matches v1 order:
+ *   [demo banner ×  with dismiss]
  *   3-up stat row: Total balance · Income · Expenses
  *   2-up cards:    Accounts preview · Goals preview
- *   full-width card: Debts (i owe / owed to me + per-debt rows)
- *   full-width card: Investments (total + per-inv rows)
- *   full-width card: Recent activity (tx list)
+ *   full-width:    Recent activity
+ *
+ * Component sizes match v1:
+ *   .stat         padding 22px, num 26px, label 12px tracked
+ *   .card         padding 24px, radius 24px (r-card), shadow
+ *   .acct-row     padding 14px 0, icon 36×36 radius 11
+ *   .goal         padding 18px 0, bar height 10px, pct pill 3×10
+ *   .tx           padding 16px 0, icon 38×38 radius 14
+ *   .topbar       mb 24px
  */
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useStore } from '../domain/store';
 import { monthlyIncome, monthlyExpenses, accountBalance, daysToMaturity, investmentMaturityValue } from '../domain/math';
 import * as accounts from '../domain/accounts';
@@ -52,23 +60,25 @@ export function HomeScreen() {
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-[20px]">
       {showOnboardingBanner && <DemoBanner />}
 
-      <Topbar
-        title="Where is my money?"
-        sub={`Total across ${accList.length} account${accList.length === 1 ? '' : 's'} · updated just now`}
-      />
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight leading-none mb-1">Where is my money?</h1>
+          <div className="text-muted text-[13px]">{`Total across ${accList.length} account${accList.length === 1 ? '' : 's'} · updated just now`}</div>
+        </div>
+      </div>
 
       {/* 3-up stat row */}
-      <div className="grid grid-cols-3 gap-[14px]">
-        <Stat label="Total balance"        value={fmtBDT(totalBalance)} trend={`across ${accList.length} accounts`} />
-        <Stat label="Income (this month)"  value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
-        <Stat label="Expenses (this month)" value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
+      <div className="grid grid-cols-3 gap-4">
+        <Stat label="Total balance"          value={fmtBDT(totalBalance)} trend={`across ${accList.length} accounts`} />
+        <Stat label="Income (this month)"    value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
+        <Stat label="Expenses (this month)"  value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
       </div>
 
       {/* Accounts + Goals preview */}
-      <div className="grid grid-cols-[2fr_1fr] gap-[14px]">
+      <div className="grid grid-cols-[2fr_1fr] gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
             ? <Empty msg="No accounts yet." cta="Add an account" to="/accounts/add" />
@@ -87,10 +97,10 @@ export function HomeScreen() {
             : activeGoals.slice(0, 3).map(g => {
                 const pct = Math.min(100, Math.round(((Number(g.saved) || 0) / (Number(g.target) || 1)) * 100));
                 return (
-                  <div key={g.id} className="py-3 border-b border-border last:border-0">
+                  <div key={g.id} className="py-[18px] border-b border-border last:border-0">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-semibold text-sm">{g.name}</div>
-                      <div className="text-[11px] text-primary font-bold bg-primary-soft px-2 py-0.5 rounded-pill">{pct}%</div>
+                      <div className="text-xs text-primary font-bold bg-primary-soft px-2.5 py-[3px] rounded-pill">{pct}%</div>
                     </div>
                     <Bar pct={pct} />
                     <div className="flex justify-between text-xs text-muted mt-1.5">
@@ -106,7 +116,7 @@ export function HomeScreen() {
 
       {/* Debts card */}
       <Card title="Debts" right={<ManageLink to="/debts" />}>
-        <div className="grid grid-cols-2 gap-[14px] mb-3">
+        <div className="grid grid-cols-2 gap-4 mb-3.5">
           <SummaryMicro label="I owe" amount={iOwe} sub={`${activeDebts.filter(d => d.direction === 'i_owe').length} active`} tone="danger" />
           <SummaryMicro label="Owed to me" amount={owedToMe} sub={`${activeDebts.filter(d => d.direction === 'owed_to_me').length} active`} tone="primary" />
         </div>
@@ -139,7 +149,7 @@ export function HomeScreen() {
 
       {/* Investments card */}
       <Card title="Investments" right={<ManageLink to="/investments" />}>
-        <div className="mb-3">
+        <div className="mb-3.5">
           <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Total invested</div>
           <div className="text-2xl font-extrabold text-accent mt-1 tabular">{fmtBDT(totalInvested)}</div>
           <div className="text-xs text-muted mt-0.5">
@@ -154,7 +164,7 @@ export function HomeScreen() {
             const mat = investmentMaturityValue(inv);
             const label = days > 0 ? `Matures in ${days}d` : days === 0 ? 'Matures today' : `Matured ${-days}d ago`;
             return (
-              <div key={inv.id} className="py-2 border-t border-border">
+              <div key={inv.id} className="py-2.5 border-t border-border">
                 <div className="flex justify-between items-center mb-1.5">
                   <div className="font-semibold text-sm">{inv.name}</div>
                   <div className="text-xs text-muted font-bold">{label}</div>
@@ -201,24 +211,13 @@ function accountTypeLabel(t: string): string {
 
 /* ---------- tiny presentational atoms ---------- */
 
-function Topbar({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div className="flex justify-between items-end mb-5">
-      <div>
-        <h1 className="text-[22px] font-bold tracking-tight leading-none">{title}</h1>
-        {sub && <div className="text-muted text-[13px] mt-1">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
 function Card({
   title, right, children,
 }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="bg-surface border border-border rounded-card p-5 shadow-card">
+    <section className="bg-surface border border-border rounded-card p-6 shadow-card">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-xs text-muted uppercase tracking-wider font-semibold m-0">{title}</h2>
+        <h2 className="text-[13px] text-muted uppercase tracking-wider font-semibold m-0">{title}</h2>
         {right}
       </div>
       {children}
@@ -233,9 +232,9 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
 function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' }) {
   const color = tone === 'out' ? 'text-danger' : tone === 'in' ? 'text-primary' : 'text-ink';
   return (
-    <div className="bg-surface border border-border rounded-card p-[18px]">
-      <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">{label}</div>
-      <div className={`text-2xl font-bold mt-1.5 tracking-tight tabular ${color}`}>{value}</div>
+    <div className="bg-surface border border-border rounded-card p-[22px]">
+      <div className="text-xs text-muted uppercase tracking-wider">{label}</div>
+      <div className={`text-[26px] font-bold mt-2 tracking-tight tabular ${color}`}>{value}</div>
       {trend && <div className="text-xs text-muted mt-1">{trend}</div>}
     </div>
   );
@@ -247,7 +246,7 @@ function Bar({ pct, variant = 'primary' }: { pct: number; variant?: 'primary' | 
       ? 'bg-danger'
       : 'bg-gradient-to-r from-primary to-accent';
   return (
-    <div className="h-2 bg-surface-2 rounded-pill overflow-hidden">
+    <div className="h-[10px] bg-surface-2 rounded-pill overflow-hidden">
       <div className={`h-full rounded-pill ${fill}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -268,9 +267,9 @@ function SummaryMicro({
 
 function AcctRow({ icon, name, type, balance }: { icon: React.ReactNode; name: string; type: string; balance: number }) {
   return (
-    <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
+    <div className="flex justify-between items-center py-[14px] border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className="w-[34px] h-[34px] rounded-lg bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
+        <div className="w-9 h-9 rounded-[11px] bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
           {icon}
         </div>
         <div>
@@ -284,7 +283,7 @@ function AcctRow({ icon, name, type, balance }: { icon: React.ReactNode; name: s
 }
 
 function AccountIcon({ name }: { name: string }) {
-  // First non-space character, uppercased. Matches the mockup's bKash 'b' / Savings 'S'.
+  // First non-space character, uppercased. Matches v1 mockup's bKash 'b' / Savings 'S'.
   const ch = (name.trim()[0] || '\u09F3').toUpperCase();
   return <span>{ch}</span>;
 }
@@ -294,7 +293,6 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   const cat = state.categories.find((c: any) => c.id === tx.categoryId);
   const direction: 'in' | 'out' | 'xfr' =
     tx.type === 'income' ? 'in' : tx.type === 'expense' ? 'out' : 'xfr';
-  const label = cat?.name ?? tx.type;
   const accent =
     direction === 'in'
       ? 'text-primary bg-primary-soft'
@@ -303,15 +301,15 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
         : 'text-accent bg-accent-soft';
   const amtColor = direction === 'in' ? 'text-primary' : 'text-ink';
   return (
-    <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
+    <div className="flex justify-between items-center py-4 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${accent}`}>
+        <div className={`w-[38px] h-[38px] rounded-[14px] grid place-items-center font-bold ${accent}`}>
           {direction === 'in' ? '\u2191' : direction === 'out' ? '\u2193' : '\u21C4'}
         </div>
         <div>
-          <div className="font-semibold text-[14px] leading-tight">{tx.note || label}</div>
+          <div className="font-semibold text-[14px] leading-tight">{tx.note || cat?.name || tx.type}</div>
           <div className="text-xs text-muted leading-tight mt-0.5">
-            {fmtRelative(tx.date)} {acc ? `\u00B7 ${acc.name}` : ''} {tx.linkedDebtId ? `\u00B7 debt` : ''} {tx.linkedInvestmentId ? `\u00B7 investment payout` : ''}
+            {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''} {tx.linkedDebtId ? `· debt` : ''} {tx.linkedInvestmentId ? `· investment payout` : ''}
           </div>
         </div>
       </div>
@@ -324,10 +322,10 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
 
 function Empty({ msg, cta, to }: { msg: string; cta?: string; to?: string }) {
   return (
-    <div className="py-9 text-center text-muted">
+    <div className="py-10 text-center text-muted">
       <div className="text-base font-semibold text-ink">{msg}</div>
       {cta && to && (
-        <Link to={to} className="inline-block mt-3 bg-primary text-primary-on px-4 py-2 rounded-btn text-sm font-semibold">
+        <Link to={to} className="inline-block mt-3.5 bg-primary text-primary-on px-[18px] py-3 rounded-btn text-sm font-bold hover:opacity-90">
           {cta}
         </Link>
       )}
@@ -336,10 +334,31 @@ function Empty({ msg, cta, to }: { msg: string; cta?: string; to?: string }) {
 }
 
 function DemoBanner() {
+  const [show, setShow] = useState(true);
+  const completeOnboarding = useStore(s => s.completeOnboarding);
+  if (!show) return null;
   return (
-    <div className="flex items-center gap-3 bg-surface-2 border border-dashed border-border rounded-card px-4 py-2.5 text-[13px] text-muted">
+    <div className="flex items-center gap-3 bg-surface-2 border border-dashed border-border rounded-card px-4 py-2.5 text-[13px] text-muted mb-[18px]">
       <span className="w-2 h-2 rounded-full bg-accent" />
-      <span><strong className="text-ink font-semibold">You're viewing demo data.</strong> {`This is a sample dashboard.`} <Link to="/onboarding" className="text-primary font-semibold hover:underline">Start using Finora →</Link></span>
+      <span className="grow">
+        <strong className="text-ink font-semibold">You're viewing demo data.</strong>{' '}
+        This is a sample dashboard.{' '}
+        <button
+          type="button"
+          onClick={() => { completeOnboarding(); setShow(false); }}
+          className="text-primary font-semibold hover:underline"
+        >
+          Start using Finora \u2192
+        </button>
+      </span>
+      <button
+        type="button"
+        onClick={() => setShow(false)}
+        aria-label="Dismiss banner"
+        className="ml-auto px-2 py-1 rounded-md text-muted hover:bg-surface-3 hover:text-ink"
+      >
+        {'\u2715'}
+      </button>
     </div>
   );
 }

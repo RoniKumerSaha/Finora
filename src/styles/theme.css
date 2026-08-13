@@ -35,12 +35,14 @@
   --color-border: var(--border);
   --color-border-2: var(--border-2);
 
-  --radius-card: 12px;
-  --radius-btn: 10px;
+  --radius-card: 24px;
+  --radius-btn: 14px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.25);
-  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.4);
+  /* v1 mockup uses heavier shadows (--shadow: 0 8px 28px rgba(0,0,0,.35),
+     --shadow-lg: 0 10px 40px rgba(0,0,0,.5)) on the rounded surfaces. */
+  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.5);
 
   /* numeric fonts for amounts */
   --font-numeric: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -49,6 +51,11 @@
 /* Tabular numerals on numbers everywhere — amount alignment matters
    in dense lists. */
 .tabular { font-variant-numeric: tabular-nums; }
+
+/* v1 modal backdrop: darkened + 6px blur overlay. */
+:root {
+  --overlay: rgba(15, 20, 25, 0.6);
+}
 
 [data-theme="dark"] {
   --bg:           #1E2A26;

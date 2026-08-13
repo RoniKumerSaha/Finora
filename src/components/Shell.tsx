@@ -1,29 +1,28 @@
 /**
  * Shell — sidebar + content area.
  *
- * AD-18: the 35 screens flow into <Outlet />. The sidebar layout matches
- * docs/ux-designs/.../mockups/v2/dark.html:
+ * Visual target: docs/ux-designs/.../mockups/v1/index.html — the v1
+ * "pillowy" roundness pass. Sidebar nav uses 14px radius items with
+ * 6px gap; brand row carries the real Finora logo SVG.
  *
+ * Layout:
  *   ┌──────────────┐
- *   │ ● Finora     │   ← brand row (border-b)
+ *   │ [logo] Finora│   ← brand row (border-b)
  *   ├──────────────┤
  *   │  Home        │
- *   │  Transactions│
- *   │  Accounts    │   ← nav-items grouped together
+ *   │  Transactions│   ← nav-items grouped, 14px radius
+ *   │  Accounts    │
  *   │  Goals       │
  *   │  Investments │
  *   │  Debts       │
  *   │  Settings    │
  *   │  (spacer)    │
- *   │  [+ Add]     │   ← primary button pinned to bottom
+ *   │  [+ Add]     │   ← primary button pinned to bottom (r-btn)
  *   └──────────────┘
- *
- * Active item uses the primary-soft background + primary text per the
- * mockup. Items keep a fixed 36 px height and 8 px radius so the sidebar
- * never reflows when a screen changes length.
  */
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import logoUrl from '../assets/finora-logo.svg';
 
 interface NavDef { to: string; label: string; icon: string }
 
@@ -45,17 +44,15 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-screen bg-bg text-ink">
-      <aside className="bg-surface border-r border-border p-4 flex flex-col gap-1 sticky top-0 h-screen">
+      <aside className="bg-surface border-r border-border p-4 flex flex-col gap-[6px] sticky top-0 h-screen">
         <div className="flex items-center gap-3 px-2 pb-3 mb-2 border-b border-border">
-          <div className="w-9 h-9 rounded-lg bg-primary text-primary-on grid place-items-center text-base font-bold">
-            F
-          </div>
-          <div className="text-base font-bold tracking-tight">
+          <img src={logoUrl} alt="Finora" className="w-9 h-9 rounded-[12px]" />
+          <div className="text-[17px] font-bold tracking-tight">
             fin<span className="text-primary">ora</span>
           </div>
         </div>
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-[6px]">
           {NAV.map(n => <NavItem key={n.to} {...n} />)}
         </nav>
 
@@ -64,7 +61,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {!onForm && (
           <NavLink
             to="/transactions/add"
-            className="mt-2 inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90"
+            className="mt-2 inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-[18px] py-3 rounded-btn font-bold text-sm hover:opacity-90"
           >
             <span className="text-base leading-none">+</span>
             <span>Add Transaction</span>
@@ -83,10 +80,10 @@ function NavItem({ to, label, icon }: NavDef) {
       to={to}
       className={({ isActive }) =>
         [
-          'flex items-center gap-3 px-3 py-2 rounded-md text-[13.5px] transition',
+          'flex items-center gap-3 px-[14px] py-[10px] rounded-btn text-[13.5px] font-medium transition',
           isActive
-            ? 'bg-primary-soft text-primary font-medium'
-            : 'text-muted hover:bg-surface-2 hover:text-ink font-medium',
+            ? 'bg-primary-soft text-primary'
+            : 'text-muted hover:bg-surface-2 hover:text-ink',
         ].join(' ')
       }
     >
