@@ -311,17 +311,17 @@
       <div class="grid-top">
         <div class="stat in">
           <div class="label">Total balance</div>
-          <div class="num">৳ 38,500</div>
+          <div class="num" data-bind="total-balance">৳ 38,500</div>
           <div class="trend">across 4 accounts</div>
         </div>
         <div class="stat in">
           <div class="label">Income (this month)</div>
-          <div class="num">৳ 60,000</div>
+          <div class="num" data-bind="monthly-income">৳ 60,000</div>
           <div class="trend">2 entries</div>
         </div>
         <div class="stat out">
           <div class="label">Expenses (this month)</div>
-          <div class="num">৳ 21,500</div>
+          <div class="num" data-bind="monthly-expenses">৳ 21,500</div>
           <div class="trend">18 entries</div>
         </div>
       </div>
@@ -390,12 +390,12 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div>
             <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">I owe</div>
-            <div style="font-size:20px;font-weight:700;color:var(--danger);margin-top:4px;font-variant-numeric:tabular-nums">৳ 25,000</div>
+            <div style="font-size:20px;font-weight:700;color:var(--danger);margin-top:4px;font-variant-numeric:tabular-nums" data-bind="i-owe">৳ 25,000</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">2 active</div>
           </div>
           <div>
             <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Owed to me</div>
-            <div style="font-size:20px;font-weight:700;color:var(--primary);margin-top:4px;font-variant-numeric:tabular-nums">৳ 8,000</div>
+            <div style="font-size:20px;font-weight:700;color:var(--primary);margin-top:4px;font-variant-numeric:tabular-nums" data-bind="owed-to-me">৳ 8,000</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">1 active</div>
           </div>
         </div>
@@ -424,7 +424,7 @@
         </div>
         <div style="margin-bottom:14px">
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Total invested</div>
-          <div style="font-size:26px;font-weight:800;color:var(--accent);margin-top:4px;font-variant-numeric:tabular-nums">৳ 160,000</div>
+          <div style="font-size:26px;font-weight:800;color:var(--accent);margin-top:4px;font-variant-numeric:tabular-nums" data-bind="total-invested">৳ 160,000</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">across 2 active · 1 closed</div>
         </div>
         <div data-goto="investment-detail" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border)">
@@ -478,13 +478,16 @@
       <div class="topbar">
         <div>
           <h1>Transactions</h1>
-          <div class="sub">All entries · 152 this month</div>
+          <div class="sub">All entries</div>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ghost">⬇ Export CSV</button>
           <button class="btn btn-primary" data-goto="add-picker">+ Add</button>
         </div>
       </div>
+
+      <!-- Live-rendered list of real transactions from the data layer. -->
+      <div data-bind="tx-list"></div>
 
       <div class="filters">
         <div class="filter active">All</div>
@@ -794,9 +797,12 @@
     <!-- =================== ACCOUNTS =================== -->
     <section id="accounts" class="screen">
       <div class="topbar">
-        <div><h1>Accounts</h1><div class="sub">4 accounts · total ৳ 38,500</div></div>
+        <div><h1>Accounts</h1><div class="sub">All accounts</div></div>
         <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-account">+ Add account</button></div>
       </div>
+
+      <!-- Live-rendered list of real accounts. -->
+      <div data-bind="account-list"></div>
 
       <div class="card">
         <div class="acct-row">
@@ -849,9 +855,12 @@
     <!-- =================== GOALS =================== -->
     <section id="goals" class="screen">
       <div class="topbar">
-        <div><h1>Goals</h1><div class="sub">3 active goals</div></div>
+        <div><h1>Goals</h1><div class="sub">All goals</div></div>
         <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-goal">+ New goal</button></div>
       </div>
+
+      <!-- Live-rendered list of real goals. -->
+      <div data-bind="goal-list"></div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
         <div class="card" data-goto="goal-detail" style="cursor:pointer">
@@ -1120,9 +1129,12 @@
     <!-- =================== DEBTS =================== -->
     <section id="debts" class="screen">
       <div class="topbar">
-        <div><h1>Debts</h1><div class="sub">2 I owe · 1 owed to me</div></div>
+        <div><h1>Debts</h1><div class="sub">All debts</div></div>
         <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-debt">+ New debt</button></div>
       </div>
+
+      <!-- Live-rendered list of real debts. -->
+      <div data-bind="debt-list"></div>
 
       <div class="card" style="margin-bottom:14px">
         <h2>I owe</h2>
@@ -1244,9 +1256,12 @@
     <!-- =================== INVESTMENTS LIST =================== -->
     <section id="investments" class="screen">
       <div class="topbar">
-        <div><h1>Investments</h1><div class="sub">2 active · 1 closed</div></div>
+        <div><h1>Investments</h1><div class="sub">All investments</div></div>
         <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-investment-1">+ New investment</button></div>
       </div>
+
+      <!-- Live-rendered list of real investments. -->
+      <div data-bind="investment-list"></div>
 
       <div class="grid-mid">
         <div class="card">
@@ -1625,31 +1640,10 @@
   </main>
 </div>
 
-<script>
-  // -------------- Screen routing --------------
-  const screens = document.querySelectorAll('.screen');
-  const navItems = document.querySelectorAll('.nav-item');
-
-  function show(id){
-    const target = document.getElementById(id);
-    if(!target) return;
-    screens.forEach(s => s.classList.toggle('active', s === target));
-    navItems.forEach(n => n.classList.toggle('active', n.dataset.goto === id));
-    window.scrollTo(0, 0);
-    history.replaceState(null, '', '#' + id);
-  }
-
-  // Wire every "data-goto" element
-  document.addEventListener('click', (e) => {
-    const t = e.target.closest('[data-goto]');
-    if(!t) return;
-    e.preventDefault();
-    show(t.dataset.goto);
-  });
-
-  // Initial route from hash or default to home
-  const initial = (location.hash || '#home').slice(1);
-  if(document.getElementById(initial)) show(initial); else show('home');
+<!-- App entry — the render layer (AD-6) lives in src/js/app.js. -->
+<script type="module">
+  import { init } from './js/app.js';
+  init();
 </script>
 
 </body>

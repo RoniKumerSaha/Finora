@@ -35,16 +35,18 @@
  * Idempotent. Re-running overwrites index.html from the two originals.
  */
 
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const MOCK_DIR = path.join(__dirname, '..', 'docs', 'ux-designs', 'ux-finora-2026-08-13', 'mockups', 'v2');
-const DARK_PATH  = path.join(MOCK_DIR, 'dark.html');
-const LIGHT_PATH = path.join(MOCK_DIR, 'light.html');
-const OUT_PATH   = path.join(MOCK_DIR, 'index.html');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const MOCK_DIR = join(__dirname, '..', 'docs', 'ux-designs', 'ux-finora-2026-08-13', 'mockups', 'v2');
+const DARK_PATH  = join(MOCK_DIR, 'dark.html');
+const LIGHT_PATH = join(MOCK_DIR, 'light.html');
+const OUT_PATH   = join(MOCK_DIR, 'index.html');
 
-const dark  = fs.readFileSync(DARK_PATH, 'utf8');
-const light = fs.readFileSync(LIGHT_PATH, 'utf8');
+const dark  = readFileSync(DARK_PATH, 'utf8');
+const light = readFileSync(LIGHT_PATH, 'utf8');
 
 // Sanity: line counts should match exactly so section-by-section merge is 1:1.
 const darkLines  = dark.split('\n').length;
@@ -293,7 +295,7 @@ const finalHtml = finalBody.replace(
   '<title>Finora · Prototype</title>'
 );
 
-fs.writeFileSync(OUT_PATH, finalHtml, 'utf8');
+writeFileSync(OUT_PATH, finalHtml, 'utf8');
 
 console.log(`OK: ${OUT_PATH}`);
 console.log(`  dark  ${darkLines} lines → merged`);
