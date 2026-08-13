@@ -1,0 +1,84 @@
+/**
+ * theme.css — theme tokens (AD-17).
+ *
+ * Tailwind v4 reads these CSS custom properties directly. The tokens come
+ * from docs/ux-designs/ux-finora-2026-08-13/mockups/v2/{dark,light}.html
+ * (the V2 Soft design that the React app is meant to match).
+ *
+ * App.tsx flips [data-theme="dark"|"light"] on <html> based on settings.theme.
+ * 'auto' listens to prefers-color-scheme.
+ */
+
+@import "tailwindcss";
+
+@theme {
+  /* Tailwind v4 reads these as CSS variables in @theme and exposes them
+     as Tailwind utilities: bg-bg, text-ink, border-border, etc. */
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-hi: var(--primary-hi);
+  --color-primary-on: var(--primary-on);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+
+  --radius-card: 12px;
+  --radius-btn: 10px;
+}
+
+[data-theme="dark"] {
+  --bg:           #1E2A26;
+  --surface:      #253229;
+  --surface-2:    #2E3C34;
+  --surface-3:    #3A4A42;
+  --ink:          #F1F3EF;
+  --muted:        #94A59C;
+  --muted-2:      #647068;
+  --primary:      #5DBFA0;
+  --primary-soft: rgba(93, 191, 160, 0.18);
+  --primary-hi:   rgba(93, 191, 160, 0.08);
+  --primary-on:   #0F1419;
+  --accent:       #D9B26B;
+  --accent-soft:  rgba(217, 178, 107, 0.18);
+  --danger:       #D67560;
+  --danger-soft:  rgba(214, 117, 96, 0.18);
+  --warn:         #F4B860;
+  --warn-soft:    rgba(244, 184, 96, 0.15);
+  --border:       #324139;
+  --border-2:     #28332D;
+}
+
+[data-theme="light"] {
+  --bg:           #F7F4EC;
+  --surface:      #FFFFFF;
+  --surface-2:    #F0EBDF;
+  --surface-3:    #E5DECB;
+  --ink:          #2A2620;
+  --muted:        #7A6F5E;
+  --muted-2:      #B5A992;
+  --primary:      #0D8275;
+  --primary-soft: rgba(13, 130, 117, 0.12);
+  --primary-hi:   rgba(13, 130, 117, 0.06);
+  --primary-on:   #FFFFFF;
+  --accent:       #A47E2C;
+  --accent-soft:  rgba(164, 126, 44, 0.14);
+  --danger:       #B8553F;
+  --danger-soft:  rgba(184, 85, 63, 0.12);
+  --warn:         #B6842E;
+  --warn-soft:    rgba(182, 132, 46, 0.14);
+  --border:       #E5DECB;
+  --border-2:     #D8CFB8;
+}

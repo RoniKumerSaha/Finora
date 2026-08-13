@@ -1,6 +1,9 @@
 # Puku CLI
 .puku/
 
+# TypeScript incremental build
+*.tsbuildinfo
+
 # Environment files
 .env
 .env.local

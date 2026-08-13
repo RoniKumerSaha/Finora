@@ -3,12 +3,35 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Finora — Bangladesh-first personal finance/bookkeeping app, V1.",
+  "description": "Finora — Bangladesh-first personal finance/bookkeeping app, V1 (React + Vite).",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1",
+    "react-hook-form": "^7.54.2",
+    "zod": "^3.24.1",
+    "@hookform/resolvers": "^3.10.0",
+    "zustand": "^5.0.2"
+  },
   "devDependencies": {
-    "vitest": "^2.1.0"
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.5.2",
+    "happy-dom": "^15.11.7",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0"
   }
 }
