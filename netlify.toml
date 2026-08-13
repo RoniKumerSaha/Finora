@@ -1,0 +1,15 @@
+# Netlify deploy config for Finora V1.
+#
+# The build output is dist/ (from `npm run build`). SPA routing means
+# every unknown path needs to fall back to index.html — since we use
+# HashRouter this is technically not required, but it's good hygiene
+# for the rare case of someone bookmarking a route.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

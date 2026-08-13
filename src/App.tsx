@@ -82,34 +82,32 @@ export function App() {
 
   return (
     <HashRouter>
-      <Shell>
-        <RoleAlertBanner />
-        <Outlet />
-      </Shell>
       <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<HomeScreen />} />
+        <Route element={<Shell><RoleAlertBanner /><Outlet /></Shell>}>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<HomeScreen />} />
 
-        <Route path="/transactions" element={<TransactionsListScreen />} />
-        <Route path="/transactions/add" element={<TransactionAddScreen />} />
+          <Route path="/transactions" element={<TransactionsListScreen />} />
+          <Route path="/transactions/add" element={<TransactionAddScreen />} />
 
-        <Route path="/accounts" element={<AccountsListScreen />} />
-        <Route path="/accounts/add" element={<AccountAddScreen />} />
-        <Route path="/accounts/:id/edit" element={<AccountEditScreen />} />
+          <Route path="/accounts" element={<AccountsListScreen />} />
+          <Route path="/accounts/add" element={<AccountAddScreen />} />
+          <Route path="/accounts/:id/edit" element={<AccountEditScreen />} />
 
-        <Route path="/goals" element={<GoalsListScreen />} />
-        <Route path="/goals/add" element={<GoalAddScreen />} />
+          <Route path="/goals" element={<GoalsListScreen />} />
+          <Route path="/goals/add" element={<GoalAddScreen />} />
 
-        <Route path="/debts" element={<DebtsListScreen />} />
-        <Route path="/debts/add" element={<DebtAddScreen />} />
+          <Route path="/debts" element={<DebtsListScreen />} />
+          <Route path="/debts/add" element={<DebtAddScreen />} />
 
-        <Route path="/investments" element={<InvestmentsListScreen />} />
-        <Route path="/investments/add" element={<InvestmentAddScreen />} />
+          <Route path="/investments" element={<InvestmentsListScreen />} />
+          <Route path="/investments/add" element={<InvestmentAddScreen />} />
 
-        <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/onboarding" element={<OnboardingScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/onboarding" element={<OnboardingScreen />} />
 
-        <Route path="*" element={<div className="p-8 text-muted">Not found.</div>} />
+          <Route path="*" element={<div className="p-8 text-muted">Not found.</div>} />
+        </Route>
       </Routes>
     </HashRouter>
   );

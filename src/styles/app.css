@@ -14,9 +14,18 @@ html, body, #root {
 }
 
 body {
+  margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Fallback to the V2 Soft theme colors directly so the *body* matches
+     the Shell even before Tailwind processes the @theme directive. */
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+#root {
+  isolation: isolate;
 }
 
 /* Firefox: hide spinner on number inputs; our forms use custom steppers if needed. */
