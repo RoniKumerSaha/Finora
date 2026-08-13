@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="44" fill="#1A2028" stroke="#2A3340" stroke-width="2"/>
+  <text x="100" y="78" font-family="-apple-system,BlinkMacSystemFont,Inter,sans-serif" font-size="42" font-weight="800" fill="#A78BFA" text-anchor="middle" letter-spacing="-1">fin</text>
+  <text x="100" y="148" font-family="-apple-system,BlinkMacSystemFont,Inter,sans-serif" font-size="42" font-weight="800" fill="#2DD4BF" text-anchor="middle" letter-spacing="-1">ora</text>
+</svg>

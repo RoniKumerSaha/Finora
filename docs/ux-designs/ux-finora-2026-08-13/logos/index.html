@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · Logo Variants</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0F1419; --surface:#1A2028; --surface-2:#232B36;
+    --ink:#E6EDF3; --muted:#8B949E;
+    --primary:#2DD4BF; --accent:#A78BFA; --border:#2A3340;
+    --r-card:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif;font-size:14px;line-height:1.5}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:48px 32px}
+
+  header{text-align:center;margin-bottom:48px}
+  header h1{margin:0;font-size:32px;letter-spacing:-.02em}
+  header p{color:var(--muted);margin:8px 0 0;font-size:14px}
+  header .meta{margin-top:18px;color:var(--muted);font-size:12px}
+
+  .controls{display:flex;justify-content:center;gap:8px;margin-bottom:32px;flex-wrap:wrap}
+  .pill{padding:8px 16px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;transition:all .15s}
+  .pill:hover{color:var(--ink)}
+  .pill.active{background:var(--primary-soft);color:var(--primary);border-color:rgba(45,212,191,.4)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;transition:all .2s}
+  .card:hover{border-color:var(--primary);transform:translateY(-2px)}
+
+  .stage{padding:32px;display:flex;align-items:center;justify-content:center;height:200px;position:relative}
+  .stage.dark{background:#0F1419}
+  .stage.mid{background:#1A2028}
+  .stage.light{background:#E6EDF3}
+  .stage.brand{background:#2DD4BF}
+
+  .stage img{max-width:160px;max-height:140px;width:auto;height:auto;display:block}
+
+  .meta{padding:18px 20px;border-top:1px solid var(--border);background:var(--surface-2)}
+  .meta .num{font-size:11px;color:var(--primary);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+  .meta .name{font-weight:600;font-size:15px;margin-bottom:4px}
+  .meta .desc{font-size:12px;color:var(--muted)}
+  .meta .picks{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .tag{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--surface);color:var(--muted);border:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+  .picker{margin:64px 0 32px;padding:24px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--r-card);text-align:center}
+  .picker h2{margin:0 0 6px;font-size:16px}
+  .picker p{margin:0 0 14px;color:var(--muted);font-size:13px}
+  .picker select{padding:8px 14px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;font:inherit}
+
+  /* Click-to-zoom */
+  .zoomable{cursor:zoom-in}
+  .zoomable:active{cursor:zooming}
+
+  @media (max-width:680px){
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <h1>Finora — Logo Variants</h1>
+    <p>10 SVG marks, each rendered against dark, mid, and light backgrounds.</p>
+    <div class="meta">Pick one and we'll wire it through DESIGN.md + the favicon + the sidebar brand.</div>
+  </header>
+
+  <div class="controls">
+    <div class="pill active" data-bg="dark">Dark BG</div>
+    <div class="pill" data-bg="mid">Mid BG</div>
+    <div class="pill" data-bg="light">Light BG</div>
+    <div class="pill" data-bg="brand">Brand BG</div>
+  </div>
+
+  <div class="picker">
+    <h2>Pick the one you like</h2>
+    <p>This is non-binding — but it tells me which direction to push forward.</p>
+    <select id="favorite">
+      <option value="">— None yet —</option>
+      <option value="01-mono-F">#01 Monogram F (gradient)</option>
+      <option value="02-wordmark">#02 Wordmark</option>
+      <option value="03-up-arrow">#03 Up-arrow</option>
+      <option value="04-coin">#04 Taka coin</option>
+      <option value="05-pulse">#05 Pulse line</option>
+      <option value="06-bar-graph">#06 Bar graph</option>
+      <option value="07-leaf">#07 Leaf (growth)</option>
+      <option value="08-stacked-F">#08 Stacked wordmark</option>
+      <option value="09-wallet">#09 Wallet mark</option>
+      <option value="10-ring">#10 Ring</option>
+    </select>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+</div>
+
+<script>
+  // ---- Data ----
+  const variants = [
+    {file:'01-mono-F.svg',     name:'Monogram F',       desc:'Bold "F" on a gradient tile. App-icon friendly, scales to favicon.', picks:['App icon','Favicon','Brand mark']},
+    {file:'02-wordmark.svg',   name:'Wordmark',         desc:'Just the word "finora" with a teal accent on "ora". Best for headers.', picks:['Header','Marketing','Email signature']},
+    {file:'03-up-arrow.svg',   name:'Up Arrow',         desc:'A stylized arrow pointing up — symbolizes income growing.', picks:['Concept mark']},
+    {file:'04-coin.svg',       name:'Taka Coin',        desc:'A teal disc with ৳. Direct signal of money. May feel heavy for a sober app.', picks:['Concept mark','App icon']},
+    {file:'05-pulse.svg',      name:'Pulse Line',       desc:'An activity line — a quiet nod to "where money went".', picks:['App icon','Marketing']},
+    {file:'06-bar-graph.svg',  name:'Bar Graph',        desc:'Three bars growing. Reads as chart/balance. Visualizes totals.', picks:['App icon']},
+    {file:'07-leaf.svg',       name:'Leaf (Growth)',    desc:'A leaf shape — savings growing calmly. Softer, more emotional.', picks:['Marketing','Concept']},
+    {file:'08-stacked-F.svg',  name:'Stacked Wordmark', desc:'fin / ora split across two lines. Good for square spaces.', picks:['Square header','App splash']},
+    {file:'09-wallet.svg',     name:'Wallet Mark',      desc:'A wallet silhouette with a violet accent dot. Reads as money storage.', picks:['Marketing']},
+    {file:'10-ring.svg',       name:'Ring',             desc:'A gradient ring with a teal dot — minimal, modern, abstract.', picks:['App icon','Favicon']},
+  ];
+
+  // ---- Render cards (one per variant, dark stage) ----
+  const grid = document.getElementById('grid');
+  variants.forEach((v, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.bg = 'dark';
+    card.innerHTML = `
+      <div class="stage dark zoomable" data-zoom="${v.file}">
+        <img src="${v.file}" alt="${v.name}" />
+      </div>
+      <div class="meta">
+        <div class="num">#${String(i+1).padStart(2,'0')}</div>
+        <div class="name">${v.name}</div>
+        <div class="desc">${v.desc}</div>
+        <div class="picks">${v.picks.map(p => `<span class="tag">${p}</span>`).join('')}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // ---- Background switcher ----
+  document.querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      const bg = p.dataset.bg;
+      document.querySelectorAll('.card').forEach(c => {
+        const stage = c.querySelector('.stage');
+        stage.classList.remove('dark','mid','light','brand');
+        stage.classList.add(bg);
+        c.dataset.bg = bg;
+      });
+    });
+  });
+
+  // ---- Click-to-zoom ----
+  document.body.addEventListener('click', e => {
+    const z = e.target.closest('[data-zoom]');
+    if(!z) return;
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,20,25,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:99;cursor:zoom-out';
+    const img = document.createElement('img');
+    img.src = z.dataset.zoom;
+    img.style.cssText = 'max-width:90vw;max-height:80vh;width:auto;height:auto';
+    ov.appendChild(img);
+    ov.addEventListener('click', () => ov.remove());
+    document.body.appendChild(ov);
+  });
+
+  // ---- Favorite persistence ----
+  const fav = document.getElementById('favorite');
+  fav.value = localStorage.getItem('finora-fav-logo') || '';
+  fav.addEventListener('change', () => {
+    localStorage.setItem('finora-fav-logo', fav.value);
+    fav.style.borderColor = 'var(--primary)';
+  });
+</script>
+
+</body>
+</html>
