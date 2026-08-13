@@ -22,7 +22,7 @@ export function TransactionsListScreen() {
           <h1 className="text-[22px] font-bold tracking-tight leading-none">Transactions</h1>
           <div className="text-muted text-[13px] mt-1">{txs.length} entries</div>
         </div>
-        <Link to="/transactions/add" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
+        <Link to="/transactions/new" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
           <span className="text-base leading-none">+</span>
           <span>Add</span>
         </Link>

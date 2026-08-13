@@ -5,36 +5,9 @@
  * driven from settings via a hook into the Zustand store. RoleAlertBanner
  * is mounted globally so any screen can surface an error.
  *
- * Routing surface (35 screens per PRD §8):
- *   - #/                        → redirect → #/home
- *   - #/home                    → dashboard
- *   - #/transactions            → list
- *   - #/transactions/add        → add form
- *   - #/transactions/:id/edit   → edit form
- *   - #/accounts                → list
- *   - #/accounts/add
- *   - #/accounts/:id/edit
- *   - #/goals                   → list
- *   - #/goals/add
- *   - #/goals/:id/edit
- *   - #/goals/:id/contribute    → add a contribution to a goal
- *   - #/debts                   → list
- *   - #/debts/add
- *   - #/debts/:id/edit
- *   - #/investments             → list
- *   - #/investments/add
- *   - #/investments/:id/edit
- *   - #/investments/:id/close   → close-out flow (matured investment)
- *   - #/investments/:id/rollover→ roll into a new investment
- *   - #/categories              → manage income/expense categories
- *   - #/settings                → theme, export, import, danger zone
- *   - #/settings/export         → download backup
- *   - #/settings/import         → restore from backup
- *   - #/onboarding              → first-run flow
- *   - 11 more form/error edge-case screens come in AD-19
- *
- * The shell layout (sidebar nav, topbar, content area) is rendered once
- * here and screens flow into <Outlet />.
+ * Add-transaction flow (v1 mockup): /transactions/new is the picker,
+ *   /transactions/new/{expense|income|transfer} are the per-type forms,
+ *   /transactions/:id/edit edits.
  */
 
 import { useEffect } from 'react';
@@ -44,7 +17,11 @@ import { RoleAlertBanner } from './components/RoleAlertBanner';
 import { useStore } from './domain/store';
 import { HomeScreen } from './screens/HomeScreen';
 import { TransactionsListScreen } from './screens/TransactionsListScreen';
-import { TransactionAddScreen } from './screens/TransactionAddScreen';
+import { AddTransactionPickerScreen } from './screens/AddTransactionPickerScreen';
+import { AddExpenseScreen } from './screens/AddExpenseScreen';
+import { AddIncomeScreen } from './screens/AddIncomeScreen';
+import { AddTransferScreen } from './screens/AddTransferScreen';
+import { TransactionEditScreen } from './screens/TransactionEditScreen';
 import { AccountsListScreen } from './screens/AccountsListScreen';
 import { AccountAddScreen } from './screens/AccountAddScreen';
 import { AccountEditScreen } from './screens/AccountEditScreen';
@@ -88,7 +65,11 @@ export function App() {
           <Route path="/home" element={<HomeScreen />} />
 
           <Route path="/transactions" element={<TransactionsListScreen />} />
-          <Route path="/transactions/add" element={<TransactionAddScreen />} />
+          <Route path="/transactions/new"                  element={<AddTransactionPickerScreen />} />
+          <Route path="/transactions/new/expense"          element={<AddExpenseScreen />} />
+          <Route path="/transactions/new/income"           element={<AddIncomeScreen />} />
+          <Route path="/transactions/new/transfer"         element={<AddTransferScreen />} />
+          <Route path="/transactions/:id/edit"             element={<TransactionEditScreen />} />
 
           <Route path="/accounts" element={<AccountsListScreen />} />
           <Route path="/accounts/add" element={<AccountAddScreen />} />

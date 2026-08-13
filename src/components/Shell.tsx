@@ -38,9 +38,13 @@ const NAV: NavDef[] = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
-  // Hide the "Add Transaction" shortcut on the form screens where it'd
-  // duplicate the screen's own submit button.
-  const onForm = /\/add$|\/[a-z]+\/[a-z0-9-]+\/edit$/.test(location.pathname);
+  // Hide the "Add Transaction" shortcut on add/edit/form screens where
+  // it'd duplicate a screen's own submit button.
+  const onForm =
+    /\/add$/.test(location.pathname) ||
+    /\/transactions\/new/.test(location.pathname) ||
+    /\/transactions\/[^/]+\/edit$/.test(location.pathname) ||
+    /\/[^/]+\/[^/]+\/edit$/.test(location.pathname);
 
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-screen bg-bg text-ink">
@@ -60,7 +64,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
         {!onForm && (
           <NavLink
-            to="/transactions/add"
+            to="/transactions/new"
             className="mt-2 inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-[18px] py-3 rounded-btn font-bold text-sm hover:opacity-90"
           >
             <span className="text-base leading-none">+</span>
