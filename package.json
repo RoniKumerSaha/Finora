@@ -1,0 +1,14 @@
+{
+  "name": "finora",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Finora — Bangladesh-first personal finance/bookkeeping app, V1.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}
