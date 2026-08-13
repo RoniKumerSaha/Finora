@@ -27,7 +27,7 @@
   .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
   .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
   .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;border-bottom:1px solid var(--border);margin-bottom:14px}
-  .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#0F1419;font-weight:800;font-size:16px}
+  .logo{width:32px;height:32px;border-radius:9px;display:block;object-fit:contain}
   .brand-name{font-size:16px;font-weight:700;letter-spacing:-.01em}
   .brand-name span{color:var(--primary)}
   .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);font-weight:500;cursor:pointer;transition:all .15s}
@@ -141,7 +141,7 @@
   /* Onboarding */
   .onboarding{height:100vh;display:flex;align-items:center;justify-content:center;padding:32px}
   .onb-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-lg)}
-  .onb-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--accent));margin:0 auto 24px;display:flex;align-items:center;justify-content:center;color:#0F1419;font-weight:800;font-size:28px}
+  .onb-logo{width:64px;height:64px;border-radius:18px;margin:0 auto 24px;display:block;object-fit:contain}
   .onb-card h1{margin:0 0 8px;font-size:24px}
   .onb-card p{color:var(--muted);margin:0 0 24px;font-size:14px}
   .onb-input{font-size:32px;font-weight:700;text-align:center;padding:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;width:100%;color:var(--primary)}
@@ -216,7 +216,7 @@
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo">F</div>
+      <img class="logo" src="finora-logo.svg" alt="Finora" />
       <div class="brand-name">fin<span>ora</span></div>
     </div>
 
@@ -250,7 +250,7 @@
     <section id="onboarding" class="screen">
       <div class="onboarding">
         <div class="onb-card">
-          <div class="onb-logo">F</div>
+          <img class="onb-logo" src="finora-logo.svg" alt="Finora" />
           <h1>Welcome to Finora</h1>
           <p>Know where your money goes. That's the whole job.</p>
           <p style="margin-top:16px;font-weight:600;color:var(--ink)">How much money do you have available right now across all your accounts?</p>
@@ -267,7 +267,7 @@
     <section id="demo-mode" class="screen">
       <div class="onboarding">
         <div class="onb-card">
-          <div class="onb-logo">F</div>
+          <img class="onb-logo" src="finora-logo.svg" alt="Finora" />
           <h1>Explore demo data</h1>
           <p>You'll see a sample dashboard with fake transactions, accounts, and goals. Nothing is saved until you start using the app.</p>
           <div class="onb-actions">
