@@ -54,12 +54,10 @@
 
 <header>
   <h1>Finora — Design Variants Compare</h1>
-  <p>All 4 design directions × 2 themes = 8 variants of the same Home screen. Click any variant to open it full-screen.</p>
+  <p>v1 + v2 × 2 themes = 3 variants of the same Home screen. Click any variant to open it full-screen.</p>
   <div class="meta">
     <div class="tag primary">v1 LOCKED · Midnight dark</div>
     <div class="tag">v2 Soft · mint + sand</div>
-    <div class="tag">v3 Editorial · serif + ink</div>
-    <div class="tag">v4 Compact · electric + graphite</div>
   </div>
 </header>
 
@@ -102,17 +100,18 @@
           <div class="num" style="color:var(--primary)">V2 · DARK</div>
           <div>
             <div class="name">Soft · Dark</div>
-            <div class="sub">Mint + gold accents · generous radii · warm</div>
+            <div class="sub">Mint + gold · 22 screens · 12px card radius</div>
           </div>
         </div>
         <a class="a" href="v2/dark.html" target="_blank">Open →</a>
       </div>
-      <iframe src="v2/dark.html" loading="lazy"></iframe>
+      <iframe src="v2/dark.html#home" loading="lazy"></iframe>
       <div class="cell-footer">
         <div class="picks">
           <span class="pick">soft</span>
           <span class="pick">mint</span>
-          <span class="pick">24px radius</span>
+          <span class="pick">12px radius</span>
+          <span class="pick">full app</span>
         </div>
       </div>
     </div>
@@ -123,101 +122,18 @@
           <div class="num" style="color:var(--primary)">V2 · LIGHT</div>
           <div>
             <div class="name">Soft · Light</div>
-            <div class="sub">Sand bg · same generous radii · daylight version</div>
+            <div class="sub">Sand bg · 22 screens · daylight version</div>
           </div>
         </div>
         <a class="a" href="v2/light.html" target="_blank">Open →</a>
       </div>
-      <iframe src="v2/light.html" loading="lazy"></iframe>
+      <iframe src="v2/light.html#home" loading="lazy"></iframe>
       <div class="cell-footer">
         <div class="picks">
           <span class="pick">soft</span>
           <span class="pick">sand</span>
-          <span class="pick">24px radius</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cell" data-variant="v3-dark">
-      <div class="cell-head">
-        <div class="cell-title">
-          <div class="num" style="color:var(--accent)">V3 · DARK</div>
-          <div>
-            <div class="name">Editorial · Dark</div>
-            <div class="sub">Serif headings · hairline borders · newspaper feel</div>
-          </div>
-        </div>
-        <a class="a" href="v3/dark.html" target="_blank">Open →</a>
-      </div>
-      <iframe src="v3/dark.html" loading="lazy"></iframe>
-      <div class="cell-footer">
-        <div class="picks">
-          <span class="pick">editorial</span>
-          <span class="pick">serif</span>
-          <span class="pick">4px radius</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cell" data-variant="v3-light">
-      <div class="cell-head">
-        <div class="cell-title">
-          <div class="num" style="color:var(--accent)">V3 · LIGHT</div>
-          <div>
-            <div class="name">Editorial · Light</div>
-            <div class="sub">Ink on paper · serif headlines · magazinized</div>
-          </div>
-        </div>
-        <a class="a" href="v3/light.html" target="_blank">Open →</a>
-      </div>
-      <iframe src="v3/light.html" loading="lazy"></iframe>
-      <div class="cell-footer">
-        <div class="picks">
-          <span class="pick">editorial</span>
-          <span class="pick">ink</span>
-          <span class="pick">serif</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cell" data-variant="v4-dark">
-      <div class="cell-head">
-        <div class="cell-title">
-          <div class="num" style="color:#4A8AFF">V4 · DARK</div>
-          <div>
-            <div class="name">Compact · Dark</div>
-            <div class="sub">Electric blue · tighter density · information-rich</div>
-          </div>
-        </div>
-        <a class="a" href="v4/dark.html" target="_blank">Open →</a>
-      </div>
-      <iframe src="v4/dark.html" loading="lazy"></iframe>
-      <div class="cell-footer">
-        <div class="picks">
-          <span class="pick">dense</span>
-          <span class="pick">compact</span>
-          <span class="pick">data-first</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cell" data-variant="v4-light">
-      <div class="cell-head">
-        <div class="cell-title">
-          <div class="num" style="color:#4A8AFF">V4 · LIGHT</div>
-          <div>
-            <div class="name">Compact · Light</div>
-            <div class="sub">Graphite + electric · same density · day mode</div>
-          </div>
-        </div>
-        <a class="a" href="v4/light.html" target="_blank">Open →</a>
-      </div>
-      <iframe src="v4/light.html" loading="lazy"></iframe>
-      <div class="cell-footer">
-        <div class="picks">
-          <span class="pick">dense</span>
-          <span class="pick">compact</span>
-          <span class="pick">data-first</span>
+          <span class="pick">12px radius</span>
+          <span class="pick">full app</span>
         </div>
       </div>
     </div>
@@ -239,7 +155,7 @@
 
   // Open all in new tabs
   document.getElementById('openAll').addEventListener('click', () => {
-    const urls = ['v1/index.html','v2/dark.html','v2/light.html','v3/dark.html','v3/light.html','v4/dark.html','v4/light.html'];
+    const urls = ['v1/index.html','v2/dark.html','v2/light.html'];
     urls.forEach(u => window.open(u, '_blank'));
   });
 </script>
