@@ -1,169 +1,122 @@
-# Personal Finance Assistant — Product Requirements Document (PRD)
+# Finora — Product Requirements Document (PRD)
 
 | Field | Value |
 |---|---|
-| **Product** | Personal Finance Assistant |
+| **Product** | Finora — Personal Bookkeeping |
 | **Version** | 1.0 (MVP) |
 | **Status** | Approved for Build |
 | **Document Owner** | John (Product Manager) |
-| **Market** | Bangladesh |
+| **Target User** | Everyday people who want to know where their money goes |
 | **Primary Language** | English |
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-12 |
-| **Source** | `business.md` |
+| **Last Updated** | 2026-08-13 |
 
 ---
 
 ## 1. Executive Summary
 
-The **Personal Finance Assistant** is a Bangladesh-first, English-language personal finance web application that helps individuals understand, track, and plan their finances.
+**Finora** is a simple personal bookkeeping app for everyday people. It helps a user answer two questions and only two:
 
-The MVP combines:
+1. **Where did my money come from?** (Income)
+2. **Where did my money go?** (Expenses)
 
-- Income and expense tracking
-- Multiple financial accounts
-- Savings tracking
-- Savings goals
-- DPS and FDR planning/calculation
-- Generic investment tracking
-- Debt tracking
-- Money-lent tracking
-- Monthly financial planning
-- Financial Health scoring
-- Net Worth tracking
-- Charts and financial insights
-- Local-first storage
-- Data export/import backup
+That's it. Everything else in the app exists to support those two questions.
 
-The product is **not** a bank, brokerage, accounting-compliance system, or automated financial advisor. It provides transparent calculations and planning suggestions while keeping financial decisions under user control.
-
-### Why Now
-
-Bangladesh users lack a single, transparent tool that combines **DPS/FDR calculation**, **goal-driven monthly planning**, and **Net Worth + Financial Health** without requiring a bank account, cloud sync, or formal accounting knowledge. Existing tools either ignore Bangladesh-specific products or are tracking-only with no planning loop.
+The user records money in and money out, organized into simple **accounts** (Cash, Bank, Mobile Wallet, etc.) and **categories** (Food, Rent, Salary, etc.). The app shows running totals, monthly summaries, and a list of savings goals. All data lives on the user's device — no account, no cloud, no signup.
 
 ### One-sentence description
 
-A local-first personal finance assistant for Bangladesh that helps users track money, calculate savings/investment products, understand financial health, and create realistic monthly plans to achieve financial goals.
+A local-first bookkeeping app that lets anyone track income and expenses without learning accounting.
+
+### What this app is NOT
+
+- Not a budget planner with recommendations
+- Not an investment tracker
+- Not a financial-health scoring tool
+- Not a charting or analytics dashboard
+- Not a bank, broker, or accountant
+- Does not move money or connect to a bank
+
+> **Out of scope for V1:** Financial Health score, Charts, DPS/FDR projections, Investments, Debt tracking, Monthly Planning recommendations, Insights engine. These are deferred to V2.
 
 ---
 
 ## 2. Product Vision
 
-> **Track your money. Understand your financial position. Plan what comes next.**
+> **Know where your money goes. That's the whole job.**
 
-The product should help a user answer five questions quickly:
+A user should be able to:
 
-1. Where is my money?
-2. Where did my money go?
-3. How financially healthy am I?
-4. What should I prioritize next?
-5. Am I on track for my financial goals?
-
-### Core Principles
-
-1. **Actual financial records are the source of truth.**
-2. **Plans and recommendations never silently change actual balances.**
-3. **Users control priorities and allocations.**
-4. **Calculations are transparent and testable.**
-5. **The app is helpful rather than judgmental.**
-6. **Financial data belongs to the user.**
-7. **V1 remains simple enough for everyday manual use.**
-
-### The Core Loop
-
-```
-Record → Understand → Plan → Act → Review → Improve
-```
+- Add money received → it shows in totals and account balance.
+- Add money spent → it shows in totals and category breakdown.
+- Glance at the dashboard → see this month's income, expenses, and balance.
+- Add a savings goal → see how much more per month is needed.
+- Back up or restore their data → without any technical knowledge.
 
 ---
 
-## 3. Goals & Success Metrics
-
-### 3.1 Primary Goals (Must-Have)
-
-| # | Goal | Success Metric |
-|---|---|---|
-| G1 | Users can record income manually | 95%+ of test users record income within first session |
-| G2 | Users can record expenses manually | Quick-add expense completes in ≤3 taps |
-| G3 | Users can transfer money between owned accounts | Source/dest balances update atomically; totals unchanged |
-| G4 | Users can track actual savings | Surplus ≠ Savings distinction enforced in code |
-| G5 | Users can manage multiple accounts | Add/list/edit/archive accounts supported |
-| G6 | Users can track investments with manual current value | Gain/Loss = Current − Invested shown |
-| G7 | Users can calculate/project DPS returns | Projection matches approved formula in unit tests |
-| G8 | Users can calculate/project FDR returns | Projection matches approved formula in unit tests |
-| G9 | Users can track debts and repayments | Outstanding balance recalculates on payment |
-| G10 | Users can track money lent to others | Receivable ledger separate from expense |
-| G11 | Users can create savings goals with deadlines | Required monthly savings auto-calculated |
-| G12 | Users can create monthly financial allocation plans | Validation blocks over-allocation |
-| G13 | Users receive personalized, explainable recommendations | Each recommendation shows its inputs |
-| G14 | Users can view Net Worth | Net Worth = Assets − Liabilities, with history |
-| G15 | Users can view Financial Health | 0–100 score, live, with positive/concerns |
-| G16 | Users can view useful financial charts | 6 chart types renderable across 6+ time ranges |
-| G17 | Users receive automatic in-app insights | In-app only, no notifications |
-| G18 | Users can export all financial data | JSON full export + CSV transaction export |
-| G19 | Users can import previously exported data | Versioned, validated, error-reported |
-| G20 | Core financial data stays local to device/browser | No backend call carries financial record data |
-
-### 3.2 Secondary Goals
-
-- Make transaction entry very fast (quick-add path).
-- Make financial terminology understandable (in-app glossary).
-- Support long-term historical analysis.
-- Keep the domain model suitable for future cloud synchronization.
-- Make all important financial rules deterministic and testable.
-
----
-
-## 4. Non-Goals (Out of Scope for V1)
-
-| # | Non-Goal | Rationale |
-|---|---|---|
-| N1 | Bank account integration / Open Banking | Adds regulatory, security, and partner dependencies |
-| N2 | Automatic transaction import | V1 is manual-first by design |
-| N3 | Cloud synchronization / User accounts | V1 is local-first |
-| N4 | Dedicated credit-card management | Credit-card debt still representable as a liability |
-| N5 | Live stock/market prices | Investments use manual current value |
-| N6 | Automated Bangladesh tax calculations | Out of MVP scope; deferred to V2 |
-| N7 | FDR maturity / DPS payment notifications | No notification system in V1 |
-| N8 | Push / email / SMS / reminder notifications | In-app only |
-| N9 | Dedicated monthly Reports module | No detailed Plan-vs-Actual reporting in V1 |
-| N10 | Complex accounting / audit functionality | Tool is not a bookkeeper |
-| N11 | Investment trading / Brokerage / Product purchasing | Read-only investment tracking |
-| N12 | Automatic financial transactions | The app never moves money |
-| N13 | Guaranteed or authoritative investment advice | Recommendations are suggestions, not advice |
-
----
-
-## 5. Target User
+## 3. Target User
 
 ### Primary Persona
 
-A **Bangladesh-based individual** who wants to understand and improve their personal finances.
+**"Rina" — a non-technical adult who wants to keep tabs on personal spending.**
 
-**Typical financial circumstances may include:**
+- Has a job and a bank account, maybe a mobile wallet (bKash/Nagad).
+- Knows what "income" and "expense" mean. Does not know what "amortization" means.
+- Wants to answer: *"Did I spend too much this month?"*
+- Has never used accounting software. May have tried a notes app or spreadsheet.
+- Will abandon the app if the first screen asks three setup questions.
 
-- Salary or freelance income
-- Cash
-- Multiple bank accounts
-- Mobile wallets
-- Savings accounts
-- DPS (Deposit Pension Scheme)
-- FDR (Fixed Deposit Receipt)
-- Investments (stocks, mutual funds, gold, crypto, business)
-- Loans
-- Informal borrowing/lending
-- Multiple financial goals
+### Anti-Persona
 
-**Key assumption:** The product must **not assume formal accounting knowledge**. Terminology is plain-English; advanced fields are progressively disclosed.
+- A small-business owner who needs invoicing, GST, or tax filing.
+- A user wanting automated bank feeds.
+- A power user wanting investment tracking or amortization schedules.
 
-### Anti-Persona (What the V1 User Is Not)
+---
 
-- An enterprise finance team
-- A licensed financial advisor
-- A user needing automated tax filing
-- A user needing live brokerage trading
+## 4. Goals & Success Metrics
+
+### Primary Goals (Must-Have)
+
+| # | Goal | Success Metric |
+|---|---|---|
+| G1 | A novice can record income in under 30 seconds | First-time user completes a test income entry unaided |
+| G2 | A novice can record an expense in under 15 seconds (3 taps) | Quick-add: Amount → Category → Save |
+| G3 | Account balances update automatically and match what the user expects | User-verified balance = app balance after 5 manual entries |
+| G4 | Monthly income and expense totals are visible at a glance | Dashboard shows current-month totals without any click |
+| G5 | Categories are customizable but work out-of-the-box | Default categories cover ≥90% of common entries |
+| G6 | Savings goals are easy to set and track | User can create a goal with target amount and date in one screen |
+| G7 | All data is stored locally | App works fully offline; no signup or login required |
+| G8 | Data can be backed up and restored | User can export and re-import their data successfully |
+| G9 | The app never silently changes data | Every change is the result of an explicit user action |
+
+### Secondary Goals
+
+- The app feels fast — no loading spinner for any primary action.
+- The wording is in plain English; financial jargon is either avoided or explained in one line.
+- The UI works well on a phone screen.
+
+---
+
+## 5. Non-Goals (Explicitly Out of Scope for V1)
+
+| # | Non-Goal | Why |
+|---|---|---|
+| N1 | Financial Health score | Too abstract for novices; deferred to V2 |
+| N2 | Charts and graphs | Adds complexity; totals in numbers are sufficient for V1 |
+| N3 | DPS / FDR / investment product calculations | Not bookkeeping; deferred to V2 |
+| N4 | Investment tracking | Not bookkeeping; deferred to V2 |
+| N5 | Debt tracking with amortization | Confusing for novices; deferred to V2 |
+| N6 | Monthly budget recommendations | Power-user feature; deferred to V2 |
+| N7 | Insights / trend analysis | Too analytical; deferred to V2 |
+| N8 | Bank integration / automatic import | Privacy and complexity concerns |
+| N9 | Cloud sync / user accounts | V1 is local-first by design |
+| N10 | Tax calculations | Out of scope entirely |
+| N11 | Multi-currency | V1 is BDT only |
+| N12 | Notifications / reminders | In-app only; no push/email/SMS |
 
 ---
 
@@ -171,38 +124,37 @@ A **Bangladesh-based individual** who wants to understand and improve their pers
 
 | # | Module | V1 Scope |
 |---|---|---|
-| 1 | Dashboard | Single-glance financial overview |
-| 2 | Transactions | Income / Expense / Transfer / Saving / Borrow / Repay / Lend / Loan-repayment-received |
-| 3 | Accounts | Multi-type accounts with opening/current balance |
-| 4 | Savings Goals | Target + deadline + required monthly saving |
-| 5 | Investments | Manual current value, gain/loss |
-| 6 | DPS | Projection calculator + actual value |
-| 7 | FDR | Projection calculator + actual value |
-| 8 | Debts | Liabilities with payments counted as expenses |
-| 9 | Money Lent | Receivable ledger (non-expense) |
-| 10 | Monthly Planning | Recommended → user-edited → validated → active |
-| 11 | Financial Health | 0–100 score with explainable factors |
-| 12 | Net Worth | Assets − Liabilities, with history |
-| 13 | Charts & Insights | 6+ chart types; in-app insights |
-| 14 | Settings | Categories, priorities, app lock, export, import, delete |
-| 15 | Data Export/Import | JSON full backup + CSV transactions + version field |
+| 1 | Dashboard | This month's totals + recent activity |
+| 2 | Transactions | Income, Expense, Transfer |
+| 3 | Accounts | Add, edit, list, see balance |
+| 4 | Categories | Pre-defined set; user can add/edit/disable |
+| 5 | Savings Goals | Target amount, target date, progress bar |
+| 6 | Settings | Currency (locked to BDT in V1), app PIN (optional), export, import, delete all data |
+
+**Removed from V1 (compared to earlier draft):** DPS, FDR, Investments, Debts, Money Lent, Monthly Planning, Financial Health, Net Worth history, Charts, Insights.
 
 ---
 
 ## 7. Information Architecture
 
-### Primary Navigation
+### Primary Navigation (Bottom Bar)
 
-- Dashboard
-- Transactions
-- Accounts
-- Goals
-- Investments
-- Plans
-- Financial Health
-- Settings
+- **Home** (Dashboard)
+- **Transactions** (list of all entries)
+- **Add** (big button, center) — quick add Income or Expense
+- **Goals**
+- **Settings**
 
-> DPS/FDR, debt, and money-lent functionality may be surfaced from the relevant modules while retaining dedicated detail screens.
+### Screens
+
+- **Dashboard:** Monthly totals, account balances, recent transactions.
+- **Transactions list:** All entries, sortable by date, filterable by type/account/category.
+- **Add transaction:** Amount → Type (Income/Expense) → Category → Account → Save.
+- **Accounts list:** Each account with its current balance.
+- **Account detail:** Balance + transaction history for that account.
+- **Goals list:** All goals with progress.
+- **Goal detail / create:** Name, target, deadline, current saved.
+- **Settings:** App PIN, Export data, Import data, Delete all data, About.
 
 ---
 
@@ -210,64 +162,81 @@ A **Bangladesh-based individual** who wants to understand and improve their pers
 
 ### 8.1 First Use (Onboarding)
 
-1. Open application.
-2. Enter monthly income.
-3. Enter current available balance.
-4. App creates initial financial context.
-5. User reaches dashboard.
-6. User adds accounts, records income/expenses, creates savings goals, adds existing investments/DPS/FDR/debts, configures priorities.
-7. App begins generating relevant insights and planning recommendations.
+1. User opens the app for the first time.
+2. **One question:** *"How much money do you have available right now across all your accounts?"* — single number field.
+3. App creates one default account ("Cash") seeded with that amount.
+4. User lands on the Dashboard. The "Add" button is the most prominent thing on screen.
 
-**Onboarding principle:** Minimal and progressive. Only two fields required to enter the dashboard.
+**Onboarding principle:** Two screens, one number. Then the app.
 
-### 8.2 Record Expense
+### 8.2 Record Income
 
-1. Open Transactions → Add Expense.
-2. Enter amount, select category, save.
-3. Account balance, monthly expenses, surplus, available-to-plan, Financial Health, and insights all recalculate.
+1. Tap **Add**.
+2. Choose **Income**.
+3. Enter amount.
+4. Choose category (Salary, Freelance, Gift, Other — predefined, pickable).
+5. Choose account (or default = Cash).
+6. Tap **Save**.
 
-**Quick-entry path:** Amount + Category + Save (3 fields).
+→ Balance updates. Dashboard reflects new monthly income.
 
-### 8.3 Create Savings Goal
+### 8.3 Record Expense (Quick Path)
 
-1. Open Goals → Create Goal.
-2. Enter name, target amount, target date (optional: starting amount, destination account, notes).
-3. App calculates remaining amount and required monthly savings.
-4. Goal appears on dashboard.
+1. Tap **Add**.
+2. Choose **Expense**.
+3. Enter amount.
+4. Pick a category from the visible grid.
+5. Tap **Save**.
 
-### 8.4 Create Monthly Plan
+→ Three taps total. Balance updates. Dashboard reflects new monthly expense.
 
-1. Open Plans.
-2. App calculates Available-to-Plan and evaluates priorities.
-3. App generates a recommendation.
-4. User reviews and edits allocations.
-5. App validates (Total ≤ Available).
-6. On invalid: save blocked; show "Allocation exceeds available amount by ৳X."
-7. On valid: user accepts → plan becomes active → reservations reflected in UI.
-8. Actual transactions remain the source of truth.
+### 8.4 Transfer Between Accounts
 
-### 8.5 DPS
+1. Tap **Add**.
+2. Choose **Transfer**.
+3. Pick "From" account, "To" account, enter amount.
+4. Tap **Save**.
 
-1. Select DPS → Create DPS.
-2. Enter monthly contribution, rate, duration, start date.
-3. App shows projected maturity value.
-4. Actual payments recorded as separate transactions.
-5. User may update actual/current value later.
+→ Both account balances update. Total money across all accounts stays the same.
 
-### 8.6 FDR
+### 8.5 Create a Savings Goal
 
-1. Select FDR → Create FDR.
-2. Enter principal, interest rate, duration/maturity date.
-3. App shows projected maturity value.
-4. User may update actual/current value later.
-5. No maturity notification in V1.
+1. Tap **Goals** → **New Goal**.
+2. Enter name (e.g., "New phone").
+3. Enter target amount.
+4. Pick a target date.
+5. Tap **Save**.
 
-### 8.7 Debt
+→ App shows: *"You need to save ৳X per month to reach this goal by [date]."*
+→ Goal appears on dashboard with a progress bar (0% until first contribution).
 
-1. Create debt with original amount, outstanding amount, interest rate, monthly payment.
-2. Debt becomes a liability.
-3. Record payments manually → counts as expense → outstanding balance updates.
-4. Financial Health and Net Worth recalculate.
+### 8.6 Mark a Goal Contribution
+
+1. Open the goal.
+2. Tap **Add to goal**.
+3. Enter amount.
+4. Pick source account.
+5. Tap **Save**.
+
+→ Account balance decreases. Goal progress updates.
+
+### 8.7 Back Up Data
+
+1. Tap **Settings** → **Export data**.
+2. App downloads a single `.json` file.
+3. User saves it anywhere (email to self, drive, USB).
+
+### 8.8 Restore Data
+
+1. Tap **Settings** → **Import data**.
+2. User picks the previously exported `.json` file.
+3. App replaces all current data with the imported data. (Asks for confirmation first.)
+
+### 8.9 Delete All Data
+
+1. Tap **Settings** → **Delete all data**.
+2. App shows confirmation: *"This deletes all your transactions, accounts, and goals on this device. This cannot be undone."*
+3. Two buttons: **Cancel** | **Delete everything**.
 
 ---
 
@@ -275,419 +244,199 @@ A **Bangladesh-based individual** who wants to understand and improve their pers
 
 ### 9.1 Dashboard
 
-**Sections (in order):**
+**Shown on Home:**
 
-| Section | Content |
-|---|---|
-| Financial Health | Score 0–100, status, positives, concerns, link to detail |
-| Current Month | Income, Expenses, Surplus, Actual Savings, Available Balance |
-| Financial Position | Available Money, Total Savings, Investments, Total Debt, Net Worth |
-| Current Monthly Plan | Plan status, Available-to-Plan, Allocations, Underfunded state, view/edit |
-| Goals | Active goals, progress, required monthly saving, deadline |
-| Spending | By category, Income vs Expense trend, Monthly spending trend |
-| Insights | Relevant automatic insights |
+- **This month:** Income ৳X · Expenses ৳Y · Balance (Income − Expenses) ৳Z.
+- **Accounts:** Each account with its current balance. Total balance at the top.
+- **Active goals:** Up to 3 goals with progress bars. Tap to see all.
+- **Recent activity:** Last 5 transactions (date, description, amount).
+
+**Hidden from dashboard (deferred to V2):** Charts, financial health, spending breakdowns.
 
 ### 9.2 Transaction System
 
-**Supported transaction types (V1):**
+**Supported types (V1):**
 
-1. Income
-2. Expense
-3. Transfer
-4. Savings / investment contribution
-5. Borrowed money
-6. Debt repayment
-7. Money lent
-8. Loan repayment received
+1. **Income** — money received.
+2. **Expense** — money spent.
+3. **Transfer** — money moved between the user's own accounts.
 
-**Critical rule:** Transfers and balance-sheet movements must not be incorrectly counted as income or expenses.
+**Common fields for every transaction:**
 
-#### 9.2.1 Income
+- Amount (required, must be > 0)
+- Date (defaults to today)
+- Note (optional, one line)
 
-- **Default categories:** Salary, Freelance, Business, Gift, Loan repayment, Other
-- **Required fields:** Amount, Category, Date, Account
-- **Optional:** Note
-- **Rules:**
-  - Income increases the destination account balance.
-  - Income contributes to monthly income.
-  - Transfers between owned accounts are not income.
-  - Borrowed money is not income.
-  - Loan repayment received is tracked separately.
+**Type-specific:**
 
-#### 9.2.2 Expense
+| Type | Required fields | Effect on account |
+|---|---|---|
+| Income | Amount, Category, Account | Destination account balance increases |
+| Expense | Amount, Category, Account | Source account balance decreases |
+| Transfer | Amount, From account, To account | From decreases, To increases, total unchanged |
 
-- **Default categories:** Food, Transport, Housing, Bills & Utilities, Shopping, Entertainment, Health, Education, Family, Other
-- **Quick entry:** Amount + Category + Save
-- **Detailed entry (optional):** Account, Date, Note, Recurring flag
-- **Rules:**
-  - Expense reduces account balance.
-  - Expense contributes to monthly expenses and surplus.
-  - Expense may affect insights and recommendations.
+**Rules:**
 
-#### 9.2.3 Transfer
-
-> Example: City Bank → Savings Account: ৳10,000
-
-- Source balance decreases; destination balance increases.
-- Total assets do not change.
-- Not income. Not expense. Does not inflate surplus.
-
-#### 9.2.4 Savings
-
-> Example: Income ৳60,000 − Expenses ৳40,000 = Surplus ৳20,000; Actual savings transfer ৳10,000.
-
-Result: Surplus = ৳20,000 | Actual Savings = ৳10,000 | Unallocated = ৳10,000.
-
-Savings are based on **actual financial movements**, not automatic surplus treatment.
+- A Transfer is **not** income or expense.
+- Editing a transaction re-computes account balances and monthly totals.
+- Deleting a transaction is permanent after confirmation.
 
 ### 9.3 Accounts
 
-**Default types:** Cash, Bank Account, Savings Account, Mobile Wallet, Credit Card Debt, DPS, FDR, Investment, Other.
+**Predefined account types (V1):**
 
-**Account fields:**
+- Cash
+- Bank Account
+- Mobile Wallet (bKash, Nagad, Rocket, etc. — generic label)
+- Savings Account
+- Other
 
-- ID
-- Name
-- Type
-- Opening balance
-- Current balance (derived from opening + transactions)
-- Currency
-- Include in Net Worth (boolean)
-- Created date
-- Notes
-- Active / inactive status
+**Each account has:**
 
-### 9.4 Credit Cards (Limited)
+- Name (user-defined, e.g., "City Bank Salary")
+- Type (chosen from list above)
+- Opening balance (entered once)
+- Current balance (derived = opening balance + sum of all transactions)
+- Created date (auto)
 
-- Dedicated credit-card management: **out of scope**.
-- Credit-card debt still representable as a liability.
-- V1 does not need: credit limits, available credit, statement cycles, card-specific reconciliation.
+**V1 does NOT support:** "Include in Net Worth" toggle, currency per account, archived/hidden accounts beyond delete.
 
-### 9.5 Investments
+### 9.4 Categories
 
-**Supported types:** Stocks, Mutual funds, Bonds, Gold, Crypto, Business investments, Other.
+**Two category sets:**
 
-**Fields:** Name, Investment type, Invested amount, Current value, Start date, Notes.
+- **Income categories:** Salary, Freelance, Business, Gift, Other.
+- **Expense categories:** Food, Transport, Housing, Bills, Shopping, Health, Education, Family, Entertainment, Other.
 
-**Gain/Loss:** `Gain/Loss = Current Value − Invested Amount` (user manually updates current value).
+**User can:**
 
-### 9.6 DPS
+- Add a new category (one text field).
+- Rename an existing category.
+- Delete a category only if no transactions use it (otherwise show error).
 
-**Inputs:** Name, Monthly contribution, Interest/profit rate, Duration, Start date, Payment frequency, Optional actual/current value.
+**User cannot:**
 
-**Outputs:**
-- Projected maturity value (calculated via `calculateDPSProjection`).
-- Actual / current value (separate, manually updated).
+- Create nested categories. (One flat list per type. No folder structure.)
+- Change the type of an existing category. (Delete and recreate.)
 
-**Rules:**
-- User-entered rate is authoritative for projection.
-- DPS schedules are projections only.
-- Actual payments recorded as real transactions; missed or changed contributions do not silently rewrite history.
+### 9.5 Savings Goals
 
-### 9.7 FDR
+**Fields:**
 
-**Inputs:** Name, Principal, Interest rate, Duration, Start date, Maturity date, Optional actual/current value.
-
-**Outputs:**
-- Projected maturity value (calculated via `calculateFDRProjection`).
-- Actual / current value (separate, manually updated).
-
-**Scope restrictions (V1):** Does **not** calculate Bangladesh taxes, withholding, bank-specific fees, or charges. UI must clearly state projected values are estimates and actual returns may differ.
-
-### 9.8 Financial Product Calculation Architecture
-
-| Function | Purpose |
-|---|---|
-| `calculateDPSProjection(inputs)` | DPS maturity projection |
-| `calculateFDRProjection(inputs)` | FDR maturity projection |
-
-Both must be product-specific, documented in the technical spec, and covered by unit tests.
-
-### 9.9 Debt Management
-
-**Supported liabilities:** Bank loans, Personal loans, Credit-card debt, Money borrowed from friends/family, Other debts.
-
-**Fields:** Name, Type, Original amount, Outstanding balance, Interest rate, Monthly payment, Due date, Start date, Notes.
-
-**V1 debt-payment rule:** The full monthly debt payment counts as an expense. V1 does not split principal and interest.
-
-### 9.10 Borrowed Money
-
-> Borrowed money is **not income**.
-
-When borrowed money is received:
-- Available balance increases.
-- Liability increases.
-- Income remains unchanged.
-
-**Example:** Borrow ৳50,000 → Cash +৳50,000, Debt +৳50,000, Income unchanged.
-
-### 9.11 Money Lent
-
-**Lending (Example: Lend ৳20,000 to Friend):**
-- Available account balance decreases by ৳20,000.
-- Receivable increases by ৳20,000.
-- Expense does **not** increase.
-
-**Repayment (when returned):**
-- Available balance increases.
-- Receivable decreases.
-- Repayment is **not** treated as new income.
-
-### 9.12 Savings Goals
-
-**Required fields:** Goal name, Target amount, Target date.
-
-**Optional fields:** Starting amount, Account/destination, Notes.
+- Name (required)
+- Target amount (required, > 0)
+- Target date (required, must be in the future)
+- Starting amount (optional, defaults to 0)
+- Notes (optional, one line)
 
 **Calculations:**
 
 ```
-Remaining Amount = Target Amount − Current Amount
-Required Monthly Saving = Remaining Amount / Remaining Months
+Remaining = Target amount − Current saved
+Months left = Number of months between today and target date (rounded down)
+Required per month = Remaining ÷ Months left   (if Months left > 0)
 ```
 
-Basic goal calculation does not assume investment returns.
+**States:**
 
-**States:** Active, Achieved Early, Completed, Expired / pending user decision.
+- **Active** — still being saved toward.
+- **Completed** — current saved ≥ target. (User can choose to keep it visible or hide it.)
+- **Expired** — target date passed without completion. App shows: *"This goal's date has passed. Extend the date or mark it complete?"* with two buttons.
 
-**Completion logic:**
-- Reached before deadline → **Achieved Early**.
-- Reached at/around deadline → **Completed**.
+**V1 does NOT support:** Goal investment returns, goal linking to a specific account, automatic monthly transfers to goals.
 
-**Missed deadline (deadline passed before target reached):** App must ask the user what to do — extend target date, mark completed manually, or close/cancel. The app **must not** automatically extend the deadline.
+### 9.6 Settings
 
-### 9.13 Monthly Financial Planning
+| Setting | Behavior |
+|---|---|
+| App PIN (optional) | 4-digit PIN. If set, asked at app open. V1 has no recovery — if forgotten, user must delete all data. |
+| Export data | Downloads a `.json` file containing everything. |
+| Import data | Replaces current data with file contents. Asks for confirmation. |
+| Delete all data | Permanently wipes local data. Confirmation required. |
+| About | App name, version, link to docs/feedback. |
 
-**Available-to-Plan formula:**
+**Currency is fixed to BDT in V1. No selector shown.**
 
-```
-Available to Plan =
-  Opening Available Balance
-  + Actual Income
-  − Actual Expenses
-```
+### 9.7 Local Data Storage
 
-Existing investments and debt affect recommendations but are **not** automatically treated as current planning cash.
+- All data is stored on the user's device.
+- The PRD does not mandate a specific storage technology; engineering may pick the appropriate local persistence layer.
+- The data model is designed so cloud sync can be added later without rewriting the bookkeeping logic.
 
-**Plan lifecycle:** Recommended → User Reviews → User Edits → Validation → Accepted → Active → Month Closed.
+### 9.8 Data Export
 
-**Recommendation behavior at month start:**
-- Generate recommendation.
-- Do not commit it.
-- Show to user.
-- Allow accept, edit, or dismiss.
-- If ignored, it remains available until accepted or dismissed.
+**Export format:** Single `.json` file containing:
 
-**Recommendations are never automatically committed.**
+- All accounts
+- All categories (including user-added ones)
+- All transactions
+- All savings goals
+- App settings (PIN is **not** exported)
+- A version field (e.g., `"version": 1`)
 
-### 9.14 Planning Priorities
+CSV export is **not required** for V1. JSON is sufficient and lossless.
 
-Users can rank financial priorities (e.g., Savings goal, Debt repayment, Investment, Available cash).
+### 9.9 Data Import
 
-**Suggested priority options:**
-- Reach a savings goal
-- Reduce debt
-- Build savings
-- Invest
-- Maintain available cash
+- User selects a `.json` file.
+- App validates the file: schema, version, required fields.
+- On validation failure, app shows: *"This file isn't a valid backup. It may be from a different version or corrupted."*
+- On success, app asks for confirmation: *"This will replace all your current data. Continue?"*
+- On confirm, app wipes current data and loads the file.
 
-Priorities can be changed at any time.
+### 9.10 Data Deletion
 
-**Recommendations consider:** user priorities, income, expenses, available balance, savings, investments, debt, goals, Financial Health, and spending behavior.
-
-### 9.15 Recommendation Engine
-
-**Philosophy:** Recommendations are suggestions, not commands.
-
-**Example:** Available ৳20,000 → Recommended: Goal ৳8,000, Debt ৳5,000, DPS ৳4,000, Cash ৳3,000.
-
-**User modification:** User may change any allocation; app recalculates immediately.
-
-**Validation rule:** A plan **cannot be saved** if Total Allocation > Available to Plan.
-
-> Example error: Cannot save plan. Allocation exceeds available amount by ৳10,000.
-
-The app **must never silently reduce user allocations**.
-
-### 9.16 Plan Reservations
-
-Accepted plans reserve planned amounts for planning purposes.
-
-> Example: Actual available ৳20,000 − Reserved by plan ৳17,000 = Unallocated ৳3,000.
-
-Reservation is a **planning concept** and does not physically move money.
-
-**Unexpected spending:**
-
-> Planned ৳17,000; Actual available ৳15,000 → Plan is underfunded by ৳2,000.
-
-The app does **not** automatically rewrite the plan.
-
-### 9.17 Monthly Plan Completion
-
-- Monthly plan closes at month-end.
-- Historical transactions can still be edited.
-- V1 does not require detailed Plan-vs-Actual reporting.
-- Unused plan allocations do **not** become debt.
-- Unfinished objectives may influence future recommendations.
-
-> Example: Planned goal contribution ৳10,000; Actual ৳7,000. September recognizes the remaining ৳3,000 requirement without treating it as an unpaid August bill.
-
-### 9.18 Financial Health
-
-- **Score range:** 0–100.
-- **Factors:** Income vs Expenses, Savings, Debt, Investments, Goal progress, Available balance, Spending behavior.
-- **Updates:** Dashboard shows live score; recalculates on relevant data change.
-- **History:** Monthly score retained for historical analysis (e.g., Jul 71, Aug 75, Sep 78).
-- **Explainability:** Each score surfaces positives and concerns.
-
-> Example: 78/100 — Positives: Expenses below income, Savings increased, Debt decreased. Needs attention: Spending increased this month.
-
-Exact scoring weights must be documented and unit-tested.
-
-### 9.19 Net Worth
-
-**Formula:** `Net Worth = Total Assets − Total Liabilities`
-
-**Assets:** Cash, Bank accounts, Savings accounts, DPS, FDR, Investments, Money lent to others.
-**Liabilities:** Bank loans, Personal loans, Credit-card debt, Money borrowed from friends/family, Other debts.
-
-Support Net Worth trends over time using available historical data.
-
-### 9.20 Insights Engine
-
-Insights are **in-app only** in V1 (no notifications).
-
-**Categories:** Spending trend, Savings trend, Income trend, Debt trend, Investment trend, Goal progress, Net Worth, Planning, Financial Health.
-
-**Tone rules:** Neutral, helpful, data-based, non-judgmental. Avoid judgmental language.
-
-**Examples:**
-- "Your spending this month is 18% higher than your three-month average."
-- "Your savings rate increased from 12% to 18%."
-- "Transportation expenses increased for three consecutive months."
-- "Your debt balance decreased this month."
-- "Your Shopping spending increased by ৳4,000, which may reduce your planned contribution toward your laptop goal."
-
-### 9.21 Charts
-
-**Required chart types:**
-- Income vs Expenses
-- Monthly Spending Trend
-- Spending by Category
-- Net Worth Trend
-- Goal Progress
-- Savings vs Investment (where useful)
-
-**Supported ranges:** This month, Last month, 3 months, 6 months, 1 year, All time, Custom date range.
-
-### 9.22 Transaction History
-
-- **Search:** Text search (notes, descriptions).
-- **Filters:** Date range, Category, Account, Transaction type, Amount range.
-- **Editing:** Allowed. All dependent calculations must recalculate.
-- **Deletion:** Permanent after confirmation. Recalculates account balances, monthly cash flow, savings, goals, plans, Financial Health, and Net Worth.
-
-### 9.23 Onboarding
-
-- **Initial setup (minimum):** Monthly income, Current available balance.
-- **Progressive setup:** Accounts, income/expenses, savings, investments, DPS, FDR, debts, goals, priorities.
-
-### 9.24 Authentication & App Lock
-
-- **V1 has no** email/password, Google login, or social login.
-- Financial data remains local to the device/browser.
-- **Optional local PIN / app lock** may be provided (enable/disable).
-- Because there is no account/recovery system, forgotten-PIN recovery must be **explicitly designed** before implementation.
-- The app **must not** claim server-grade security or encryption unless technically implemented.
-
-### 9.25 Local Data Storage
-
-- All financial data stored locally.
-- The PRD intentionally does not mandate a specific storage technology; engineering may select the appropriate local persistence layer.
-- The data/domain model should be designed so future cloud sync can be introduced **without rewriting core financial logic**.
-
-### 9.26 Data Export
-
-Users must be able to export complete application data.
-
-**Export must include:** Profile/settings, Accounts, Transactions, Goals, Investments, DPS, FDR, Debts, Money lent, Monthly plans, Financial Health history, Relevant configuration.
-
-**Format recommendations:**
-- Structured backup (JSON recommended).
-- CSV export for transaction analysis.
-
-### 9.27 Data Import
-
-Users must be able to restore exported backups.
-
-**Requirements:** File validation, Schema/version validation, Required-field validation, Invalid-data handling, Clear errors, Protection against silent corruption.
-
-Backup files must contain a version field. Example: `backupVersion: 1`.
-
-### 9.28 Data Deletion
-
-- Users can permanently delete all local financial data.
-- Confirmation must clearly state the action is irreversible.
-- The app must not require an export before deletion.
-
-> Example: "Delete all financial data? This permanently deletes transactions, accounts, goals, investments, debts, and plans stored on this device. This action cannot be undone."
-
-Actions: Cancel | Delete Everything.
+- Single button in Settings: **Delete all data**.
+- Confirmation: *"This permanently deletes all your transactions, accounts, and goals on this device. This cannot be undone."*
+- Buttons: **Cancel** | **Delete everything**.
+- The app does **not** require an export before deletion.
 
 ---
 
 ## 10. Core Financial Rules (Authoritative)
 
-| # | Rule | Formula / Statement |
+| # | Rule | Formula |
 |---|---|---|
-| R1 | Surplus | `Surplus = Income − Expenses` |
-| R2 | Available to Plan | `Available to Plan = Opening Available Balance + Actual Income − Actual Expenses` |
-| R3 | Savings | Surplus ≠ Actual Savings. Actual savings require a recorded financial movement. |
-| R4 | Transfer | Transfers between owned accounts do not affect income or expenses. |
-| R5 | Borrowing | Borrowed money: increases cash, increases liabilities, does not increase income. |
-| R6 | Lending | Money lent: decreases cash, increases receivable, does not increase expenses. |
-| R7 | Net Worth | `Net Worth = Assets − Liabilities` |
-| R8 | Goal Requirement | `Remaining = Target − Current`; `Required Monthly Saving = Remaining / Remaining Months` |
-| R9 | Plan Validity | `Total Plan Allocation ≤ Available to Plan`; otherwise plan cannot be saved |
-| R10 | Debt Payment | The full debt payment counts as an expense in V1. |
-| R11 | Actual Transaction Authority | Actual transactions are the source of truth. Projections and plans must not silently change actual financial records. |
+| R1 | Monthly income | Sum of all income transactions dated in the current month |
+| R2 | Monthly expenses | Sum of all expense transactions dated in the current month |
+| R3 | Account balance | Opening balance + sum of all transactions on that account |
+| R4 | Transfer rule | Transfers move money between accounts; they are not income or expense |
+| R5 | Goal requirement | Remaining = Target − Current; Required per month = Remaining ÷ Months left |
+| R6 | Source of truth | The user's recorded transactions are the only thing that changes account balances |
 
 ---
 
 ## 11. Error Handling Requirements
 
-Provide clear errors for:
+Every error message must:
 
-- Invalid amounts
-- Missing required fields
-- Invalid dates
-- Invalid goal values
-- Invalid plan allocations
-- Invalid DPS/FDR parameters
-- Corrupted imports
-- Duplicate/import conflicts
-- Invalid backup versions
-- Invalid account operations
-- Deletion confirmation
+1. Say **what** went wrong (in plain English).
+2. Say **why** it matters.
+3. Say **how to fix it**.
 
-**Every error must explain:** What is wrong, why it matters, and how to fix it.
+**Examples:**
+
+| Situation | Error message |
+|---|---|
+| User enters 0 or negative amount | *"Enter an amount greater than 0."* |
+| User enters a past goal date | *"Pick a date in the future."* |
+| User deletes a category in use | *"This category is used in 4 transactions. Reassign or delete those first."* |
+| User imports an invalid file | *"This file isn't a valid backup. It may be from a different version."* |
+| User tries to delete all data | *"This deletes all your data on this device. This cannot be undone."* (confirmation, not error) |
 
 ---
 
 ## 12. UX Principles
 
-| Principle | Application |
+| Principle | What it means in practice |
 |---|---|
-| Fast | Common actions require minimal input (quick-add expense). |
-| Clear | Simple financial language. |
-| Transparent | Show important calculation inputs and results. |
-| Reversible | Allow users to edit/delete records where appropriate. |
-| Non-Judgmental | Never shame users for spending or missing goals. |
-| User-Controlled | Recommendations can be modified. |
-| Data-First | Actual financial records are more authoritative than projections. |
-| Progressive Disclosure | Advanced fields should not clutter quick-entry workflows. |
+| **One primary action per screen** | The Add button is always one tap away. |
+| **Plain English** | "Income" and "Expense", not "Credits" and "Debits". |
+| **Numbers, not scores** | Show ৳20,000 expenses, not "spending is 18% above average". |
+| **Defaults that work** | New account = Cash. New expense = most recent category. |
+| **Reversible** | Edit or delete any transaction. |
+| **No setup walls** | Onboarding asks one question. Everything else is progressive. |
+| **Offline always** | No feature requires internet. |
 
 ---
 
@@ -695,36 +444,34 @@ Provide clear errors for:
 
 ### 13.1 Performance
 
-- Quick-add expense must complete in ≤3 taps.
-- Dashboard must render the live Financial Health score without perceptible lag after data changes.
-- Calculations must be cheap enough to recalculate on every relevant edit/delete.
+- Adding an expense (quick path) takes ≤ 3 taps and finishes in under 1 second.
+- Dashboard loads in under 1 second for up to 10,000 transactions.
+- All calculations (totals, balances) recompute instantly on data change.
 
 ### 13.2 Privacy & Security
 
-- Do not expose financial data unnecessarily.
-- Do not store secrets in plain text.
-- Do not log financial records in production.
-- Do not include financial data in analytics by default.
-- Export files contain sensitive financial information — treat accordingly.
-- Treat import files as untrusted input.
-- Delete-all-data must remove application data from supported storage.
+- No financial data is sent off-device.
+- No analytics by default.
+- Export files contain sensitive data — treat accordingly.
+- Import files are treated as untrusted input and validated.
+- App PIN (if set) is stored locally and never exported.
 
 ### 13.3 Accessibility
 
-- All monetary values must be readable by screen readers.
-- Color must not be the sole signal for status (e.g., underfunded, achieved).
-- Keyboard navigation must be supported for all primary flows.
+- All monetary values are screen-reader friendly (e.g., "Twenty thousand taka", not just "20000").
+- Color is not the sole signal (use icons + text).
+- Keyboard navigation works for all primary flows.
 
 ### 13.4 Internationalization
 
 - Primary language: English.
-- Future localization (V2): Bangla, additional currencies, country-specific financial products.
+- Bangla localization is a V2 candidate.
 
 ### 13.5 Reliability
 
-- Calculations must be deterministic and testable.
-- Edits and deletions to historical transactions must consistently recalculate dependents.
-- Import must not silently corrupt existing data.
+- Calculations are deterministic and unit-tested.
+- Edit and delete operations recalculate all dependents reliably.
+- Import does not silently corrupt data.
 
 ---
 
@@ -732,41 +479,58 @@ Provide clear errors for:
 
 ### 14.1 Unit Tests (Required)
 
-Income calculations, expense calculations, surplus, available-to-plan, account balance, transfers, savings, goal calculations, goal completion, DPS calculation, FDR calculation, investment gain/loss, debt balance, Net Worth, plan validation, Financial Health scoring, date calculations.
+- Income / expense / transfer math
+- Account balance recalculation on edit and delete
+- Monthly totals (including month boundaries)
+- Goal calculations (remaining, required per month)
+- Import validation (good file, bad file, wrong version)
 
 ### 14.2 Integration Tests
 
-Income → dashboard update, expense → surplus update, transfer → two account balances update, savings transfer → savings/account updates, debt payment → expense + debt update, investment update → Net Worth update, goal contribution → goal progress, transaction edit → recalculation, transaction deletion → recalculation, import → complete state restoration.
+- Add expense → account balance and dashboard update
+- Add income → account balance and dashboard update
+- Transfer → both accounts update, totals unchanged
+- Edit transaction → balances and totals recalculate
+- Delete transaction → balances and totals recalculate
+- Goal contribution → goal progress and account balance update
+- Import → full state restored
 
 ### 14.3 End-to-End Scenarios (Minimum)
 
-New user setup, monthly income/expense tracking, multiple account transfers, savings goal achievement, DPS projection, FDR projection, debt tracking, monthly plan creation, plan becomes underfunded after unexpected expense, Net Worth calculation, Financial Health update, export/import backup, delete all local data.
+- First-run onboarding
+- Record a week of mixed income and expenses
+- Set up a goal and contribute to it
+- Back up, delete all data, restore from backup
 
 ---
 
 ## 15. Edge Cases (Must Handle)
 
-Zero income, zero expenses, negative monthly surplus, no savings, no accounts, multiple accounts, empty transaction history, goal reached exactly on deadline, goal reached before deadline, goal deadline passed, goal target changed, transfers, same-account transfer attempts, investment loss, investment break-even, debt reaches zero, payment greater than outstanding debt, lending and repayment, borrowing, month boundaries, leap years, old backup schema, corrupted backup, duplicate imported data, large transaction history, deleted historical transactions, edited historical transactions, plan allocation exceeding available amount, plan becoming underfunded, no active plan, no priorities, missing investment current value, invalid interest rate, invalid DPS/FDR duration.
+- Zero income this month
+- Zero expenses this month
+- Negative balance in an account (spend more than you have)
+- Same-account transfer attempt (show error)
+- Goal target date today
+- Goal target date in the past (block on create)
+- Goal completed before deadline
+- Goal deadline passed without completion
+- Deleting an account with transactions (block with clear error)
+- Deleting a category with transactions (block with clear error)
+- Empty transaction list
+- Import file from a newer version (block with explanation)
 
 ---
 
 ## 16. Open Technical Decisions
 
-These belong in the technical specification phase and **should not change product requirements** without a deliberate product decision:
+These belong in the technical specification phase and should not change product requirements:
 
 - Exact local storage implementation
 - Exact data schema
 - Backup file schema / versioning
-- DPS mathematical formula
-- FDR mathematical formula
-- Financial Health scoring weights
-- Recommendation algorithm
-- Date / month boundary behavior
-- App PIN security implementation
-- Charting library
-- Frontend framework and architecture
-- State management approach
-- Automated migration strategy for future backup versions
+- App PIN hashing approach
+- Frontend framework
+- State management
 
 ---
 
@@ -774,11 +538,11 @@ These belong in the technical specification phase and **should not change produc
 
 | # | Risk | Mitigation |
 |---|---|---|
-| 1 | Incorrect financial calculations | Centralized calculation services, unit tests, known-value test cases, formula documentation, regression tests |
-| 2 | Data loss | Export/import, backup versioning, import validation, clear local-storage behavior |
-| 3 | Projected vs Actual confusion | UI clearly distinguishes Actual / Projected / Planned / Reserved |
-| 4 | Recommendation overreach | User-controlled priorities, editable recommendations, no automatic transactions, no silent allocation changes, explainable recommendations |
-| 5 | Overly complex UX | Quick transaction entry, progressive disclosure, fixed dashboard, simple categories, minimal onboarding |
+| 1 | User enters wrong amount and doesn't notice | Recent transactions list on dashboard makes entries easy to spot and edit |
+| 2 | User loses device and loses data | Export-to-file is one tap; user is reminded once at setup to back up |
+| 3 | User forgets PIN | V1 has no recovery; user must delete all data and restore from backup |
+| 4 | User opens app, sees empty state, leaves | Dashboard has prominent "Add" button; recent activity is shown even with one entry |
+| 5 | User is confused by accounting terms | All labels are plain English; no jargon without a one-line explanation |
 
 ---
 
@@ -786,39 +550,32 @@ These belong in the technical specification phase and **should not change produc
 
 | Theme | V2 Features |
 |---|---|
-| Accounts & Sync | User accounts, Cloud backup, Cross-device sync, Encrypted cloud storage |
-| Notifications | Goal reminders, Monthly plan reminders, DPS reminders, FDR maturity reminders |
-| Advanced Investments | Market data, Portfolio tracking, Performance metrics |
-| Banking | Bank integrations, Automatic transaction import, Account sync |
-| Advanced Debt | Principal/interest split, Amortization schedules, Debt payoff strategies |
-| Advanced Goals | Interest-aware goal planning, Investment-backed goals, Goal prioritization |
-| Reports | Monthly reports, PDF export, Tax-oriented reports |
-| Localization | Bangla, Additional currencies, Country-specific financial products |
-| Advanced Planning | Scenario planning, Retirement planning, Emergency fund recommendations, Long-term wealth projections |
+| Insights | Spending by category breakdown, monthly comparison |
+| Planning | Budget recommendations, savings rate |
+| Investments | Simple investment tracking |
+| Financial products | DPS / FDR calculators |
+| Debt | Track what you owe |
+| Net Worth | Aggregated asset/liability view |
+| Charts | Income vs expense trend, category charts |
+| Sync | Optional cloud backup with user account |
+| Localization | Bangla |
+| Multi-currency | USD, INR, EUR support |
 
 ---
 
 ## 19. Terminology
 
-| Term | Meaning |
+| Term | What it means in this app |
 |---|---|
-| Income | External money received that does not create a liability |
-| Expense | Money spent |
-| Transfer | Money moved between owned accounts |
-| Surplus | Income minus expenses |
-| Actual Savings | Money actually transferred/set aside |
-| Available Balance | Current spendable account money |
-| Available to Plan | Money available for current monthly allocation |
-| Planned | User-approved future allocation |
-| Reserved | Amount committed within an active plan |
-| Projected | System-calculated future estimate |
-| Actual | User-recorded real value |
-| Asset | Financial value owned by the user |
-| Liability | Money the user owes |
-| Net Worth | Assets minus liabilities |
-| Goal | A target amount with a deadline |
-| Financial Health | Overall financial condition score |
-| Insight | Data-based observation about finances |
+| Income | Money received (salary, gift, freelance payment) |
+| Expense | Money spent (food, rent, transport) |
+| Transfer | Money moved between your own accounts (e.g., Cash → Bank) |
+| Account | Where your money lives (Cash, Bank, bKash, etc.) |
+| Category | What the money was for (Food, Salary, etc.) |
+| Goal | A target amount of money you want to save by a certain date |
+| Balance | How much money is in an account right now |
+
+We deliberately do **not** use: credit, debit, ledger, amortization, allocation, surplus, net worth, asset, liability. If a V2 feature needs one, it will be introduced with a one-line explanation.
 
 ---
 
@@ -826,69 +583,38 @@ These belong in the technical specification phase and **should not change produc
 
 The MVP is complete when **all** of the following are true:
 
-- [ ] All core modules (Section 6) are implemented.
-- [ ] Financial calculations pass defined unit tests.
-- [ ] Core user journeys pass end-to-end tests.
-- [ ] Local persistence works reliably.
-- [ ] Export/import restores a complete dataset.
-- [ ] Delete-all-data removes all local application data.
-- [ ] No financial data requires a backend account.
-- [ ] Dashboard correctly reflects current financial state.
-- [ ] Goals calculate progress correctly.
-- [ ] DPS/FDR projections pass approved test cases.
-- [ ] Monthly planning validates allocations correctly.
-- [ ] Underfunded plans are detected without silently changing allocations.
-- [ ] Net Worth updates correctly.
-- [ ] Financial Health updates correctly.
-- [ ] Insights are based on stored data.
-- [ ] Users can edit/delete historical transactions.
-- [ ] UI distinguishes Actual, Projected, Planned, and Reserved amounts.
-- [ ] No V1 notification system is present.
+- [ ] Onboarding asks one question and lands the user on the dashboard.
+- [ ] User can add income, expense, and transfer in ≤ 3 taps.
+- [ ] Account balances update correctly and stay correct after edit and delete.
+- [ ] Monthly income and expense totals appear on the dashboard.
+- [ ] Categories are predefined and editable.
+- [ ] User can create a savings goal and see required monthly amount.
+- [ ] User can mark a goal contribution and see progress update.
+- [ ] User can export data to a `.json` file.
+- [ ] User can import data from a previously exported file.
+- [ ] User can delete all data with confirmation.
+- [ ] All data is local; no backend or account is required.
+- [ ] All V1 features work fully offline.
+- [ ] Unit tests for all financial rules pass.
+- [ ] End-to-end tests for the four core journeys pass.
+- [ ] No feature from the "Non-Goals" list is implemented.
 
 ---
 
-## 21. Suggested Screen List
+## 21. Product Summary
 
-| Module | Screens |
-|---|---|
-| Dashboard | Financial Health, Monthly cash flow, Financial position, Net Worth, Current plan, Goals, Charts, Insights |
-| Transactions | List, Add, Edit, Search, Filters |
-| Accounts | List, Details, Add, Edit, Balance |
-| Goals | List, Create, Details, Progress, Required monthly savings |
-| Investments | List, Add, Details, Current value update |
-| DPS/FDR | Product list, Create DPS, Create FDR, Projection calculator, Actual value update |
-| Debts | List, Add, Details, Repayment tracking |
-| Plans | Current month recommendation, Allocation editor, Validation, Accept plan, Underfunded status |
-| Financial Health | Current score, Score factors, Historical trend, Supporting metrics |
-| Settings | Categories, Priorities, App lock, Export, Import, Delete all data |
+### What this app is
 
----
+A simple, fast, local-first bookkeeping app. The user adds income and expenses. The app keeps totals and balances correct. The user can back up their data with one tap.
 
-## 22. Product Summary
+### What this app is not
 
-### Strongest Differentiators
+It is not a financial advisor, a budget planner, an investment tracker, or a bank. It does not score the user's financial health. It does not generate charts. It does one job and does it well: **track where money came in and where it went out.**
 
-- Financial planning, not just expense tracking
-- Goal-driven monthly allocation
-- DPS/FDR calculation
-- Debt-aware recommendations
-- Net Worth + Financial Health
-- Explainable financial insights
-- Local-first privacy
-- User-controlled recommendations
-- Actual vs planned financial state
-- Bangladesh-focused financial product support
+### The one-line pitch
 
-### What This App Is Not
-
-- Not a bank, broker, accountant, or licensed financial advisor
-- Does not execute financial transactions
-- Does not move money
-
-### What This App Is
-
-A trustworthy, transparent personal financial picture that helps the user make better-informed decisions.
+*"Finora knows where your money goes."*
 
 ---
 
-*— End of PRD —*
+*— End of PRD (V1, simplified for novice users) —*
