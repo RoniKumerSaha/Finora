@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · V1 Full Mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0F1419; --surface:#1A2028; --surface-2:#232B36; --surface-3:#2A3340;
+    --ink:#E6EDF3; --muted:#8B949E; --muted-2:#5C6670;
+    --primary:#2DD4BF; --primary-soft:rgba(45,212,191,.15); --primary-hi:rgba(45,212,191,.08);
+    --accent:#A78BFA; --accent-soft:rgba(167,139,250,.15);
+    --danger:#F87171; --danger-soft:rgba(248,113,113,.15);
+    --warn:#F4B860; --warn-soft:rgba(244,184,96,.15);
+    --border:#2A3340; --border-2:#1F2730;
+    --r-card:16px; --r-btn:10px; --r-pill:999px;
+    --shadow:0 4px 24px rgba(0,0,0,.35); --shadow-lg:0 10px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;font-size:14px;line-height:1.5}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  ::selection{background:var(--primary-soft);color:var(--ink)}
+
+  /* ---------- App shell ---------- */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#0F1419;font-weight:800;font-size:16px}
+  .brand-name{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .brand-name span{color:var(--primary)}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);font-weight:500;cursor:pointer;transition:all .15s}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--primary-soft);color:var(--primary)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+  .nav-spacer{flex:1}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-btn);font-weight:600;font-size:14px;transition:all .15s;border:1px solid transparent}
+  .btn-primary{background:var(--primary);color:#0F1419}
+  .btn-primary:hover{filter:brightness(1.1)}
+  .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--ink)}
+  .btn-ghost:hover{background:var(--surface-2)}
+  .btn-danger{background:var(--danger-soft);color:var(--danger);border:1px solid rgba(248,113,113,.3)}
+  .btn-danger:hover{background:rgba(248,113,113,.2)}
+  .icon-btn{width:36px;height:36px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center}
+  .icon-btn:hover{background:var(--surface-2)}
+
+  .main{padding:24px 32px 64px;max-width:1280px}
+  .screen{display:none}
+  .screen.active{display:block}
+
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px}
+  .topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .topbar .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .topbar-actions{display:flex;gap:10px;align-items:center}
+
+  .demo-banner{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--r-card);padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--muted)}
+  .demo-banner .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .demo-banner strong{color:var(--ink);font-weight:600}
+  .demo-banner .x{margin-left:auto;padding:4px 8px;border-radius:6px}
+  .demo-banner .x:hover{background:var(--surface-3);color:var(--ink)}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 14px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .section-head h2{margin:0}
+  .link{color:var(--primary);font-size:13px;font-weight:600;cursor:pointer}
+  .link:hover{text-decoration:underline}
+
+  .grid-top{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:18px}
+  .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .stat .num{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .stat .trend{font-size:12px;margin-top:4px;color:var(--muted)}
+  .stat.in .num{color:var(--primary)}
+  .stat.out .num{color:var(--danger)}
+  .stat.net .num{color:var(--accent)}
+
+  .grid-mid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
+
+  .acct-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+  .acct-row:last-child{border-bottom:0}
+  .acct{display:flex;gap:12px;align-items:center}
+  .acct-icon{width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary)}
+  .acct .name{font-weight:600}
+  .acct .type{font-size:12px;color:var(--muted)}
+  .balance{font-weight:700;font-variant-numeric:tabular-nums}
+
+  .goal{padding:14px 0;border-bottom:1px solid var(--border)}
+  .goal:last-child{border-bottom:0}
+  .goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .goal-name{font-weight:600}
+  .goal-pct{font-size:12px;color:var(--primary);font-weight:700;background:var(--primary-soft);padding:3px 10px;border-radius:var(--r-pill)}
+  .bar{height:6px;background:var(--surface-2);border-radius:var(--r-pill);overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:var(--r-pill)}
+  .goal-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+
+  .tx{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .tx:last-child{border-bottom:0}
+  .tx-left{display:flex;gap:12px;align-items:center}
+  .tx-ic{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .tx-ic.in{color:var(--primary);background:var(--primary-soft)}
+  .tx-ic.out{color:var(--danger);background:var(--danger-soft)}
+  .tx-ic.xfr{color:var(--accent);background:var(--accent-soft)}
+  .tx-name{font-weight:600;font-size:14px}
+  .tx-sub{font-size:12px;color:var(--muted)}
+  .tx-amt{font-weight:700;font-variant-numeric:tabular-nums}
+  .tx-amt.in{color:var(--primary)}
+  .tx-amt.out{color:var(--ink)}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:12px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em}
+  td{padding:14px 10px;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:0}
+  tr:hover td{background:var(--surface-2)}
+  .num-cell{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+  .pos{color:var(--primary)}
+  .neg{color:var(--danger)}
+
+  /* Chips & badges */
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:var(--r-pill);font-size:12px;font-weight:600}
+  .chip.in{background:var(--primary-soft);color:var(--primary)}
+  .chip.out{background:var(--danger-soft);color:var(--danger)}
+  .chip.xfr{background:var(--accent-soft);color:var(--accent)}
+  .chip.warn{background:var(--warn-soft);color:var(--warn)}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(15,20,25,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:24px;width:420px;max-width:90vw;box-shadow:var(--shadow-lg)}
+  .modal h3{margin:0 0 4px;font-size:18px}
+  .modal p{margin:0 0 18px;color:var(--muted);font-size:13px}
+  .modal label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+  .modal input,.modal select,.modal textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px 12px;border-radius:var(--r-btn);font-size:14px}
+  .modal input:focus,.modal select:focus,.modal textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+  .modal .danger-text{color:var(--danger);font-size:13px;background:var(--danger-soft);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+
+  /* Onboarding */
+  .onboarding{height:100vh;display:flex;align-items:center;justify-content:center;padding:32px}
+  .onb-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-lg)}
+  .onb-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--accent));margin:0 auto 24px;display:flex;align-items:center;justify-content:center;color:#0F1419;font-weight:800;font-size:28px}
+  .onb-card h1{margin:0 0 8px;font-size:24px}
+  .onb-card p{color:var(--muted);margin:0 0 24px;font-size:14px}
+  .onb-input{font-size:32px;font-weight:700;text-align:center;padding:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;width:100%;color:var(--primary)}
+  .onb-input:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+  .onb-actions{margin-top:24px;display:flex;flex-direction:column;gap:10px}
+  .onb-alt{background:none;border:0;color:var(--muted);font-size:13px;padding:8px;cursor:pointer}
+  .onb-alt:hover{color:var(--ink)}
+
+  /* Categories grid */
+  .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .cat-tile{aspect-ratio:1;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .15s;font-size:12px;color:var(--muted)}
+  .cat-tile:hover{background:var(--surface-3)}
+  .cat-tile.selected{border-color:var(--primary);background:var(--primary-hi);color:var(--primary)}
+  .cat-tile .em{font-size:22px}
+
+  /* Settings */
+  .set-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)}
+  .set-row:last-child{border-bottom:0}
+  .set-row .label{font-weight:600}
+  .set-row .desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* Toggle */
+  .toggle{width:40px;height:22px;background:var(--surface-3);border-radius:999px;position:relative;cursor:pointer;transition:all .15s}
+  .toggle::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:all .15s}
+  .toggle.on{background:var(--primary)}
+  .toggle.on::after{left:20px;background:#0F1419}
+
+  /* Filter chips */
+  .filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .filter{padding:6px 14px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer}
+  .filter:hover{color:var(--ink)}
+  .filter.active{background:var(--primary-soft);color:var(--primary);border-color:rgba(45,212,191,.4)}
+
+  /* Empty state */
+  .empty{padding:40px 20px;text-align:center;color:var(--muted)}
+  .empty .em{font-size:40px;margin-bottom:8px;opacity:.6}
+  .empty .title{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
+
+  /* Helper */
+  .row{display:flex;gap:10px;align-items:center}
+  .grow{flex:1}
+  .helper{font-size:12px;color:var(--muted);margin-top:4px}
+  .num-input{font-variant-numeric:tabular-nums}
+
+  /* Index page */
+  .index{padding:48px 32px;max-width:1100px;margin:0 auto}
+  .index h1{font-size:32px;margin:0 0 8px}
+  .index p{color:var(--muted);margin:0 0 32px}
+  .index-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .index-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px;cursor:pointer;transition:all .15s}
+  .index-card:hover{transform:translateY(-2px);border-color:var(--primary)}
+  .index-card .num{font-size:11px;color:var(--primary);font-weight:700;margin-bottom:6px}
+  .index-card .title{font-weight:600;font-size:15px;margin-bottom:4px}
+  .index-card .desc{font-size:12px;color:var(--muted)}
+
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;padding:12px}
+    .brand{border:0;padding:0;margin:0 14px 0 4px}
+    .nav-item span{display:none}
+    .nav-item{padding:10px}
+    .grid-top{grid-template-columns:1fr}
+    .grid-mid{grid-template-columns:1fr}
+    .cat-grid{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">F</div>
+      <div class="brand-name">fin<span>ora</span></div>
+    </div>
+
+    <a class="nav-item" data-goto="home"><span class="ic">⌂</span><span>Home</span></a>
+    <a class="nav-item" data-goto="transactions"><span class="ic">⇄</span><span>Transactions</span></a>
+    <a class="nav-item" data-goto="accounts"><span class="ic">◎</span><span>Accounts</span></a>
+    <a class="nav-item" data-goto="goals"><span class="ic">★</span><span>Goals</span></a>
+    <a class="nav-item" data-goto="settings"><span class="ic">⚙</span><span>Settings</span></a>
+
+    <div class="nav-spacer"></div>
+
+    <button class="btn btn-primary" data-goto="add-picker" style="justify-content:center">
+      <span style="font-size:18px;line-height:1">+</span>
+      <span>Add</span>
+    </button>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- =================== INDEX =================== -->
+    <section id="idx" class="screen active">
+      <div class="index">
+        <h1>Finora V1 — Full Mockup</h1>
+        <p>All 13 screens from the simplified PRD. Click any screen to navigate. Sidebar items jump to the live app flow.</p>
+        <div class="index-grid" id="index-grid"></div>
+      </div>
+    </section>
+
+    <!-- =================== ONBOARDING =================== -->
+    <section id="onboarding" class="screen">
+      <div class="onboarding">
+        <div class="onb-card">
+          <div class="onb-logo">F</div>
+          <h1>Welcome to Finora</h1>
+          <p>Know where your money goes. That's the whole job.</p>
+          <p style="margin-top:16px;font-weight:600;color:var(--ink)">How much money do you have available right now across all your accounts?</p>
+          <input class="onb-input" value="38,500" inputmode="numeric">
+          <div class="onb-actions">
+            <button class="btn btn-primary" data-goto="home" style="justify-content:center;padding:14px">Get started</button>
+            <button class="onb-alt" data-goto="demo-mode">Or explore demo data first →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DEMO MODE ENTRY =================== -->
+    <section id="demo-mode" class="screen">
+      <div class="onboarding">
+        <div class="onb-card">
+          <div class="onb-logo">F</div>
+          <h1>Explore demo data</h1>
+          <p>You'll see a sample dashboard with fake transactions, accounts, and goals. Nothing is saved until you start using the app.</p>
+          <div class="onb-actions">
+            <button class="btn btn-primary" data-goto="home" style="justify-content:center;padding:14px">Show me how it works</button>
+            <button class="onb-alt" data-goto="onboarding">← Back to setup</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== HOME =================== -->
+    <section id="home" class="screen">
+      <div class="demo-banner">
+        <div class="dot"></div>
+        <div><strong>You're viewing demo data.</strong> This is a sample dashboard. <a class="link" data-goto="onboarding">Start using Finora →</a></div>
+        <button class="x">✕</button>
+      </div>
+
+      <div class="topbar">
+        <div>
+          <h1>Where is my money?</h1>
+          <div class="sub">Total across all accounts · updated just now</div>
+        </div>
+        <div class="topbar-actions">
+          <input placeholder="⌕ Search" style="background:var(--surface);border:1px solid var(--border);color:var(--ink);padding:8px 12px;border-radius:8px;width:200px">
+          <button class="icon-btn">⚙</button>
+        </div>
+      </div>
+
+      <div class="grid-top">
+        <div class="stat in">
+          <div class="label">Total balance</div>
+          <div class="num">৳ 38,500</div>
+          <div class="trend">across 4 accounts</div>
+        </div>
+        <div class="stat in">
+          <div class="label">Income (this month)</div>
+          <div class="num">৳ 60,000</div>
+          <div class="trend">2 entries</div>
+        </div>
+        <div class="stat out">
+          <div class="label">Expenses (this month)</div>
+          <div class="num">৳ 21,500</div>
+          <div class="trend">18 entries</div>
+        </div>
+      </div>
+
+      <div class="grid-mid">
+        <div class="card">
+          <div class="section-head">
+            <h2>Accounts</h2>
+            <a class="link" data-goto="accounts">Manage →</a>
+          </div>
+          <div class="acct-row">
+            <div class="acct"><div class="acct-icon">৳</div><div><div class="name">Cash</div><div class="type">Cash · default</div></div></div>
+            <div class="balance">৳ 12,000</div>
+          </div>
+          <div class="acct-row">
+            <div class="acct"><div class="acct-icon">B</div><div><div class="name">City Bank Salary</div><div class="type">Bank Account</div></div></div>
+            <div class="balance">৳ 18,500</div>
+          </div>
+          <div class="acct-row">
+            <div class="acct"><div class="acct-icon">b</div><div><div class="name">bKash</div><div class="type">Mobile Wallet</div></div></div>
+            <div class="balance">৳ 6,500</div>
+          </div>
+          <div class="acct-row">
+            <div class="acct"><div class="acct-icon">S</div><div><div class="name">Savings (Dutch-Bangla)</div><div class="type">Savings Account</div></div></div>
+            <div class="balance">৳ 1,500</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <h2>Goals</h2>
+            <a class="link" data-goto="goals">All →</a>
+          </div>
+          <div class="goal">
+            <div class="goal-head">
+              <div class="goal-name">New phone</div>
+              <div class="goal-pct">45%</div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:45%"></div></div>
+            <div class="goal-meta"><span>৳ 15,750 / ৳ 35,000</span><span>~৳ 5,833 / mo</span></div>
+          </div>
+          <div class="goal">
+            <div class="goal-head">
+              <div class="goal-name">Emergency fund</div>
+              <div class="goal-pct">80%</div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:80%"></div></div>
+            <div class="goal-meta"><span>৳ 40,000 / ৳ 50,000</span><span>~৳ 3,333 / mo</span></div>
+          </div>
+          <div class="goal">
+            <div class="goal-head">
+              <div class="goal-name">Travel — December</div>
+              <div class="goal-pct">10%</div>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:10%"></div></div>
+            <div class="goal-meta"><span>৳ 10,000 / ৳ 100,000</span><span>~৳ 15,000 / mo</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>Recent activity</h2>
+          <a class="link" data-goto="transactions">View all →</a>
+        </div>
+        <div class="tx">
+          <div class="tx-left"><div class="tx-ic in">↑</div><div><div class="tx-name">Salary</div><div class="tx-sub">Today · City Bank Salary</div></div></div>
+          <div class="tx-amt in">+৳ 60,000</div>
+        </div>
+        <div class="tx">
+          <div class="tx-left"><div class="tx-ic out">↓</div><div><div class="tx-name">Lunch · Food</div><div class="tx-sub">Today · Cash</div></div></div>
+          <div class="tx-amt">−৳ 250</div>
+        </div>
+        <div class="tx">
+          <div class="tx-left"><div class="tx-ic in">↑</div><div><div class="tx-name">Freelance payment</div><div class="tx-sub">Yesterday · bKash</div></div></div>
+          <div class="tx-amt in">+৳ 8,000</div>
+        </div>
+        <div class="tx">
+          <div class="tx-left"><div class="tx-ic out">↓</div><div><div class="tx-name">Groceries · Shopping</div><div class="tx-sub">Yesterday · City Bank Salary</div></div></div>
+          <div class="tx-amt">−৳ 1,420</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== TRANSACTIONS =================== -->
+    <section id="transactions" class="screen">
+      <div class="topbar">
+        <div>
+          <h1>Transactions</h1>
+          <div class="sub">All entries · 152 this month</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost">⬇ Export CSV</button>
+          <button class="btn btn-primary" data-goto="add-picker">+ Add</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="filter active">All</div>
+        <div class="filter">Income</div>
+        <div class="filter">Expense</div>
+        <div class="filter">Transfer</div>
+        <div class="filter">This month</div>
+        <div class="filter">Cash</div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Type</th><th style="text-align:right">Amount</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Aug 13</td>
+              <td>Salary</td>
+              <td>Salary</td>
+              <td>City Bank Salary</td>
+              <td><span class="chip in">Income</span></td>
+              <td class="num-cell pos">+৳ 60,000</td>
+            </tr>
+            <tr>
+              <td>Aug 13</td>
+              <td><a class="link" data-goto="edit-tx">Lunch</a></td>
+              <td>Food</td>
+              <td>Cash</td>
+              <td><span class="chip out">Expense</span></td>
+              <td class="num-cell">−৳ 250</td>
+            </tr>
+            <tr>
+              <td>Aug 12</td>
+              <td>Freelance payment</td>
+              <td>Freelance</td>
+              <td>bKash</td>
+              <td><span class="chip in">Income</span></td>
+              <td class="num-cell pos">+৳ 8,000</td>
+            </tr>
+            <tr>
+              <td>Aug 12</td>
+              <td>Groceries</td>
+              <td>Shopping</td>
+              <td>City Bank Salary</td>
+              <td><span class="chip out">Expense</span></td>
+              <td class="num-cell">−৳ 1,420</td>
+            </tr>
+            <tr>
+              <td>Aug 11</td>
+              <td>Move to savings</td>
+              <td>—</td>
+              <td>Cash → Savings</td>
+              <td><span class="chip xfr">Transfer</span></td>
+              <td class="num-cell">৳ 5,000</td>
+            </tr>
+            <tr>
+              <td>Aug 11</td>
+              <td>Bus fare</td>
+              <td>Transport</td>
+              <td>bKash</td>
+              <td><span class="chip out">Expense</span></td>
+              <td class="num-cell">−৳ 60</td>
+            </tr>
+            <tr>
+              <td>Aug 10</td>
+              <td>Internet bill</td>
+              <td>Bills</td>
+              <td>City Bank Salary</td>
+              <td><span class="chip out">Expense</span></td>
+              <td class="num-cell">−৳ 1,200</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =================== ADD PICKER =================== -->
+    <section id="add-picker" class="screen">
+      <div class="topbar">
+        <div>
+          <h1>What happened?</h1>
+          <div class="sub">Pick one to continue</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:780px">
+        <button class="card" data-goto="add-income" style="text-align:center;cursor:pointer;border:1px solid var(--border)">
+          <div style="font-size:42px;color:var(--primary);margin-bottom:6px">↑</div>
+          <div style="font-weight:700;font-size:16px">Income</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Money received</div>
+        </button>
+        <button class="card" data-goto="add-expense" style="text-align:center;cursor:pointer;border:1px solid var(--primary);background:var(--primary-hi)">
+          <div style="font-size:42px;color:var(--danger);margin-bottom:6px">↓</div>
+          <div style="font-weight:700;font-size:16px">Expense</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Money spent</div>
+        </button>
+        <button class="card" data-goto="add-transfer" style="text-align:center;cursor:pointer;border:1px solid var(--border)">
+          <div style="font-size:42px;color:var(--accent);margin-bottom:6px">⇄</div>
+          <div style="font-weight:700;font-size:16px">Transfer</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Between your accounts</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- =================== ADD EXPENSE =================== -->
+    <section id="add-expense" class="screen">
+      <div class="topbar">
+        <div>
+          <h1>Add expense</h1>
+          <div class="sub">Quick path · 3 fields</div>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</label>
+        <input class="num-input" style="font-size:32px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--primary);padding:14px;border-radius:12px;width:100%;margin-bottom:6px" value="৳ 250">
+        <div class="helper">Tap the preset chips below to autofill common amounts.</div>
+        <div class="row" style="margin-top:8px;flex-wrap:wrap">
+          <button class="filter">৳ 50</button>
+          <button class="filter">৳ 100</button>
+          <button class="filter">৳ 250</button>
+          <button class="filter">৳ 500</button>
+          <button class="filter">৳ 1,000</button>
+        </div>
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:18px;margin-bottom:8px">Category</label>
+        <div class="cat-grid">
+          <div class="cat-tile"><div class="em">🍔</div>Food</div>
+          <div class="cat-tile selected"><div class="em">🛍</div>Shopping</div>
+          <div class="cat-tile"><div class="em">🚗</div>Transport</div>
+          <div class="cat-tile"><div class="em">🏠</div>Housing</div>
+          <div class="cat-tile"><div class="em">💡</div>Bills</div>
+          <div class="cat-tile"><div class="em">💊</div>Health</div>
+          <div class="cat-tile"><div class="em">🎓</div>Education</div>
+          <div class="cat-tile"><div class="em">👨‍👩‍👧</div>Family</div>
+          <div class="cat-tile"><div class="em">🎬</div>Fun</div>
+          <div class="cat-tile"><div class="em">＋</div>Other</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Account</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option>Cash</option>
+              <option>City Bank Salary</option>
+              <option>bKash</option>
+              <option>Savings (Dutch-Bangla)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Date</label>
+            <input type="date" value="2026-08-13" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+          </div>
+        </div>
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Note (optional)</label>
+        <input placeholder="e.g. Lunch with team" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="home">Cancel</button>
+          <button class="btn btn-primary" data-goto="home">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD INCOME =================== -->
+    <section id="add-income" class="screen">
+      <div class="topbar"><div><h1>Add income</h1><div class="sub">Money received</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</label>
+        <input class="num-input" style="font-size:32px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--primary);padding:14px;border-radius:12px;width:100%" value="৳ 60,000">
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:18px;margin-bottom:8px">Category</label>
+        <div class="cat-grid">
+          <div class="cat-tile selected"><div class="em">💼</div>Salary</div>
+          <div class="cat-tile"><div class="em">💻</div>Freelance</div>
+          <div class="cat-tile"><div class="em">🏪</div>Business</div>
+          <div class="cat-tile"><div class="em">🎁</div>Gift</div>
+          <div class="cat-tile"><div class="em">＋</div>Other</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Account</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option>Cash</option>
+              <option selected>City Bank Salary</option>
+              <option>bKash</option>
+              <option>Savings (Dutch-Bangla)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Date</label>
+            <input type="date" value="2026-08-13" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="home">Cancel</button>
+          <button class="btn btn-primary" data-goto="home">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD TRANSFER =================== -->
+    <section id="add-transfer" class="screen">
+      <div class="topbar"><div><h1>Transfer</h1><div class="sub">Move money between your accounts</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">From</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option selected>Cash</option>
+              <option>City Bank Salary</option>
+              <option>bKash</option>
+            </select>
+            <div class="helper" style="margin-top:6px">Balance: ৳ 12,000</div>
+          </div>
+          <div style="text-align:center;font-size:24px;color:var(--accent)">⇄</div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">To</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option>Cash</option>
+              <option>City Bank Salary</option>
+              <option selected>Savings (Dutch-Bangla)</option>
+            </select>
+            <div class="helper" style="margin-top:6px">Balance: ৳ 1,500</div>
+          </div>
+        </div>
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:18px">Amount</label>
+        <input class="num-input" style="font-size:32px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--primary);padding:14px;border-radius:12px;width:100%" value="৳ 5,000">
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="home">Cancel</button>
+          <button class="btn btn-primary" data-goto="home">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== EDIT TX =================== -->
+    <section id="edit-tx" class="screen">
+      <div class="topbar"><div><h1>Edit transaction</h1><div class="sub">Lunch · Food · Today</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</label>
+        <input class="num-input" style="font-size:32px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--primary);padding:14px;border-radius:12px;width:100%" value="৳ 260">
+
+        <div class="row" style="margin-top:18px">
+          <div class="grow">
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Category</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option selected>Food</option>
+              <option>Shopping</option>
+              <option>Transport</option>
+            </select>
+          </div>
+          <div class="grow">
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Account</label>
+            <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+              <option selected>Cash</option>
+              <option>City Bank Salary</option>
+            </select>
+          </div>
+        </div>
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Note</label>
+        <input value="Lunch with team" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px">
+          <button class="btn btn-danger" data-goto="delete-confirm">🗑 Delete</button>
+          <div class="row">
+            <button class="btn btn-ghost" data-goto="transactions">Cancel</button>
+            <button class="btn btn-primary" data-goto="transactions">Save</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DELETE CONFIRM =================== -->
+    <section id="delete-confirm" class="screen">
+      <div class="topbar"><div><h1>Delete transaction</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:420px">
+        <h3>Delete this entry?</h3>
+        <p>This permanently removes <strong>৳ 260 Food expense</strong> from your records. This cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="edit-tx">Cancel</button>
+          <button class="btn btn-danger" data-goto="transactions">Delete</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ACCOUNTS =================== -->
+    <section id="accounts" class="screen">
+      <div class="topbar">
+        <div><h1>Accounts</h1><div class="sub">4 accounts · total ৳ 38,500</div></div>
+        <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-account">+ Add account</button></div>
+      </div>
+
+      <div class="card">
+        <div class="acct-row">
+          <div class="acct"><div class="acct-icon">৳</div><div><div class="name">Cash</div><div class="type">Cash · default · opening ৳ 12,000</div></div></div>
+          <div class="row"><div class="balance">৳ 12,000</div><a class="link" data-goto="add-account">Edit</a></div>
+        </div>
+        <div class="acct-row">
+          <div class="acct"><div class="acct-icon">B</div><div><div class="name">City Bank Salary</div><div class="type">Bank Account · opening ৳ 0</div></div></div>
+          <div class="row"><div class="balance">৳ 18,500</div><a class="link" data-goto="add-account">Edit</a></div>
+        </div>
+        <div class="acct-row">
+          <div class="acct"><div class="acct-icon">b</div><div><div class="name">bKash</div><div class="type">Mobile Wallet · opening ৳ 0</div></div></div>
+          <div class="row"><div class="balance">৳ 6,500</div><a class="link" data-goto="add-account">Edit</a></div>
+        </div>
+        <div class="acct-row">
+          <div class="acct"><div class="acct-icon">S</div><div><div class="name">Savings (Dutch-Bangla)</div><div class="type">Savings Account · opening ৳ 0</div></div></div>
+          <div class="row"><div class="balance">৳ 1,500</div><a class="link" data-goto="add-account">Edit</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD ACCOUNT =================== -->
+    <section id="add-account" class="screen">
+      <div class="topbar"><div><h1>Add account</h1><div class="sub">Where your money lives</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Name</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px;margin-bottom:6px" value="Dutch-Bangla Savings">
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Type</label>
+        <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+          <option>Cash</option>
+          <option>Bank Account</option>
+          <option>Mobile Wallet</option>
+          <option selected>Savings Account</option>
+          <option>Other</option>
+        </select>
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:14px;margin-bottom:6px">Opening balance</label>
+        <input class="num-input" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px" value="৳ 0">
+        <div class="helper">The balance at the moment you created this account. Future transactions will adjust from here.</div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="accounts">Cancel</button>
+          <button class="btn btn-primary" data-goto="accounts">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== GOALS =================== -->
+    <section id="goals" class="screen">
+      <div class="topbar">
+        <div><h1>Goals</h1><div class="sub">3 active goals</div></div>
+        <div class="topbar-actions"><button class="btn btn-primary" data-goto="add-goal">+ New goal</button></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+        <div class="card" data-goto="goal-detail" style="cursor:pointer">
+          <div class="row" style="justify-content:space-between"><div class="goal-name">New phone</div><div class="goal-pct">45%</div></div>
+          <div class="bar" style="margin-top:10px"><div class="bar-fill" style="width:45%"></div></div>
+          <div class="goal-meta"><span>৳ 15,750 / ৳ 35,000</span><span>by Mar 14, 2027</span></div>
+          <div class="helper">Save ৳ 5,833 / month to reach your goal.</div>
+        </div>
+        <div class="card" data-goto="goal-detail" style="cursor:pointer">
+          <div class="row" style="justify-content:space-between"><div class="goal-name">Emergency fund</div><div class="goal-pct">80%</div></div>
+          <div class="bar" style="margin-top:10px"><div class="bar-fill" style="width:80%"></div></div>
+          <div class="goal-meta"><span>৳ 40,000 / ৳ 50,000</span><span>by Dec 31, 2026</span></div>
+          <div class="helper">Save ৳ 3,333 / month to reach your goal.</div>
+        </div>
+        <div class="card" data-goto="goal-detail" style="cursor:pointer">
+          <div class="row" style="justify-content:space-between"><div class="goal-name">Travel — December</div><div class="goal-pct">10%</div></div>
+          <div class="bar" style="margin-top:10px"><div class="bar-fill" style="width:10%"></div></div>
+          <div class="goal-meta"><span>৳ 10,000 / ৳ 100,000</span><span>by Aug 28, 2027</span></div>
+          <div class="helper">Save ৳ 15,000 / month to reach your goal.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== GOAL DETAIL =================== -->
+    <section id="goal-detail" class="screen">
+      <div class="topbar"><div><h1>New phone</h1><div class="sub">Goal · 45% complete</div></div></div>
+
+      <div class="grid-mid">
+        <div class="card">
+          <h2>Progress</h2>
+          <div class="num" style="font-size:36px;font-weight:800;color:var(--primary)">৳ 15,750 <span style="color:var(--muted);font-size:18px">/ ৳ 35,000</span></div>
+          <div class="bar" style="margin-top:14px"><div class="bar-fill" style="width:45%"></div></div>
+          <div class="goal-meta"><span>Started Jun 2026</span><span>by Mar 14, 2027</span></div>
+          <div class="helper" style="margin-top:14px">Required monthly: <strong style="color:var(--ink)">৳ 5,833</strong> · Remaining: ৳ 19,250</div>
+
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn btn-primary grow" data-goto="add-goal-contribution" style="justify-content:center">+ Add to goal</button>
+            <button class="btn btn-ghost">Edit</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Recent contributions</h2>
+          <div class="tx">
+            <div class="tx-left"><div class="tx-ic in">↑</div><div><div class="tx-name">July contribution</div><div class="tx-sub">Jul 31 · from Cash</div></div></div>
+            <div class="tx-amt in">+৳ 5,000</div>
+          </div>
+          <div class="tx">
+            <div class="tx-left"><div class="tx-ic in">↑</div><div><div class="tx-name">June contribution</div><div class="tx-sub">Jun 30 · from Cash</div></div></div>
+            <div class="tx-amt in">+৳ 5,750</div>
+          </div>
+          <div class="tx">
+            <div class="tx-left"><div class="tx-ic in">↑</div><div><div class="tx-name">Opening balance</div><div class="tx-sub">Jun 1 · from Cash</div></div></div>
+            <div class="tx-amt in">+৳ 5,000</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD GOAL =================== -->
+    <section id="add-goal" class="screen">
+      <div class="topbar"><div><h1>New goal</h1><div class="sub">Target amount and deadline</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Name</label>
+        <input style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px;margin-bottom:6px" value="New phone">
+
+        <div class="row" style="margin-top:14px">
+          <div class="grow">
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Target amount</label>
+            <input class="num-input" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px" value="৳ 35,000">
+          </div>
+          <div class="grow">
+            <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Target date</label>
+            <input type="date" style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px" value="2027-03-14">
+          </div>
+        </div>
+
+        <div class="card" style="background:var(--primary-hi);border:1px solid rgba(45,212,191,.3);margin-top:18px;box-shadow:none">
+          <div style="font-size:12px;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Live calculation</div>
+          <div style="margin-top:6px;font-size:14px">You need to save <strong style="color:var(--primary);font-size:18px">৳ 5,833 / month</strong> to reach this goal by March 14, 2027.</div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="goals">Cancel</button>
+          <button class="btn btn-primary" data-goto="goals">Save goal</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== ADD GOAL CONTRIBUTION =================== -->
+    <section id="add-goal-contribution" class="screen">
+      <div class="topbar"><div><h1>Add to "New phone"</h1><div class="sub">Goal contribution</div></div></div>
+
+      <div class="card" style="max-width:560px">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Amount</label>
+        <input class="num-input" style="font-size:32px;font-weight:700;background:var(--surface-2);border:1px solid var(--border);color:var(--primary);padding:14px;border-radius:12px;width:100%" value="৳ 2,000">
+
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:18px;margin-bottom:6px">From account</label>
+        <select style="width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px;border-radius:10px">
+          <option selected>Cash</option>
+          <option>City Bank Salary</option>
+          <option>bKash</option>
+        </select>
+        <div class="helper" style="margin-top:6px">Cash balance after: ৳ 10,000</div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
+          <button class="btn btn-ghost" data-goto="goal-detail">Cancel</button>
+          <button class="btn btn-primary" data-goto="goal-detail">Add contribution</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== SETTINGS =================== -->
+    <section id="settings" class="screen">
+      <div class="topbar"><div><h1>Settings</h1><div class="sub">App preferences, data, security</div></div></div>
+
+      <div class="grid-mid">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <h2>Security</h2>
+            <div class="set-row">
+              <div><div class="label">App PIN</div><div class="desc">Require a 4-digit PIN to open the app.</div></div>
+              <div class="toggle"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <h2>Data</h2>
+            <div class="set-row">
+              <div><div class="label">Export data</div><div class="desc">Download a JSON backup of all your data.</div></div>
+              <button class="btn btn-ghost" data-goto="export">Export</button>
+            </div>
+            <div class="set-row">
+              <div><div class="label">Import data</div><div class="desc">Restore from a previous JSON backup.</div></div>
+              <button class="btn btn-ghost" data-goto="import">Import</button>
+            </div>
+            <div class="set-row">
+              <div><div class="label">Delete all data</div><div class="desc">Permanently delete all your data on this device.</div></div>
+              <button class="btn btn-danger" data-goto="delete-all">Delete</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>About</h2>
+            <div class="set-row">
+              <div><div class="label">Version</div><div class="desc">Finora V1 · local-first bookkeeping</div></div>
+            </div>
+            <div class="set-row">
+              <div><div class="label">Currency</div><div class="desc">BDT ৳ (locked in V1)</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="height:fit-content">
+          <h2>At a glance</h2>
+          <div class="set-row">
+            <div><div class="label">Transactions</div><div class="desc">All-time</div></div>
+            <strong>152</strong>
+          </div>
+          <div class="set-row">
+            <div><div class="label">Accounts</div></div>
+            <strong>4</strong>
+          </div>
+          <div class="set-row">
+            <div><div class="label">Active goals</div></div>
+            <strong>3</strong>
+          </div>
+          <div class="set-row">
+            <div><div class="label">Categories</div><div class="desc">1 custom added</div></div>
+            <strong>16</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== EXPORT =================== -->
+    <section id="export" class="screen">
+      <div class="topbar"><div><h1>Export data</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:40px auto;width:480px">
+        <h3>Create a backup file</h3>
+        <p>This creates a finora-backup-2026-08-13.json file containing all your accounts, transactions, goals, and settings. Save it somewhere safe.</p>
+        <div class="card" style="background:var(--surface-2);padding:12px;margin-bottom:10px;box-shadow:none">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Contents</div>
+          <div style="font-size:13px;margin-top:6px">4 accounts · 152 transactions · 3 goals · 16 categories · settings</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="settings">Cancel</button>
+          <button class="btn btn-primary">⬇ Download</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== IMPORT =================== -->
+    <section id="import" class="screen">
+      <div class="topbar"><div><h1>Import data</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:40px auto;width:480px">
+        <h3>Restore from a backup</h3>
+        <p>Pick a previously exported .json file. This will replace all your current data.</p>
+
+        <div class="card" style="background:var(--surface-2);border:1px dashed var(--border);padding:24px;text-align:center;margin-bottom:14px;box-shadow:none">
+          <div style="font-size:32px;margin-bottom:8px">⬆</div>
+          <div style="font-weight:600">Drop a .json file here</div>
+          <div class="helper">or click to browse</div>
+        </div>
+
+        <div class="helper">The file will be validated before anything changes. Invalid files are rejected with a clear message.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="settings">Cancel</button>
+          <button class="btn btn-primary" data-goto="import-confirm">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== IMPORT CONFIRM =================== -->
+    <section id="import-confirm" class="screen">
+      <div class="topbar"><div><h1>Replace data?</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:480px">
+        <h3>This will replace all your current data</h3>
+        <p>After this, your current 152 transactions, 4 accounts, and 3 goals will be gone, replaced by the contents of the backup file.</p>
+        <div class="danger-text">This cannot be undone.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="import">Cancel</button>
+          <button class="btn btn-danger" data-goto="home">Replace</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== DELETE ALL =================== -->
+    <section id="delete-all" class="screen">
+      <div class="topbar"><div><h1>Delete all data</h1></div></div>
+
+      <div class="modal show" style="position:relative;display:block;margin:60px auto;width:480px;border-color:rgba(248,113,113,.4)">
+        <h3 style="color:var(--danger)">Delete everything?</h3>
+        <p>This permanently deletes all your transactions, accounts, and goals on this device. This cannot be undone.</p>
+        <div class="danger-text">152 transactions · 4 accounts · 3 goals will be erased.</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-goto="settings">Cancel</button>
+          <button class="btn btn-danger" data-goto="onboarding">Delete everything</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== EMPTY STATE =================== -->
+    <section id="empty-state" class="screen">
+      <div class="topbar"><div><h1>Goals</h1></div></div>
+      <div class="card">
+        <div class="empty">
+          <div class="em">★</div>
+          <div class="title">Save toward something</div>
+          <p>Set a target amount and a date. We'll tell you how much to save each month.</p>
+          <button class="btn btn-primary" data-goto="add-goal" style="margin-top:14px">+ New goal</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // -------------- Screen routing --------------
+  const screens = document.querySelectorAll('.screen');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  function show(id){
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.goto === id));
+    window.scrollTo(0, 0);
+    // Update URL hash so deep links work
+    history.replaceState(null, '', '#' + id);
+  }
+
+  // Wire every "data-goto" element
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-goto]');
+    if(!t) return;
+    e.preventDefault();
+    show(t.dataset.goto);
+  });
+
+  // Initial route from hash or default to index
+  const indexGrid = document.getElementById('index-grid');
+  const screenList = [
+    {id:'onboarding', title:'Onboarding', desc:'One question, then dashboard.'},
+    {id:'demo-mode', title:'Demo mode entry', desc:'Try the app with sample data.'},
+    {id:'home', title:'Home', desc:'Accounts-first dashboard.'},
+    {id:'transactions', title:'Transactions list', desc:'Searchable, filterable table.'},
+    {id:'add-picker', title:'Add picker', desc:'Income / Expense / Transfer.'},
+    {id:'add-expense', title:'Add expense', desc:'3-tap quick path.'},
+    {id:'add-income', title:'Add income', desc:'Money received.'},
+    {id:'add-transfer', title:'Add transfer', desc:'Between own accounts.'},
+    {id:'edit-tx', title:'Edit transaction', desc:'Inline edit + delete.'},
+    {id:'delete-confirm', title:'Delete confirm', desc:'Modal confirmation.'},
+    {id:'accounts', title:'Accounts', desc:'Manage balances.'},
+    {id:'add-account', title:'Add account', desc:'New balance row.'},
+    {id:'goals', title:'Goals list', desc:'All savings goals.'},
+    {id:'goal-detail', title:'Goal detail', desc:'Progress + contributions.'},
+    {id:'add-goal', title:'New goal', desc:'Target + deadline.'},
+    {id:'add-goal-contribution', title:'Add contribution', desc:'Cash to goal.'},
+    {id:'settings', title:'Settings', desc:'App prefs, data, about.'},
+    {id:'export', title:'Export data', desc:'JSON backup.'},
+    {id:'import', title:'Import data', desc:'Restore from backup.'},
+    {id:'import-confirm', title:'Import confirm', desc:'Replace confirmation.'},
+    {id:'delete-all', title:'Delete all data', desc:'Wipe everything.'},
+    {id:'empty-state', title:'Empty state', desc:'No goals yet.'},
+  ];
+  screenList.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'index-card';
+    div.dataset.goto = s.id;
+    div.innerHTML = `
+      <div class="num">#${String(i+1).padStart(2,'0')}</div>
+      <div class="title">${s.title}</div>
+      <div class="desc">${s.desc}</div>
+    `;
+    indexGrid.appendChild(div);
+  });
+
+  // Initial route
+  const initial = (location.hash || '#idx').slice(1);
+  if(document.getElementById(initial)) show(initial); else show('idx');
+</script>
+
+</body>
+</html>
