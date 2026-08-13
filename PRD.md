@@ -39,7 +39,7 @@ A local-first bookkeeping app that lets anyone track income and expenses without
 - Not a bank, broker, or accountant
 - Does not move money or connect to a bank
 
-> **Out of scope for V1:** Financial Health score, Charts, DPS/FDR projections, Investments, Debt tracking, Monthly Planning recommendations, Insights engine. These are deferred to V2.
+> **Out of scope for V1:** Financial Health score, Charts, DPS/FDR projections, Investments, Debt tracking, Monthly Planning recommendations, Insights engine. These are deferred to V2. Savings Goals ARE in scope (kept simple).
 
 ---
 
@@ -52,7 +52,7 @@ A user should be able to:
 - Add money received → it shows in totals and account balance.
 - Add money spent → it shows in totals and category breakdown.
 - Glance at the dashboard → see this month's income, expenses, and balance.
-- Add a savings goal → see how much more per month is needed.
+- Add a savings goal → see how much more per month is needed, and track progress.
 - Back up or restore their data → without any technical knowledge.
 
 ---
