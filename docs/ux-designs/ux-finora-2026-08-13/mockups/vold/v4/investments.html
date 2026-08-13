@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Investments — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html" aria-current="page"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 10</div>
+        <h1>Investments</h1>
+      </div>
+      <div class="actions">
+        <button class="btn primary">New investment</button>
+      </div>
+    </div>
+
+    <!-- HERO TRIPTYCH -->
+    <div class="card">
+      <div class="hero-triptych">
+        <div class="col">
+          <div class="label">Portfolio value</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>65,950</div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+          <div class="sub mt-3">3 holdings</div>
+        </div>
+        <div class="col">
+          <div class="label">Projected at maturity</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>71,400</div>
+          <div class="hero-tile-head">
+            <span class="mode-pill projected">Projected</span>
+            <span class="delta pos"><span class="cur">BDT</span>5,450</span>
+          </div>
+          <div class="sub mt-3">Expected return over the term</div>
+        </div>
+        <div class="col">
+          <div class="label">This month deposited</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>320</div>
+          <div class="hero-tile-head">
+            <span class="mode-pill actual">Actual</span>
+          </div>
+          <div class="sub mt-3">This deposit is not a return</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOLDINGS -->
+    <div class="card mt-4">
+      <div class="tabs" data-tab-group role="tablist">
+        <button data-tab="all"   aria-selected="true"  role="tab" data-tab-target="#inv-all">All<span class="tab-count">(3)</span></button>
+        <button data-tab="dps"   aria-selected="false" role="tab" data-tab-target="#inv-dps">DPS<span class="tab-count">(2)</span></button>
+        <button data-tab="fdr"   aria-selected="false" role="tab" data-tab-target="#inv-fdr">FDR<span class="tab-count">(1)</span></button>
+        <button data-tab="other" aria-selected="false" role="tab" data-tab-target="#inv-other">Other</button>
+      </div>
+
+      <div id="inv-all" class="mt-4">
+        <div class="data-row t-invest mt-3">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">DPS · Bank Asia</div>
+              <div class="meta"><span class="cur">BDT</span>4,000<span class="unit">/mo</span> · matures Mar 2027 · <span class="pos">6.5% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>32,000</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="dps.html">Open →</a>
+          </div>
+        </div>
+        <div class="data-row t-invest mt-3">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">DPS · DBBL</div>
+              <div class="meta"><span class="cur">BDT</span>3,000<span class="unit">/mo</span> · matures Aug 2027 · <span class="pos">6.0% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>18,000</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="dps.html">Open →</a>
+          </div>
+        </div>
+        <div class="data-row t-invest mt-3">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">FDR · EBL</div>
+              <div class="meta">Lump sum · matures Dec 2026 · <span class="pos">7.5% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>15,950</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="fdr.html">Open →</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="inv-dps" hidden class="mt-4">
+        <div class="data-row t-invest">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">DPS · Bank Asia</div>
+              <div class="meta"><span class="cur">BDT</span>4,000<span class="unit">/mo</span> · matures Mar 2027 · <span class="pos">6.5% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>32,000</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="dps.html">Open →</a>
+          </div>
+        </div>
+        <div class="data-row t-invest mt-3">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">DPS · DBBL</div>
+              <div class="meta"><span class="cur">BDT</span>3,000<span class="unit">/mo</span> · matures Aug 2027 · <span class="pos">6.0% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>18,000</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="dps.html">Open →</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="inv-fdr" hidden class="mt-4">
+        <div class="data-row t-invest">
+          <div class="stripe"></div>
+          <div class="body">
+            <div class="icon-chip invest">◆</div>
+            <div class="text">
+              <div class="name">FDR · EBL</div>
+              <div class="meta">Lump sum · matures Dec 2026 · <span class="pos">7.5% p.a.</span></div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="right-meta">
+              <div class="amount"><span class="cur">BDT</span>15,950</div>
+              <div class="mode">Actual</div>
+            </div>
+            <a class="row-action tone-cta" href="fdr.html">Open →</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="inv-other" hidden class="mt-4">
+        <div class="empty-hint">
+          <span class="icon" aria-hidden="true">+</span>
+          <span>No other investments yet. Track stocks, mutual funds, or crypto here.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING MATURITIES -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Upcoming maturities</div>
+        <span class="tiny muted">Next 12 months</span>
+      </div>
+      <div class="data-row t-invest mt-3">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="icon-chip invest">⏱</div>
+          <div class="text">
+            <div class="name">FDR · EBL matures</div>
+            <div class="meta">Dec 15, 2026 · in <span class="mono">125 days</span></div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>16,400</div>
+            <div class="mode projected">Projected</div>
+          </div>
+        </div>
+      </div>
+      <div class="data-row t-invest mt-3">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="icon-chip invest">⏱</div>
+          <div class="text">
+            <div class="name">DPS · Bank Asia matures</div>
+            <div class="meta">Mar 1, 2027 · in <span class="mono">201 days</span></div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>38,500</div>
+            <div class="mode projected">Projected</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

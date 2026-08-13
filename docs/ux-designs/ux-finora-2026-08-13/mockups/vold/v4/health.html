@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Financial Health — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html" aria-current="page"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 11</div>
+        <h1>Financial Health</h1>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex between items-center">
+        <div>
+          <div class="label">Overall score</div>
+          <div class="hero-num mono mt-3">82<span class="sub" style="font-size:18px; margin-left:8px">/ 100</span></div>
+          <div class="trend up mt-3"><span class="arrow">▲</span><span>+4</span><span class="muted">vs last month</span></div>
+        </div>
+        <div role="img" aria-label="Financial Health score: 82 out of 100, Good"
+             style="position:relative;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--accent) 82%, var(--surface-2) 0);display:grid;place-items:center;flex-shrink:0;">
+          <div style="position:absolute;width:96px;height:96px;background:var(--surface);border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:32px;color:var(--ink);">82</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">5 components</div>
+      </div>
+
+      <div class="grid-12 mt-4">
+        <div class="col-6">
+          <div class="flex between items-center">
+            <div><strong>Savings rate</strong></div>
+            <div class="mono">88</div>
+          </div>
+          <div class="progress tall good mt-3" role="progressbar" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100"><i style="width:88%"></i></div>
+          <div class="tiny mt-3">18% saved vs 15% target.</div>
+        </div>
+        <div class="col-6">
+          <div class="flex between items-center">
+            <div><strong>Emergency buffer</strong></div>
+            <div class="mono">76</div>
+          </div>
+          <div class="progress tall good mt-3" role="progressbar" aria-valuenow="76" aria-valuemin="0" aria-valuemax="100"><i style="width:76%"></i></div>
+          <div class="tiny mt-3">3.2 months · target 6.</div>
+        </div>
+        <div class="col-6 mt-4">
+          <div class="flex between items-center">
+            <div><strong>Debt-to-income</strong></div>
+            <div class="mono">90</div>
+          </div>
+          <div class="progress tall good mt-3" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"><i style="width:90%"></i></div>
+          <div class="tiny mt-3">DTI 12% · below 30% threshold.</div>
+        </div>
+        <div class="col-6 mt-4">
+          <div class="flex between items-center">
+            <div><strong>Spending stability</strong></div>
+            <div class="mono">74</div>
+          </div>
+          <div class="progress tall mt-3" role="progressbar" aria-valuenow="74" aria-valuemin="0" aria-valuemax="100"><i style="width:74%"></i></div>
+          <div class="tiny mt-3">Variance 18%.</div>
+        </div>
+        <div class="col-12 mt-4">
+          <div class="flex between items-center">
+            <div><strong>Goal progress</strong></div>
+            <div class="mono">82</div>
+          </div>
+          <div class="progress tall accent mt-3" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"><i style="width:82%"></i></div>
+          <div class="tiny mt-3">3 of 4 active goals on pace.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Score trend · last 6 months</div>
+      </div>
+      <svg class="spark" viewBox="0 0 600 140" width="100%" height="140" role="img" aria-label="Score trend: climbing from 70 to 82 over 6 months" style="margin-top:12px">
+        <title>Score trend: 70 → 75 → 78 → 75 → 80 → 78 → 82 over 6 months</title>
+        <defs>
+          <linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".18"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient>
+        </defs>
+        <path d="M0,100 L100,90 L200,80 L300,75 L400,60 L500,40 L600,20 L600,140 L0,140 Z" fill="url(#hg)"/>
+        <path d="M0,100 L100,90 L200,80 L300,75 L400,60 L500,40 L600,20" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <g class="tiny muted" fill="currentColor">
+          <text x="0" y="135">Mar</text>
+          <text x="100" y="135">Apr</text>
+          <text x="200" y="135">May</text>
+          <text x="300" y="135">Jun</text>
+          <text x="400" y="135">Jul</text>
+          <text x="500" y="135">Aug</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">What changed · +4 points</div>
+      </div>
+      <div class="trend up mt-3"><span class="arrow">▲</span><span>Savings rate +6</span><span class="muted">— kept 18% saved rate</span></div>
+      <div class="trend up mt-3"><span class="arrow">▲</span><span>Debt-to-income +3</span><span class="muted">— paid 5,000 of personal loan</span></div>
+      <div class="trend down mt-3"><span class="arrow">▼</span><span>Spending stability −2</span><span class="muted">— shopping spiked</span></div>
+      <div class="trend up mt-3"><span class="arrow">▲</span><span>Goal progress +1</span><span class="muted">— Vacation reached 100%</span></div>
+    </div>
+  </main>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

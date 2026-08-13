@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>States — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 14</div>
+        <h1>States</h1>
+      </div>
+    </div>
+
+    <!-- EMPTY -->
+    <div class="card">
+      <div class="card-head"><div class="label">Empty</div></div>
+      <div class="empty mt-4">
+        <div class="circle" aria-hidden="true">∅</div>
+        <div class="title">No transactions yet</div>
+        <div class="sub">Add your first transaction to start tracking.</div>
+        <button class="btn primary mt-3">+ Add transaction</button>
+      </div>
+    </div>
+
+    <!-- EMPTY HINT -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Empty hint (inline)</div></div>
+      <div class="empty-hint mt-4">
+        <span class="icon" aria-hidden="true">+</span>
+        <span>Track stocks, mutual funds, or crypto here.</span>
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Loading</div></div>
+      <div class="flex items-center gap-3 mt-4">
+        <div class="dot" style="background:var(--accent-2);width:8px;height:8px;border-radius:50%;animation:pulse 1s infinite"></div>
+        <span class="tiny">Crunching the numbers…</span>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Error</div></div>
+      <div class="banner bad mt-4" role="alert">
+        <div class="icon" aria-hidden="true">!</div>
+        <div class="body"><strong>Couldn’t save this transaction.</strong> Storage quota exceeded. Export and remove old data in Settings → Data.</div>
+        <button class="btn ghost sm">Retry</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Confirmation</div></div>
+      <div class="banner good mt-4" role="status">
+        <div class="icon" aria-hidden="true">✓</div>
+        <div class="body"><strong>Plan accepted.</strong> August 2026 plan saved. Recommendations will follow this order.</div>
+      </div>
+    </div>
+
+    <!-- OFFLINE -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Offline</div></div>
+      <div class="banner warn mt-4" role="status">
+        <div class="icon" aria-hidden="true">⌐</div>
+        <div class="body"><strong>You’re offline.</strong> Changes are saved locally and will sync when you reconnect.</div>
+      </div>
+    </div>
+
+    <!-- OVER-ALLOCATED -->
+    <div class="card mt-4" data-over-banner hidden>
+      <div class="banner bad" role="alert">
+        <div class="icon" aria-hidden="true">!</div>
+        <div class="body"><strong>You’ve over-allocated this plan.</strong> Total <span data-over-delta>BDT 2,000</span> over the available amount. Reduce a bucket to accept.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

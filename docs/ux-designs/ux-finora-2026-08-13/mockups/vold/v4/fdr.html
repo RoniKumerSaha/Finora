@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FDR · UCBL — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html" aria-current="page"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 18</div>
+        <h1>FDR · UCBL</h1>
+        <div class="sub mt-3"><a href="investments.html">← All investments</a></div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="openModal('m-edit')">Edit</button>
+        <button class="btn primary" onclick="openModal('m-current')">Update current value</button>
+      </div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="card">
+      <div class="grid-12">
+        <div class="col-3 field">
+          <label for="fdr-principal">Principal</label>
+          <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="fdr-principal" class="input right mono" type="number" value="100000"></div>
+        </div>
+        <div class="col-3 field">
+          <label for="fdr-rate">Annual rate</label>
+          <div class="input-group"><input id="fdr-rate" class="input right mono" type="number" value="7.5" step="0.1"><span class="suffix">% p.a.</span></div>
+        </div>
+        <div class="col-3 field">
+          <label for="fdr-years">Term</label>
+          <div class="input-group"><input id="fdr-years" class="input right mono" type="number" value="3"><span class="suffix">years</span></div>
+        </div>
+        <div class="col-3 field">
+          <label for="fdr-mode">Interest mode</label>
+          <select id="fdr-mode" class="input">
+            <option value="simple">Simple</option>
+            <option value="compound" selected>Compound (annual)</option>
+            <option value="monthly">Compound (monthly)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="card mt-4">
+      <div class="hero-triptych">
+        <div class="col">
+          <div class="label">Maturity value</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span><span id="fdr-fv">1,24,232</span></div>
+          <div class="hero-tile-head"><span class="mode-pill projected">Projected</span></div>
+          <div class="sub mt-3">on <span id="fdr-maturity">Aug 12, 2029</span></div>
+        </div>
+        <div class="col">
+          <div class="label">Principal</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span><span id="fdr-principal-out">1,00,000</span></div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+          <div class="sub mt-3">deposit only</div>
+        </div>
+        <div class="col">
+          <div class="label">Interest earned</div>
+          <div class="hero-num mono mt-3 pos"><span class="cur">BDT</span><span id="fdr-profit">24,232</span></div>
+          <div class="hero-tile-head"><span class="mode-pill projected">Estimated</span></div>
+          <div class="sub mt-3"><span id="fdr-eff-rate">7.76</span>% effective</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT VALUE -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Current value</div>
+        <span class="tiny muted">manual · last reconciled Aug 1, 2026</span>
+      </div>
+      <div class="grid-12 mt-4">
+        <div class="col-6">
+          <div class="label">Recorded</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>1,12,500</div>
+          <div class="sub mt-3">as of Aug 1, 2026</div>
+        </div>
+        <div class="col-6">
+          <div class="label">Expected at this date</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>1,13,150</div>
+          <div class="sub mt-3">based on schedule</div>
+        </div>
+      </div>
+      <div class="progress mt-4" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" aria-label="FDR progress">
+        <i style="width:75%"></i>
+      </div>
+      <div class="flex between mt-3">
+        <span class="tiny muted">started Aug 12, 2023</span>
+        <span class="tiny muted">821 of 1095 days · 274 days to maturity</span>
+      </div>
+    </div>
+
+    <!-- INTEREST SCHEDULE -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Interest schedule</div>
+        <span class="tiny muted">compound annual · next credit Aug 12, 2027</span>
+      </div>
+      <table class="data-table mt-4" style="width:100%">
+        <thead>
+          <tr style="text-align:left">
+            <th class="tiny muted">Year</th>
+            <th class="tiny muted">Date</th>
+            <th class="tiny muted">Opening</th>
+            <th class="tiny muted">Interest</th>
+            <th class="tiny muted">Closing</th>
+          </tr>
+        </thead>
+        <tbody id="fdr-schedule">
+          <tr><td class="mono">Y1</td><td class="mono">Aug 2024</td><td class="mono"><span class="cur">BDT</span>1,00,000</td><td class="mono pos"><span class="cur">BDT</span>7,500</td><td class="mono"><span class="cur">BDT</span>1,07,500</td></tr>
+          <tr><td class="mono">Y2</td><td class="mono">Aug 2025</td><td class="mono"><span class="cur">BDT</span>1,07,500</td><td class="mono pos"><span class="cur">BDT</span>8,063</td><td class="mono"><span class="cur">BDT</span>1,15,563</td></tr>
+          <tr><td class="mono">Y3</td><td class="mono">Aug 2026</td><td class="mono"><span class="cur">BDT</span>1,15,563</td><td class="mono pos"><span class="cur">BDT</span>8,667</td><td class="mono"><span class="cur">BDT</span>1,24,230</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="m-edit" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fe-title">
+    <h2 id="fe-title">Edit FDR</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-12 field">
+        <label>Name</label>
+        <input class="input" value="FDR · UCBL">
+      </div>
+      <div class="col-6 field">
+        <label>Principal</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="100000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Annual rate</label>
+        <div class="input-group"><input class="input right mono" type="number" value="7.5" step="0.1"><span class="suffix">% p.a.</span></div>
+      </div>
+      <div class="col-6 field">
+        <label>Term</label>
+        <div class="input-group"><input class="input right mono" type="number" value="3"><span class="suffix">years</span></div>
+      </div>
+      <div class="col-6 field">
+        <label>Interest mode</label>
+        <select class="input"><option>Simple</option><option selected>Compound (annual)</option><option>Compound (monthly)</option></select>
+      </div>
+      <div class="col-6 field">
+        <label>Start date</label>
+        <input class="input" type="date" value="2023-08-12">
+      </div>
+      <div class="col-6 field">
+        <label>Maturity date</label>
+        <input class="input" type="date" value="2026-08-12" disabled>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('FDR updated.', 'good'); closeModal('m-edit')">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-current" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fc-title">
+    <h2 id="fc-title">Update current value</h2>
+    <p class="modal-sub">Reconcile to the bank's actual FDR balance. Interest earned recalculates from this value.</p>
+    <div class="grid-12 mt-3">
+      <div class="col-6 field">
+        <label for="fcr-amt">Current value</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="fcr-amt" class="input right mono" type="number" value="112500"></div>
+      </div>
+      <div class="col-6 field">
+        <label>As of date</label>
+        <input class="input" type="date" value="2026-08-01">
+      </div>
+      <div class="col-12">
+        <div class="input-helper">Interest so far: <strong><span id="fcr-interest">BDT 12,500</span></strong> · Difference vs expected: <strong id="fcr-diff">BDT 650 short</strong></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Current value saved.', 'good'); closeModal('m-current')">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  function fmt(n) { return Math.round(n).toLocaleString('en-IN'); }
+  function recalcFdr() {
+    const principal = parseFloat(document.getElementById('fdr-principal').value) || 0;
+    const rate = parseFloat(document.getElementById('fdr-rate').value) || 0;
+    const years = parseInt(document.getElementById('fdr-years').value) || 0;
+    const mode = document.getElementById('fdr-mode').value;
+    const r = rate / 100;
+    let fv;
+    if (mode === 'simple') fv = principal * (1 + r * years);
+    else if (mode === 'compound') fv = principal * Math.pow(1 + r, years);
+    else fv = principal * Math.pow(1 + r / 12, years * 12);
+    const profit = fv - principal;
+    const effRate = principal > 0 ? ((fv / principal) - 1) * 100 / years : 0;
+    document.getElementById('fdr-fv').textContent = fmt(fv);
+    document.getElementById('fdr-principal-out').textContent = fmt(principal);
+    document.getElementById('fdr-profit').textContent = fmt(profit);
+    document.getElementById('fdr-eff-rate').textContent = effRate.toFixed(2);
+  }
+  ['fdr-principal','fdr-rate','fdr-years','fdr-mode'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', recalcFdr);
+    document.getElementById(id)?.addEventListener('change', recalcFdr);
+  });
+  recalcFdr();
+</script>
+</body>
+</html>

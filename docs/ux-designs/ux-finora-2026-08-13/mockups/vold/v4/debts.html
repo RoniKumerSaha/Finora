@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Debts — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html" aria-current="page"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 20</div>
+        <h1>Debts</h1>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="openModal('m-record')">Record repayment</button>
+        <button class="btn primary" onclick="openModal('m-add')">New debt</button>
+      </div>
+    </div>
+
+    <!-- HERO: Total debt summary — stat-card-group with one accent rail per metric -->
+    <div class="card">
+      <div class="card-head">
+        <div class="label">Debt summary</div>
+        <span class="tiny muted">Updated today</span>
+      </div>
+      <div class="stat-card-group mt-3">
+        <div class="stat-card" data-tone="debt">
+          <div class="label">Total outstanding</div>
+          <div class="stat-value neg"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+          <div class="stat-foot">
+            <span class="stat-badge tone-bad"><span class="dot"></span>Liability</span>
+            <span class="tiny muted">across <strong id="debts-count">1</strong> active debt</span>
+          </div>
+        </div>
+        <div class="stat-card" data-tone="muted">
+          <div class="label">Original amount</div>
+          <div class="stat-value"><span class="cur">BDT</span>50,000</div>
+          <div class="stat-foot">
+            <span class="stat-badge tone-muted"><span class="dot"></span>Starting balance</span>
+            <span class="tiny muted">Sum of original amounts</span>
+          </div>
+        </div>
+        <div class="stat-card" data-tone="good">
+          <div class="label">Repaid so far</div>
+          <div class="stat-value pos"><span class="cur">BDT</span>10,000</div>
+          <div class="stat-progress" aria-hidden="true"><i style="width:20%"></i></div>
+          <div class="stat-foot">
+            <span class="stat-badge tone-good"><span class="dot"></span>20% repaid</span>
+            <span class="tiny muted">on pace · 4 of 36 months</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE DEBTS -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Active debts</div>
+        <span class="tiny muted">1 open</span>
+      </div>
+
+      <div class="data-row t-debt mt-3">
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="icon">⚠</div>
+          <div class="text">
+            <div class="name">Personal loan · Brother</div>
+            <div class="meta">Opened Aug 1, 2026 · 0% interest · due 1st of each month</div>
+            <div class="progress mt-3" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" aria-label="Repaid 20% of original"><i style="width:20%"></i></div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount neg"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+            <div class="mode liability">Liability</div>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn sm" onclick="openModal('m-edit')">Edit</button>
+            <button class="btn primary sm" onclick="openModal('m-record')">Repay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOSED DEBTS -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Closed debts</div>
+        <span class="tiny muted">last 12 months</span>
+      </div>
+      <div class="empty-hint mt-3">
+        <span class="icon" aria-hidden="true">✓</span>
+        <span>No closed debts in the past year. Once a debt is fully repaid, it shows here for history.</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="m-add" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
+    <h2 id="add-title">New debt</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-6 field">
+        <label for="d-type">Type</label>
+        <select id="d-type" class="input">
+          <option>Personal loan</option>
+          <option>Bank loan</option>
+          <option>Credit card</option>
+          <option>BNPL</option>
+        </select>
+      </div>
+      <div class="col-6 field">
+        <label for="d-lender">Lender</label>
+        <input id="d-lender" class="input" placeholder="e.g. Brother, DBBL">
+      </div>
+      <div class="col-6 field">
+        <label for="d-original">Original amount</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="d-original" class="input right mono" type="number" value="50000"></div>
+      </div>
+      <div class="col-6 field">
+        <label for="d-outstanding">Outstanding today</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="d-outstanding" class="input right mono" type="number" value="40000"></div>
+      </div>
+      <div class="col-6 field">
+        <label for="d-rate">Interest rate</label>
+        <div class="input-group"><input id="d-rate" class="input right mono" type="number" value="0" step="0.1"><span class="suffix">% p.a.</span></div>
+      </div>
+      <div class="col-6 field">
+        <label for="d-monthly">Monthly payment</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="d-monthly" class="input right mono" type="number" value="5000"></div>
+      </div>
+      <div class="col-6 field">
+        <label for="d-due">Due day</label>
+        <select id="d-due" class="input">
+          <option>1st</option><option>5th</option><option>10th</option><option>15th</option><option>Last day</option>
+        </select>
+      </div>
+      <div class="col-6 field">
+        <label for="d-start">Start date</label>
+        <input id="d-start" class="input" type="date" value="2026-08-01">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Debt added.', 'good'); closeModal('m-add')">Add debt</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-edit" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <h2 id="edit-title">Edit debt · Personal loan</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-6 field">
+        <label>Type</label>
+        <select class="input"><option>Personal loan</option><option>Bank loan</option><option>Credit card</option><option>BNPL</option></select>
+      </div>
+      <div class="col-6 field">
+        <label>Lender</label>
+        <input class="input" value="Brother">
+      </div>
+      <div class="col-6 field">
+        <label>Original amount</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="50000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Outstanding today</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="40000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Interest rate</label>
+        <div class="input-group"><input class="input right mono" type="number" value="0" step="0.1"><span class="suffix">% p.a.</span></div>
+      </div>
+      <div class="col-6 field">
+        <label>Monthly payment</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="5000"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn danger" onclick="openModal('m-close-debt'); closeModal('m-edit')">Delete debt…</button>
+      <button class="btn primary" onclick="toast('Debt updated.', 'good'); closeModal('m-edit')">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-record" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rec-title">
+    <h2 id="rec-title">Record repayment</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-6 field">
+        <label>Debt</label>
+        <select class="input">
+          <option>Personal loan · Brother</option>
+        </select>
+      </div>
+      <div class="col-6 field">
+        <label>Amount</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="repay-amt" class="input right mono" type="number" value="5000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Date</label>
+        <input class="input" type="date" value="2026-08-12">
+      </div>
+      <div class="col-6 field">
+        <label>From account</label>
+        <select class="input">
+          <option>City Bank</option><option>Cash</option><option>bKash</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <div class="input-helper">After this payment, outstanding will be <strong><span class="cur">BDT</span><span id="repay-after">35,000</span></strong>.</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Repayment recorded.', 'good'); closeModal('m-record')">Record</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-close-debt" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cd-title">
+    <h2 id="cd-title">Delete this debt?</h2>
+    <p class="modal-sub">Removes the debt from your active list. Past repayments will remain in transactions.</p>
+    <div class="field mt-4">
+      <label>Type <strong>DELETE</strong> to confirm</label>
+      <input class="input" placeholder="DELETE">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn danger" onclick="toast('Debt deleted.', 'bad'); closeModal('m-close-debt')">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  document.getElementById('repay-amt')?.addEventListener('input', function () {
+    const amt = parseInt(this.value || '0', 10);
+    const after = Math.max(0, 40000 - amt);
+    const el = document.getElementById('repay-after');
+    if (el) el.textContent = after.toLocaleString('en-IN');
+  });
+</script>
+</body>
+</html>

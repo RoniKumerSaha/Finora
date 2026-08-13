@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App Shell — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 02</div>
+        <h1>App shell</h1>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Layout</h2>
+      <p class="muted mt-3">Three-zone layout: persistent sidebar, content column, content cards. The sidebar collapses to icons on narrow viewports.</p>
+      <div class="grid-12 mt-4">
+        <div class="col-4">
+          <div class="label">Sidebar</div>
+          <div class="tiny mt-3">Persistent · 240px</div>
+          <div class="tiny muted">Brand · Main · Plan · System</div>
+        </div>
+        <div class="col-4">
+          <div class="label">Topbar</div>
+          <div class="tiny mt-3">Page title · primary action</div>
+        </div>
+        <div class="col-4">
+          <div class="label">Content</div>
+          <div class="tiny mt-3">Cards on a 12-column grid</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <h2>Page anatomy</h2>
+      <div class="mt-4">
+        <div class="label">Topbar</div>
+        <div class="tiny muted mt-3">Title · version chip · actions</div>
+      </div>
+      <div class="mt-4">
+        <div class="label">Filters</div>
+        <div class="tiny muted mt-3">Search · tabs · select · chips</div>
+      </div>
+      <div class="mt-4">
+        <div class="label">List rows</div>
+        <div class="tiny muted mt-3">Stripe · icon · title · meta · amount · mode · link</div>
+      </div>
+      <div class="mt-4">
+        <div class="label">Footer actions</div>
+        <div class="tiny muted mt-3">Primary right · ghost left</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Accounts — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html" aria-current="page"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 09</div>
+        <h1>Accounts</h1>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="openModal('m-add-acc')">+ Add account</button>
+      </div>
+    </div>
+
+    <div class="grid-12">
+      <div class="card col-4">
+        <div class="label">Total balance</div>
+        <div class="hero-num mono mt-3"><span class="cur">BDT</span>1,82,350</div>
+        <div class="sub mt-3">5 accounts</div>
+      </div>
+      <div class="card col-4">
+        <div class="label">Included in net worth</div>
+        <div class="hero-num mono mt-3"><span class="cur">BDT</span>1,82,350</div>
+        <div class="sub mt-3">5 of 5</div>
+      </div>
+      <div class="card col-4">
+        <div class="label">Total debt</div>
+        <div class="hero-num mono mt-3"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+        <div class="sub mt-3">1 active liability</div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Cash &amp; bank</div>
+      </div>
+
+      <div class="data-row t-expense mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">City Bank ··· 4421</div><div class="meta">Checking · BDT</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>38,400</div>
+            <div class="mode">Available</div>
+          </div>
+          <a class="row-action tone-cta" href="account-detail.html">Open →</a>
+        </div>
+      </div>
+
+      <div class="data-row t-save mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Savings ··· 7780</div><div class="meta">Savings · BDT</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>78,000</div>
+            <div class="mode reserved">Reserved</div>
+          </div>
+          <a class="row-action tone-cta" href="account-detail.html">Open →</a>
+        </div>
+      </div>
+
+      <div class="data-row t-transfer mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Cash</div><div class="meta">Physical · BDT</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>2,000</div>
+            <div class="mode">Available</div>
+          </div>
+          <a class="row-action tone-cta" href="account-detail.html">Open →</a>
+        </div>
+      </div>
+
+      <div class="data-row t-transfer mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">bKash</div><div class="meta">Mobile wallet · BDT</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>3,950</div>
+            <div class="mode">Available</div>
+          </div>
+          <a class="row-action tone-cta" href="account-detail.html">Open →</a>
+        </div>
+      </div>
+
+      <div class="data-row t-transfer mt-3 excluded">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Nagad</div><div class="meta">Mobile wallet · excluded from net worth</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>0</div>
+            <div class="mode excluded">Excluded</div>
+          </div>
+          <span class="row-action" aria-hidden="true">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Debts</div>
+      </div>
+      <div class="data-row t-debt mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">⚠</div><div class="text"><div class="name">Personal loan · Brother</div><div class="meta">Opened Aug 1, 2026 · 0% interest</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount neg"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+            <div class="mode liability">Liability</div>
+          </div>
+          <a class="row-action tone-cta" href="debts.html">Open →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Receivables</div>
+        <div class="sub">Money you lent · not in net worth</div>
+      </div>
+      <div class="data-row t-lend mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">↑</div><div class="text"><div class="name">Rahim (friend)</div><div class="meta">Lent Aug 3, 2026</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>20,000</div>
+            <div class="mode receivable">Receivable</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="m-add-acc" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="acc-title">
+    <h2 id="acc-title">Add account</h2>
+    <div class="field">
+      <label id="acc-type-label">Type</label>
+      <div class="tabs mt-3" role="tablist" aria-labelledby="acc-type-label">
+        <button data-tab="bank" aria-selected="true" role="tab">Bank</button>
+        <button data-tab="cash" aria-selected="false" role="tab">Cash</button>
+        <button data-tab="wallet" aria-selected="false" role="tab">Wallet</button>
+      </div>
+    </div>
+    <div class="grid-12 mt-3">
+      <div class="col-12 field">
+        <label class="req" for="acc-name">Account name</label>
+        <input id="acc-name" class="input" placeholder="e.g. City Bank ··· 4421" required aria-required="true">
+      </div>
+      <div class="col-6 field">
+        <label for="acc-open">Opening balance</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="acc-open" class="input right mono" type="number" value="0" aria-label="Opening balance in BDT"></div>
+      </div>
+      <div class="col-6 field">
+        <label for="acc-cur">Currency</label>
+        <select id="acc-cur" class="input"><option>BDT · Taka</option><option>USD · Dollar</option></select>
+      </div>
+      <div class="col-12">
+        <label class="flex items-center gap-2" style="font-size:13px">
+          <input type="checkbox" checked aria-describedby="acc-include-help">
+          <span>Include in net worth</span>
+        </label>
+        <div id="acc-include-help" class="input-helper">Uncheck to track without affecting your total assets.</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Account added.', 'good'); closeModal('m-add-acc')">Add account</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

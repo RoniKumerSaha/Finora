@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html" aria-current="page"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 13</div>
+        <h1>Settings</h1>
+      </div>
+    </div>
+
+    <div class="tabs" data-tab-group role="tablist">
+      <button data-tab="profile" aria-selected="true" role="tab" data-tab-target="#s-profile">Profile</button>
+      <button data-tab="cats" aria-selected="false" role="tab" data-tab-target="#s-cats">Categories &amp; priorities</button>
+      <button data-tab="display" aria-selected="false" role="tab" data-tab-target="#s-display">Display</button>
+      <button data-tab="privacy" aria-selected="false" role="tab" data-tab-target="#s-privacy">Privacy &amp; lock</button>
+      <button data-tab="data" aria-selected="false" role="tab" data-tab-target="#s-data">Data</button>
+      <button data-tab="about" aria-selected="false" role="tab" data-tab-target="#s-about">About</button>
+    </div>
+
+    <div id="s-profile" class="card mt-4">
+      <div class="card-head"><div class="label">Profile</div></div>
+      <div class="grid-12 mt-4">
+        <div class="col-6 field">
+          <label>Display name</label>
+          <input class="input" value="Rahim">
+        </div>
+        <div class="col-6 field">
+          <label>Currency</label>
+          <select class="input"><option>BDT · Taka</option><option>USD · Dollar</option><option>INR · Rupee</option></select>
+        </div>
+        <div class="col-6 field">
+          <label>Month starts on</label>
+          <select class="input"><option>1st of month</option><option>Last working day</option></select>
+        </div>
+        <div class="col-6 field">
+          <label>Number format</label>
+          <select class="input"><option>Lakh grouping (1,00,000)</option><option>Western (100,000)</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="s-cats" class="card mt-4" hidden>
+      <div class="card-head"><div class="label">Expense categories</div><span class="tiny muted">Default · reorderable</span></div>
+      <div class="mt-4" id="expense-cat-list"></div>
+
+      <hr class="mt-6"/>
+      <div class="card-head"><div class="label">Income categories</div></div>
+      <div class="mt-4" id="income-cat-list"></div>
+
+      <hr class="mt-6"/>
+      <div class="card-head">
+        <div class="label">Planning priorities</div>
+        <span class="tiny muted">Top = highest priority for recommendations</span>
+      </div>
+      <p class="tiny muted mt-3">Recommendations consider these in order, along with your income, expenses, savings, and goals. The app never silently rewrites your allocations.</p>
+      <div class="mt-4" id="priority-list"></div>
+      <button class="btn ghost mt-3" onclick="resetPriorities()">Reset to recommended</button>
+    </div>
+
+    <div id="s-display" class="card mt-4" hidden>
+      <div class="card-head"><div class="label">Display</div></div>
+      <div class="field mt-4">
+        <label>Theme</label>
+        <div class="tabs mt-3" role="tablist">
+          <button aria-selected="true" onclick="setThemeTo('light')">Light</button>
+          <button aria-selected="false" onclick="setThemeTo('dark')">Dark</button>
+          <button aria-selected="false" onclick="setThemeTo('system')">System</button>
+        </div>
+      </div>
+      <div class="field mt-4">
+        <label>Density</label>
+        <div class="tabs mt-3" role="tablist">
+          <button aria-selected="true" onclick="togglePressed(this)">Comfortable</button>
+          <button aria-selected="false" onclick="togglePressed(this)">Compact</button>
+        </div>
+      </div>
+      <div class="field mt-4">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" checked>
+          <span>Reduce motion</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="s-privacy" class="card mt-4" hidden>
+      <div class="card-head"><div class="label">Privacy &amp; lock</div></div>
+      <div class="field mt-4">
+        <label class="flex items-center gap-2">
+          <input type="checkbox">
+          <span>App lock</span>
+        </label>
+      </div>
+      <div class="field mt-4">
+        <label>Auto-lock after</label>
+        <select class="input"><option>Immediately</option><option>1 minute</option><option>5 minutes</option><option>15 minutes</option></select>
+      </div>
+      <div class="field mt-4">
+        <label>Lock method</label>
+        <select class="input"><option>PIN</option><option>Biometric</option><option>PIN + Biometric</option></select>
+      </div>
+      <div class="input-helper mt-3">All financial data stays on this device.</div>
+    </div>
+
+    <div id="s-data" class="card mt-4" hidden>
+      <div class="card-head"><div class="label">Data</div></div>
+      <div class="grid-12 mt-4">
+        <div class="col-6">
+          <div class="label">Export</div>
+          <div class="flex gap-2 mt-3">
+            <button class="btn" onclick="toast('Downloading finance-2026-08-12.json')">JSON (full)</button>
+            <button class="btn" onclick="toast('Downloading transactions-2026-08-12.csv')">CSV (transactions)</button>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="label">Import</div>
+          <button class="btn mt-3" onclick="openModal('m-import')">Import backup</button>
+        </div>
+      </div>
+      <hr class="mt-6"/>
+      <div class="label">Delete all data</div>
+      <div class="tiny mt-3">Permanently removes every transaction, account, goal, plan, and investment.</div>
+      <button class="btn danger mt-3" onclick="openModal('m-delete')">Delete all data…</button>
+    </div>
+
+    <div id="s-about" class="card mt-4" hidden>
+      <div class="card-head"><div class="label">About</div></div>
+      <div class="tiny mt-3">Finora · V1 MVP</div>
+      <div class="tiny mt-3">Build 2026-08-12 · local-first, no auth</div>
+      <div class="tiny mt-3">All data stored in your browser — you own it.</div>
+    </div>
+  </main>
+</div>
+
+<div id="m-import" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="imp-title">
+    <h2 id="imp-title">Importing older version</h2>
+    <p class="modal-sub">This file was created with Version 0.3 — older than V1 (2026-08-12).</p>
+    <div class="input-helper mt-3">
+      Your current data will be backed up to <code>backup-before-import-2026-08-12.json</code> before merge.
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Importing… backup created.', 'good'); closeModal('m-import')">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-delete" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="del-title">
+    <h2 id="del-title">Delete all data?</h2>
+    <p class="modal-sub">This permanently removes everything. There is no undo.</p>
+    <div class="field mt-4">
+      <label>Type <strong>DELETE</strong> to confirm</label>
+      <input class="input" placeholder="DELETE">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn danger" onclick="toast('All data deleted.', 'bad'); closeModal('m-delete')">Delete everything</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  function setThemeTo(mode) {
+    if (mode === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.removeItem('theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', mode);
+      localStorage.setItem('theme', mode);
+    }
+  }
+  function togglePressed(btn) {
+    const group = btn.parentElement;
+    group.querySelectorAll('.btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+  }
+
+  // ====== Categories & priorities ======
+  const expenseCategories = [
+    { id: 'food',       name: 'Food',             color: 'var(--data-expense)' },
+    { id: 'transport',  name: 'Transport',        color: 'var(--accent)' },
+    { id: 'shopping',   name: 'Shopping',         color: 'var(--data-lend)' },
+    { id: 'housing',    name: 'Housing',          color: 'var(--data-saving)' },
+    { id: 'bills',      name: 'Bills & utilities',color: 'var(--data-invest)' },
+    { id: 'health',     name: 'Health',           color: 'var(--data-borrow)' },
+    { id: 'education',  name: 'Education',        color: 'var(--data-transfer)' },
+    { id: 'entertain',  name: 'Entertainment',    color: 'var(--data-debt)' },
+    { id: 'family',     name: 'Family',           color: 'var(--warn)' },
+    { id: 'other',      name: 'Other',            color: 'var(--ink-3)' }
+  ];
+  const incomeCategories = [
+    { id: 'salary',     name: 'Salary',           color: 'var(--good)' },
+    { id: 'freelance',  name: 'Freelance',        color: 'var(--accent)' },
+    { id: 'business',   name: 'Business',         color: 'var(--data-invest)' },
+    { id: 'gift',       name: 'Gift',             color: 'var(--data-lend)' },
+    { id: 'loanback',   name: 'Loan repayment',   color: 'var(--data-saving)' },
+    { id: 'other',      name: 'Other',            color: 'var(--ink-3)' }
+  ];
+  const defaultPriorities = [
+    { id: 'goal',     name: 'Reach a savings goal',           hint: 'Auto-funds your highest-priority goal.' },
+    { id: 'debt',     name: 'Reduce debt',                   hint: 'Directs surplus toward outstanding debt.' },
+    { id: 'savings',  name: 'Build savings',                 hint: 'General-purpose savings allocation.' },
+    { id: 'invest',   name: 'Invest',                        hint: 'Feeds DPS / FDR / investment contributions.' },
+    { id: 'cash',     name: 'Maintain available cash',       hint: 'Keeps a cash buffer; avoids overcommitting.' }
+  ];
+  let priorities = [...defaultPriorities];
+
+  function renderCats() {
+    const expHost = document.getElementById('expense-cat-list');
+    const incHost = document.getElementById('income-cat-list');
+    function row(c, parent) {
+      const el = document.createElement('div');
+      el.className = 'data-row t-transfer';
+      el.style.marginTop = '4px';
+      el.innerHTML = `
+        <div class="stripe" style="background:${c.color}"></div>
+        <div class="body"><div class="icon">●</div>
+          <div class="text"><div class="name">${c.name}</div><div class="meta">Active</div></div>
+        </div>
+        <div class="right">
+          <button class="btn ghost sm" aria-label="Rename ${c.name}">Rename</button>
+          <button class="btn sm" aria-label="Hide ${c.name}">Hide</button>
+        </div>`;
+      parent.appendChild(el);
+    }
+    expenseCategories.forEach(c => row(c, expHost));
+    incomeCategories.forEach(c => row(c, incHost));
+  }
+
+  function renderPriorities() {
+    const host = document.getElementById('priority-list');
+    host.innerHTML = '';
+    priorities.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'data-row';
+      row.style.marginTop = '4px';
+      row.dataset.idx = i;
+      row.innerHTML = `
+        <div class="stripe"></div>
+        <div class="body">
+          <div class="icon-chip" style="background:var(--surface-2);color:var(--ink-2)">${i + 1}</div>
+          <div class="text">
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.hint}</div>
+          </div>
+        </div>
+        <div class="right" style="display:flex;gap:4px;align-items:center">
+          <button class="btn ghost sm" ${i === 0 ? 'disabled' : ''} aria-label="Move up" onclick="movePriority(${i}, -1)">▲</button>
+          <button class="btn ghost sm" ${i === priorities.length - 1 ? 'disabled' : ''} aria-label="Move down" onclick="movePriority(${i}, +1)">▼</button>
+        </div>`;
+      host.appendChild(row);
+    });
+  }
+
+  function movePriority(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= priorities.length) return;
+    [priorities[i], priorities[j]] = [priorities[j], priorities[i]];
+    renderPriorities();
+    window.toast('Priorities updated.', 'good');
+  }
+
+  function resetPriorities() {
+    priorities = [...defaultPriorities];
+    renderPriorities();
+    window.toast('Priorities reset to recommended.', 'good');
+  }
+
+  renderCats();
+  renderPriorities();
+</script>
+</body>
+</html>

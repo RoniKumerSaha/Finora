@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>City Bank ···· 4421 — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html" aria-current="page"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 22</div>
+        <h1>City Bank ···· 4421</h1>
+        <div class="sub mt-3"><a href="accounts.html">← All accounts</a></div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="openModal('m-edit')">Edit</button>
+        <button class="btn primary" onclick="location.href='transaction-add.html'">+ Record transaction</button>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="card">
+      <div class="hero-triptych">
+        <div class="col">
+          <div class="label">Current balance</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>38,400</div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+        </div>
+        <div class="col">
+          <div class="label">Opening balance</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>30,000</div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+          <div class="sub mt-3">Set Aug 1, 2026</div>
+        </div>
+        <div class="col">
+          <div class="label">Transactions</div>
+          <div class="hero-num mono mt-3">58</div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Total</span></div>
+          <div class="sub mt-3">42 in / 16 out</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILS -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Details</div></div>
+      <div class="grid-12 mt-4">
+        <div class="col-6">
+          <div class="label">Type</div>
+          <div class="mt-3">Checking</div>
+        </div>
+        <div class="col-6">
+          <div class="label">Currency</div>
+          <div class="mt-3">BDT · Taka</div>
+        </div>
+        <div class="col-6 mt-4">
+          <div class="label">In net worth</div>
+          <div class="mt-3">Yes</div>
+        </div>
+        <div class="col-6 mt-4">
+          <div class="label">Last activity</div>
+          <div class="mt-3">Aug 12, 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BALANCE HISTORY -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Balance · last 6 months</div>
+      </div>
+      <svg viewBox="0 0 600 180" width="100%" height="180" style="margin-top:12px" role="img" aria-label="Balance over 6 months: climbing from 30,000 to 38,400">
+        <title>Balance · last 6 months</title>
+        <defs>
+          <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".2"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient>
+        </defs>
+        <path d="M0,150 L100,140 L200,120 L300,90 L400,70 L500,50 L600,30 L600,180 L0,180 Z" fill="url(#bg)"/>
+        <path d="M0,150 L100,140 L200,120 L300,90 L400,70 L500,50 L600,30" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <g class="tiny muted" fill="currentColor">
+          <text x="0" y="175">Mar</text>
+          <text x="100" y="175">Apr</text>
+          <text x="200" y="175">May</text>
+          <text x="300" y="175">Jun</text>
+          <text x="400" y="175">Jul</text>
+          <text x="500" y="175">Aug</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- RECENT TRANSACTIONS -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Recent transactions</div>
+        <a class="more" href="transactions.html">View all →</a>
+      </div>
+      <div class="data-row t-income mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">৳</div><div class="text"><div class="name">Salary</div><div class="meta">Aug 5</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount pos"><span class="cur">BDT</span>60,000</div>
+            <div class="mode">Actual</div>
+          </div>
+        </div>
+      </div>
+      <div class="data-row t-save mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Goal: Laptop</div><div class="meta">Aug 5</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>8,000</div>
+            <div class="mode">Actual</div>
+          </div>
+        </div>
+      </div>
+      <div class="data-row t-debt mt-3">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">⚠</div><div class="text"><div class="name">Personal loan repayment</div><div class="meta">Aug 1</div></div></div>
+        <div class="right">
+          <div class="right-meta">
+            <div class="amount"><span class="cur">BDT</span>5,000</div>
+            <div class="mode">Actual</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label danger">Danger zone</div></div>
+      <div class="flex between items-center mt-4">
+        <div>
+          <div class="strong">Close account</div>
+          <div class="tiny muted">Hide from net worth. Past transactions stay in history.</div>
+        </div>
+        <button class="btn danger" onclick="openModal('m-close')">Close account…</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="m-edit" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <h2 id="edit-title">Edit account</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-12 field">
+        <label>Account name</label>
+        <input class="input" value="City Bank ···· 4421">
+      </div>
+      <div class="col-6 field">
+        <label>Type</label>
+        <select class="input"><option>Checking</option><option>Savings</option><option>Cash</option><option>Mobile wallet</option></select>
+      </div>
+      <div class="col-6 field">
+        <label>Currency</label>
+        <select class="input"><option>BDT · Taka</option><option>USD · Dollar</option></select>
+      </div>
+      <div class="col-12">
+        <label class="flex items-center gap-2" style="font-size:13px">
+          <input type="checkbox" checked>
+          <span>Include in net worth</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Account updated.', 'good'); closeModal('m-edit')">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-close" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="close-title">
+    <h2 id="close-title">Close this account?</h2>
+    <p class="modal-sub">It will be hidden from net worth and active lists. Past transactions remain in history.</p>
+    <div class="field mt-4">
+      <label>Type <strong>CLOSE</strong> to confirm</label>
+      <input class="input" placeholder="CLOSE">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn danger" onclick="toast('Account closed.', 'bad'); closeModal('m-close')">Close account</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>

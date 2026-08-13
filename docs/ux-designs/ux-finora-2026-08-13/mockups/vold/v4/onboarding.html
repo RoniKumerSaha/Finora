@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Welcome — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+
+<div class="onboarding">
+  <section id="ob-1" class="onb-card">
+    <div class="brand" style="justify-content:center; padding:0; margin-bottom:24px; gap:12px">
+      <span class="logo-mark-a2" style="width:48px; height:48px"><i></i></span>
+    </div>
+    <h1 style="margin-top:0">Finora</h1>
+    <p class="muted" style="max-width:480px; margin: 12px auto 0;">
+      A local-first finance app for Bangladesh.
+    </p>
+    <p class="tiny mt-3 muted">
+      <a href="logo-preview.html">→ Logo design system · see all variants</a>
+    </p>
+    <div class="grid-12 mt-6" style="gap:12px">
+      <div class="col-4">
+        <div class="card">
+          <div class="ico-xl mb-3" aria-hidden="true">▦</div>
+          <strong>Dashboard</strong>
+          <div class="tiny mt-3">Net worth and this month at a glance.</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card">
+          <div class="ico-xl mb-3" aria-hidden="true">⇄</div>
+          <strong>8 transaction types</strong>
+          <div class="tiny mt-3">Income, expense, transfer, save, borrow, repay, lend, receive.</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card">
+          <div class="ico-xl mb-3" aria-hidden="true">▣</div>
+          <strong>Monthly plan</strong>
+          <div class="tiny mt-3">Allocate surplus — flagged when under, blocked when over.</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn primary mt-6" onclick="obNext(2)">Get started →</button>
+    <div class="tiny mt-3 muted">No account needed · Data stays on this device</div>
+  </section>
+
+  <section id="ob-2" class="onb-card" hidden>
+    <div class="tiny">Step 2 of 4</div>
+    <h2 class="mt-3">Add an account</h2>
+    <p class="muted">Start with one — a bank, wallet, or cash.</p>
+    <div class="field mt-6" style="max-width:480px; margin: 24px auto 0;">
+      <label>Account name</label>
+      <input class="input" value="City Bank ··· 4421">
+    </div>
+    <div class="field mt-4" style="max-width:480px; margin: 0 auto;">
+      <label>Opening balance</label>
+      <div class="input-group">
+        <span class="prefix" aria-hidden="true">BDT</span>
+        <input class="input right mono" type="number" value="38400">
+      </div>
+    </div>
+    <div class="flex gap-2 mt-6" style="justify-content:center">
+      <button class="btn ghost" onclick="obNext(1)">Back</button>
+      <button class="btn primary" onclick="obNext(3)">Next →</button>
+    </div>
+  </section>
+
+  <section id="ob-3" class="onb-card" hidden>
+    <div class="tiny">Step 3 of 4</div>
+    <h2 class="mt-3">Choose format</h2>
+    <p class="muted">How would you like amounts to appear?</p>
+    <div class="grid-12 mt-6" style="gap:12px; max-width:600px; margin: 24px auto 0;">
+      <div class="col-6">
+        <button class="card" style="width:100%; text-align:left; cursor:pointer; border: 2px solid var(--accent)" aria-pressed="true" onclick="selectFormat(this)">
+          <strong>BDT · Lakh grouping</strong>
+          <div class="md-num mono mt-3"><span class="cur">BDT</span>1,42,350</div>
+          <div class="tiny mt-3 muted">Bangladesh, India, Nepal</div>
+        </button>
+      </div>
+      <div class="col-6">
+        <button class="card" style="width:100%; text-align:left; cursor:pointer" aria-pressed="false" onclick="selectFormat(this)">
+          <strong>BDT · Western</strong>
+          <div class="md-num mono mt-3"><span class="cur">BDT</span>142,350</div>
+          <div class="tiny mt-3 muted">International</div>
+        </button>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-6" style="justify-content:center">
+      <button class="btn ghost" onclick="obNext(2)">Back</button>
+      <button class="btn primary" onclick="obNext(4)">Next →</button>
+    </div>
+  </section>
+
+  <section id="ob-4" class="onb-card" hidden>
+    <div class="tiny">Step 4 of 4</div>
+    <h2 class="mt-3">You're all set</h2>
+    <ul class="muted" style="text-align:left; max-width:480px; margin: 24px auto 0; line-height: 1.8; padding-left: 20px;">
+      <li>Data stays on this device — no accounts, no servers.</li>
+      <li>Export everything as JSON anytime.</li>
+      <li>Goals are suggestions, not obligations.</li>
+      <li>Surplus ≠ savings.</li>
+    </ul>
+    <div class="flex gap-2 mt-6" style="justify-content:center">
+      <button class="btn ghost" onclick="obNext(3)">Back</button>
+      <a class="btn primary" href="dashboard.html">Open dashboard →</a>
+    </div>
+  </section>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  function obNext(n) {
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('ob-' + i).hidden = (i !== n);
+    }
+  }
+  function selectFormat(el) {
+    document.querySelectorAll('.onb-card .card').forEach(c => {
+      c.style.border = '1px solid var(--line)';
+      c.setAttribute('aria-pressed', 'false');
+    });
+    el.style.border = '2px solid var(--accent)';
+    el.setAttribute('aria-pressed', 'true');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Add transaction — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html" aria-current="page"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 23</div>
+        <h1>Add transaction</h1>
+        <div class="sub mt-3"><a href="transactions.html">← All transactions</a></div>
+      </div>
+    </div>
+
+    <!-- TYPE SELECTOR -->
+    <div class="card">
+      <div class="card-head"><div class="label">Type · 8 modes per PRD §9.2</div></div>
+      <div class="tabs mt-3" role="tablist">
+        <button class="tab active" role="tab" aria-selected="true" data-type="expense">Expense</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="income">Income</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="transfer">Transfer</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="save">Savings</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="debt">Debt repayment</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="borrow">Borrowed</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="lend">Money lent</button>
+        <button class="tab" role="tab" aria-selected="false" data-type="repay-recv">Loan repay. received</button>
+      </div>
+      <div class="tiny muted mt-3">Tabs wrap on narrow viewports. Each type surfaces different source/destination accounts and ledger side-effects.</div>
+    </div>
+
+    <!-- FORM -->
+    <div class="card mt-4">
+      <div class="grid-12">
+        <div class="col-6 field">
+          <label for="ta-amount">Amount</label>
+          <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="ta-amount" class="input right mono" type="number" placeholder="0"></div>
+        </div>
+        <div class="col-6 field">
+          <label for="ta-date">Date</label>
+          <input id="ta-date" class="input" type="date" value="2026-08-12">
+        </div>
+        <div class="col-12 field">
+          <label for="ta-merchant">Merchant / payee</label>
+          <input id="ta-merchant" class="input" placeholder="e.g. Agora, BRAC Bank, Salary">
+        </div>
+        <div class="col-6 field">
+          <label for="ta-category">Category</label>
+          <select id="ta-category" class="input">
+            <option>Groceries</option>
+            <option>Dining</option>
+            <option>Transport</option>
+            <option>Rent</option>
+            <option>Utilities</option>
+            <option>Health</option>
+            <option>Entertainment</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="col-6 field">
+          <label for="ta-account">Account</label>
+          <select id="ta-account" class="input">
+            <option>City Bank ···· 4421</option>
+            <option>Savings</option>
+            <option>Cash</option>
+            <option>bKash</option>
+          </select>
+        </div>
+        <div class="col-12 field">
+          <label for="ta-note">Note (optional)</label>
+          <textarea id="ta-note" class="input" rows="3" placeholder="Anything worth remembering"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE-DEPENDENT FIELDS — visibility toggles by .tabs active tab via app.js -->
+    <div class="card mt-4" id="ta-transfer">
+      <div class="card-head"><div class="label">Transfer</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-6 field">
+          <label for="ta-from">From</label>
+          <select id="ta-from" class="input"><option>City Bank ···· 4421</option><option>Cash</option><option>bKash</option></select>
+        </div>
+        <div class="col-6 field">
+          <label for="ta-to">To</label>
+          <select id="ta-to" class="input"><option>Savings</option><option>City Bank ···· 4421</option><option>Cash</option></select>
+        </div>
+        <div class="col-12"><div class="input-helper">Transfer does not affect Surplus or Net Worth — only moves liquid balance across accounts.</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="ta-save" hidden>
+      <div class="card-head"><div class="label">Savings / invest contribution</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-6 field">
+          <label for="ta-goal">Linked goal</label>
+          <select id="ta-goal" class="input"><option>Laptop — Goal</option><option>Emergency fund</option><option>Vacation (achieved)</option></select>
+        </div>
+        <div class="col-6 field">
+          <label for="ta-via">Via</label>
+          <select id="ta-via" class="input"><option>City Bank ···· 4421</option><option>Cash</option></select>
+        </div>
+        <div class="col-12"><div class="input-helper">Reduces Available-to-Plan and grows the linked goal balance. Does not reduce Surplus.</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="ta-debt" hidden>
+      <div class="card-head"><div class="label">Debt repayment</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-12 field">
+          <label for="ta-contract">Debt contract</label>
+          <select id="ta-contract" class="input"><option>Personal loan · BRAC · 36 mo</option><option>Credit card · EBL</option><option>Family loan · Brother</option></select>
+        </div>
+        <div class="col-12"><div class="input-helper">Lowers outstanding principal. Auto-creates a payment entry in the debt ledger.</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="ta-borrow" hidden>
+      <div class="card-head"><div class="label">Borrowed money</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-6 field">
+          <label for="ta-lender">Lender</label>
+          <input id="ta-lender" class="input" placeholder="e.g. Brother, BRAC Bank">
+        </div>
+        <div class="col-6 field">
+          <label for="ta-repay-by">Expected repay by</label>
+          <input id="ta-repay-by" class="input" type="date">
+        </div>
+        <div class="col-12"><div class="input-helper">Increases Liability and destination account balance. Plan a repayment in the Monthly Plan to lower it.</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="ta-lend" hidden>
+      <div class="card-head"><div class="label">Money lent</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-6 field">
+          <label for="ta-borrower">Borrower</label>
+          <input id="ta-borrower" class="input" placeholder="e.g. Rahim, Colleague">
+        </div>
+        <div class="col-6 field">
+          <label for="ta-collect-by">Expected collect by</label>
+          <input id="ta-collect-by" class="input" type="date">
+        </div>
+        <div class="col-12"><div class="input-helper">Decreases source account and creates a Receivable. Receivable contributes to Net Worth but not to liquid balance.</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="ta-repay-recv" hidden>
+      <div class="card-head"><div class="label">Loan repayment received</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-12 field">
+          <label for="ta-receivable">Reduce receivable</label>
+          <select id="ta-receivable" class="input"><option>Rahim — 20,000 outstanding</option><option>Colleague — 5,000 outstanding</option></select>
+        </div>
+        <div class="col-12"><div class="input-helper">Adds to selected deposit account and lowers the corresponding receivable by the same amount.</div></div>
+      </div>
+    </div>
+
+    <!-- HELPERS -->
+    <div class="card mt-4">
+      <div class="card-head"><div class="label">Quick shortcuts</div></div>
+      <div class="grid-12 mt-3">
+        <div class="col-4">
+          <button class="btn ghost" style="width:100%">📎 Attach receipt</button>
+        </div>
+        <div class="col-4">
+          <button class="btn ghost" style="width:100%">🔁 Make recurring</button>
+        </div>
+        <div class="col-4">
+          <button class="btn ghost" style="width:100%">📋 Paste from SMS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex between mt-4">
+      <button class="btn ghost" onclick="location.href='transactions.html'">Cancel</button>
+      <div class="flex gap-2">
+        <button class="btn" onclick="toast('Saved as draft.', 'good'); location.href='transactions.html'">Save draft</button>
+        <button class="btn primary" onclick="toast('Transaction added.', 'good'); location.href='transactions.html'">Save transaction</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  // Map type → dependent card id. Cards missing from the map have no extra form (income/expense use the base form).
+  const TYPE_PANELS = {
+    transfer: 'ta-transfer',
+    save: 'ta-save',
+    debt: 'ta-debt',
+    borrow: 'ta-borrow',
+    lend: 'ta-lend',
+    'repay-recv': 'ta-repay-recv'
+  };
+  function setTypePanel(type) {
+    Object.values(TYPE_PANELS).forEach(id => document.getElementById(id).hidden = true);
+    const id = TYPE_PANELS[type];
+    if (id) document.getElementById(id).hidden = false;
+  }
+  document.querySelectorAll('.tabs [data-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs [data-type]').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      setTypePanel(btn.dataset.type);
+    });
+  });
+  setTypePanel('expense');
+</script>
+</body>
+</html>

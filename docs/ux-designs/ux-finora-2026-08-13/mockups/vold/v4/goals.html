@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Goals — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html" aria-current="page"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 07</div>
+        <h1>Goals</h1>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="openModal('m-add-goal')">+ New goal</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex gap-2 items-center" style="flex-wrap:wrap">
+        <span class="label">Filter:</span>
+        <button class="btn sm" data-chip aria-pressed="true" onclick="filterGoals('all', this)">All (4)</button>
+        <button class="btn sm" data-chip aria-pressed="false" onclick="filterGoals('active', this)">Active (2)</button>
+        <button class="btn sm" data-chip aria-pressed="false" onclick="filterGoals('achieved', this)">Achieved (1)</button>
+        <button class="btn sm" data-chip aria-pressed="false" onclick="filterGoals('completed', this)">Completed (1)</button>
+        <button class="btn sm" data-chip aria-pressed="false" onclick="filterGoals('expired', this)" disabled style="opacity:0.45;cursor:not-allowed">Expired (0)</button>
+      </div>
+    </div>
+
+    <div class="grid-12 mt-4" id="goal-grid">
+
+      <div class="card col-6" data-goal data-state="active">
+        <div class="flex between items-center">
+          <div class="h3">Laptop</div>
+          <span class="pill accent"><span class="dot"></span>Active</span>
+        </div>
+        <div class="tiny mt-3">By Dec 2026</div>
+        <div class="pace-badge mt-3">
+          <span class="pace-label">Required pace</span>
+          <span class="pace-value"><span class="cur">BDT</span>3,200<span class="unit">/mo</span></span>
+        </div>
+        <div class="progress tall accent mt-3" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"><i style="width:62%"></i></div>
+        <div class="flex between mt-3">
+          <span class="mono sm-num"><span class="cur">BDT</span>62,000 / 1,00,000</span>
+          <span class="mono tiny">62%</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a class="btn sm" href="goal-detail.html">Open</a>
+          <button class="btn sm ghost">+ Contribute</button>
+        </div>
+      </div>
+
+      <div class="card col-6" data-goal data-state="active">
+        <div class="flex between items-center">
+          <div class="h3">Emergency fund</div>
+          <span class="pill accent"><span class="dot"></span>Active</span>
+        </div>
+        <div class="tiny mt-3">By Jun 2027</div>
+        <div class="pace-badge mt-3">
+          <span class="pace-label">Required pace</span>
+          <span class="pace-value"><span class="cur">BDT</span>22,500<span class="unit">/mo</span></span>
+        </div>
+        <div class="progress tall mt-3" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"><i style="width:40%"></i></div>
+        <div class="flex between mt-3">
+          <span class="mono sm-num"><span class="cur">BDT</span>1,20,000 / 3,00,000</span>
+          <span class="mono tiny">40%</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a class="btn sm" href="goal-detail.html">Open</a>
+          <button class="btn sm ghost">+ Contribute</button>
+        </div>
+      </div>
+
+      <div class="card col-6" data-goal data-state="achieved">
+        <div class="flex between items-center">
+          <div class="h3">Vacation</div>
+          <span class="pill good"><span class="dot"></span>Achieved Early</span>
+        </div>
+        <div class="tiny mt-3">Target Sep 2026 · reached Aug 8</div>
+        <div class="pace-badge good mt-3">
+          <span class="pace-label">Goal reached</span>
+          <span class="pace-value">8 days early</span>
+        </div>
+        <div class="progress tall good mt-3" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"><i style="width:100%"></i></div>
+        <div class="flex between mt-3">
+          <span class="mono sm-num"><span class="cur">BDT</span>50,000 / 50,000</span>
+          <span class="mono tiny">100%</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a class="btn sm" href="goal-detail.html">Open</a>
+          <button class="btn sm ghost">Withdraw</button>
+        </div>
+      </div>
+
+      <div class="card col-6" data-goal data-state="completed">
+        <div class="flex between items-center">
+          <div class="h3">Phone upgrade</div>
+          <span class="pill info"><span class="dot"></span>Completed</span>
+        </div>
+        <div class="tiny mt-3">Closed Jul 28, 2026</div>
+        <div class="progress tall info mt-3" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"><i style="width:100%"></i></div>
+        <div class="flex between mt-3">
+          <span class="mono sm-num"><span class="cur">BDT</span>80,000 / 80,000</span>
+          <span class="mono tiny">100%</span>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a class="btn sm" href="goal-detail.html">Open</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="empty-state" hidden>
+      <div class="empty">
+        <div class="circle">◎</div>
+        <div class="title">No goals yet</div>
+        <div class="sub">Goals help you save for things that matter.</div>
+        <button class="btn primary mt-3" onclick="openModal('m-add-goal')">+ Add your first goal</button>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Demo · Expired dialog</div>
+      </div>
+      <button class="btn mt-3" onclick="openModal('m-expired')">Show Expired dialog</button>
+    </div>
+  </main>
+</div>
+
+<div id="m-add-goal" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="g-title">
+    <h2 id="g-title">New goal</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-12 field">
+        <label>Goal name</label>
+        <input class="input" value="Laptop" required>
+      </div>
+      <div class="col-6 field">
+        <label>Target amount</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="100000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Target date</label>
+        <input class="input" type="date" value="2026-12-31">
+      </div>
+      <div class="col-12 field">
+        <label>Linked account</label>
+        <select class="input"><option>City Bank</option><option>Savings</option><option>DPS — Bank Asia</option></select>
+      </div>
+      <div class="col-12">
+        <div class="input-helper">Saving <span class="cur">BDT</span>8,000<span class="unit">/mo</span> reaches this on Dec 28, 2026 — 3 days early.</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Goal created.', 'good'); closeModal('m-add-goal')">Create goal</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-expired" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ex-title">
+    <h2 id="ex-title">Vacation goal expired</h2>
+    <p class="modal-sub">Your target date passed on Sep 30, 2026.</p>
+    <div class="input-helper mt-3">You saved <span class="cur">BDT</span>36,000 of <span class="cur">BDT</span>50,000. What would you like to do?</div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Decide later</button>
+      <button class="btn" onclick="toast('Target lowered.', 'good'); closeModal('m-expired')">Lower target to <span class="cur">BDT</span>36,000</button>
+      <button class="btn primary" onclick="toast('Date extended.', 'good'); closeModal('m-expired')">Extend by 2 months</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  function filterGoals(state, btn) {
+    document.querySelectorAll('[data-chip]').forEach(c => c.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+    document.querySelectorAll('[data-goal]').forEach(g => {
+      const s = g.dataset.state;
+      g.hidden = !(state === 'all' || s === state);
+    });
+  }
+</script>
+</body>
+</html>

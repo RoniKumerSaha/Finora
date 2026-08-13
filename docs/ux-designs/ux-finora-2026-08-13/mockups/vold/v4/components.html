@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components — Design System</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<main class="content">
+  <a href="index.html" class="sub">← All mockups</a>
+  <div class="topbar mt-4">
+    <div>
+      <div class="title">v4 · 00</div>
+      <h1>Design system</h1>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" onclick="toggleTheme()">◐ Theme</button>
+    </div>
+  </div>
+
+  <p class="muted" style="max-width:640px;">
+    Every token, component, and semantic data color.
+  </p>
+
+  <section class="card mt-6">
+    <h2>Color tokens</h2>
+    <p class="sub">Three distinct surfaces — <strong>bg</strong> = canvas, <strong>surface</strong> = card, <strong>surface-2</strong> = inset.</p>
+    <div class="grid-12 mt-4">
+      <div class="col-3"><div style="background:var(--bg); border:1px solid var(--line); height:80px; border-radius:10px"></div><div class="tiny mt-3">--bg</div><div class="mono tiny muted">#f4f4f5</div></div>
+      <div class="col-3"><div style="background:var(--surface); border:1px solid var(--line); height:80px; border-radius:10px"></div><div class="tiny mt-3">--surface</div><div class="mono tiny muted">#ffffff</div></div>
+      <div class="col-3"><div style="background:var(--surface-2); border:1px solid var(--line); height:80px; border-radius:10px"></div><div class="tiny mt-3">--surface-2</div><div class="mono tiny muted">#f1f1f2</div></div>
+      <div class="col-3"><div style="background:var(--ink); height:80px; border-radius:10px"></div><div class="tiny mt-3">--ink</div><div class="mono tiny muted">#09090b</div></div>
+      <div class="col-3"><div style="background:var(--accent); height:60px; border-radius:10px"></div><div class="tiny mt-3">--accent</div><div class="mono tiny muted">#4f46e5</div></div>
+      <div class="col-3"><div style="background:var(--planned); height:60px; border-radius:10px"></div><div class="tiny mt-3">--planned</div><div class="mono tiny muted">#0d9488</div></div>
+      <div class="col-3"><div style="background:var(--line); height:60px; border-radius:10px"></div><div class="tiny mt-3">--line</div><div class="mono tiny muted">hairline</div></div>
+      <div class="col-3"><div style="background:var(--good); height:60px; border-radius:10px"></div><div class="tiny mt-3">--good</div><div class="mono tiny muted">#059669</div></div>
+      <div class="col-3"><div style="background:var(--warn); height:60px; border-radius:10px"></div><div class="tiny mt-3">--warn</div><div class="mono tiny muted">#d97706</div></div>
+      <div class="col-3"><div style="background:var(--bad); height:60px; border-radius:10px"></div><div class="tiny mt-3">--bad</div><div class="mono tiny muted">#dc2626</div></div>
+      <div class="col-3"><div style="background:var(--info); height:60px; border-radius:10px"></div><div class="tiny mt-3">--info</div><div class="mono tiny muted">#2563eb</div></div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Semantic data colors</h2>
+    <p class="sub">Each data type has a hue + a soft-tint background.</p>
+    <div class="grid-12 mt-4">
+      <div class="col-4 data-row t-income" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">৳</div><div class="text"><div class="name">Income</div><div class="meta">--data-income</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>60,000</div></div></div>
+      </div>
+      <div class="col-4 data-row t-expense" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">−</div><div class="text"><div class="name">Expense</div><div class="meta">--data-expense</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>12,400</div></div></div>
+      </div>
+      <div class="col-4 data-row t-save" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Saving</div><div class="meta">--data-saving</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>10,000</div></div></div>
+      </div>
+      <div class="col-4 data-row t-debt" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">⚠</div><div class="text"><div class="name">Debt</div><div class="meta">--data-debt</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount neg"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div></div></div>
+      </div>
+      <div class="col-4 data-row t-invest" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">◆</div><div class="text"><div class="name">Investment</div><div class="meta">--data-invest</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>65,950</div></div></div>
+      </div>
+      <div class="col-4 data-row t-transfer" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">⇄</div><div class="text"><div class="name">Transfer</div><div class="meta">--data-transfer</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>5,000</div></div></div>
+      </div>
+      <div class="col-4 data-row t-borrow" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">↓</div><div class="text"><div class="name">Borrowed</div><div class="meta">--data-borrow</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>50,000</div></div></div>
+      </div>
+      <div class="col-4 data-row t-lend" style="border:1px solid var(--line);">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">↑</div><div class="text"><div class="name">Lent</div><div class="meta">--data-lend</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>20,000</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Typography</h2>
+    <div class="hero-num mt-4 mono"><span class="cur">BDT</span>1,42,350</div>
+    <div class="sub mt-3">--hero-num · 48px</div>
+    <div class="lg-num mt-4 mono"><span class="cur">BDT</span>60,000</div>
+    <div class="sub mt-3">--lg-num · 32px</div>
+    <div class="md-num mt-4 mono"><span class="cur">BDT</span>8,000</div>
+    <div class="sub mt-3">--md-num · 22px</div>
+    <div class="sm-num mt-4 mono"><span class="cur">BDT</span>250</div>
+    <div class="sub mt-3">--sm-num · 16px</div>
+    <div class="body mt-4">Body text — 14px.</div>
+    <div class="label mt-4">UPPERCASE LABEL</div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Buttons</h2>
+    <div class="flex gap-3 items-center mt-4">
+      <button class="btn primary">Primary</button>
+      <button class="btn">Secondary</button>
+      <button class="btn ghost">Ghost</button>
+      <button class="btn danger">Danger</button>
+      <button class="btn icon">⚙</button>
+      <button class="btn sm">Small</button>
+      <button class="btn" disabled>Disabled</button>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Pills &amp; status</h2>
+    <p class="sub">Pills encode state (active, achieved, overdue). Mode-pills encode <strong>source of truth</strong>.</p>
+
+    <div class="label mt-4">State pills</div>
+    <div class="flex gap-2 items-center mt-3" style="flex-wrap:wrap;">
+      <span class="pill"><span class="dot"></span> Default</span>
+      <span class="pill good"><span class="dot"></span> Achieved</span>
+      <span class="pill warn"><span class="dot"></span> Expired</span>
+      <span class="pill bad"><span class="dot"></span> Overdue</span>
+      <span class="pill info"><span class="dot"></span> Completed</span>
+      <span class="pill accent"><span class="dot"></span> Active</span>
+    </div>
+
+    <div class="label mt-6">Mode pills · source of truth</div>
+    <p class="tiny muted mt-3">Each mode has a unique hue — no two modes are confusable. <span class="mode-pill actual">Actual</span> = recorded fact · <span class="mode-pill projected">Projected</span> = forecast · <span class="mode-pill planned">Planned</span> = user intent · <span class="mode-pill reserved">Reserved</span> = set aside · <span class="mode-pill liability">Liability</span> = owed out · <span class="mode-pill receivable">Receivable</span> = owed in.</p>
+    <div class="mt-4">
+      <div class="md-num mono"><span class="cur">BDT</span>1,42,350</div>
+      <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+      <div class="md-num mono mt-3"><span class="cur">BDT</span>8,00,000</div>
+      <div class="hero-tile-head"><span class="mode-pill projected">Projected</span></div>
+      <div class="md-num mono mt-3"><span class="cur">BDT</span>17,000</div>
+      <div class="hero-tile-head"><span class="mode-pill planned">Planned</span></div>
+      <div class="md-num mono mt-3"><span class="cur">BDT</span>17,000</div>
+      <div class="hero-tile-head"><span class="mode-pill reserved">Reserved</span></div>
+      <div class="md-num mono mt-3"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+      <div class="hero-tile-head"><span class="mode-pill liability">Liability</span></div>
+      <div class="md-num mono mt-3"><span class="cur">BDT</span>20,000</div>
+      <div class="hero-tile-head"><span class="mode-pill receivable">Receivable</span></div>
+    </div>
+    <div class="grid-12 mt-6">
+      <div class="col-6">
+        <div class="tiny muted">Net worth — what's actually true today</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span>1,42,350</div>
+        <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+      </div>
+      <div class="col-6">
+        <div class="tiny muted">Maturity value — what could be true later</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span>8,00,000</div>
+        <div class="hero-tile-head"><span class="mode-pill projected">Projected</span></div>
+      </div>
+      <div class="col-6 mt-4">
+        <div class="tiny muted">Plan target — what the user said to do</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span>8,000</div>
+        <div class="hero-tile-head"><span class="mode-pill planned">Planned</span></div>
+      </div>
+      <div class="col-6 mt-4">
+        <div class="tiny muted">Locked in a goal — money already spoken for</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span>8,000</div>
+        <div class="hero-tile-head"><span class="mode-pill reserved">Reserved</span></div>
+      </div>
+      <div class="col-6 mt-4">
+        <div class="tiny muted">Personal loan — what you owe</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span><span class="amt-neg">−</span>40,000</div>
+        <div class="hero-tile-head"><span class="mode-pill liability">Liability</span></div>
+      </div>
+      <div class="col-6 mt-4">
+        <div class="tiny muted">Rahim's loan — what you're owed</div>
+        <div class="lg-num mono mt-3"><span class="cur">BDT</span>20,000</div>
+        <div class="hero-tile-head"><span class="mode-pill receivable">Receivable</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Inputs</h2>
+    <div class="grid-12 mt-4">
+      <div class="col-6 field">
+        <label for="i1">Goal name <span style="color:var(--bad)">*</span></label>
+        <input id="i1" class="input" value="Laptop" required>
+      </div>
+      <div class="col-6 field">
+        <label for="i2">Target amount</label>
+        <div class="input-group">
+          <span class="prefix" aria-hidden="true">BDT</span>
+          <input id="i2" class="input" value="1,00,000">
+        </div>
+      </div>
+      <div class="col-6 field">
+        <label for="i3">Date</label>
+        <input id="i3" class="input" type="date" value="2026-12-31">
+      </div>
+      <div class="col-6 field">
+        <label for="i4">Destination account</label>
+        <select id="i4" class="input"><option>City Bank</option><option>DPS — Bank Asia</option><option>Cash</option></select>
+      </div>
+      <div class="col-12 field">
+        <label for="i5">Note</label>
+        <textarea id="i5" class="input" rows="2" placeholder="Optional note"></textarea>
+      </div>
+      <div class="col-6 field">
+        <label for="i6">Invalid example</label>
+        <input id="i6" class="input" value="-200" aria-invalid="true">
+        <div class="input-helper danger">Amount must be positive. <strong>Why:</strong> a negative value would imply a refund.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Progress &amp; slider</h2>
+    <div class="mt-4">
+      <div class="label">Goal progress · 62%</div>
+      <div class="progress tall accent mt-3"><i style="width:62%"></i></div>
+    </div>
+    <div class="mt-5">
+      <div class="label">Plan underfunded · warn</div>
+      <div class="progress warn mt-3"><i style="width:75%"></i></div>
+    </div>
+    <div class="mt-5">
+      <div class="label">Slider (live)</div>
+      <input type="range" min="0" max="100" value="40" class="mt-3" aria-label="Demo slider">
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Tabs (segmented control)</h2>
+    <div class="tabs mt-4" data-tab-group role="tablist" aria-label="Type">
+      <button data-tab="income" aria-selected="false" role="tab">Income</button>
+      <button data-tab="expense" aria-selected="true" role="tab">Expense</button>
+      <button data-tab="transfer" aria-selected="false" role="tab">Transfer</button>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Banners</h2>
+    <p class="sub">Right-rail colored stripe + icon + body. Use role="alert" for blocking, role="status" for friendly.</p>
+    <div class="banner good mt-4" role="status">
+      <div class="icon" aria-hidden="true">✓</div>
+      <div class="body"><strong>Plan saved.</strong> Reserved <span class="cur">BDT</span>17,000 across 4 buckets.</div>
+    </div>
+    <div class="banner warn mt-3" role="status">
+      <div class="icon" aria-hidden="true">!</div>
+      <div class="body"><strong>Underfunded.</strong> Reserved <span class="cur">BDT</span>12,000 of <span class="cur">BDT</span>19,800 — unused carries forward.</div>
+    </div>
+    <div class="banner bad mt-3" role="alert">
+      <div class="icon" aria-hidden="true">!</div>
+      <div class="body"><strong>Over-allocated by <span class="cur">BDT</span>4,500.</strong> Reduce one or more buckets before saving.</div>
+    </div>
+    <div class="banner info mt-3" role="status">
+      <div class="icon" aria-hidden="true">i</div>
+      <div class="body">This month is <strong>read-only</strong>. <span class="cur">BDT</span>9,800 carried forward to September.</div>
+    </div>
+    <div class="banner accent mt-3">
+      <div class="icon" aria-hidden="true">★</div>
+      <div class="body"><strong>Recommendation.</strong> Goal 40% · Debt 25% · DPS 20% · Cash 15% — based on last 3 months.</div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Trends &amp; keyboard</h2>
+
+    <div class="grid-12 mt-4">
+      <div class="col-6">
+        <div class="label">Direction · ink-2 base, colored arrow only</div>
+        <div class="trend-list mt-3">
+          <div class="trend-row">
+            <span class="trend-arrow up" aria-hidden="true">▲</span>
+            <span class="trend-value"><span class="cur">BDT</span>10,800</span>
+            <span class="trend-reason">vs Jul · savings rate up</span>
+          </div>
+          <div class="trend-row">
+            <span class="trend-arrow down" aria-hidden="true">▼</span>
+            <span class="trend-value"><span class="cur">BDT</span>4,000</span>
+            <span class="trend-reason">shopping spiked</span>
+          </div>
+          <div class="trend-row">
+            <span class="trend-arrow flat" aria-hidden="true">→</span>
+            <span class="trend-value"><span class="cur">BDT</span>0</span>
+            <span class="trend-reason">unchanged from last month</span>
+          </div>
+          <div class="trend-row">
+            <span class="trend-arrow muted" aria-hidden="true">—</span>
+            <span class="trend-value">no history yet</span>
+            <span class="trend-reason">first month of tracking</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="label">Keyboard shortcuts</div>
+        <div class="kbd-list mt-3">
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">N</span></div>
+            <div class="kbd-action">Add transaction</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">K</span></div>
+            <div class="kbd-action">Quick search</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">/</span></div>
+            <div class="kbd-action">Open Monthly Plan</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">⌘</span><span class="kbd">E</span></div>
+            <div class="kbd-action">Export data</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">↑</span><span class="kbd">↓</span></div>
+            <div class="kbd-action">Navigate rows</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">?</span></div>
+            <div class="kbd-action">Show all shortcuts</div>
+          </div>
+          <div class="kbd-row">
+            <div class="kbd-keys"><span class="kbd">Esc</span></div>
+            <div class="kbd-action">Close modal / sheet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card mt-6">
+    <h2>Data rows (semantic transactions)</h2>
+    <p class="sub">Each row carries a colored left-border (data type) + an icon (data type) + a <code>.mode</code> caption (source of truth).</p>
+    <div class="mt-4">
+      <div class="data-row t-income">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">৳</div><div class="text"><div class="name">Salary</div><div class="meta">Today · City Bank</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>60,000</div><div class="mode">Actual</div></div></div>
+      </div>
+      <div class="data-row t-expense">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">🛍</div><div class="text"><div class="name">Shopping</div><div class="meta">Today · City Bank</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>4,000</div><div class="mode">Actual</div></div></div>
+      </div>
+      <div class="data-row t-save">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Transfer to goal: Laptop</div><div class="meta">Today · City Bank → Goal</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>8,000</div><div class="mode">Actual</div></div></div>
+      </div>
+      <div class="data-row t-invest">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">◆</div><div class="text"><div class="name">FDR at maturity</div><div class="meta">Dec 2026 · 7.5% p.a.</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>16,400</div><div class="mode projected">Projected</div></div></div>
+      </div>
+      <div class="data-row t-debt">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">⚠</div><div class="text"><div class="name">Personal loan repayment</div><div class="meta">Aug 1 · City Bank</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>5,000</div><div class="mode">Actual · counts as expense</div></div></div>
+      </div>
+      <div class="data-row t-save">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Goal: Laptop — August target</div><div class="meta">Aug 1 → Aug 31</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>8,000</div><div class="mode planned">Planned</div></div></div>
+      </div>
+      <div class="data-row t-save">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">▤</div><div class="text"><div class="name">Goal: Laptop — locked in</div><div class="meta">Reserved from surplus</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>8,000</div><div class="mode reserved">Reserved</div></div></div>
+      </div>
+      <div class="data-row t-borrow">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">↓</div><div class="text"><div class="name">Borrowed from family</div><div class="meta">Aug 1 · Source: Brother</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>50,000</div><div class="mode liability">Liability ↑</div></div></div>
+      </div>
+      <div class="data-row t-lend">
+        <div class="stripe"></div>
+        <div class="body"><div class="icon">↑</div><div class="text"><div class="name">Lent to Rahim (friend)</div><div class="meta">Aug 3 · Receivable</div></div></div>
+        <div class="right"><div class="right-meta"><div class="amount"><span class="cur">BDT</span>20,000</div><div class="mode receivable">Receivable ↑</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

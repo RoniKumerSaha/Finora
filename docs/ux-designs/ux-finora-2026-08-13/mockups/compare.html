@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · Design Variant Comparison</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0F1419; --surface:#1A2028; --surface-2:#232B36;
+    --ink:#E6EDF3; --muted:#8B949E;
+    --primary:#2DD4BF; --accent:#A78BFA; --border:#2A3340;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif;font-size:14px;line-height:1.5}
+
+  header{padding:32px 32px 0;max-width:1400px;margin:0 auto}
+  header h1{margin:0;font-size:28px;letter-spacing:-.01em}
+  header p{margin:8px 0 0;color:var(--muted)}
+  .meta{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .tag{padding:4px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .tag.primary{background:var(--primary-soft);color:var(--primary);border-color:rgba(45,212,191,.3)}
+
+  .controls{max-width:1400px;margin:24px auto;padding:0 32px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .controls .label{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+  .pill{padding:7px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-weight:600;font-size:12.5px;font-family:inherit}
+  .pill:hover{color:var(--ink)}
+  .pill.active{background:var(--primary-soft);color:var(--primary);border-color:rgba(45,212,191,.3)}
+  .pill.layout{background:var(--accent-soft);color:var(--accent);border-color:rgba(167,139,250,.3)}
+
+  .grid-wrap{max-width:1400px;margin:0 auto;padding:0 32px 64px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .cell{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .cell-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .cell-title{display:flex;align-items:center;gap:10px}
+  .cell-title .num{font-size:10px;font-weight:700;color:var(--primary);background:var(--primary-soft);padding:3px 8px;border-radius:4px;letter-spacing:.06em}
+  .cell-title .name{font-weight:600;font-size:14px}
+  .cell-title .sub{font-size:12px;color:var(--muted)}
+  .cell iframe{width:100%;height:780px;border:0;background:#fff;display:block;flex:1}
+  .cell-footer{padding:10px 16px;background:var(--surface-2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .picks{display:flex;gap:6px;flex-wrap:wrap}
+  .pick{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--surface);color:var(--muted);border:1px solid var(--border);font-weight:600;letter-spacing:.04em}
+  .a{font-size:11px;color:var(--primary);font-weight:600}
+
+  .layout-grid-1{grid-template-columns:1fr !important}
+  .layout-grid-2{grid-template-columns:1fr 1fr !important}
+  .layout-grid-4{grid-template-columns:repeat(4,1fr) !important}
+
+  .hidden{display:none}
+
+  @media (max-width:980px){.grid{grid-template-columns:1fr}.cell iframe{height:600px}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Finora — Design Variants Compare</h1>
+  <p>All 4 design directions × 2 themes = 8 variants of the same Home screen. Click any variant to open it full-screen.</p>
+  <div class="meta">
+    <div class="tag primary">v1 LOCKED · Midnight dark</div>
+    <div class="tag">v2 Soft · mint + sand</div>
+    <div class="tag">v3 Editorial · serif + ink</div>
+    <div class="tag">v4 Compact · electric + graphite</div>
+  </div>
+</header>
+
+<div class="controls">
+  <span class="label">Layout</span>
+  <button class="pill layout active" data-layout="2">2-column</button>
+  <button class="pill layout" data-layout="1">1-column</button>
+  <button class="pill layout" data-layout="4">4-column</button>
+  <button class="pill" id="openAll">Open all in tabs</button>
+</div>
+
+<div class="grid-wrap">
+  <div class="grid layout-grid-2" id="grid">
+
+    <div class="cell" data-variant="v1">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num">V1 · LOCKED</div>
+          <div>
+            <div class="name">Midnight</div>
+            <div class="sub">Dark · 22 connected screens in v1/index.html</div>
+          </div>
+        </div>
+        <a class="a" href="v1/index.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v1/index.html#home" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">dark only</span>
+          <span class="pick">teal + indigo</span>
+          <span class="pick">slate bg</span>
+        </div>
+        <span class="sub">★ Selected</span>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v2-dark">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:var(--primary)">V2 · DARK</div>
+          <div>
+            <div class="name">Soft · Dark</div>
+            <div class="sub">Mint + gold accents · generous radii · warm</div>
+          </div>
+        </div>
+        <a class="a" href="v2/dark.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v2/dark.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">soft</span>
+          <span class="pick">mint</span>
+          <span class="pick">24px radius</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v2-light">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:var(--primary)">V2 · LIGHT</div>
+          <div>
+            <div class="name">Soft · Light</div>
+            <div class="sub">Sand bg · same generous radii · daylight version</div>
+          </div>
+        </div>
+        <a class="a" href="v2/light.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v2/light.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">soft</span>
+          <span class="pick">sand</span>
+          <span class="pick">24px radius</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v3-dark">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:var(--accent)">V3 · DARK</div>
+          <div>
+            <div class="name">Editorial · Dark</div>
+            <div class="sub">Serif headings · hairline borders · newspaper feel</div>
+          </div>
+        </div>
+        <a class="a" href="v3/dark.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v3/dark.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">editorial</span>
+          <span class="pick">serif</span>
+          <span class="pick">4px radius</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v3-light">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:var(--accent)">V3 · LIGHT</div>
+          <div>
+            <div class="name">Editorial · Light</div>
+            <div class="sub">Ink on paper · serif headlines · magazinized</div>
+          </div>
+        </div>
+        <a class="a" href="v3/light.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v3/light.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">editorial</span>
+          <span class="pick">ink</span>
+          <span class="pick">serif</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v4-dark">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:#4A8AFF">V4 · DARK</div>
+          <div>
+            <div class="name">Compact · Dark</div>
+            <div class="sub">Electric blue · tighter density · information-rich</div>
+          </div>
+        </div>
+        <a class="a" href="v4/dark.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v4/dark.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">dense</span>
+          <span class="pick">compact</span>
+          <span class="pick">data-first</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell" data-variant="v4-light">
+      <div class="cell-head">
+        <div class="cell-title">
+          <div class="num" style="color:#4A8AFF">V4 · LIGHT</div>
+          <div>
+            <div class="name">Compact · Light</div>
+            <div class="sub">Graphite + electric · same density · day mode</div>
+          </div>
+        </div>
+        <a class="a" href="v4/light.html" target="_blank">Open →</a>
+      </div>
+      <iframe src="v4/light.html" loading="lazy"></iframe>
+      <div class="cell-footer">
+        <div class="picks">
+          <span class="pick">dense</span>
+          <span class="pick">compact</span>
+          <span class="pick">data-first</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Layout switcher
+  document.querySelectorAll('[data-layout]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('[data-layout]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const grid = document.getElementById('grid');
+      grid.classList.remove('layout-grid-1','layout-grid-2','layout-grid-4');
+      grid.classList.add('layout-grid-' + b.dataset.layout);
+    });
+  });
+
+  // Open all in new tabs
+  document.getElementById('openAll').addEventListener('click', () => {
+    const urls = ['v1/index.html','v2/dark.html','v2/light.html','v3/dark.html','v3/light.html','v4/dark.html','v4/light.html'];
+    urls.forEach(u => window.open(u, '_blank'));
+  });
+</script>
+
+</body>
+</html>

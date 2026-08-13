@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Finora · Logo preview · Stacked ledger variants</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+<style>
+  body { padding: var(--s-8); background: var(--bg); }
+  .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: var(--s-6); }
+  h1 { font-size: 28px; letter-spacing: -0.02em; }
+  .sub { color: var(--ink-3); font-size: 14px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-5); }
+  @media (max-width: 880px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--s-6);
+    display: grid;
+    gap: var(--s-4);
+  }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; }
+  .panel h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .panel .tag {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-3); padding: 2px 8px; border-radius: var(--r-full);
+    border: 1px solid var(--line);
+  }
+  .sizes {
+    display: grid; grid-template-columns: auto auto 1fr; gap: var(--s-4);
+    align-items: center; padding: var(--s-3); background: var(--surface-2);
+    border-radius: var(--r-sm);
+  }
+  .sizes .size-label { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+  .sizes .size-mark { display: flex; align-items: center; gap: var(--s-3); }
+  .sizes .size-24 { width: 24px; height: 24px; }
+  .sizes .size-32 { width: 32px; height: 32px; }
+  .sizes .size-48 { width: 48px; height: 48px; }
+  .sizes .size-32 .logo-mark-a1,
+  .sizes .size-32 .logo-mark-a2,
+  .sizes .size-32 .logo-mark-a3,
+  .sizes .size-32 .logo-mark-a4 { transform: scale(1.333); transform-origin: left center; }
+  .sizes .size-48 .logo-mark-a1,
+  .sizes .size-48 .logo-mark-a2,
+  .sizes .size-48 .logo-mark-a3,
+  .sizes .size-48 .logo-mark-a4 { transform: scale(2); transform-origin: left center; }
+  .lockup-row {
+    display: flex; gap: var(--s-5); align-items: center;
+    padding: var(--s-3); background: var(--surface-2);
+    border-radius: var(--r-sm); flex-wrap: wrap;
+  }
+  .lockup-row .at-32 .logo-mark-a1,
+  .lockup-row .at-32 .logo-mark-a2,
+  .lockup-row .at-32 .logo-mark-a3,
+  .lockup-row .at-32 .logo-mark-a4 { width: 32px; height: 32px; transform: none; }
+  .lockup-row .at-48 .logo-mark-a1,
+  .lockup-row .at-48 .logo-mark-a2,
+  .lockup-row .at-48 .logo-mark-a3,
+  .lockup-row .at-48 .logo-mark-a4 { width: 48px; height: 48px; transform: none; }
+  .lockup-row .at-32 .logo-wordmark { font-size: 20px; }
+  .lockup-row .at-48 .logo-wordmark { font-size: 28px; }
+  .dark-strip {
+    background: #0b1220; color: #f1f5f9; padding: var(--s-5);
+    border-radius: var(--r-sm); display: flex; gap: var(--s-5);
+    align-items: center; flex-wrap: wrap;
+  }
+  .dark-strip .logo-wordmark { color: #f1f5f9; }
+  .dark-strip .logo-wordmark .accent { color: #2dd4bf; }
+  .pick-row { display: flex; gap: var(--s-3); align-items: center; }
+  button.pick {
+    cursor: pointer; font: inherit;
+    padding: 6px 12px; border-radius: var(--r-sm);
+    background: var(--accent-soft); color: var(--accent-ink);
+    border: 1px solid var(--accent); font-weight: 600; font-size: 12px;
+  }
+  button.pick.is-picked { background: var(--accent); color: var(--ink-on-accent); }
+  .pick-hint { font-size: 12px; color: var(--ink-3); }
+  .sketch {
+    width: 48px; height: 48px; padding: 8px; border-radius: var(--r-xs);
+    background: var(--surface-2); border: 1px dashed var(--line);
+    display: grid; place-items: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="title">v4 · logo-preview</div>
+    <h1>Finora · stacked ledger · 4 variants</h1>
+    <p class="sub">You picked the stacked-ledger direction. Here are 4 takes on it — different shape, weight, and color treatment of the same idea. Compare at 24 / 32 / 48 px, in light + dark, with the wordmark.</p>
+  </div>
+
+  <div class="panel" id="opt-A1">
+    <div class="panel-head">
+      <h3>A1 · Soft bars (base)</h3>
+      <span class="tag">Refined · calm</span>
+    </div>
+    <p class="sub">Three right-aligned accent bars in an accent-soft rounded square. Middle bar uses accent-2 for a tiny color rhythm. The original — most "spreadsheet with soul".</p>
+
+    <div class="sizes">
+      <span class="size-label">24 px</span>
+      <span class="size-mark"><span class="size-24"><span class="logo-mark-a1"><i></i></span></span></span>
+      <span class="sub">Sidebar mark</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">32 px</span>
+      <span class="size-mark"><span class="size-32"><span class="logo-mark-a1"><i></i></span></span></span>
+      <span class="sub">App icon</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">48 px</span>
+      <span class="size-mark"><span class="size-48"><span class="logo-mark-a1"><i></i></span></span></span>
+      <span class="sub">Onboarding hero</span>
+    </div>
+
+    <div class="lockup-row">
+      <span class="at-32"><span class="logo-lockup"><span class="logo-mark-a1"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+      <span class="at-48"><span class="logo-lockup"><span class="logo-mark-a1"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+    </div>
+
+    <div class="dark-strip">
+      <span><span class="logo-mark-a1"><i></i></span></span>
+      <span class="logo-wordmark">Fin<span class="accent">ora</span></span>
+      <span style="color:#94a3b8; font-size:12px;">Dark mode · accent lifts to #2dd4bf</span>
+    </div>
+
+    <div class="pick-row">
+      <button class="pick" data-opt="A1">Pick A1 · Soft bars</button>
+      <span class="pick-hint">The safe pick. Calm, on-brand, matches the brand voice exactly.</span>
+    </div>
+  </div>
+
+  <div class="panel" id="opt-A2">
+    <div class="panel-head">
+      <h3>A2 · Solid filled (weight)</h3>
+      <span class="tag">Heavier · accumulation</span>
+    </div>
+    <p class="sub">Three solid bars with descending opacity — top 100% accent, middle 60%, bottom 30%. No inner spacing; feels like a stacked weight, not ledger lines. More "coin-like".</p>
+
+    <div class="sizes">
+      <span class="size-label">24 px</span>
+      <span class="size-mark"><span class="size-24"><span class="logo-mark-a2"><i></i></span></span></span>
+      <span class="sub">Sidebar mark</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">32 px</span>
+      <span class="size-mark"><span class="size-32"><span class="logo-mark-a2"><i></i></span></span></span>
+      <span class="sub">App icon</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">48 px</span>
+      <span class="size-mark"><span class="size-48"><span class="logo-mark-a2"><i></i></span></span></span>
+      <span class="sub">Onboarding hero</span>
+    </div>
+
+    <div class="lockup-row">
+      <span class="at-32"><span class="logo-lockup"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+      <span class="at-48"><span class="logo-lockup"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+    </div>
+
+    <div class="dark-strip">
+      <span><span class="logo-mark-a2"><i></i></span></span>
+      <span class="logo-wordmark">Fin<span class="accent">ora</span></span>
+      <span style="color:#94a3b8; font-size:12px;">Dark mode · opacity steps stay distinct</span>
+    </div>
+
+    <div class="pick-row">
+      <button class="pick" data-opt="A2">Pick A2 · Solid filled</button>
+      <span class="pick-hint">Heavier, more "weight / savings". Reads as accumulation rather than ledger.</span>
+    </div>
+  </div>
+
+  <div class="panel" id="opt-A3">
+    <div class="panel-head">
+      <h3>A3 · Outline bars (lightest)</h3>
+      <span class="tag">Open · data-viz</span>
+    </div>
+    <p class="sub">Three outlined bars on transparent background. Accent for the top, ink-2 for the middle, ink-3 for the bottom — a gradient from accent to muted as bars descend. Most "actual data viz" of the four.</p>
+
+    <div class="sizes">
+      <span class="size-label">24 px</span>
+      <span class="size-mark"><span class="size-24"><span class="logo-mark-a3"><i></i></span></span></span>
+      <span class="sub">Sidebar mark</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">32 px</span>
+      <span class="size-mark"><span class="size-32"><span class="logo-mark-a3"><i></i></span></span></span>
+      <span class="sub">App icon</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">48 px</span>
+      <span class="size-mark"><span class="size-48"><span class="logo-mark-a3"><i></i></span></span></span>
+      <span class="sub">Onboarding hero</span>
+    </div>
+
+    <div class="lockup-row">
+      <span class="at-32"><span class="logo-lockup"><span class="logo-mark-a3"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+      <span class="at-48"><span class="logo-lockup"><span class="logo-mark-a3"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+    </div>
+
+    <div class="dark-strip">
+      <span><span class="logo-mark-a3"><i></i></span></span>
+      <span class="logo-wordmark">Fin<span class="accent">ora</span></span>
+      <span style="color:#94a3b8; font-size:12px;">Dark mode · outline lifts against dark bg</span>
+    </div>
+
+    <div class="pick-row">
+      <button class="pick" data-opt="A3">Pick A3 · Outline bars</button>
+      <span class="pick-hint">Lightest, most data-viz. Risk: outline at 24 px can look thin.</span>
+    </div>
+  </div>
+
+  <div class="panel" id="opt-A4">
+    <div class="panel-head">
+      <h3>A4 · Cumulative (goal)</h3>
+      <span class="tag">Narrative · optimistic</span>
+    </div>
+    <p class="sub">Three left-aligned bars, getting longer as they descend. Top shortest (accent-2), bottom longest (accent). Reads as "cumulative total reaching a goal." Most narrative-rich.</p>
+
+    <div class="sizes">
+      <span class="size-label">24 px</span>
+      <span class="size-mark"><span class="size-24"><span class="logo-mark-a4"><i></i></span></span></span>
+      <span class="sub">Sidebar mark</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">32 px</span>
+      <span class="size-mark"><span class="size-32"><span class="logo-mark-a4"><i></i></span></span></span>
+      <span class="sub">App icon</span>
+    </div>
+    <div class="sizes">
+      <span class="size-label">48 px</span>
+      <span class="size-mark"><span class="size-48"><span class="logo-mark-a4"><i></i></span></span></span>
+      <span class="sub">Onboarding hero</span>
+    </div>
+
+    <div class="lockup-row">
+      <span class="at-32"><span class="logo-lockup"><span class="logo-mark-a4"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+      <span class="at-48"><span class="logo-lockup"><span class="logo-mark-a4"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></span></span>
+    </div>
+
+    <div class="dark-strip">
+      <span><span class="logo-mark-a4"><i></i></span></span>
+      <span class="logo-wordmark">Fin<span class="accent">ora</span></span>
+      <span style="color:#94a3b8; font-size:12px;">Dark mode · the longest bar at bottom anchors the mark</span>
+    </div>
+
+    <div class="pick-row">
+      <button class="pick" data-opt="A4">Pick A4 · Cumulative</button>
+      <span class="pick-hint">Most narrative. Tells "you are accumulating toward your goal" in one glance.</span>
+    </div>
+  </div>
+
+  <div class="panel" style="background: var(--surface-2); border-style: dashed;">
+    <div class="panel-head">
+      <h3>Comparison at a glance</h3>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="text-align:left; color: var(--ink-3); font-size:11px; text-transform:uppercase; letter-spacing:0.06em;">
+          <th style="padding:8px 0">Variant</th>
+          <th>Shape</th>
+          <th>Color treatment</th>
+          <th>Feel</th>
+          <th>At 24 px</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 0"><strong>A1</strong></td><td>3 separate bars</td><td>Accent + accent-2 + accent</td><td>Calm, ledger</td><td>Solid</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 0"><strong>A2</strong></td><td>3 stacked solids</td><td>Accent @ 100/60/30%</td><td>Heavy, weight</td><td>Solid</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 0"><strong>A3</strong></td><td>3 outlined bars</td><td>Accent → ink-3 (gradient)</td><td>Open, data-viz</td><td>Risky</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 0"><strong>A4</strong></td><td>3 left-aligned, growing</td><td>Accent-2 → accent (cumulative)</td><td>Narrative, goal</td><td>Solid</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Once you pick</h3>
+    <p class="sub">Tell me which variant (or a hybrid — e.g., "A1's colors but A4's alignment"). I'll then update all 24 mockups to use the chosen mark in the sidebar, and the wordmark on the onboarding + login + empty-dashboard surfaces. I'll also update DESIGN.md's brand register and add a decision log entry.</p>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  const buttons = document.querySelectorAll('button.pick');
+  const stored = localStorage.getItem('finora.logoPick');
+  if (stored) applyPick(stored);
+  buttons.forEach(b => b.addEventListener('click', () => {
+    const opt = b.dataset.opt;
+    localStorage.setItem('finora.logoPick', opt);
+    applyPick(opt);
+  }));
+  function applyPick(opt) {
+    buttons.forEach(b => {
+      b.classList.toggle('is-picked', b.dataset.opt === opt);
+      b.textContent = b.dataset.opt === opt
+        ? `✓ Picked ${opt}`
+        : `Pick ${b.textContent.split('·')[1].trim()}`;
+    });
+  }
+</script>
+</body>
+</html>

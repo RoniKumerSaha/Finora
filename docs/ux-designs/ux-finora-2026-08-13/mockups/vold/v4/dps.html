@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DPS · Bank Asia — Finora</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="index.html" class="brand"><span class="logo-mark-a2"><i></i></span><span class="logo-wordmark">Fin<span class="accent">ora</span></span></a>
+    <div class="nav-group">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon nav-i-dashboard">▦</span>Dashboard</a>
+    <a class="nav-item" href="transactions.html"><span class="icon nav-i-tx">⇄</span>Transactions</a>
+    <a class="nav-item" href="accounts.html"><span class="icon nav-i-accounts">▤</span>Accounts</a>
+    <a class="nav-item" href="goals.html"><span class="icon nav-i-goals">◎</span>Goals</a>
+    <a class="nav-item" href="investments.html" aria-current="page"><span class="icon nav-i-invest">◆</span>Investments</a>
+    <div class="nav-group">Plan</div>
+    <a class="nav-item" href="plan.html"><span class="icon nav-i-plan">▣</span>Monthly Plan</a>
+    <a class="nav-item" href="health.html"><span class="icon nav-i-health">♥</span>Financial Health</a>
+    <a class="nav-item" href="debts.html"><span class="icon nav-i-debts">⚠</span>Debts</a>
+    <a class="nav-item" href="charts.html"><span class="icon nav-i-charts">▥</span>Charts</a>
+    <div class="nav-group">System</div>
+    <a class="nav-item" href="settings.html"><span class="icon nav-i-settings">⚙</span>Settings</a>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="topbar">
+      <div>
+        <div class="title">v4 · 17</div>
+        <h1>DPS · Bank Asia</h1>
+        <div class="sub mt-3"><a href="investments.html">← All investments</a></div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="openModal('m-edit')">Edit</button>
+        <button class="btn primary" onclick="openModal('m-current')">Update current value</button>
+      </div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="card">
+      <div class="grid-12">
+        <div class="col-3 field">
+          <label for="dps-monthly">Monthly deposit</label>
+          <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="dps-monthly" class="input right mono" type="number" value="4000"></div>
+        </div>
+        <div class="col-3 field">
+          <label for="dps-rate">Annual rate</label>
+          <div class="input-group"><input id="dps-rate" class="input right mono" type="number" value="6.5" step="0.1"><span class="suffix">% p.a.</span></div>
+        </div>
+        <div class="col-3 field">
+          <label for="dps-years">Term</label>
+          <div class="input-group"><input id="dps-years" class="input right mono" type="number" value="5"><span class="suffix">years</span></div>
+        </div>
+        <div class="col-3 field">
+          <label for="dps-start">Start date</label>
+          <input id="dps-start" class="input" type="date" value="2022-04-01">
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="card mt-4">
+      <div class="hero-triptych">
+        <div class="col">
+          <div class="label">Projected at maturity</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span><span id="dps-fv">3,08,200</span></div>
+          <div class="hero-tile-head"><span class="mode-pill projected">Projected</span></div>
+          <div class="sub mt-3">in <span id="dps-maturity">Apr 2027</span></div>
+        </div>
+        <div class="col">
+          <div class="label">Total deposited</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span><span id="dps-deposited">2,40,000</span></div>
+          <div class="hero-tile-head"><span class="mode-pill actual">Actual</span></div>
+          <div class="sub mt-3">60 monthly deposits</div>
+        </div>
+        <div class="col">
+          <div class="label">Profit</div>
+          <div class="hero-num mono mt-3 pos"><span class="cur">BDT</span><span id="dps-profit">68,200</span></div>
+          <div class="hero-tile-head"><span class="mode-pill projected">Estimated</span></div>
+          <div class="sub mt-3">28.4% on deposit</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT VALUE UPDATE -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Current value</div>
+        <span class="tiny muted">manual · most recent reconciliation</span>
+      </div>
+      <div class="grid-12 mt-4">
+        <div class="col-6">
+          <div class="label">Recorded value</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>1,93,400</div>
+          <div class="sub mt-3">as of Aug 1, 2026</div>
+        </div>
+        <div class="col-6">
+          <div class="label">Expected at this date</div>
+          <div class="hero-num mono mt-3"><span class="cur">BDT</span>2,08,650</div>
+          <div class="sub mt-3">based on plan rate + deposits</div>
+        </div>
+      </div>
+      <div class="banner hint mt-4" role="status">
+        <div class="icon" aria-hidden="true">i</div>
+        <div class="body"><strong>Below expected by <span class="cur">BDT</span>15,250.</strong> Reconcile the current value to track your actual return — projections stay as a forecast.</div>
+      </div>
+    </div>
+
+    <!-- PAYMENT SCHEDULE -->
+    <div class="card mt-4">
+      <div class="card-head">
+        <div class="label">Payment schedule</div>
+        <span class="tiny muted">first 8 of 60</span>
+      </div>
+      <table class="data-table mt-4" style="width:100%">
+        <thead>
+          <tr style="text-align:left">
+            <th class="tiny muted">Month</th>
+            <th class="tiny muted">Deposit</th>
+            <th class="tiny muted">Cumulative</th>
+            <th class="tiny muted">Profit so far</th>
+          </tr>
+        </thead>
+        <tbody id="dps-schedule">
+          <tr><td class="mono">Apr 2022</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono muted"><span class="cur">BDT</span>22</td></tr>
+          <tr><td class="mono">May 2022</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono"><span class="cur">BDT</span>8,022</td><td class="mono muted"><span class="cur">BDT</span>44</td></tr>
+          <tr><td class="mono">Jun 2022</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono"><span class="cur">BDT</span>12,066</td><td class="mono muted"><span class="cur">BDT</span>66</td></tr>
+          <tr><td class="mono">Jul 2022</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono"><span class="cur">BDT</span>16,132</td><td class="mono muted"><span class="cur">BDT</span>88</td></tr>
+          <tr><td class="mono">…</td><td colspan="3" class="tiny muted">52 more rows</td></tr>
+          <tr><td class="mono">Mar 2027</td><td class="mono"><span class="cur">BDT</span>4,000</td><td class="mono"><span class="cur">BDT</span>2,40,000</td><td class="mono pos"><span class="cur">BDT</span>68,200</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="m-edit" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="de-title">
+    <h2 id="de-title">Edit DPS</h2>
+    <div class="grid-12 mt-3">
+      <div class="col-12 field">
+        <label>Name</label>
+        <input class="input" value="DPS · Bank Asia">
+      </div>
+      <div class="col-6 field">
+        <label>Monthly deposit</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input class="input right mono" type="number" value="4000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>Annual rate</label>
+        <div class="input-group"><input class="input right mono" type="number" value="6.5" step="0.1"><span class="suffix">% p.a.</span></div>
+      </div>
+      <div class="col-6 field">
+        <label>Term</label>
+        <div class="input-group"><input class="input right mono" type="number" value="5"><span class="suffix">years</span></div>
+      </div>
+      <div class="col-6 field">
+        <label>Start date</label>
+        <input class="input" type="date" value="2022-04-01">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('DPS updated.', 'good'); closeModal('m-edit')">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="m-current" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dc-title">
+    <h2 id="dc-title">Update current value</h2>
+    <p class="modal-sub">Reconcile to your bank's actual balance. Profit and gain/loss recalculate from this value.</p>
+    <div class="grid-12 mt-3">
+      <div class="col-6 field">
+        <label for="cv-amt">Current value</label>
+        <div class="input-group"><span class="prefix" aria-hidden="true">BDT</span><input id="cv-amt" class="input right mono" type="number" value="32000"></div>
+      </div>
+      <div class="col-6 field">
+        <label>As of date</label>
+        <input class="input" type="date" value="2026-08-12">
+      </div>
+      <div class="col-12">
+        <div class="input-helper">Profit from deposits: <strong><span id="cv-profit">profit <span class="cur">BDT</span>0</span></strong> · Difference vs expected: <strong id="cv-diff">diff <span class="cur">BDT</span>0</strong></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close-modal>Cancel</button>
+      <button class="btn primary" onclick="toast('Current value saved.', 'good'); closeModal('m-current')">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+<script>
+  function fmt(n) { return Math.round(n).toLocaleString('en-IN'); }
+  function recalcDps() {
+    const monthly = parseFloat(document.getElementById('dps-monthly').value) || 0;
+    const rate = parseFloat(document.getElementById('dps-rate').value) || 0;
+    const years = parseInt(document.getElementById('dps-years').value) || 0;
+    const startVal = document.getElementById('dps-start').value;
+    const months = years * 12;
+    const r = (rate / 100) / 12;
+    // Annuity due
+    const fv = r === 0 ? monthly * months : monthly * ((Math.pow(1 + r, months) - 1) / r) * (1 + r);
+    const deposited = monthly * months;
+    const profit = fv - deposited;
+    document.getElementById('dps-fv').textContent = fmt(fv);
+    document.getElementById('dps-deposited').textContent = fmt(deposited);
+    document.getElementById('dps-profit').textContent = fmt(profit);
+    if (startVal) {
+      const start = new Date(startVal);
+      const maturity = new Date(start);
+      maturity.setMonth(maturity.getMonth() + months);
+      document.getElementById('dps-maturity').textContent = maturity.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    }
+  }
+  ['dps-monthly','dps-rate','dps-years','dps-start'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', recalcDps);
+  });
+  function recalcCurrent() {
+    const v = parseFloat(document.getElementById('cv-amt').value) || 0;
+    const deposited = 4000 * 60; // approximate
+    const profit = v - deposited;
+    const expected = 208650;
+    const diff = expected - v;
+    document.getElementById('cv-profit').innerHTML = (profit >= 0 ? 'profit ' : 'loss ') + `<span class="cur">BDT</span>${fmt(Math.abs(profit))}`;
+    document.getElementById('cv-diff').innerHTML = (diff >= 0 ? 'short by ' : 'over by ') + `<span class="cur">BDT</span>${fmt(Math.abs(diff))}`;
+  }
+  document.getElementById('cv-amt')?.addEventListener('input', recalcCurrent);
+  recalcDps();
+  recalcCurrent();
+</script>
+</body>
+</html>

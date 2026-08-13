@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · V4 Compact · Dark</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0A0C10; --surface:#14181F; --surface-2:#1A1F28; --surface-3:#222834;
+    --ink:#F0F2F5; --muted:#7A8590; --muted-2:#3D4550;
+    --primary:#4A8AFF; --primary-soft:rgba(74,138,255,.15);
+    --accent:#2BD9A8; --accent-soft:rgba(43,217,168,.15);
+    --danger:#FF6B70; --danger-soft:rgba(255,107,112,.15);
+    --warn:#F5A524;
+    --border:#222834; --border-2:#1A1F28;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif;font-size:13px;line-height:1.5}
+  .app{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+  .sidebar{background:#06080B;color:#fff;padding:14px 10px;display:flex;flex-direction:column;gap:1px;position:sticky;top:0;height:100vh;border-right:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:8px;padding:4px 8px 14px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:10px}
+  .brand img{width:26px;height:26px;border-radius:4px}
+  .brand-name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .brand-name span{color:var(--primary)}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:4px;color:rgba(255,255,255,.6);font-weight:500;cursor:pointer;font-size:12.5px}
+  .nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+  .nav-item.active{background:var(--primary);color:#fff}
+  .nav-spacer{flex:1}
+  .btn-primary{background:var(--primary);color:#fff;padding:8px 12px;border-radius:4px;font-weight:600;font-size:12.5px;border:0;cursor:pointer;width:100%}
+
+  .main{padding:14px 18px 40px}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+  .topbar h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
+  .topbar .sub{color:var(--muted);font-size:12px}
+
+  .demo-banner{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--muted)}
+  .demo-banner strong{color:var(--ink);font-weight:600}
+  .demo-banner .dot{width:6px;height:6px;border-radius:50%;background:var(--warn)}
+
+  .grid-top{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+  .stat .label{color:var(--muted);font-size:11px;font-weight:500}
+  .stat .num{font-size:18px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .stat.in .num{color:var(--primary)}
+  .stat.out .num{color:var(--danger)}
+  .stat .delta{font-size:11px;color:var(--accent);margin-top:2px;font-weight:600}
+
+  .grid-mid{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+  .card-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .card-head h2{margin:0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .card-head a{font-size:11px;color:var(--primary);font-weight:600}
+  .card-body{padding:6px 14px}
+
+  .acct-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-2)}
+  .acct-row:last-child{border-bottom:0}
+  .acct{display:flex;gap:8px;align-items:center}
+  .acct-icon{width:26px;height:26px;border-radius:5px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+  .acct-name{font-size:13px;font-weight:600}
+  .acct-meta{font-size:11px;color:var(--muted)}
+  .balance{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+
+  .goal{padding:8px 0;border-bottom:1px solid var(--border-2)}
+  .goal:last-child{border-bottom:0}
+  .goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+  .goal-name{font-size:12.5px;font-weight:600}
+  .goal-pct{font-size:10px;color:var(--accent);font-weight:700;background:var(--accent-soft);padding:2px 6px;border-radius:3px}
+  .bar{height:4px;background:var(--border-2);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:var(--primary);border-radius:3px}
+  .goal-meta{font-size:10.5px;color:var(--muted);margin-top:4px}
+
+  .tx-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-2)}
+  .tx-row:last-child{border-bottom:0}
+  .tx-ic{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+  .tx-ic.in{background:var(--primary-soft);color:var(--primary)}
+  .tx-ic.out{background:var(--danger-soft);color:var(--danger)}
+  .tx-name{font-size:12.5px;font-weight:600}
+  .tx-sub{font-size:11px;color:var(--muted)}
+  .tx-amt{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .tx-amt.in{color:var(--primary)}
+
+  @media (max-width:980px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;padding:8px}.brand{border:0;margin:0;padding:0 10px 0 4px}.grid-top{grid-template-columns:repeat(2,1fr)}.grid-mid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="../../logos/finora-logo.svg" alt="Finora">
+      <div class="brand-name">fin<span>ora</span></div>
+    </div>
+    <a class="nav-item active">⌂ Home</a>
+    <a class="nav-item">⇄ Txns</a>
+    <a class="nav-item">◎ Accts</a>
+    <a class="nav-item">★ Goals</a>
+    <a class="nav-item">⚙ Settings</a>
+    <div class="nav-spacer"></div>
+    <button class="btn-primary">+ Add</button>
+  </aside>
+
+  <main class="main">
+    <div class="demo-banner"><div class="dot"></div><div><strong>Demo data</strong> · sample dashboard</div></div>
+
+    <div class="topbar"><div><h1>Where is my money?</h1><div class="sub">4 accounts · total ৳ 38,500</div></div></div>
+
+    <div class="grid-top">
+      <div class="stat in"><div class="label">Total</div><div class="num">৳ 38,500</div></div>
+      <div class="stat in"><div class="label">Income</div><div class="num">৳ 60,000</div><div class="delta">+12% MoM</div></div>
+      <div class="stat out"><div class="label">Expenses</div><div class="num">৳ 21,500</div></div>
+      <div class="stat"><div class="label">Goals</div><div class="num">3</div><div class="delta">৳ 65,750 saved</div></div>
+    </div>
+
+    <div class="grid-mid">
+      <div class="card">
+        <div class="card-head"><h2>Accounts</h2><a>Manage →</a></div>
+        <div class="card-body">
+          <div class="acct-row"><div class="acct"><div class="acct-icon">৳</div><div><div class="acct-name">Cash</div><div class="acct-meta">Cash · default</div></div></div><div class="balance">৳ 12,000</div></div>
+          <div class="acct-row"><div class="acct"><div class="acct-icon">B</div><div><div class="acct-name">City Bank Salary</div><div class="acct-meta">Bank</div></div></div><div class="balance">৳ 18,500</div></div>
+          <div class="acct-row"><div class="acct"><div class="acct-icon">b</div><div><div class="acct-name">bKash</div><div class="acct-meta">Wallet</div></div></div><div class="balance">৳ 6,500</div></div>
+          <div class="acct-row"><div class="acct"><div class="acct-icon">S</div><div><div class="acct-name">Savings</div><div class="acct-meta">Savings</div></div></div><div class="balance">৳ 1,500</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Goals</h2><a>All →</a></div>
+        <div class="card-body">
+          <div class="goal"><div class="goal-head"><div class="goal-name">New phone</div><div class="goal-pct">45%</div></div><div class="bar"><div class="bar-fill" style="width:45%"></div></div><div class="goal-meta">৳ 15,750 / ৳ 35,000 · 5,833/mo</div></div>
+          <div class="goal"><div class="goal-head"><div class="goal-name">Emergency</div><div class="goal-pct">80%</div></div><div class="bar"><div class="bar-fill" style="width:80%"></div></div><div class="goal-meta">৳ 40,000 / ৳ 50,000</div></div>
+          <div class="goal"><div class="goal-head"><div class="goal-name">Travel — Dec</div><div class="goal-pct">10%</div></div><div class="bar"><div class="bar-fill" style="width:10%"></div></div><div class="goal-meta">৳ 10,000 / ৳ 100,000</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Recent activity</h2><a>View all →</a></div>
+      <div class="card-body">
+        <div class="tx-row"><div class="tx-ic in">↑</div><div><div class="tx-name">Salary</div><div class="tx-sub">Today · City Bank</div></div><div class="tx-amt in">+৳ 60,000</div></div>
+        <div class="tx-row"><div class="tx-ic out">↓</div><div><div class="tx-name">Lunch · Food</div><div class="tx-sub">Today · Cash</div></div><div class="tx-amt">−৳ 250</div></div>
+        <div class="tx-row"><div class="tx-ic in">↑</div><div><div class="tx-name">Freelance</div><div class="tx-sub">Yesterday · bKash</div></div><div class="tx-amt in">+৳ 8,000</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

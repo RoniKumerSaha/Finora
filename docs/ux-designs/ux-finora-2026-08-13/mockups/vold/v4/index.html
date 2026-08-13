@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Finora · v4 Mockups</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="design-system.css">
+</head>
+<body>
+<main class="content">
+  <div class="topbar">
+    <div>
+      <div class="title">v4 · Mockups</div>
+      <div class="flex items-center gap-3 mt-3">
+        <span class="logo-mark-a2"><i></i></span>
+        <h1 style="margin:0">Finora</h1>
+      </div>
+      <p class="sub mt-3">Logo locked: <strong>A2 · Solid filled</strong> — stacked solids with descending opacity 100/60/30%. <a href="logo-preview.html">See all 4 variants →</a></p>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="logo-preview.html">Logo system →</a>
+      <button class="btn ghost" onclick="toggleTheme()">◐ Theme</button>
+    </div>
+  </div>
+
+  <p class="muted" style="max-width:640px;">Pure white · sharp edges · hairline borders · no shadows. Electric indigo accent · 8-color data spectrum · geometric sans + mono numbers. Linear/Vercel aesthetic. <strong>Production polish:</strong> focus rings, banner component, mode pills, semantic data colors with 60° separation, dark-mode contrast lift, accessibility.</p>
+  <div class="grid-12 mt-6">
+    <a class="card col-4" href="logo-preview.html" style="text-decoration:none;color:inherit;border-color:var(--accent)">
+      <div class="flex gap-2 items-center" style="margin-bottom:8px">
+        <span class="logo-mark-a2"><i></i></span>
+        <strong style="font-size:14px">Fin<span class="accent">ora</span></strong>
+      </div>
+      <strong>v4 · 24 Logo system · A2 picked →</strong>
+      <div class="tiny mt-3">4 variants rendered · A2 (Solid filled) locked across all 24 mockups · light + dark · 24 / 32 / 48 px</div>
+    </a>
+    <a class="card col-4" href="components.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-expense);margin-bottom:8px"></div>
+      <strong>v4 · 00 Design system</strong>
+      <div class="tiny mt-3">Tokens · 8-color data rows · banners · trends · kbd</div>
+    </a>
+    <a class="card col-4" href="app-shell.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--accent);margin-bottom:8px"></div>
+      <strong>v4 · 01 App shell</strong>
+      <div class="tiny mt-3">Persistent sidebar · 240px</div>
+    </a>
+    <a class="card col-4" href="dashboard.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-income);margin-bottom:8px"></div>
+      <strong>v4 · 03 Dashboard</strong>
+      <div class="tiny mt-3">Big number + sparkline</div>
+    </a>
+    <a class="card col-4" href="transactions.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-saving);margin-bottom:8px"></div>
+      <strong>v4 · 04 Transactions</strong>
+      <div class="tiny mt-3">Filter + 8-type left-border rows</div>
+    </a>
+    <a class="card col-4" href="transaction-add.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-debt);margin-bottom:8px"></div>
+      <strong>v4 · 05 Add transaction</strong>
+      <div class="tiny mt-3">4×2 type grid · live recompute</div>
+    </a>
+    <a class="card col-4" href="plan.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-invest);margin-bottom:8px"></div>
+      <strong>v4 · 06 Monthly Plan</strong>
+      <div class="tiny mt-3">Visual bucket diagram</div>
+    </a>
+    <a class="card col-4" href="goals.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-saving);margin-bottom:8px"></div>
+      <strong>v4 · 07 Goals</strong>
+      <div class="tiny mt-3">4 states + expired dialog</div>
+    </a>
+    <a class="card col-4" href="goal-detail.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-transfer);margin-bottom:8px"></div>
+      <strong>v4 · 08 Goal detail</strong>
+      <div class="tiny mt-3">Pace chart + activity</div>
+    </a>
+    <a class="card col-4" href="accounts.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-borrow);margin-bottom:8px"></div>
+      <strong>v4 · 09 Accounts</strong>
+      <div class="tiny mt-3">Type + net-worth toggle</div>
+    </a>
+    <a class="card col-4" href="investments.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-invest);margin-bottom:8px"></div>
+      <strong>v4 · 10 Investments</strong>
+      <div class="tiny mt-3">DPS / FDR / Other</div>
+    </a>
+    <a class="card col-4" href="health.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-income);margin-bottom:8px"></div>
+      <strong>v4 · 11 Financial Health</strong>
+      <div class="tiny mt-3">5 components + trend</div>
+    </a>
+    <a class="card col-4" href="charts.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--accent);margin-bottom:8px"></div>
+      <strong>v4 · 12 Charts</strong>
+      <div class="tiny mt-3">6 chart types</div>
+    </a>
+    <a class="card col-4" href="settings.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--ink-3);margin-bottom:8px"></div>
+      <strong>v4 · 13 Settings</strong>
+      <div class="tiny mt-3">5 sub-sections</div>
+    </a>
+    <a class="card col-4" href="states.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--warn);margin-bottom:8px"></div>
+      <strong>v4 · 14 States</strong>
+      <div class="tiny mt-3">Empty / Loading / Error</div>
+    </a>
+    <a class="card col-4" href="onboarding.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-transfer);margin-bottom:8px"></div>
+      <strong>v4 · 15 Onboarding</strong>
+      <div class="tiny mt-3">4-step first use</div>
+    </a>
+    <a class="card col-4" href="quick-add-mobile.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-lend);margin-bottom:8px"></div>
+      <strong>v4 · 16 Quick add (mobile)</strong>
+      <div class="tiny mt-3">Numpad + type chips</div>
+    </a>
+    <a class="card col-4" href="dps.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-invest);margin-bottom:8px"></div>
+      <strong>v4 · 17 DPS calculator</strong>
+      <div class="tiny mt-3">Projection + live current value</div>
+    </a>
+    <a class="card col-4" href="fdr.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-invest);margin-bottom:8px"></div>
+      <strong>v4 · 18 FDR calculator</strong>
+      <div class="tiny mt-3">Simple/compound modes</div>
+    </a>
+    <a class="card col-4" href="net-worth.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--accent);margin-bottom:8px"></div>
+      <strong>v4 · 19 Net Worth</strong>
+      <div class="tiny mt-3">Assets vs liabilities + trend</div>
+    </a>
+    <a class="card col-4" href="debts.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-debt);margin-bottom:8px"></div>
+      <strong>v4 · 20 Debts</strong>
+      <div class="tiny mt-3">List + repayment + ledger</div>
+    </a>
+    <a class="card col-4" href="investment-detail.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-invest);margin-bottom:8px"></div>
+      <strong>v4 · 21 Investment detail</strong>
+      <div class="tiny mt-3">Live gain/loss + update value</div>
+    </a>
+    <a class="card col-4" href="account-detail.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-transfer);margin-bottom:8px"></div>
+      <strong>v4 · 22 Account detail</strong>
+      <div class="tiny mt-3">Balance + history + edit</div>
+    </a>
+    <a class="card col-4" href="transaction-edit.html" style="text-decoration:none;color:inherit">
+      <div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--data-expense);margin-bottom:8px"></div>
+      <strong>v4 · 23 Edit transaction</strong>
+      <div class="tiny mt-3">Prefilled + recalc preview</div>
+    </a>
+  </div>
+</main>
+
+<div class="theme-toggle"><button class="btn" onclick="toggleTheme()">◐</button></div>
+<script src="app.js"></script>
+</body>
+</html>
