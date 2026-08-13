@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · Web Mockup V1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0F1419;
+    --surface:#1A2028;
+    --surface-2:#232B36;
+    --surface-3:#2A3340;
+    --ink:#E6EDF3;
+    --muted:#8B949E;
+    --primary:#2DD4BF;
+    --primary-soft:rgba(45,212,191,.15);
+    --accent:#A78BFA;
+    --accent-soft:rgba(167,139,250,.15);
+    --danger:#F87171;
+    --danger-soft:rgba(248,113,113,.15);
+    --warn:#F4B860;
+    --border:#2A3340;
+    --r-card:16px;
+    --r-btn:10px;
+    --r-pill:999px;
+    --shadow:0 4px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;font-size:14px;line-height:1.5}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+
+  /* ------- App shell ------- */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:8px}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#0F1419;font-weight:800}
+  .brand-name{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .brand-name span{color:var(--primary)}
+
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);font-weight:500;cursor:pointer;transition:all .15s}
+  .nav-item:hover{background:var(--surface-2);color:var(--ink)}
+  .nav-item.active{background:var(--primary-soft);color:var(--primary)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center}
+  .nav-spacer{flex:1}
+
+  /* ------- Main ------- */
+  .main{padding:24px 32px 48px;max-width:1280px}
+  .demo-banner{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--r-card);padding:10px 16px;margin-bottom:20px;font-size:13px;color:var(--muted)}
+  .demo-banner .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .demo-banner strong{color:var(--ink);font-weight:600}
+  .demo-banner .x{margin-left:auto;color:var(--muted);padding:4px 8px;border-radius:6px}
+  .demo-banner .x:hover{background:var(--surface-3);color:var(--ink)}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+  .topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .topbar .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .topbar-actions{display:flex;gap:10px;align-items:center}
+  .icon-btn{width:36px;height:36px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center}
+  .icon-btn:hover{background:var(--surface-2)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-btn);font-weight:600;font-size:14px;transition:all .15s}
+  .btn-primary{background:var(--primary);color:#0F1419}
+  .btn-primary:hover{filter:brightness(1.1)}
+  .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--ink)}
+  .btn-ghost:hover{background:var(--surface-2)}
+
+  /* ------- Cards ------- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 14px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+  /* ------- Dashboard layout ------- */
+  .grid-top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:18px}
+  .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .stat .num{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
+  .stat .trend{font-size:12px;margin-top:4px;color:var(--muted)}
+  .stat.in .num{color:var(--primary)}
+  .stat.out .num{color:var(--danger)}
+  .stat.net .num{color:var(--accent)}
+
+  .grid-mid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
+
+  .acct-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+  .acct-row:last-child{border-bottom:0}
+  .acct{display:flex;gap:12px;align-items:center}
+  .acct-icon{width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary)}
+  .acct .name{font-weight:600}
+  .acct .type{font-size:12px;color:var(--muted)}
+  .balance{font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* ------- Goals ------- */
+  .goal{padding:14px 0;border-bottom:1px solid var(--border)}
+  .goal:last-child{border-bottom:0}
+  .goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .goal-name{font-weight:600}
+  .goal-pct{font-size:12px;color:var(--primary);font-weight:700;background:var(--primary-soft);padding:3px 10px;border-radius:var(--r-pill)}
+  .bar{height:6px;background:var(--surface-2);border-radius:var(--r-pill);overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:var(--r-pill)}
+  .goal-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* ------- Recent activity ------- */
+  .tx{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .tx:last-child{border-bottom:0}
+  .tx-left{display:flex;gap:12px;align-items:center}
+  .tx-ic{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .tx-ic.in{color:var(--primary);background:var(--primary-soft)}
+  .tx-ic.out{color:var(--danger);background:var(--danger-soft)}
+  .tx-name{font-weight:600;font-size:14px}
+  .tx-sub{font-size:12px;color:var(--muted)}
+  .tx-amt{font-weight:700;font-variant-numeric:tabular-nums}
+  .tx-amt.in{color:var(--primary)}
+  .tx-amt.out{color:var(--ink)}
+
+  /* ------- Modal ------- */
+  .modal-bg{position:fixed;inset:0;background:rgba(15,20,25,.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:24px;width:420px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .modal h3{margin:0 0 4px;font-size:18px}
+  .modal p{margin:0 0 18px;color:var(--muted);font-size:13px}
+  .modal label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+  .modal input,.modal select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);padding:10px 12px;border-radius:var(--r-btn);font:inherit;font-size:14px}
+  .modal input:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+
+  /* ------- Section header ------- */
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .section-head h2{margin:0;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .link{color:var(--primary);font-size:13px;font-weight:600;cursor:pointer}
+
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;padding:12px}
+    .brand{border:0;padding:0;margin:0 14px 0 4px}
+    .nav-item span.label{display:none}
+    .grid-top{grid-template-columns:1fr}
+    .grid-mid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">F</div>
+      <div class="brand-name">fin<span>ora</span></div>
+    </div>
+
+    <div class="nav-item active"><span class="ic">⌂</span><span class="label">Home</span></div>
+    <div class="nav-item"><span class="ic">⇄</span><span class="label">Transactions</span></div>
+    <div class="nav-item"><span class="ic">◎</span><span class="label">Accounts</span></div>
+    <div class="nav-item"><span class="ic">★</span><span class="label">Goals</span></div>
+    <div class="nav-item"><span class="ic">⚙</span><span class="label">Settings</span></div>
+
+    <div class="nav-spacer"></div>
+
+    <button class="btn btn-primary" style="justify-content:center">
+      <span style="font-size:18px;line-height:1">+</span>
+      <span class="label">Add</span>
+    </button>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- Demo banner -->
+    <div class="demo-banner">
+      <div class="dot"></div>
+      <div>
+        <strong>You're viewing demo data.</strong>
+        This is a sample dashboard to show you how Finora works.
+      </div>
+      <button class="x">✕</button>
+    </div>
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div>
+        <h1>Where is my money?</h1>
+        <div class="sub">Total across all accounts · updated just now</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost">⌕ Search</button>
+        <button class="icon-btn">⚙</button>
+      </div>
+    </div>
+
+    <!-- Top stats -->
+    <div class="grid-top">
+      <div class="stat in">
+        <div class="label">Total balance</div>
+        <div class="num">৳ 38,500</div>
+        <div class="trend">across 4 accounts</div>
+      </div>
+      <div class="stat in">
+        <div class="label">Income (this month)</div>
+        <div class="num">৳ 60,000</div>
+        <div class="trend">2 entries</div>
+      </div>
+      <div class="stat out">
+        <div class="label">Expenses (this month)</div>
+        <div class="num">৳ 21,500</div>
+        <div class="trend">18 entries</div>
+      </div>
+    </div>
+
+    <!-- Mid grid: Accounts + Goals -->
+    <div class="grid-mid">
+      <!-- Accounts -->
+      <div class="card">
+        <div class="section-head">
+          <h2>Accounts</h2>
+          <a class="link">+ Add account</a>
+        </div>
+
+        <div class="acct-row">
+          <div class="acct">
+            <div class="acct-icon">৳</div>
+            <div>
+              <div class="name">Cash</div>
+              <div class="type">Cash · default</div>
+            </div>
+          </div>
+          <div class="balance">৳ 12,000</div>
+        </div>
+
+        <div class="acct-row">
+          <div class="acct">
+            <div class="acct-icon">B</div>
+            <div>
+              <div class="name">City Bank Salary</div>
+              <div class="type">Bank Account</div>
+            </div>
+          </div>
+          <div class="balance">৳ 18,500</div>
+        </div>
+
+        <div class="acct-row">
+          <div class="acct">
+            <div class="acct-icon">b</div>
+            <div>
+              <div class="name">bKash</div>
+              <div class="type">Mobile Wallet</div>
+            </div>
+          </div>
+          <div class="balance">৳ 6,500</div>
+        </div>
+
+        <div class="acct-row">
+          <div class="acct">
+            <div class="acct-icon">S</div>
+            <div>
+              <div class="name">Savings (Dutch-Bangla)</div>
+              <div class="type">Savings Account</div>
+            </div>
+          </div>
+          <div class="balance">৳ 1,500</div>
+        </div>
+      </div>
+
+      <!-- Goals -->
+      <div class="card">
+        <div class="section-head">
+          <h2>Goals</h2>
+          <a class="link">+ New</a>
+        </div>
+
+        <div class="goal">
+          <div class="goal-head">
+            <div class="goal-name">New phone</div>
+            <div class="goal-pct">45%</div>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:45%"></div></div>
+          <div class="goal-meta">
+            <span>৳ 15,750 / ৳ 35,000</span>
+            <span>~৳ 5,833 / mo</span>
+          </div>
+        </div>
+
+        <div class="goal">
+          <div class="goal-head">
+            <div class="goal-name">Emergency fund</div>
+            <div class="goal-pct">80%</div>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:80%"></div></div>
+          <div class="goal-meta">
+            <span>৳ 40,000 / ৳ 50,000</span>
+            <span>~৳ 3,333 / mo</span>
+          </div>
+        </div>
+
+        <div class="goal">
+          <div class="goal-head">
+            <div class="goal-name">Travel — December</div>
+            <div class="goal-pct">10%</div>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:10%"></div></div>
+          <div class="goal-meta">
+            <span>৳ 10,000 / ৳ 100,000</span>
+            <span>~৳ 15,000 / mo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="card">
+      <div class="section-head">
+        <h2>Recent activity</h2>
+        <a class="link">View all →</a>
+      </div>
+
+      <div class="tx">
+        <div class="tx-left">
+          <div class="tx-ic in">↑</div>
+          <div>
+            <div class="tx-name">Salary</div>
+            <div class="tx-sub">Today · City Bank Salary</div>
+          </div>
+        </div>
+        <div class="tx-amt in">+৳ 60,000</div>
+      </div>
+
+      <div class="tx">
+        <div class="tx-left">
+          <div class="tx-ic out">↓</div>
+          <div>
+            <div class="tx-name">Lunch · Food</div>
+            <div class="tx-sub">Today · Cash</div>
+          </div>
+        </div>
+        <div class="tx-amt">−৳ 250</div>
+      </div>
+
+      <div class="tx">
+        <div class="tx-left">
+          <div class="tx-ic in">↑</div>
+          <div>
+            <div class="tx-name">Freelance payment</div>
+            <div class="tx-sub">Yesterday · bKash</div>
+          </div>
+        </div>
+        <div class="tx-amt in">+৳ 8,000</div>
+      </div>
+
+      <div class="tx">
+        <div class="tx-left">
+          <div class="tx-ic out">↓</div>
+          <div>
+            <div class="tx-name">Groceries · Shopping</div>
+            <div class="tx-sub">Yesterday · City Bank Salary</div>
+          </div>
+        </div>
+        <div class="tx-amt">−৳ 1,420</div>
+      </div>
+
+      <div class="tx">
+        <div class="tx-left">
+          <div class="tx-ic out">↓</div>
+          <div>
+            <div class="tx-name">Bus · Transport</div>
+            <div class="tx-sub">2 days ago · bKash</div>
+          </div>
+        </div>
+        <div class="tx-amt">−৳ 60</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ MODAL: Add expense ============ -->
+<div class="modal-bg">
+  <div class="modal">
+    <h3>Add expense</h3>
+    <p>Quick path · 3 fields</p>
+
+    <label for="amt">Amount</label>
+    <input id="amt" value="250" style="font-size:18px;font-weight:600">
+
+    <label for="cat">Category</label>
+    <select id="cat">
+      <option>Food</option>
+      <option>Transport</option>
+      <option>Housing</option>
+      <option>Bills</option>
+      <option selected>Shopping</option>
+    </select>
+
+    <label for="acc">Account</label>
+    <select id="acc">
+      <option selected>Cash</option>
+      <option>City Bank Salary</option>
+      <option>bKash</option>
+    </select>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
