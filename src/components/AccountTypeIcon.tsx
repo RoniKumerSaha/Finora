@@ -70,6 +70,23 @@ export function accountTileClass(tone: AccountTone): string {
   }
 }
 
+/**
+ * Text-color class for the balance number on an account row. Mirrors
+ * `accountTileClass` so the balance picks up the same color family as
+ * its icon tile — cash balances read gold, mobile wallets read blue,
+ * card balances read red, and so on. Centralized here so the home
+ * preview and the accounts list stay in sync.
+ */
+export function accountBalanceColor(tone: AccountTone): string {
+  switch (tone) {
+    case 'accent':  return 'text-accent';
+    case 'primary': return 'text-primary';
+    case 'info':    return 'text-info';
+    case 'danger':  return 'text-danger';
+    default:        return 'text-ink';
+  }
+}
+
 interface Props {
   type: AccountType | string;
   className?: string;

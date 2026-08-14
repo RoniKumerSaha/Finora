@@ -24,7 +24,7 @@ import * as accounts from '../domain/accounts';
 import { accountBalance } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import { RowMenu } from '../components/RowMenu';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass } from '../components/AccountTypeIcon';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT } from '../lib/format';
@@ -115,7 +115,7 @@ export function AccountsListScreen() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-bold tabular text-[14px]">{fmtBDT(bal)}</span>
+                    <span className={`font-bold tabular text-[14px] ${accountBalanceColor(accountTone(a.type))}`}>{fmtBDT(bal)}</span>
                     <RowMenu
                       ariaLabel={`Actions for ${a.name}`}
                       items={[

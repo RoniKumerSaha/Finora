@@ -111,7 +111,7 @@ export function InsightsScreen() {
         <StatTile
           label="Avg monthly expense"
           value={fmtBDT(stats.avgMonthlyExpense)}
-          tone="ink"
+          tone="danger"
           caption={periodComparison(stats.avgMonthlyExpense, stats.avgMonthlyExpensePrev, rangeKey)}
         />
         <StatTile
@@ -211,13 +211,14 @@ function StatTile({
 }: {
   label: string;
   value: string;
-  tone: 'primary' | 'danger' | 'ink' | 'accent';
+  tone: 'primary' | 'danger' | 'ink' | 'accent' | 'info';
   caption: string | null;
 }) {
   const valueColor =
     tone === 'primary' ? 'text-primary'
     : tone === 'danger' ? 'text-danger'
     : tone === 'accent' ? 'text-accent'
+    : tone === 'info'   ? 'text-info'
     : 'text-ink';
   return (
     <div className="card" role="group" aria-label={`${label}: ${value}${caption ? ', ' + caption : ''}`}>
@@ -499,7 +500,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
           <h2 className="heading h3-modal">Net worth</h2>
           <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Assets {'\u2212'} liabilities</div>
         </div>
-        <div className="text-[22px] font-bold tabular text-ink">
+        <div className="text-[22px] font-bold tabular text-info">
           {lastPoint ? fmtBDT(lastPoint.value) : '—'}
         </div>
       </div>
@@ -625,7 +626,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
           {/* Bottom legend */}
           {hoverPoint && (
             <div className="text-[11px] text-muted mt-2 tabular">
-              {hoverPoint.label}: <span className="text-ink font-semibold">{fmtBDT(hoverPoint.value)}</span>
+              {hoverPoint.label}: <span className="text-info font-semibold">{fmtBDT(hoverPoint.value)}</span>
             </div>
           )}
         </>
@@ -637,11 +638,18 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
 // ---------- Goals ----------
 
 function GoalsCard({ goals }: { goals: ReturnType<typeof goalsForInsights> }) {
+  // The widget caps the row list at 5 for visual density. When there are
+  // more goals than that, the header-right slot swaps from a passive
+  // "N active" count to an active "See all →" link so the extras don't
+  // become unreachable from this screen.
+  const overflow = goals.length > 5;
   return (
     <div className="card">
       <div className="flex justify-between items-end mb-3">
         <h2 className="heading h3-modal">Goals</h2>
-        <div className="text-[12px] text-muted tabular">{goals.length} active</div>
+        {overflow
+          ? <Link to="/goals" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">See all {'\u2192'}</Link>
+          : <div className="text-[12px] text-muted tabular">{goals.length} active</div>}
       </div>
       {goals.length === 0 ? (
         <EmptyState message="No active goals." cta={{ to: '/goals/add', label: 'Set a goal' }} />
@@ -694,11 +702,16 @@ function GoalRow({ goal }: { goal: ReturnType<typeof goalsForInsights>[number] }
 // ---------- Debts ----------
 
 function DebtsCard({ debts }: { debts: ReturnType<typeof debtsForInsights> }) {
+  // Header-right slot swaps from "N active" → "See all →" when the
+  // widget is hiding items. See GoalsCard for the rationale.
+  const overflow = debts.length > 5;
   return (
     <div className="card">
       <div className="flex justify-between items-end mb-3">
         <h2 className="heading h3-modal">Debts</h2>
-        <div className="text-[12px] text-muted tabular">{debts.length} active</div>
+        {overflow
+          ? <Link to="/debts" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">See all {'\u2192'}</Link>
+          : <div className="text-[12px] text-muted tabular">{debts.length} active</div>}
       </div>
       {debts.length === 0 ? (
         <EmptyState message="No active debts." />
@@ -792,9 +805,21 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
           cta={{ to: '/investments/add', label: 'Add an investment' }}
         />
       ) : (
-        <div className="flex flex-col gap-1">
-          {investments.slice(0, 5).map(inv => <InvestmentRow key={inv.id} inv={inv} />)}
-        </div>
+        <>
+          <div className="flex flex-col gap-1">
+            {investments.slice(0, 5).map(inv => <InvestmentRow key={inv.id} inv={inv} />)}
+          </div>
+          {/* The Investments header is occupied by the totals cluster, so
+              the "See all" affordance lives at the bottom of the list.
+              Only renders when the widget is actually hiding rows. */}
+          {investments.length > 5 && (
+            <div className="flex justify-end pt-3">
+              <Link to="/investments" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">
+                See all {'\u2192'}
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

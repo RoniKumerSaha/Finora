@@ -42,8 +42,9 @@ import {
   debtPaidSoFar,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass } from '../components/AccountTypeIcon';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
 import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
+import { TransactionTag } from '../components/TransactionTag';
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
@@ -139,7 +140,7 @@ export function HomeScreen() {
           label="Net worth"
           value={fmtBDT(netWorth)}
           trend={netWorth >= 0 ? 'assets \u2212 liabilities' : 'liabilities exceed assets'}
-          tone="neutral"
+          tone="info"
         />
       </div>
 
@@ -220,11 +221,12 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
   );
 }
 
-function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' }) {
+function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' | 'info' }) {
   const color =
     tone === 'out'    ? 'text-danger' :
     tone === 'in'     ? 'text-primary' :
     tone === 'accent' ? 'text-accent' :
+    tone === 'info'   ? 'text-info' :
     tone === 'primary' ? 'text-primary' :
                         'text-ink';
   return (
@@ -237,6 +239,9 @@ function Stat({ label, value, trend, tone }: { label: string; value: string; tre
 }
 
 function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; name: string; type: string; balance: number; tone?: import('../components/AccountTypeIcon').AccountTone }) {
+  // The balance number picks up the same tone as the icon tile so
+  // mobile_wallet balances (info/blue) read as the same color family
+  // as the avatar. `muted` falls back to the default ink color.
   return (
     <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
@@ -248,7 +253,7 @@ function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; n
           <div className="text-xs text-muted leading-tight mt-1">{type}</div>
         </div>
       </div>
-      <div className="font-bold tabular text-[14px]">{fmtBDT(balance)}</div>
+      <div className={`font-bold tabular text-[14px] ${accountBalanceColor(tone ?? 'muted')}`}>{fmtBDT(balance)}</div>
     </div>
   );
 }
@@ -264,9 +269,14 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
       : direction === 'out'
         ? 'text-danger bg-danger-soft'
         : 'text-accent bg-accent-soft';
+  // On the home preview, transfer amounts color info-blue when the
+  // source account is a mobile wallet — so a bKash → Cash movement
+  // reads with the same blue family as the avatar tile instead of
+  // the default neutral ink.
   const amtColor =
     direction === 'in'   ? 'text-primary'  // income → green
     : direction === 'out' ? 'text-danger'   // expense → red
+    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
     :                       'text-ink';      // transfer → neutral
   return (
     <div className="flex justify-between items-center py-3.5 border-b border-border last:border-0">
@@ -277,9 +287,15 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
           {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
         </div>
         <div>
-          <div className="font-semibold text-[14px] leading-tight tracking-tight">{tx.note || cat?.name || tx.type}</div>
+          <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
+            <span className="min-w-0 truncate">{tx.note || cat?.name || tx.type}</span>
+            <TransactionTag
+              tx={tx}
+              debtDirection={tx.linkedDebtId ? state.debts.find((d: any) => d.id === tx.linkedDebtId)?.direction : undefined}
+            />
+          </div>
           <div className="text-xs text-muted leading-tight mt-1">
-            {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''} {tx.linkedDebtId ? '· debt' : ''} {tx.linkedInvestmentId ? '· investment payout' : ''}
+            {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''}
           </div>
         </div>
       </div>

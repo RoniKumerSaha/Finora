@@ -32,6 +32,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as transactions from '../domain/transactions';
 import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight } from '../components/icons/Icons';
+import { TransactionTag } from '../components/TransactionTag';
 import { fmtBDTSigned, fmtDate } from '../lib/format';
 
 type FilterKey = 'all' | 'income' | 'expense' | 'transfer' | 'payouts' | 'debtPayments' | 'thisMonth' | 'cash';
@@ -209,11 +210,19 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   // simpler: always omit the date from the row subtitle; it would be
   // redundant either way (the day-grouped view already shows it, and
   // for filtered views the date is informative but not essential).
+  //
+  // The trailing `· payout` / `· debt payment` text was removed when
+  // tags were introduced — the <TransactionTag> pill now carries that
+  // information visually next to the title. Subtitle stays focused on
+  // account + category.
+  const linkedDebt = tx.linkedDebtId
+    ? state.debts.find((d: any) => d.id === tx.linkedDebtId)
+    : undefined;
   const sub = (() => {
     if (direction === 'xfr') {
       return `Transfer \u00B7 ${acc?.name ?? '\u2014'} \u2192 ${toAcc?.name ?? '\u2014'}`;
     }
-    return `${acc?.name ?? '\u2014'}${cat ? ` \u00B7 ${cat.name}` : ''}${tx.linkedDebtId ? ` \u00B7 debt payment` : ''}${tx.linkedInvestmentId ? ` \u00B7 payout` : ''}`;
+    return `${acc?.name ?? '\u2014'}${cat ? ` \u00B7 ${cat.name}` : ''}`;
   })();
 
   return (
@@ -233,8 +242,9 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
           {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
         </div>
         <div className="min-w-0">
-          <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">
-            {tx.note || cat?.name || tx.type}
+          <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
+            <span className="min-w-0 truncate grow">{tx.note || cat?.name || tx.type}</span>
+            <TransactionTag tx={tx} debtDirection={linkedDebt?.direction} />
           </div>
           <div className="text-xs text-muted leading-tight mt-1 truncate">{sub}</div>
         </div>
