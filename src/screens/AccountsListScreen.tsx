@@ -3,16 +3,26 @@
  *
  * Visual target: docs/ux-designs/.../mockups/v2/dark.html#accounts
  * Each row is a single flex row: icon + name/type on the left,
- * balance + Edit on the right.
+ * balance + overflow menu on the right.
  *
  * 2026-08-14 polish: subtler row hover (using .row-hover), refined
  * tile corners, and a tighter page header.
+ *
+ * 2026-08-14 polish (row hover accent): each row carries a left-edge
+ * accent dot that fades in on hover (matches TransactionsListScreen),
+ * and destructive actions live behind a `⋯` overflow menu instead of
+ * being permanently visible red links.
+ *
+ * 2026-08-14 polish (dedupe Add): the header Add button is gone —
+ * Shell already pins a global "Add transaction" CTA. The empty-state
+ * still gets a contextual button so first-run users aren't stranded.
  */
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as accounts from '../domain/accounts';
 import { accountBalance } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
+import { RowMenu } from '../components/RowMenu';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT } from '../lib/format';
@@ -21,6 +31,7 @@ export function AccountsListScreen() {
   const state = useStore(s => s.state);
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
+  const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
   const accs = accounts.list(state);
 
@@ -49,19 +60,9 @@ export function AccountsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="heading h1-screen">Accounts</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{accs.length} total</div>
-        </div>
-        <Link
-          to="/accounts/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          style={{ background: 'var(--primary)' }}
-        >
-          <span className="text-base leading-none">+</span>
-          <span>Add account</span>
-        </Link>
+      <div>
+        <h1 className="heading h1-screen">Accounts</h1>
+        <div className="text-muted text-[13px] mt-1.5 tabular">{accs.length} total</div>
       </div>
 
       <section className="card">
@@ -83,34 +84,33 @@ export function AccountsListScreen() {
               return (
                 <div
                   key={a.id}
-                  className="flex justify-between items-center py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition"
+                  className="group relative flex justify-between items-center py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition"
                 >
-                  <div className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
+                    style={{ background: 'var(--primary)' }}
+                  />
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-[10px] bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
                       {(a.name.trim()[0] || '\u09F3').toUpperCase()}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight tracking-tight">{a.name}</div>
                       <div className="text-xs text-muted leading-tight mt-1 tabular">
                         {accountTypeLabel(a.type)} · opens at {fmtBDT(a.openingBalance)}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <span className="font-bold tabular text-[14px]">{fmtBDT(bal)}</span>
-                    <Link
-                      to={`/accounts/${a.id}/edit`}
-                      className="text-primary font-semibold text-[13px] hover:underline underline-offset-2"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(a)}
-                      className="text-danger font-semibold text-[13px] hover:underline underline-offset-2"
-                    >
-                      Delete
-                    </button>
+                    <RowMenu
+                      ariaLabel={`Actions for ${a.name}`}
+                      items={[
+                        { label: 'Edit',   onSelect: () => navigate(`/accounts/${a.id}/edit`) },
+                        { label: 'Delete', tone: 'danger', onSelect: () => onDelete(a) },
+                      ]}
+                    />
                   </div>
                 </div>
               );

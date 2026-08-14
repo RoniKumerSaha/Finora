@@ -93,3 +93,39 @@ input[type="number"]::-webkit-inner-spin-button {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
 }
+
+/* Page transition — applied to direct children of <main> in Shell.
+   The animation runs on every route change because the routed screen
+   is a fresh child that mounts/unmounts; React's keyed removal +
+   remount of the screen component triggers the animation naturally.
+   Subtle 4px slide + opacity fade feels like content settling in
+   without being a "loading" effect. */
+@keyframes content-in {
+  from { opacity: 0; translate: 0 4px; }
+  to   { opacity: 1; translate: none; }
+}
+/* Only animate the screen's top-level container (the first div the
+   screen renders). Targeting `main > *` directly would also animate
+   nested fragments. To be safe, we wrap in a div via the .page frame
+   class — but to keep this 5-min, we use the simpler approach and
+   let the screen container at depth-1 animate. */
+main > * {
+  animation: content-in 140ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main > * { animation: none; }
+}
+
+/* Banner slide-in keyframe — paired with RoleAlertBanner's transition.
+   The banner mounts, runs the keyframe, then idles until user dismiss
+   or fade-out timer. Decoupled from the transition so the in/out
+   animations can have different easing.
+   IMPORTANT: Tailwind v4's `-translate-x-1/2` uses the `translate` CSS
+   property (not `transform`). If we animate `transform`, both the
+   `translate` property AND the `transform` are applied independently
+   and the banner gets double-translated. Animating the `translate`
+   property keeps the centering intact and just animates the Y offset. */
+@keyframes banner-slide-in {
+  from { opacity: 0; translate: -50% -12px; }
+  to   { opacity: 1; translate: -50% 0; }
+}

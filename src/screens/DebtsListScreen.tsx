@@ -9,7 +9,12 @@
  * hover affordance + chevron, matching the transaction list pattern).
  *
  * 2026-08-14 polish: shared .card primitive, refined progress bar
- * height (8px), refined row hover.
+ * height (8px), refined row hover, and a left-edge accent dot that
+ * fades in on row hover.
+ *
+ * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
+ * already pins a global "Add transaction" CTA. Adding debts is still
+ * possible from the empty state.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -28,21 +33,11 @@ export function DebtsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="heading h1-screen">Debts</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">
-            {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
-          </div>
+      <div>
+        <h1 className="heading h1-screen">Debts</h1>
+        <div className="text-muted text-[13px] mt-1.5 tabular">
+          {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
         </div>
-        <Link
-          to="/debts/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          style={{ background: 'var(--primary)' }}
-        >
-          <span className="text-base leading-none">+</span>
-          <span>New debt</span>
-        </Link>
       </div>
 
       {ds.length === 0 ? (
@@ -90,6 +85,11 @@ function CompletedSection({ rows }: { rows: any[] }) {
               to={`/debts/${d.id}/edit`}
               className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
+                style={{ background: 'var(--primary)' }}
+              />
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-[10px] grid place-items-center font-bold bg-success-soft text-success">
@@ -132,12 +132,18 @@ function DebtGroup({
             const iconBg = tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-primary-soft text-primary';
             const barFill = tone === 'danger' ? 'bg-danger' : 'bg-gradient-to-r from-primary to-accent';
             const amtColor = tone === 'danger' ? 'text-danger' : 'text-primary';
+            const accentColor = tone === 'danger' ? 'var(--danger)' : 'var(--primary)';
             return (
               <Link
                 key={d.id}
                 to={`/debts/${d.id}/edit`}
                 className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
+                  style={{ background: accentColor }}
+                />
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${iconBg}`}>

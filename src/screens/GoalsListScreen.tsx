@@ -11,6 +11,10 @@
  * 2026-08-14 polish: cards use the shared .card primitive (rounded
  * 12px, 24px padding, refined shadow), the progress bar is slightly
  * taller, and hover affordance is subtle border + lift.
+ *
+ * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
+ * already pins a global "Add transaction" CTA. Goal creation is still
+ * possible from the empty state.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -24,19 +28,9 @@ export function GoalsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="heading h1-screen">Goals</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
-        </div>
-        <Link
-          to="/goals/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          style={{ background: 'var(--primary)' }}
-        >
-          <span className="text-base leading-none">+</span>
-          <span>New goal</span>
-        </Link>
+      <div>
+        <h1 className="heading h1-screen">Goals</h1>
+        <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
       </div>
 
       {gs.length === 0 ? (

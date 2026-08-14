@@ -17,16 +17,18 @@
  * 2026-08-14 polish: a left-edge accent bar keyed to the kind, refined
  * shadow, and a more compact action row.
  *
- * Auto-dismiss: 6 seconds. The banner fades out over 300ms starting at
- * 5.7s, then unmounts. The user can also click the X to dismiss
- * instantly.
+ * Animation: slides in from above (translateY(-12px → 0) over 200ms)
+ * via the `banner-slide-in` keyframe in app.css. Fades out over 400ms
+ * starting at 8.6s, then unmounts at 9s. The user can also click the
+ * X to dismiss instantly. Longer total life (9s) gives users with
+ * slower reading speeds a fair chance to absorb the what/why/fix.
  */
 import { useEffect, useState } from 'react';
 import { useStore } from '../domain/store';
 import type { BannerKind } from '../domain/types';
 
-const FADE_OUT_MS = 300;
-const TOTAL_MS = 6000;
+const FADE_OUT_MS = 400;
+const TOTAL_MS = 9000;
 
 export function RoleAlertBanner() {
   const banner = useStore(s => s.banner);
@@ -57,11 +59,12 @@ export function RoleAlertBanner() {
       className={[
         'fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg',
         'rounded-card px-4 py-3.5 flex flex-col gap-1',
-        'transition-opacity duration-300',
+        'transition-opacity duration-400 ease-out',
         fading ? 'opacity-0' : 'opacity-100',
         styleFor(kind),
       ].join(' ')}
       style={{
+        animation: 'banner-slide-in 200ms ease-out both',
         boxShadow: 'var(--shadow-modal)',
         borderLeft: `3px solid ${colorBar}`,
       }}

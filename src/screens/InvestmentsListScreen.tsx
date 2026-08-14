@@ -8,6 +8,15 @@
  *
  * 2026-08-14 polish: shared .card primitive, refined row hover, type
  * chip moved to the right of the row for better scan.
+ *
+ * 2026-08-14 polish (row hover accent): each row carries a left-edge
+ * accent dot that fades in on hover (matches TransactionsListScreen),
+ * tone-accented with the type's color (accent for FDR/savings, primary
+ * for DPS).
+ *
+ * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
+ * already pins a global "Add transaction" CTA. Investment creation is
+ * still possible from the empty state.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -32,19 +41,9 @@ export function InvestmentsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="heading h1-screen">Investments</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{invs.length} total</div>
-        </div>
-        <Link
-          to="/investments/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          style={{ background: 'var(--primary)' }}
-        >
-          <span className="text-base leading-none">+</span>
-          <span>New investment</span>
-        </Link>
+      <div>
+        <h1 className="heading h1-screen">Investments</h1>
+        <div className="text-muted text-[13px] mt-1.5 tabular">{invs.length} total</div>
       </div>
 
       {invs.length === 0 ? (
@@ -65,8 +64,13 @@ export function InvestmentsListScreen() {
                 <Link
                   key={inv.id}
                   to={`/investments/${inv.id}`}
-                  className="block py-2.5 border-t border-border opacity-55 hover:opacity-100 transition"
+                  className="group relative block py-2.5 border-t border-border opacity-55 hover:opacity-100 transition"
                 >
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
+                    style={{ background: 'var(--accent)' }}
+                  />
                   <div className="flex justify-between items-center mb-1">
                     <div className="font-semibold text-[14px] tracking-tight">
                       {invEmoji(inv.type)} {inv.name}
@@ -131,6 +135,11 @@ function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
       to={`/investments/${inv.id}`}
       className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
+      <span
+        aria-hidden
+        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
+        style={{ background: isDps ? 'var(--primary)' : 'var(--accent)' }}
+      />
       <div className="flex justify-between items-center mb-1.5">
         <div className="font-semibold text-[14px] tracking-tight">
           {invEmoji(inv.type)} {inv.name}
