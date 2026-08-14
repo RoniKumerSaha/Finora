@@ -7,6 +7,9 @@
  *
  * Each row is a Link to /debts/:id/edit (whole-row click target with
  * hover affordance + chevron, matching the transaction list pattern).
+ *
+ * 2026-08-14 polish: shared .card primitive, refined progress bar
+ * height (8px), refined row hover.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -24,29 +27,33 @@ export function DebtsListScreen() {
   const owed = active.filter(d => d.direction === 'owed_to_me');
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight leading-none">Debts</h1>
-          <div className="text-muted text-[13px] mt-1">
+          <h1 className="heading h1-screen">Debts</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">
             {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
           </div>
         </div>
-        <Link to="/debts/add" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
+        <Link
+          to="/debts/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
           <span className="text-base leading-none">+</span>
           <span>New debt</span>
         </Link>
       </div>
 
       {ds.length === 0 ? (
-        <section className="bg-surface border border-border rounded-card p-5 shadow-card">
-          <div className="py-9 text-center text-muted">
-            <div className="text-base font-semibold text-ink">No debts yet.</div>
+        <section className="card">
+          <div className="py-10 text-center text-muted">
+            <div className="text-[14px] font-semibold text-ink">No debts yet.</div>
           </div>
         </section>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-[14px]">
+          <div className="grid grid-cols-2 gap-4">
             <DebtGroup title="I owe"      rows={iOwe} tone="danger" />
             <DebtGroup title="Owed to me" rows={owed} tone="primary" />
           </div>
@@ -62,8 +69,8 @@ export function DebtsListScreen() {
 function CompletedSection({ rows }: { rows: any[] }) {
   const state = useStore(s => s.state);
   return (
-    <section className="bg-surface border border-border rounded-card p-5 shadow-card">
-      <h2 className="text-xs text-muted uppercase tracking-wider font-semibold m-0 mb-3">
+    <section className="card">
+      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3.5">
         Completed ({rows.length})
       </h2>
       <div>
@@ -81,16 +88,16 @@ function CompletedSection({ rows }: { rows: any[] }) {
             <Link
               key={d.id}
               to={`/debts/${d.id}/edit`}
-              className="block py-2 border-t border-border first:border-0 hover:bg-surface-2 -mx-2 px-2 rounded transition group"
+              className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-[34px] h-[34px] rounded-lg grid place-items-center font-bold bg-success-soft text-success">
+                  <div className="w-9 h-9 rounded-[10px] grid place-items-center font-bold bg-success-soft text-success">
                     {'\u2713'}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-sm leading-tight truncate">{d.name}</div>
-                    <div className="text-xs text-muted leading-tight mt-0.5 truncate">
+                    <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
+                    <div className="text-xs text-muted leading-tight mt-1 truncate tabular">
                       {fmtBDT(d.total)} paid off
                       {d.person ? ` \u00B7 ${d.person}` : ''}
                       {acc ? ` \u00B7 ${acc.name}` : ''}
@@ -98,7 +105,7 @@ function CompletedSection({ rows }: { rows: any[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-muted text-lg leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+                  <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
                 </div>
               </div>
             </Link>
@@ -113,8 +120,8 @@ function DebtGroup({
   title, rows, tone,
 }: { title: string; rows: any[]; tone: 'danger' | 'primary' }) {
   return (
-    <section className="bg-surface border border-border rounded-card p-5 shadow-card">
-      <h2 className="text-xs text-muted uppercase tracking-wider font-semibold m-0 mb-3">{title}</h2>
+    <section className="card">
+      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3.5">{title}</h2>
       {rows.length === 0 ? (
         <div className="text-muted text-sm py-6 text-center">Nothing here.</div>
       ) : (
@@ -129,16 +136,16 @@ function DebtGroup({
               <Link
                 key={d.id}
                 to={`/debts/${d.id}/edit`}
-                className="block py-2 border-t border-border first:border-0 hover:bg-surface-2 -mx-2 px-2 rounded transition group"
+                className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-[34px] h-[34px] rounded-lg grid place-items-center font-bold ${iconBg}`}>
+                    <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${iconBg}`}>
                       {tone === 'danger' ? '\u2193' : '\u2191'}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm leading-tight truncate">{d.name}</div>
-                      <div className="text-xs text-muted leading-tight mt-0.5 truncate">
+                      <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
+                      <div className="text-xs text-muted leading-tight mt-1 truncate tabular">
                         {fmtBDT(d.paidSoFar || 0)} / {fmtBDT(d.total)}
                         {d.dueDate ? ` \u00B7 by ${fmtDate(d.dueDate)}` : ''}
                         {d.person ? ` \u00B7 ${d.person}` : ''}
@@ -146,13 +153,13 @@ function DebtGroup({
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className={`font-bold tabular ${amtColor}`}>
+                    <div className={`font-bold tabular text-[14px] ${amtColor}`}>
                       {tone === 'danger' ? '\u2212' : '+'} {fmtBDT(left)}
                     </div>
-                    <span className="text-muted text-lg leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+                    <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
                   </div>
                 </div>
-                <div className="mt-1.5 h-2 bg-surface-2 rounded-pill overflow-hidden">
+                <div className="mt-2 h-2 bg-surface-2 rounded-pill overflow-hidden">
                   <div className={`h-full rounded-pill ${barFill}`} style={{ width: `${pct}%` }} />
                 </div>
               </Link>

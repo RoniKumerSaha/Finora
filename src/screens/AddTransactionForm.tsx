@@ -168,11 +168,11 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[560px]">
       <div>
-        <h1 className="text-[22px] font-bold tracking-tight leading-none mb-1">{title}</h1>
-        <div className="text-muted text-[13px]">{subtitle}</div>
+        <h1 className="heading h1-screen">{title}</h1>
+        <div className="text-muted text-[13px] mt-1.5">{subtitle}</div>
       </div>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
+      <section className="card">
         <Field label="Amount">
           <AmountInput
             type="number"

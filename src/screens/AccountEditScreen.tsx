@@ -39,22 +39,27 @@ export function AccountEditScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <h1 className="text-2xl font-semibold">Edit account</h1>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
-      </Field>
-      <Field label="Type">
-        <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
-          {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-        </Select>
-      </Field>
-      <Field label="Opening balance">
-        <Input type="number" inputMode="decimal" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} />
-      </Field>
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save changes</Button>
-        <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
-      </div>
+      <header>
+        <h1 className="heading h1-screen">Edit account</h1>
+        <div className="text-muted text-[13px] mt-1.5">Changes apply to this account only.</div>
+      </header>
+      <section className="card flex flex-col gap-5">
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
+        </Field>
+        <Field label="Type">
+          <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
+            {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+          </Select>
+        </Field>
+        <Field label="Opening balance">
+          <Input type="number" inputMode="decimal" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} />
+        </Field>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save changes</Button>
+          <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
+        </div>
+      </section>
     </form>
   );
 }

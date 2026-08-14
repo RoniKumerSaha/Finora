@@ -212,7 +212,7 @@ export function InvestmentDetailScreen() {
   return (
     <div className="flex flex-col gap-[18px] max-w-[640px]">
       <div className="flex items-center gap-3">
-        <Link to="/investments" className="text-muted text-sm hover:text-ink">{'\u2190'} Investments</Link>
+        <Link to="/investments" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Investments</Link>
       </div>
 
       {/* Header */}
@@ -234,13 +234,14 @@ export function InvestmentDetailScreen() {
             <button
               type="button"
               onClick={() => setShowContributeForm(true)}
-              className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-primary text-primary-on hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              style={{ background: 'var(--primary)' }}
             >
               + Add a contribution
             </button>
           )}
           {status === 'active' && (
-            <Link to={`/investments/${inv!.id}/edit`} className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2">
+            <Link to={`/investments/${inv!.id}/edit`} className="inline-flex items-center justify-center gap-2 px-[18px] py-2.5 rounded-btn font-bold text-[13px] bg-surface text-ink border border-border hover:bg-surface-2 transition">
               Edit
             </Link>
           )}
@@ -248,7 +249,7 @@ export function InvestmentDetailScreen() {
       </div>
 
       {/* Status + countdown */}
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
+      <section className="card">
         <div className="flex justify-between items-start mb-3">
           <div>
             <div className="text-[11px] text-muted uppercase tracking-wider">Status</div>
@@ -283,8 +284,8 @@ export function InvestmentDetailScreen() {
       </section>
 
       {/* Money */}
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-        <h2 className="heading h3-modal mb-3">{isDps ? 'Plan vs progress' : 'Maturity'}</h2>
+      <section className="card">
+        <h2 className="heading h3-modal mb-4">{isDps ? 'Plan vs progress' : 'Maturity'}</h2>
         <div className="grid grid-cols-2 gap-4">
           {!isDps && (
             <Stat label="Principal" value={fmtBDT(inv.principal)} />
@@ -324,8 +325,8 @@ export function InvestmentDetailScreen() {
 
       {/* Status actions */}
       {(status === 'active' || status === 'matured') && (
-        <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-          <h2 className="heading h3-modal mb-3">{status === 'matured' ? 'Matured' : 'When it matures'}</h2>
+        <section className="card">
+          <h2 className="heading h3-modal mb-4">{status === 'matured' ? 'Matured' : 'When it matures'}</h2>
           {isDps ? (
             <>
               <div className="flex flex-wrap gap-2">
@@ -396,8 +397,8 @@ export function InvestmentDetailScreen() {
 
       {/* Contribution + payout history */}
       {(contribs.length > 0 || payouts.length > 0) && (
-        <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-          <h2 className="heading h3-modal mb-3">Activity</h2>
+        <section className="card">
+          <h2 className="heading h3-modal mb-4">Activity</h2>
           <div className="divide-y divide-border">
             {[...contribs, ...payouts]
               .slice()
@@ -425,10 +426,14 @@ export function InvestmentDetailScreen() {
 
       {/* Footer: delete */}
       <section
-        className="border border-danger rounded-card p-6 shadow-card"
-        style={{ background: 'var(--danger-callout-bg)' }}
+        className="rounded-card p-6"
+        style={{
+          background: 'var(--danger-callout-bg)',
+          border: '1px solid var(--danger)',
+          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+        }}
       >
-        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title, #F08574)' }}>Danger zone</h2>
+        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
         <p className="text-[13px] text-muted mb-4">
           Removes the investment record only. The {contribs.length} linked contribution transactions stay in your records.
         </p>

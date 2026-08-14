@@ -8,6 +8,9 @@
  * The payout-account dropdown shows the live balance beneath it, matching
  * the transfer form's From/To pattern so users see what'll receive the
  * maturity value.
+ *
+ * 2026-08-14 polish: header section, polished review callout with
+ * subtle accent surface, refined spacing rhythm.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -39,9 +42,6 @@ export function InvestmentAddScreen() {
 
   const isDps = type === 'dps';
 
-  // Live preview:
-  //   DPS:        M × ((1+r/1200)^T − 1) / (r/1200) × (1+r/1200)
-  //   FDR/Save:   principal × (1 + rate/100 × termMonths/12)
   const matPreview = (() => {
     const T = Number(termMonths);
     const r = Number(rate);
@@ -100,67 +100,81 @@ export function InvestmentAddScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <h1 className="heading h1-screen">Add investment</h1>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="DBBL DPS #1, EBL FDR…" autoFocus />
-      </Field>
-      <Field label="Type">
-        <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
-          <option value="dps">DPS (monthly installment)</option>
-          <option value="fdr">FDR (lump-sum, fixed term)</option>
-          <option value="savings">Savings (interest-bearing)</option>
-        </Select>
-      </Field>
-      {isDps ? (
-        <Field label="Monthly contribution" hint="What you pay each month into this DPS.">
-          <Input type="number" inputMode="decimal" value={monthlyContribution} onChange={e => setMonthlyContribution(e.target.value)} placeholder="5000" />
+      <header>
+        <h1 className="heading h1-screen">Add investment</h1>
+        <div className="text-muted text-[13px] mt-1.5">DPS, FDR, or interest-bearing savings.</div>
+      </header>
+
+      <section className="card flex flex-col gap-5">
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="DBBL DPS #1, EBL FDR…" autoFocus />
         </Field>
-      ) : (
-        <Field label="Principal" hint="The amount you're placing into this investment.">
-          <Input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} placeholder="100000" />
+        <Field label="Type">
+          <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
+            <option value="dps">DPS (monthly installment)</option>
+            <option value="fdr">FDR (lump-sum, fixed term)</option>
+            <option value="savings">Savings (interest-bearing)</option>
+          </Select>
         </Field>
-      )}
-      <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
-        <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="8" />
-      </Field>
-      <Field label="Start date">
-        <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-      </Field>
-      <Field label="Term (months)">
-        <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
-      </Field>
-      <Field label="Payout account (optional)" hint="Where the matured value lands.">
-        <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
-          <option value="">— None —</option>
-          {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </Select>
-        {payoutAccountId && (
-          <div className="text-xs text-muted mt-1.5">
-            Balance: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions))}
+        {isDps ? (
+          <Field label="Monthly contribution" hint="What you pay each month into this DPS.">
+            <Input type="number" inputMode="decimal" value={monthlyContribution} onChange={e => setMonthlyContribution(e.target.value)} placeholder="5000" />
+          </Field>
+        ) : (
+          <Field label="Principal" hint="The amount you're placing into this investment.">
+            <Input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} placeholder="100000" />
+          </Field>
+        )}
+        <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
+          <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="8" />
+        </Field>
+        <Field label="Start date">
+          <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        </Field>
+        <Field label="Term (months)">
+          <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
+        </Field>
+        <Field label="Payout account (optional)" hint="Where the matured value lands.">
+          <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
+            <option value="">— None —</option>
+            {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
+          {payoutAccountId && (
+            <div className="text-xs text-muted mt-1.5 tabular">
+              Balance: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions))}
+            </div>
+          )}
+        </Field>
+        <Field label="Institution (optional)">
+          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
+        </Field>
+        {matPreview != null && (
+          <div
+            className="rounded-btn px-3.5 py-3 text-[13px] leading-relaxed"
+            style={{
+              background: 'var(--accent-soft)',
+              border: '1px solid var(--accent)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent)',
+              color: 'var(--ink)',
+            }}
+          >
+            <div>
+              <strong style={{ color: 'var(--accent)' }}>Review:</strong> You'll receive{' '}
+              <strong className="tabular">৳{Math.round(matPreview).toLocaleString('en-IN')}</strong>{' '}
+              at maturity.
+            </div>
+            <div className="text-muted text-[12.5px] mt-1">
+              {isDps
+                ? 'Annuity-due: monthly contribution compounded at the stated rate for the full term.'
+                : 'Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.'}
+            </div>
           </div>
         )}
-      </Field>
-      <Field label="Institution (optional)">
-        <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
-      </Field>
-      {matPreview != null && (
-        <div className="bg-accent-soft border border-accent rounded-md p-3 text-sm">
-          <div>
-            <strong>Review:</strong> You'll receive{' '}
-            <strong className="tabular">৳{Math.round(matPreview).toLocaleString('en-IN')}</strong>{' '}
-            at maturity.
-          </div>
-          <div className="text-muted">
-            {isDps
-              ? 'Annuity-due: monthly contribution compounded at the stated rate for the full term.'
-              : 'Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.'}
-          </div>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save investment</Button>
+          <Button variant="ghost" onClick={() => navigate('/investments')}>Cancel</Button>
         </div>
-      )}
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save investment</Button>
-        <Button variant="ghost" onClick={() => navigate('/investments')}>Cancel</Button>
-      </div>
+      </section>
     </form>
   );
 }

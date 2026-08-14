@@ -34,24 +34,27 @@ export function AccountAddScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Add account</h1>
+      <header>
+        <h1 className="heading h1-screen">Add account</h1>
+        <div className="text-muted text-[13px] mt-1.5">Cash, bank, or mobile wallet.</div>
       </header>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Cash, bKash, DBBL Bank…" autoFocus />
-      </Field>
-      <Field label="Type">
-        <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
-          {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-        </Select>
-      </Field>
-      <Field label="Opening balance" hint="What you already had in this account at the moment you start tracking.">
-        <Input type="number" inputMode="decimal" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} />
-      </Field>
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save account</Button>
-        <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
-      </div>
+      <section className="card flex flex-col gap-5">
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Cash, bKash, DBBL Bank…" autoFocus />
+        </Field>
+        <Field label="Type">
+          <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
+            {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+          </Select>
+        </Field>
+        <Field label="Opening balance" hint="What you already had in this account at the moment you start tracking.">
+          <Input type="number" inputMode="decimal" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} />
+        </Field>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save account</Button>
+          <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
+        </div>
+      </section>
     </form>
   );
 }

@@ -10,6 +10,8 @@
  *
  * Delete uses the existing ConfirmDialog flow; on success navigates
  * back to /transactions.
+ *
+ * 2026-08-14 polish: header + .card section, Fraunces title.
  */
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -36,7 +38,7 @@ export function TransactionEditScreen() {
   if (!tx) {
     return (
       <div>
-        <h1 className="text-[22px] font-bold tracking-tight">Transaction not found</h1>
+        <h1 className="heading h1-screen">Transaction not found</h1>
         <Button className="mt-4" onClick={() => navigate('/transactions')}>Back to transactions</Button>
       </div>
     );
@@ -58,9 +60,6 @@ export function TransactionEditScreen() {
 
   const type: TxType = tx.type;
 
-  // Linked-investment payout prefill (income only): when the user picks a
-  // linkedInvestmentId, mirror its payoutAccountId into accountId. Skip
-  // if the investment has no payoutAccountId set.
   const linkedInv = type === 'income' && linkedInvestmentId
     ? state.investments.find(i => i.id === linkedInvestmentId)
     : undefined;
@@ -125,8 +124,7 @@ export function TransactionEditScreen() {
   async function onDelete() {
     const ok = await confirm({
       title: 'Delete this entry?',
-      body: `This permanently removes this transaction from your records. This cannot be undone.`,
-      dangerText: 'This cannot be undone.',
+      body: 'This permanently removes this transaction from your records. This cannot be undone.',
       confirmLabel: 'Delete',
       danger: true,
     });
@@ -152,14 +150,14 @@ export function TransactionEditScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[560px]">
-      <div>
-        <h1 className="text-[22px] font-bold tracking-tight leading-none mb-1">Edit transaction</h1>
-        <div className="text-muted text-[13px]">
-          {type.charAt(0).toUpperCase() + type.slice(1)} {note ? `· ${note}` : ''} {`· ${fmtDateShort(date)}`}
+      <header>
+        <h1 className="heading h1-screen">Edit transaction</h1>
+        <div className="text-muted text-[13px] mt-1.5 capitalize tabular">
+          {type}{note ? ` · ${note}` : ''} · {fmtDateShort(date)}
         </div>
-      </div>
+      </header>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
+      <section className="card">
         <Field label="Amount">
           <AmountInput
             type="number"
@@ -209,11 +207,19 @@ export function TransactionEditScreen() {
         )}
 
         {type === 'income' && payoutMismatch && (
-          <div className="mt-4 text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-            <strong>Heads up:</strong> payout account for <span className="font-semibold">{linkedInv?.name}</span> is{' '}
+          <div
+            className="mt-4 text-[13px] rounded-btn px-3.5 py-2.5"
+            style={{
+              background: 'var(--warn-soft)',
+              border: '1px solid var(--warn)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--warn) 30%, transparent)',
+              color: 'var(--ink)',
+            }}
+          >
+            <strong style={{ color: 'var(--warn)' }}>Heads up:</strong> payout account for{' '}
+            <span className="font-semibold">{linkedInv?.name}</span> is{' '}
             <span className="font-semibold">{payoutAccName}</span>. You're sending this income to{' '}
-            <span className="font-semibold">{selectedAccName}</span>. Saving will record the payout as Income to{' '}
-            {selectedAccName}, not {payoutAccName}.
+            <span className="font-semibold">{selectedAccName}</span>.
           </div>
         )}
 
@@ -226,7 +232,10 @@ export function TransactionEditScreen() {
         {type === 'expense' && activeDebts.length > 0 && (
           <div className="mt-5">
             <Field label="Linked debt (optional)">
-              <Select value={linkedDebtId} onChange={e => setLinkedDebtId(e.target.value)}>
+              <Select value={linkedDebtId} onChange={e => {
+                setLinkedDebtId(e.target.value);
+                if (e.target.value) setLinkedInvestmentId('');
+              }}>
                 <option value="">— None —</option>
                 {activeDebts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
@@ -237,7 +246,10 @@ export function TransactionEditScreen() {
         {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
           <div className="mt-5">
             <Field label="Linked investment (optional)">
-              <Select value={linkedInvestmentId} onChange={e => setLinkedInvestmentId(e.target.value)}>
+              <Select value={linkedInvestmentId} onChange={e => {
+                setLinkedInvestmentId(e.target.value);
+                if (e.target.value) setLinkedDebtId('');
+              }}>
                 <option value="">— None —</option>
                 {state.investments
                   .filter(i => i.status !== 'closed')

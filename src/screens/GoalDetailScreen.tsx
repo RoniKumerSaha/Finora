@@ -155,7 +155,7 @@ export function GoalDetailScreen() {
   return (
     <div className="flex flex-col gap-[18px] max-w-[640px]">
       <div className="flex items-center gap-3">
-        <Link to="/goals" className="text-muted text-sm hover:text-ink">{'\u2190'} Goals</Link>
+        <Link to="/goals" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Goals</Link>
       </div>
 
       {/* Header */}
@@ -170,7 +170,8 @@ export function GoalDetailScreen() {
               <button
                 type="button"
                 onClick={() => setShowContributeForm(true)}
-                className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-primary text-primary-on hover:opacity-90"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                style={{ background: 'var(--primary)' }}
               >
                 + Add a contribution
               </button>
@@ -181,7 +182,7 @@ export function GoalDetailScreen() {
       </div>
 
       {/* Progress card */}
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
+      <section className="card">
         <div className="flex justify-between items-center mb-3">
           <div>
             <div className="text-[11px] text-muted uppercase tracking-wider">Saved so far</div>
@@ -212,8 +213,8 @@ export function GoalDetailScreen() {
       </section>
 
       {/* Math summary */}
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-        <h2 className="heading h3-modal mb-3">By the numbers</h2>
+      <section className="card">
+        <h2 className="heading h3-modal mb-4">By the numbers</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-[11px] text-muted uppercase tracking-wider">Required per month</div>
@@ -241,7 +242,7 @@ export function GoalDetailScreen() {
 
       {/* Edit form (inline) */}
       {mode === 'edit' && (
-        <form onSubmit={onSaveEdit} className="bg-surface border border-border rounded-card p-6 shadow-card flex flex-col gap-5">
+        <form onSubmit={onSaveEdit} className="card flex flex-col gap-5">
           <h2 className="heading h3-modal">Edit goal</h2>
           <div className="text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
             <strong>Heads up:</strong> the "saved so far" figure above comes from your linked transactions.
@@ -267,8 +268,8 @@ export function GoalDetailScreen() {
 
       {/* Contribution history */}
       {txs.length > 0 && (
-        <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-          <h2 className="heading h3-modal mb-3">Contribution history</h2>
+        <section className="card">
+          <h2 className="heading h3-modal mb-4">Contribution history</h2>
           <div className="divide-y divide-border">
             {txs
               .slice()
@@ -290,10 +291,14 @@ export function GoalDetailScreen() {
 
       {/* Footer: delete */}
       <section
-        className="border border-danger rounded-card p-6 shadow-card"
-        style={{ background: 'var(--danger-callout-bg)' }}
+        className="rounded-card p-6"
+        style={{
+          background: 'var(--danger-callout-bg)',
+          border: '1px solid var(--danger)',
+          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+        }}
       >
-        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title, #F08574)' }}>Danger zone</h2>
+        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
         <p className="text-[13px] text-muted mb-4">
           Removes the goal only. The {txs.length} linked transactions stay in your records as ordinary expenses.
         </p>

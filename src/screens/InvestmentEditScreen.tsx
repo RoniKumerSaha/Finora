@@ -6,9 +6,11 @@
  * the maturity value shown elsewhere). FDR/savings show principal.
  *
  * Routes: /investments/:id/edit
+ *
+ * 2026-08-14 polish: header + card section pattern.
  */
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
 import * as accounts from '../domain/accounts';
@@ -91,62 +93,67 @@ export function InvestmentEditScreen() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={() => navigate(`/investments/${inv!.id}`)} className="text-muted text-sm hover:text-ink">{'\u2190'} Back</button>
+        <Link to={`/investments/${inv!.id}`} className="text-muted text-sm hover:text-ink transition">{'\u2190'} Back</Link>
       </div>
-      <h1 className="heading h1-screen">Edit investment</h1>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
-      </Field>
-      <Field label="Type">
-        <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
-          <option value="dps">DPS (monthly installment)</option>
-          <option value="fdr">FDR (lump-sum, fixed term)</option>
-          <option value="savings">Savings (interest-bearing)</option>
-        </Select>
-      </Field>
-      {type !== 'dps' && (
-        <Field label="Principal" hint="The amount you've placed into this investment.">
-          <Input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} />
+      <header>
+        <h1 className="heading h1-screen">Edit investment</h1>
+        <div className="text-muted text-[13px] mt-1.5">Rate, term, and payout destination can change. Past contributions stay as they are.</div>
+      </header>
+      <section className="card flex flex-col gap-5">
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
         </Field>
-      )}
-      {type === 'dps' && (
-        <Field
-          label="Monthly contribution"
-          hint={dpsLocked
-            ? `Locked — ${linkedContributions} contributions already recorded.`
-            : 'The amount you pay each month into this DPS.'}
-        >
-          <Input
-            type="number"
-            inputMode="decimal"
-            value={monthlyContribution}
-            onChange={e => setMonthlyContribution(e.target.value)}
-            disabled={dpsLocked}
-          />
+        <Field label="Type">
+          <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
+            <option value="dps">DPS (monthly installment)</option>
+            <option value="fdr">FDR (lump-sum, fixed term)</option>
+            <option value="savings">Savings (interest-bearing)</option>
+          </Select>
         </Field>
-      )}
-      <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
-        <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} />
-      </Field>
-      <Field label="Start date">
-        <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-      </Field>
-      <Field label="Term (months)">
-        <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} />
-      </Field>
-      <Field label="Payout account (optional)" hint="Where the matured value lands.">
-        <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
-          <option value="">— None —</option>
-          {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </Select>
-      </Field>
-      <Field label="Institution (optional)">
-        <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
-      </Field>
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save changes</Button>
-        <Button variant="ghost" onClick={() => navigate(`/investments/${inv!.id}`)}>Cancel</Button>
-      </div>
+        {type !== 'dps' && (
+          <Field label="Principal" hint="The amount you've placed into this investment.">
+            <Input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} />
+          </Field>
+        )}
+        {type === 'dps' && (
+          <Field
+            label="Monthly contribution"
+            hint={dpsLocked
+              ? `Locked — ${linkedContributions} contributions already recorded.`
+              : 'The amount you pay each month into this DPS.'}
+          >
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={monthlyContribution}
+              onChange={e => setMonthlyContribution(e.target.value)}
+              disabled={dpsLocked}
+            />
+          </Field>
+        )}
+        <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
+          <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} />
+        </Field>
+        <Field label="Start date">
+          <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        </Field>
+        <Field label="Term (months)">
+          <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} />
+        </Field>
+        <Field label="Payout account (optional)" hint="Where the matured value lands.">
+          <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
+            <option value="">— None —</option>
+            {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
+        </Field>
+        <Field label="Institution (optional)">
+          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
+        </Field>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save changes</Button>
+          <Button variant="ghost" onClick={() => navigate(`/investments/${inv!.id}`)}>Cancel</Button>
+        </div>
+      </section>
     </form>
   );
 }

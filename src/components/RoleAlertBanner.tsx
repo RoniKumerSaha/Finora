@@ -14,6 +14,9 @@
  * No transparent tones — banner must not bleed through to the page
  * beneath it.
  *
+ * 2026-08-14 polish: a left-edge accent bar keyed to the kind, refined
+ * shadow, and a more compact action row.
+ *
  * Auto-dismiss: 6 seconds. The banner fades out over 300ms starting at
  * 5.7s, then unmounts. The user can also click the X to dismiss
  * instantly.
@@ -44,25 +47,33 @@ export function RoleAlertBanner() {
   if (!banner) return null;
   const kind: BannerKind = banner.kind ?? 'info';
 
+  const colorBar =
+    kind === 'success' ? 'var(--success)' :
+    kind === 'error'   ? 'var(--danger)'  : 'var(--primary)';
+
   return (
     <div
       role="alert"
       className={[
         'fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg',
-        'rounded-card p-4 shadow-modal flex flex-col gap-1',
+        'rounded-card px-4 py-3.5 flex flex-col gap-1',
         'transition-opacity duration-300',
         fading ? 'opacity-0' : 'opacity-100',
         styleFor(kind),
       ].join(' ')}
+      style={{
+        boxShadow: 'var(--shadow-modal)',
+        borderLeft: `3px solid ${colorBar}`,
+      }}
     >
-      <div className={`font-semibold ${titleFor(kind)}`}>{banner.what}</div>
-      <div className="text-[13px] text-muted">{banner.why}</div>
-      <div className="text-[13px]">{banner.fix}</div>
+      <div className={`font-semibold text-[14px] ${titleFor(kind)}`}>{banner.what}</div>
+      <div className="text-[12.5px] text-muted leading-snug">{banner.why}</div>
+      <div className="text-[12.5px] text-ink leading-snug">{banner.fix}</div>
       <button
         type="button"
         onClick={dismiss}
         aria-label="Dismiss"
-        className="absolute top-2.5 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md text-lg leading-none hover:bg-surface-3"
+        className="absolute top-2.5 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md text-sm text-muted hover:bg-surface-3 hover:text-ink transition"
       >
         {'\u2715'}
       </button>
@@ -71,17 +82,13 @@ export function RoleAlertBanner() {
 }
 
 function styleFor(kind: BannerKind): string {
-  if (kind === 'success') {
-    return 'border border-success bg-[var(--success-callout-bg)]';
-  }
-  if (kind === 'error') {
-    return 'border border-danger bg-[var(--danger-callout-bg)]';
-  }
-  return 'border border-border bg-surface-2';
+  if (kind === 'success') return 'border border-success bg-[var(--success-callout-bg)]';
+  if (kind === 'error')   return 'border border-danger bg-[var(--danger-callout-bg)]';
+  return 'border border-border bg-surface';
 }
 
 function titleFor(kind: BannerKind): string {
   if (kind === 'success') return 'text-[var(--success-title)]';
-  if (kind === 'error') return 'text-[var(--danger-title)]';
+  if (kind === 'error')   return 'text-[var(--danger-title)]';
   return 'text-ink';
 }

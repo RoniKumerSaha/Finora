@@ -7,6 +7,10 @@
  *
  * The saved amount is derived from transaction history (R6), so the
  * card shows the live aggregate, not the stale stored field.
+ *
+ * 2026-08-14 polish: cards use the shared .card primitive (rounded
+ * 12px, 24px padding, refined shadow), the progress bar is slightly
+ * taller, and hover affordance is subtle border + lift.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -19,31 +23,39 @@ export function GoalsListScreen() {
   const gs = goals.list(state);
 
   return (
-    <div className="flex flex-col gap-[18px]">
+    <div className="flex flex-col gap-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight leading-none">Goals</h1>
-          <div className="text-muted text-[13px] mt-1">{gs.length} total</div>
+          <h1 className="heading h1-screen">Goals</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
         </div>
-        <Link to="/goals/add" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-on px-4 py-2.5 rounded-btn font-semibold text-[13.5px] hover:opacity-90">
+        <Link
+          to="/goals/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
           <span className="text-base leading-none">+</span>
           <span>New goal</span>
         </Link>
       </div>
 
       {gs.length === 0 ? (
-        <section className="bg-surface border border-border rounded-card p-5 shadow-card">
-          <div className="py-9 text-center text-muted">
-            <div className="text-3xl opacity-60 mb-2">{'\u2605'}</div>
-            <div className="text-base font-semibold text-ink">Save toward something</div>
+        <section className="card">
+          <div className="py-10 text-center text-muted">
+            <div className="text-3xl opacity-60 mb-2.5">{'\u2605'}</div>
+            <div className="text-[15px] font-semibold text-ink">Save toward something</div>
             <p className="mt-2 text-sm">Set a target amount and a date. We'll tell you how much to save each month.</p>
-            <Link to="/goals/add" className="inline-block mt-3 bg-primary text-primary-on px-4 py-2 rounded-btn text-sm font-semibold">
+            <Link
+              to="/goals/add"
+              className="inline-block mt-4 px-4 py-2.5 rounded-btn text-[13px] font-bold text-primary-on hover:opacity-95 transition"
+              style={{ background: 'var(--primary)' }}
+            >
               + New goal
             </Link>
           </div>
         </section>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[14px]">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
           {gs.map(g => {
             const saved = goalSavedFromTxns(g, state.transactions);
             const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
@@ -51,16 +63,24 @@ export function GoalsListScreen() {
               <Link
                 key={g.id}
                 to={`/goals/${g.id}`}
-                className="block bg-surface border border-border rounded-card p-5 shadow-card hover:border-primary transition"
+                className="card flex flex-col gap-3 hover:border-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 <div className="flex justify-between items-center">
-                  <div className="font-semibold">{g.name}</div>
-                  <div className="text-[11px] text-primary font-bold bg-primary-soft px-2 py-0.5 rounded-pill">{pct}%</div>
+                  <div className="font-semibold text-[15px] tracking-tight">{g.name}</div>
+                  <div
+                    className="text-[11px] text-primary font-bold px-2.5 py-[3px] rounded-pill tabular"
+                    style={{ background: 'var(--primary-soft)' }}
+                  >
+                    {pct}%
+                  </div>
                 </div>
-                <div className="mt-2.5 h-2 bg-surface-2 rounded-pill overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-accent rounded-pill" style={{ width: `${pct}%` }} />
+                <div className="h-2.5 bg-surface-2 rounded-pill overflow-hidden">
+                  <div className="h-full rounded-pill" style={{
+                    width: `${pct}%`,
+                    background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+                  }} />
                 </div>
-                <div className="flex justify-between text-xs text-muted mt-1.5">
+                <div className="flex justify-between text-xs text-muted tabular">
                   <span>{fmtBDT(saved)} / {fmtBDT(g.target)}</span>
                   <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
                 </div>

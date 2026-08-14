@@ -1,14 +1,9 @@
 /**
  * ConfirmDialog — modal for destructive actions (AD-11).
  *
- * v1 visual target: docs/ux-designs/.../mockups/v1/index.html
- *   - backdrop:  rgba(15,20,25,.6) + 6px blur
- *   - modal:     bg-surface, border-border, radius 24px (r-card),
- *                padding 28px, width 420px, shadow-modal
- *   - h3:        18px font, no margin below
- *   - body:      13px muted, 18px margin below
- *   - actions:   right-aligned, 10px gap
- *   - danger:    danger-soft bg, danger border-radius-8, padding 10×12
+ * 2026-08-14 polish: tighter modal width (440px), refined title weight,
+ * a single action row, and a danger-callout body that uses the global
+ * "real surface" contract (no transparent tints).
  *
  * Per PRD §11: destructive confirms (delete account, delete debt, wipe
  * data, replace-on-import) use a modal with Cancel | Confirm. No toast.
@@ -66,7 +61,7 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
@@ -76,13 +71,39 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
         aria-label="Close dialog"
         onClick={() => onAnswer(false)}
         className="absolute inset-0 cursor-default"
-        style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
+        style={{ background: 'var(--overlay)', backdropFilter: 'blur(8px)' }}
       />
-      <div className="relative bg-surface border border-border rounded-card p-7 w-[420px] max-w-[90vw] shadow-modal">
-        <h3 id="confirm-title" className="text-lg font-semibold m-0 mb-1">{opts.title}</h3>
-        {opts.body && <div className="text-[13px] text-muted m-0 mb-4">{opts.body}</div>}
+      <div
+        className="relative rounded-card w-[440px] max-w-full shadow-modal"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-modal), var(--card-inset)',
+          padding: '28px',
+        }}
+      >
+        <h3
+          id="confirm-title"
+          className="heading h3-modal m-0"
+          style={{ marginBottom: opts.body || opts.dangerText ? '12px' : '20px' }}
+        >
+          {opts.title}
+        </h3>
+        {opts.body && (
+          <div className="text-[13.5px] text-muted leading-relaxed m-0 mb-4">
+            {opts.body}
+          </div>
+        )}
         {opts.dangerText && (
-          <div className="text-[13px] text-danger bg-danger-soft border border-danger rounded-lg px-3 py-2.5 mb-2.5">
+          <div
+            className="text-[13px] text-ink rounded-btn px-3.5 py-2.5 mb-5"
+            style={{
+              background: 'var(--danger-callout-bg)',
+              border: '1px solid var(--danger)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+              color: 'var(--danger-title)',
+            }}
+          >
             {opts.dangerText}
           </div>
         )}
@@ -91,7 +112,7 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
             type="button"
             ref={cancelRef}
             onClick={() => onAnswer(false)}
-            className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
+            className="inline-flex items-center justify-center px-[18px] py-2.5 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {opts.cancelLabel ?? 'Cancel'}
           </button>

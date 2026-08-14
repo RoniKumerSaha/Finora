@@ -10,7 +10,7 @@ sources:
   - UI-UX-FLOW.md
   - ../UI-UX-FLOW.md
   - src/styles/theme.css
-updated: 2026-08-13
+updated: 2026-08-14
 colors:
   primary: '#5DBFA0'        # dark ; bright teal
   primary-light: '#0D8275'  # light ; deep teal
@@ -66,12 +66,12 @@ typography:
   button:      { font: 'system-sans',    size: 13.5, weight: 700, lh: 1.0, tracking: 0 }
   nav:         { font: 'system-sans',    size: 13.5, weight: 500, lh: 1.0, tracking: 0 }
 rounded:
-  card: 18px     # middle ground: v1=24px, v2=12px
-  btn: 12px
+  card: 12px     # 2026-08-14 polish: tightened from 18px so dense lists don't feel "leathery"
+  btn: 10px
   input: 10px
   tile: 11px     # account / category tiles
   icon-btn: 8px
-  logo: 12px
+  logo: 10px     # brand logo marker
   pill: 999px    # chips, filters, goal-pct, toggle track
 spacing:
   sidebar: '240px'
@@ -86,13 +86,20 @@ spacing:
   row-gap-tight: '6px'
   form-field-gap: '14px'
 elevation:
-  card: '0 8px 28px rgba(0,0,0,0.35)'        # dark
-  card-light: '0 8px 28px rgba(42,38,32,0.08)'
-  modal: '0 10px 40px rgba(0,0,0,0.5)'
-  modal-light: '0 10px 40px rgba(42,38,32,0.18)'
+  card: '0 1px 2px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.32)'   # dark; 2026-08-14 polish: two-layer shadow + 1px top inset highlight
+  card-light: '0 1px 2px rgba(42,38,32,0.06), 0 8px 24px rgba(42,38,32,0.08)'
+  modal: '0 4px 12px rgba(0,0,0,0.32), 0 24px 60px rgba(0,0,0,0.55)'  # 2026-08-14 polish: tightened
+  modal-light: '0 4px 12px rgba(42,38,32,0.12), 0 24px 60px rgba(42,38,32,0.18)'
   overlay: 'rgba(15,20,25,0.6)'              # dark
   overlay-light: 'rgba(42,38,32,0.25)'
-  blur: '6px'                                # backdrop-filter on modal scrim
+  blur: '8px'                                # backdrop-filter on modal scrim; 2026-08-14 polish: tighter blur
+  # 2026-08-14 polish: every card carries an inset highlight to suggest
+  # a soft top-light source — adds depth without color tint.
+  card-inset: 'inset 0 1px 0 rgba(255,255,255,0.04)'  # dark
+  card-inset-light: 'inset 0 1px 0 rgba(255,255,255,0.5)'  # light
+  # 2026-08-14 polish: sidebar carries an inset right-edge so the nav
+  # feels "cut from the wall" rather than floating.
+  sidebar-inset: 'inset -1px 0 0 rgba(0,0,0,0.16)'
 components:
   button-primary:   { bg: '{colors.primary}',                 fg: '{colors.primary-on}',           radius: '{rounded.btn}',    weight: 700 }
   button-secondary: { bg: 'transparent',                       fg: '{colors.text}',                  border: '1px solid {colors.border}', radius: '{rounded.btn}' }
@@ -192,22 +199,31 @@ Each role has a `-soft` companion at ~12–18% alpha for chip fills, selected-st
 
 | Role | Font | Size | Weight | LH | Tracking | Notes |
 |---|---|---|---|---|---|---|
-| **h1-display** | Fraunces | 28 | 600 | 1.2 | -0.01 | Onboarding hero, welcome card. |
-| **h1-screen** | Fraunces | 22 | 600 | 1.2 | -0.01 | Page titles (Transactions, Accounts, Goals, etc.). |
-| **h2-section** | sans | 13 | 600 | 1.2 | +0.06, uppercase | Card section labels. |
-| **h3-modal** | Fraunces | 18 | 600 | 1.25 | -0.005 | Modal titles, confirm dialogs. |
+| **h1-display** | Fraunces | 30 | 600 | 1.15 | -0.02 | Onboarding hero, welcome card. |
+| **h1-screen** | Fraunces | 24 | 600 | 1.2  | -0.02 | Page titles (Transactions, Accounts, Goals, etc.). |
+| **h2-section** | sans | 11 | 600 | 1.2 | +0.08, uppercase | Card section labels. |
+| **h3-modal** | Fraunces | 19 | 600 | 1.25 | -0.012 | Modal titles, confirm dialogs. |
 | **body** | sans | 14 | 400 | 1.55 | 0 | Default paragraph. |
 | **body-strong** | sans | 14 | 600 | 1.5 | 0 | Buttons, list titles. |
 | **caption** | sans | 12 | 400 | 1.45 | 0 | Transaction subtitles, helper text. |
-| **money-stat** | sans | 26 | 700 | 1.1 | -0.02 | Home / list stat numbers. `tabular` required. |
+| **money-stat** | sans | 28 | 700 | 1.0 | -0.02 | Home / list stat numbers. `tabular` required. |
 | **money-hero** | sans | 42 | 800 | 1.1 | -0.02 | Investment "treasury" hero. Accent color. `tabular` required. |
 | **amount-input** | sans | 32 | 700 | 1.2 | -0.02 | Big amount input on add forms. Primary color. `tabular` required. |
 | **tx-title** | sans | 14 | 600 | 1.3 | 0 | Transaction row title. |
 | **tx-sub** | sans | 12 | 400 | 1.4 | 0 | Transaction row subtitle. |
-| **chip** | sans | 11 | 600 | 1.2 | +0.02 | Filter chips, status pills. |
-| **wordmark** | sans | 17 | 700 | 1.0 | -0.01 | Sidebar brand "fin<span style="color:primary">ora</span>". |
-| **button** | sans | 13.5 | 700 | 1.0 | 0 | All buttons. |
+| **chip** | sans | 12 | 600 | 1.2 | 0 | Filter chips, status pills. |
+| **wordmark** | sans | 20 | 800 | 1.0 | -0.02 | Sidebar brand "fin<span style="color:primary">ora</span>". |
+| **button** | sans | 13 | 700 | 1.0 | 0 | All buttons. |
 | **nav** | sans | 13.5 | 500 | 1.0 | 0 | Sidebar nav items. |
+
+### Type rules
+
+- **Fraunces appears only in 3 roles**: h1-display, h1-screen, h3-modal. Anywhere else is a brand violation.
+- **No italic in body copy.** Italic in Fraunces is permissible for emphasis in headings only.
+- **All numeric roles use `font-variant-numeric: tabular-nums`.** The `.tabular` utility class is the contract.
+- **Money is bold, never italic.** Even caption-sized amounts.
+- **Money color is semantic** — income uses primary, expense uses danger, transfer uses ink (neutral), balance uses accent.
+- **Heading tracking is tighter in 2026-08-14 polish** (-0.02em on h1, -0.012em on h3) to feel more "editorial" rather than "blocky".
 
 ### Type rules
 
@@ -262,49 +278,74 @@ Each role has a `-soft` companion at ~12–18% alpha for chip fills, selected-st
 
 | Token | Radius | Usage |
 |---|---|---|
-| `--r-card` | 18px | Cards, modal, onboarding hero card. |
-| `--r-btn` | 12px | Buttons, amount input, modal inputs. |
-| `--r-input` | 10px | Form inputs, selects. |
-| `--r-tile` | 11px | Account tiles, category tiles (smaller than card). |
+| `--r-card` | 12px | Cards, modal, onboarding hero card. (2026-08-14 polish: tightened from 18px.) |
+| `--r-btn` | 10px | Buttons, amount input, modal inputs. |
+| `--r-input` | 10px | Form inputs, selects. Shares radius with buttons. |
+| `--r-tile` | 10px (was 11px) | Account tiles, category tiles. |
 | `--r-icon-btn` | 8px | Icon-only buttons (36×36). |
-| `--r-logo` | 12px | Brand logo marker. |
+| `--r-logo` | 10px (was 12px) | Brand logo marker. |
 | `--r-pill` | 999px | Chips, filters, goal percentage, theme picker pill, toggle track. |
 
 Shape rules:
 
 - **Six radii, no more.** Each radius has a defined usage; do not introduce a 7th.
 - **Pills are always fully rounded.** Never half-rounded.
-- **Modal corner = card corner.** Always 18px.
-- **Brand logo uses 12px.** Distinct from card radius so the logo reads as a "chip" not a "card."
+- **Modal corner = card corner.** Always 12px (was 18px).
+- **Brand logo uses 10px.** Distinct from card radius so the logo reads as a "chip" not a "card."
+
+## 2026-08-14 polish pass
+
+The V2 Soft design was applied wholesale to dense financial-app surfaces. The polish pass didn't change the color palette, brand role count, or any functional behavior — it raised the visual treatment to feel more "premium finance app":
+
+- **Tighter radii.** Card radius dropped 18px → 12px, button radius 12px → 10px, inputs aligned to buttons. The card no longer feels "leathery" inside dense lists.
+- **Two-layer shadow stack.** Each card shadow is now a tight 1px ambient + a softer 24px ambient. Modal shadow is a 4px ambient + a 60px deep ambient. The result reads as a controlled, layered surface rather than a glowing blob.
+- **Inset highlight on cards.** Each card carries an `inset 0 1px 0 rgba(255,255,255,0.04)` (dark) / `rgba(255,255,255,0.5)` (light) line at the top edge, suggesting a light source from above. Adds depth without color tint.
+- **Sidebar inset shadow.** The sidebar's right edge has a `inset -1px 0 0 rgba(0,0,0,0.16)` so the nav feels "cut from the wall" rather than floating.
+- **Tighter heading tracking.** h1-display now -0.02em (was -0.01em), h3-modal -0.012em (was -0.005em). The serif feels more editorial, less "blocky".
+- **Active nav accent bar.** A 3px×20px primary bar appears on the left edge of the active nav item, in addition to the existing background tint and text color. The active state is now readable in 3 channels (background + text + edge bar).
+- **Sharpened focus ring.** The focus ring is now a 3px ring at 28% primary opacity, applied via a global `.focus-ring` utility (or `focus-visible:ring-2 focus-visible:ring-primary/40` on interactive elements). Avoids the "every interactive element has a slightly different focus style" problem.
+- **Recessed inputs.** Every input/select/textarea has a 1px inset shadow (`inset 0 1px 2px rgba(0,0,0,0.18)`) so it reads as a recessed surface against the card.
+- **Custom select caret.** The native select dropdown caret is replaced with a `▾` glyph in muted color, giving consistent treatment across OSes.
+- **Subtle row hover.** A `.row-hover` utility class applies `bg-surface-2` on hover with a 120ms transition. Used on list rows that link to a detail/edit screen.
+- **Primary color-text helper.** The accent bar on the active nav item uses the primary color (above the muted background), but the text is also in primary color so the active state carries both.
+- **Chip selected state uses an inset ring.** Instead of a border-tint that fights the parchment palette, the selected chip uses an `inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent)` ring under the primary-soft background. Cleaner, more "premium".
+- **Banner left-edge accent bar.** The global banner (error / success / info) now has a 3px left-edge accent bar in the role color. The kind is now readable in 3 channels (background + title + edge bar).
+- **Status row hover affordance.** A 3px translucent primary bar appears on the left edge of transaction / debt / investment rows on hover. Makes the "clickable row" affordance readable at a glance.
+- **Button pressed-state.** All primary buttons get a 1px downward translate on `:active` for tactile feedback.
+- **Refined scrollbar.** Webkit scrollbar narrowed to 8px (was 10px), with a `border: 2px solid transparent; background-clip: padding-box` pattern that paints the thumb inside the gutter rather than over it.
+- **Text selection uses primary at 30% opacity** so it doesn't fight the warm parchment palette.
+
+These are all additive refinements — the add/edit/delete flows, the data model, the auto-completion rules, the maturity math, the contribution modal, the linked-investment prefill, the filter chips, the money color rules, and everything else that was implemented earlier is unchanged.
 
 ## Components
 
 ### Button
 
-- Default: `bg-primary text-primary-on rounded-btn px-4 py-2.5 font-bold text-[13.5px]`.
-- Secondary: `bg-transparent text-ink border border-border rounded-btn`.
+- Default: `bg-primary text-primary-on rounded-btn px-[18px] py-2.5 font-bold text-[13px]`.
+- Secondary: `bg-surface text-ink border border-border rounded-btn` (hover: `bg-surface-2`).
 - Danger: `bg-danger text-white rounded-btn`.
-- Hover: `opacity: 0.9`. No transform, no color shift.
-- Icon-only: 36×36 square, `rounded-[8px]`, `bg-surface border border-border`.
+- Hover: `opacity: 0.95`. Active: `translate-y-px` for tactile feedback.
+- Focus ring: `ring-2 ring-primary/40` (the global focus contract).
+- Icon-only: 36×36 square, `rounded-[10px]`, `bg-surface border border-border`. (2026-08-14 polish: shares button radius.)
 
 ### Card
 
-- `bg-surface border border-border rounded-card shadow-card p-6`.
-- Inline (flat) variant: drop shadow + border retained, no extra padding.
-- Hover: no change. Cards are not interactive.
+- `.card` primitive — `bg-surface border border-border rounded-card p-6 shadow-card` with `inset 0 1px 0 rgba(255,255,255,0.04)` highlight (dark) / `rgba(255,255,255,0.5)` (light) on top.
+- Two-layer shadow: `0 1px 2px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.32)` (dark), parallel light values.
+- Hover: no change. Cards are not interactive. Wrapper links use the `.row-hover` class instead.
 
 ### Form
 
-- Input: `bg-surface-2 border border-border rounded-[10px] px-[14px] py-3`.
-- Select: inherits input styles.
-- Textarea: same as input, `min-h` 80px.
-- Label: `text-[11px] uppercase tracking-[0.06em] font-semibold text-muted`, 6px below input.
+- Input: `bg-surface-2 border border-border rounded-input px-[14px] py-2.5 text-sm leading-tight` with an inset shadow `inset 0 1px 2px rgba(0,0,0,0.18)` for a "recessed" feel.
+- Select: inherits input styles + an `appearance-none` reset + a custom `▾` caret.
+- Textarea: same as input, `min-h` 88px.
+- Label: `text-[11px] uppercase tracking-[0.08em] font-semibold text-muted`, 6px gap to input.
 - Amount input: special — `bg-surface-2 border border-border rounded-btn px-[14px] py-3.5 text-[32px] font-bold tabular text-primary`. Focus ring: `ring-2 ring-primary/40`.
 
 ### Chip
 
-- Default: `bg-surface-2 border border-border text-muted rounded-pill px-3 py-1.5 text-[12.5px]`.
-- Selected: `bg-primary-soft text-primary border-primary/40 font-semibold`.
+- Default: `bg-surface border border-border text-muted rounded-pill px-3 py-1.5 text-[12px] font-semibold` (2026-08-14 polish: surface bg + weight bump to 600).
+- Selected: `bg-primary-soft text-primary border-transparent font-semibold` + an `inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent)` ring. Avoids the border-tint that fights the parchment palette.
 
 ### Transaction row
 

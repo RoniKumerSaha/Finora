@@ -38,23 +38,28 @@ export function GoalAddScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <h1 className="text-2xl font-semibold">Add goal</h1>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency fund, laptop…" autoFocus />
-      </Field>
-      <Field label="Target amount">
-        <Input type="number" inputMode="decimal" value={target} onChange={e => setTarget(e.target.value)} placeholder="50000" />
-      </Field>
-      <Field label="Already saved (optional)" hint="What you've already saved toward this goal.">
-        <Input type="number" inputMode="decimal" value={saved} onChange={e => setSaved(e.target.value)} />
-      </Field>
-      <Field label="Target date">
-        <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
-      </Field>
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save goal</Button>
-        <Button variant="ghost" onClick={() => navigate('/goals')}>Cancel</Button>
-      </div>
+      <header>
+        <h1 className="heading h1-screen">Add goal</h1>
+        <div className="text-muted text-[13px] mt-1.5">Set a target amount and a date.</div>
+      </header>
+      <section className="card flex flex-col gap-5">
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency fund, laptop…" autoFocus />
+        </Field>
+        <Field label="Target amount">
+          <Input type="number" inputMode="decimal" value={target} onChange={e => setTarget(e.target.value)} placeholder="50000" />
+        </Field>
+        <Field label="Already saved (optional)" hint="What you've already saved toward this goal.">
+          <Input type="number" inputMode="decimal" value={saved} onChange={e => setSaved(e.target.value)} />
+        </Field>
+        <Field label="Target date">
+          <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
+        </Field>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save goal</Button>
+          <Button variant="ghost" onClick={() => navigate('/goals')}>Cancel</Button>
+        </div>
+      </section>
     </form>
   );
 }

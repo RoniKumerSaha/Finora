@@ -40,29 +40,34 @@ export function DebtAddScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <h1 className="text-2xl font-semibold">Add debt</h1>
-      <Field label="Direction">
-        <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
-          <option value="i_owe">I owe (you borrowed)</option>
-          <option value="owed_to_me">Owed to me (you lent)</option>
-        </Select>
-      </Field>
-      <Field label="Name">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from Rahim, advance to Karim…" autoFocus />
-      </Field>
-      <Field label="Total amount">
-        <Input type="number" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} placeholder="10000" />
-      </Field>
-      <Field label="Person (optional)">
-        <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Rahim, Karim…" />
-      </Field>
-      <Field label="Due date (optional)">
-        <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-      </Field>
-      <div className="flex gap-2">
-        <Button variant="primary" type="submit">Save debt</Button>
-        <Button variant="ghost" onClick={() => navigate('/debts')}>Cancel</Button>
-      </div>
+      <header>
+        <h1 className="heading h1-screen">Add debt</h1>
+        <div className="text-muted text-[13px] mt-1.5">Track what you owe or what others owe you.</div>
+      </header>
+      <section className="card flex flex-col gap-5">
+        <Field label="Direction">
+          <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
+            <option value="i_owe">I owe (you borrowed)</option>
+            <option value="owed_to_me">Owed to me (you lent)</option>
+          </Select>
+        </Field>
+        <Field label="Name">
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from Rahim, advance to Karim…" autoFocus />
+        </Field>
+        <Field label="Total amount">
+          <Input type="number" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} placeholder="10000" />
+        </Field>
+        <Field label="Person (optional)">
+          <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Rahim, Karim…" />
+        </Field>
+        <Field label="Due date (optional)">
+          <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        </Field>
+        <div className="flex gap-2">
+          <Button variant="primary" type="submit">Save debt</Button>
+          <Button variant="ghost" onClick={() => navigate('/debts')}>Cancel</Button>
+        </div>
+      </section>
     </form>
   );
 }

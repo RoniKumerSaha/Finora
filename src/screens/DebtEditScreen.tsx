@@ -151,32 +151,48 @@ export function DebtEditScreen() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
       <div className="flex items-center gap-3">
-        <Link to="/debts" className="text-muted text-sm hover:text-ink">{'\u2190'} Debts</Link>
+        <Link to="/debts" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Debts</Link>
       </div>
 
       <div>
-        <h1 className="text-[22px] font-bold tracking-tight leading-none mb-1">Edit debt</h1>
-        <div className="text-muted text-[13px]">
+        <h1 className="heading h1-screen">Edit debt</h1>
+        <div className="text-muted text-[13px] mt-1.5">
           {debt.status === 'completed'
             ? 'This debt is fully paid. Editing the total keeps the record accurate.'
             : 'Change the debt details. Linked transactions stay as they are.'}
         </div>
         {isFullyPaid && relatedAccount && (
-          <div className="mt-4 text-[13px] bg-success-soft border border-success rounded-lg px-3 py-2.5">
-            <strong>Fully paid.</strong> Last transaction used{' '}
+          <div
+            className="mt-4 text-[13px] rounded-btn px-3.5 py-3"
+            style={{
+              background: 'var(--success-callout-bg)',
+              border: '1px solid var(--success)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent)',
+              color: 'var(--ink)',
+            }}
+          >
+            <strong style={{ color: 'var(--success-title)' }}>Fully paid.</strong> Last transaction used{' '}
             <span className="font-semibold">{relatedAccount.name}</span>{' '}
             — current balance:{' '}
             <span className="font-semibold tabular">{fmtBDT(relatedAccountBalance ?? 0)}</span>.
           </div>
         )}
         {isFullyPaid && !relatedAccount && (
-          <div className="mt-4 text-[13px] bg-success-soft border border-success rounded-lg px-3 py-2.5">
+          <div
+            className="mt-4 text-[13px] rounded-btn px-3.5 py-3"
+            style={{
+              background: 'var(--success-callout-bg)',
+              border: '1px solid var(--success)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--success) 35%, transparent)',
+              color: 'var(--success-title)',
+            }}
+          >
             <strong>Fully paid.</strong>
           </div>
         )}
       </div>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card flex flex-col gap-5">
+      <section className="card flex flex-col gap-5">
         <Field label="Direction">
           <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
             <option value="i_owe">I owe (you borrowed)</option>
@@ -202,10 +218,14 @@ export function DebtEditScreen() {
       </section>
 
       <section
-        className="border border-danger rounded-card p-6 shadow-card"
-        style={{ background: 'var(--danger-callout-bg)' }}
+        className="rounded-card p-6"
+        style={{
+          background: 'var(--danger-callout-bg)',
+          border: '1px solid var(--danger)',
+          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+        }}
       >
-        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title, #F08574)' }}>Danger zone</h2>
+        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
         <p className="text-[13px] text-muted mb-4">
           {linkedTxCount > 0
             ? `Removes the debt record only. The ${linkedTxCount} linked transaction(s) stay in your records.`

@@ -111,35 +111,39 @@ export function SettingsScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-[18px] max-w-[640px]">
+    <div className="flex flex-col gap-6 max-w-[640px]">
       <div>
         <h1 className="heading h1-screen">Settings</h1>
-        <div className="text-muted text-[13px] mt-1">Theme, backup, demo data, and reset.</div>
+        <div className="text-muted text-[13px] mt-1.5">Theme, backup, demo data, and reset.</div>
       </div>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-        <h2 className="heading h3-modal mb-3">Theme</h2>
+      <section className="card">
+        <h2 className="heading h3-modal mb-4">Theme</h2>
         <div className="flex gap-2 flex-wrap">
-          {(['dark', 'light', 'auto'] as Theme[]).map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTheme(t)}
-              className={[
-                'px-4 py-2.5 rounded-btn text-[13.5px] font-bold border transition',
-                theme === t
-                  ? 'bg-primary text-primary-on border-primary'
-                  : 'bg-surface border-border text-muted hover:text-ink',
-              ].join(' ')}
-            >
-              {t}
-            </button>
-          ))}
+          {(['dark', 'light', 'auto'] as Theme[]).map(t => {
+            const active = theme === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTheme(t)}
+                className={[
+                  'px-4 py-2.5 rounded-btn text-[13.5px] font-bold transition border',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                  active
+                    ? 'bg-primary text-primary-on border-primary'
+                    : 'bg-surface text-muted border-border hover:text-ink hover:bg-surface-2',
+                ].join(' ')}
+              >
+                {t}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-        <h2 className="heading h3-modal mb-3">Backup</h2>
+      <section className="card">
+        <h2 className="heading h3-modal mb-4">Backup</h2>
         <div className="flex gap-2 flex-wrap">
           <Button variant="primary" onClick={onExport}>Export backup</Button>
           <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Import backup</Button>
@@ -151,13 +155,13 @@ export function SettingsScreen() {
             className="hidden"
           />
         </div>
-        <p className="text-xs text-muted mt-3">
+        <p className="text-xs text-muted mt-4">
           Exports save to <code>finora-backup-YYYY-MM-DD.json</code>. Import replaces all data after confirmation.
         </p>
       </section>
 
-      <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-        <h2 className="heading h3-modal mb-3">Demo data</h2>
+      <section className="card">
+        <h2 className="heading h3-modal mb-4">Demo data</h2>
         <p className="text-[13px] text-muted mb-4">
           Load a small sample dataset (3 accounts, 4 transactions, 1 goal, 1 DPS) so the app isn't empty.
         </p>
@@ -165,10 +169,14 @@ export function SettingsScreen() {
       </section>
 
       <section
-        className="border border-danger rounded-card p-6 shadow-card"
-        style={{ background: 'var(--danger-callout-bg)' }}
+        className="rounded-card p-6"
+        style={{
+          background: 'var(--danger-callout-bg)',
+          border: '1px solid var(--danger)',
+          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+        }}
       >
-        <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title, #F08574)' }}>Danger zone</h2>
+        <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
         <p className="text-[13px] text-muted mb-4">
           Removes every account, transaction, goal, debt, and investment. Your onboarding state is kept.
         </p>

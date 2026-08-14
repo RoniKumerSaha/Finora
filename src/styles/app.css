@@ -1,14 +1,4 @@
-/**
- * app.css — small global overrides on top of theme.css.
- *
- * Tailwind handles most styling; this file holds the few things that
- * belong in CSS, not utility classes:
- *   - The font stack
- *   - Form-control defaults (Tailwind's preflight covers most, but the
- *     number-input spinner on Firefox needs an opt-out)
- *   - Scrollbar polish
- */
-
+---
 html, body, #root {
   height: 100%;
 }
@@ -17,11 +7,15 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   /* Fallback to the V2 Soft theme colors directly so the *body* matches
      the Shell even before Tailwind processes the @theme directive. */
   background-color: var(--bg);
   color: var(--ink);
+  /* Subtle font-feature tweaks: context-aware ligatures & old-style
+     numerals OFF (we use tabular on numbers via .tabular). */
+  font-feature-settings: 'cv11', 'ss01';
 }
 
 #root {
@@ -36,8 +30,8 @@ input[type="number"]::-webkit-inner-spin-button {
   margin: 0;
 }
 
-/* Slightly less aggressive scrollbar in the sidebar. */
-::-webkit-scrollbar { width: 10px; height: 10px; }
+/* Refined scrollbar — narrower, more elegant. */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
@@ -46,6 +40,14 @@ input[type="number"]::-webkit-inner-spin-button {
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-2); background-clip: padding-box; border: 2px solid transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* Refined text selection: uses primary at low opacity so it doesn't
+   fight against the warm parchment palette. */
+::selection {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+  color: var(--ink);
+}
 
 /* DESIGN.md.typography — Fraunces appears only in h1-display, h1-screen,
    h3-modal roles. The .heading utility class is the single switch; do
@@ -53,8 +55,40 @@ input[type="number"]::-webkit-inner-spin-button {
 .heading {
   font-family: var(--font-heading);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
-.heading.h1-display { font-size: 28px; line-height: 1.2; }
-.heading.h1-screen  { font-size: 22px; line-height: 1.2; }
-.heading.h3-modal   { font-size: 18px; line-height: 1.25; letter-spacing: -0.005em; }
+.heading.h1-display { font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
+.heading.h1-screen  { font-size: 24px; line-height: 1.2;  letter-spacing: -0.02em; font-weight: 600; }
+.heading.h3-modal   { font-size: 19px; line-height: 1.25; letter-spacing: -0.012em; font-weight: 600; }
+
+/* Card primitive — applies the inset highlight + shadow to a surface
+   panel. Use this everywhere we previously hand-rolled
+   `bg-surface border border-border rounded-card p-6 shadow-card`.
+   The .card-flat variant drops the inset for inline panels. */
+.card,
+.card-flat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.card {
+  box-shadow: var(--shadow-card), var(--card-inset);
+  padding: 24px;
+}
+.card-flat {
+  padding: 20px;
+}
+
+/* A subtle row hover affordance for list rows inside .card. Use
+   `.row-hover` on the `<Link>` or row container. */
+.row-hover { transition: background-color 120ms ease; }
+.row-hover:hover { background: var(--surface-2); }
+
+/* Focus ring contract: every interactive element uses the same primary
+   ring at 40% opacity. Avoids the "everything has a slightly different
+   focus style" problem. */
+.focus-ring:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
+}

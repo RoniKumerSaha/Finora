@@ -2,11 +2,15 @@
  * Field — single form field with label + input + error slot.
  *
  * v1 visual target: docs/ux-designs/.../mockups/v1/index.html
- *   - label: 12px muted uppercase tracked
- *   - input:  bg-surface-2, border-border, padding 12px 14px,
- *             radius 14px (r-btn), focus → 2px primary outline
+ *   - label: 11px muted uppercase tracked
+ *   - input:  bg-surface-2, border-border, padding 10×14,
+ *             radius 10px (r-input), focus → 2px primary outline
  *   - error:  danger text (inline three-part error formatting is
  *             applied by screens, this is just the slot)
+ *
+ * 2026-08-14 polish: tight label rhythm (4px gap), a subtle inset
+ * shadow on inputs for a "recessed" feel, and a focus ring that uses
+ * the global focus contract (3px primary at 28% opacity).
  *
  * Used by every form screen. Pure presentational; validation happens
  * upstream in lib/errors.ts (AD-19).
@@ -16,6 +20,13 @@
  * they scroll past the field without clicking out first.
  */
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+
+const INPUT_BASE =
+  'w-full bg-surface-2 text-ink rounded-input border border-border ' +
+  'px-[14px] py-2.5 text-sm leading-tight ' +
+  'transition shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)] ' +
+  'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 ' +
+  'disabled:opacity-50';
 
 export function Field({
   label,
@@ -30,15 +41,17 @@ export function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs text-muted uppercase tracking-wider font-semibold">{label}</label>
+      <label className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+        {label}
+      </label>
       {children}
-      {hint && !error && <div className="text-xs text-muted">{hint}</div>}
-      {error && <div className="text-xs text-danger">{error}</div>}
+      {hint && !error && <div className="text-xs text-muted mt-0.5">{hint}</div>}
+      {error && <div className="text-xs text-danger mt-0.5">{error}</div>}
     </div>
   );
 }
 
-/** Text input — v1 `.modal input` shape. */
+/** Text input — refined .modal input shape. */
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className, onWheel, type, ...rest } = props;
   const blurOnWheel = type === 'number' && !props.disabled;
@@ -47,18 +60,12 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
       {...rest}
       type={type}
       onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
-      className={[
-        'w-full bg-surface-2 border border-border text-ink rounded-btn',
-        'px-[14px] py-3 text-sm',
-        'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
-        'disabled:opacity-50',
-        className || '',
-      ].join(' ')}
+      className={[INPUT_BASE, className || ''].join(' ')}
     />
   );
 }
 
-/** Large "amount" input — used in add screens (v1 .num-input with 32px font). */
+/** Large "amount" input — used in add screens (32px font, primary color). */
 export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className, onWheel, type, ...rest } = props;
   const blurOnWheel = type === 'number' && !props.disabled;
@@ -68,40 +75,48 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {
       type={type}
       onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
       className={[
-        'w-full bg-surface-2 border border-border text-primary rounded-btn',
-        'px-[14px] py-3.5 text-[32px] font-bold tabular',
-        'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
+        INPUT_BASE,
+        'rounded-btn text-[32px] font-bold tabular text-primary py-3.5',
+        'shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)]',
         className || '',
       ].join(' ')}
     />
   );
 }
 
-/** Select — v1 `.modal select` shape. */
+/** Select — same shell as Input, with a custom chevron caret. */
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  const { className, ...rest } = props;
   return (
-    <select
-      {...props}
-      className={[
-        'w-full bg-surface-2 border border-border text-ink rounded-btn',
-        'px-[14px] py-3 text-sm',
-        'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
-        props.className || '',
-      ].join(' ')}
-    />
+    <div className="relative">
+      <select
+        {...rest}
+        className={[
+          INPUT_BASE,
+          'appearance-none pr-9 cursor-pointer',
+          className || '',
+        ].join(' ')}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs"
+      >
+        {'\u25BE'}
+      </span>
+    </div>
   );
 }
 
 /** Textarea — same shell as Input. */
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const { className, ...rest } = props;
   return (
     <textarea
-      {...props}
+      {...rest}
       className={[
-        'w-full bg-surface-2 border border-border text-ink rounded-btn min-h-[80px]',
-        'px-[14px] py-3 text-sm',
-        'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
-        props.className || '',
+        INPUT_BASE,
+        'min-h-[88px] py-3 leading-relaxed resize-y',
+        className || '',
       ].join(' ')}
     />
   );
