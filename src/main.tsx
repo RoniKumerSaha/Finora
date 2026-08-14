@@ -15,6 +15,15 @@ import { App } from './App';
 import './styles/theme.css';
 import './styles/app.css';
 
+// DESIGN.md.typography.heading — load Fraunces once for the app
+// (variable font; supports opsz 9..144 axis used at h1-display /
+// h1-screen / h3-modal roles). Preconnect for faster first paint.
+const frauncesLink = document.createElement('link');
+frauncesLink.rel = 'stylesheet';
+frauncesLink.href =
+  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap';
+document.head.appendChild(frauncesLink);
+
 const root = document.getElementById('root');
 if (!root) throw new Error('No #root element found');
 

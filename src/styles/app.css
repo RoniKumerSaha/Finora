@@ -46,3 +46,15 @@ input[type="number"]::-webkit-inner-spin-button {
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-2); background-clip: padding-box; border: 2px solid transparent; }
+
+/* DESIGN.md.typography — Fraunces appears only in h1-display, h1-screen,
+   h3-modal roles. The .heading utility class is the single switch; do
+   not apply Fraunces outside these roles. */
+.heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.heading.h1-display { font-size: 28px; line-height: 1.2; }
+.heading.h1-screen  { font-size: 22px; line-height: 1.2; }
+.heading.h3-modal   { font-size: 18px; line-height: 1.25; letter-spacing: -0.005em; }
