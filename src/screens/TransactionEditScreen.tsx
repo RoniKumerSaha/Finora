@@ -62,6 +62,7 @@ export function TransactionEditScreen() {
     e.preventDefault();
     if (!(Number(amount) > 0)) {
       showBanner({
+        kind: 'error',
         what: 'Amount must be greater than zero',
         why: 'Zero or negative amounts produce empty transactions.',
         fix: 'Enter a positive number.',
@@ -80,9 +81,16 @@ export function TransactionEditScreen() {
         linkedInvestmentId: linkedInvestmentId || undefined,
         note,
       }));
+      showBanner({
+        kind: 'success',
+        what: 'Transaction saved',
+        why: 'Your changes are now in your records.',
+        fix: 'Open Transactions to see the updated entry.',
+      });
       navigate('/transactions');
     } catch (err) {
       showBanner({
+        kind: 'error',
         what: 'Could not save transaction',
         why: (err as Error).message,
         fix: 'Check the form values and try again.',
@@ -101,9 +109,16 @@ export function TransactionEditScreen() {
     if (!ok) return;
     try {
       update(s => transactions.remove(s, tx!.id));
+      showBanner({
+        kind: 'success',
+        what: 'Transaction deleted',
+        why: 'The entry is gone from your records.',
+        fix: 'Open Transactions to see the updated list.',
+      });
       navigate('/transactions');
     } catch (err) {
       showBanner({
+        kind: 'error',
         what: 'Could not delete',
         why: (err as Error).message,
         fix: 'Try again.',

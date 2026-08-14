@@ -94,7 +94,7 @@ export function GoalDetailScreen() {
         targetDate,
       }));
       setMode('view');
-      showBanner({ what: 'Goal updated', why: 'Name, target, and date are now in effect.', fix: 'The saved amount is unchanged — it\'s derived from your transactions.' });
+      showBanner({ kind: 'success', what: 'Goal updated', why: 'Name, target, and date are now in effect.', fix: 'The saved amount is unchanged — it\'s derived from your transactions.' });
     } catch (err) {
       showBanner({ what: 'Could not update goal', why: (err as Error).message, fix: 'Try again.' });
     }
@@ -110,6 +110,7 @@ export function GoalDetailScreen() {
     if (!ok) return;
     update(s => goals.remove(s, goal!.id));
     showBanner({
+      kind: 'success',
       what: 'Goal deleted',
       why: `${fmtBDT(saved)} of contributions remain in your transactions.`,
       fix: 'Open Home or Transactions to see them.',
@@ -137,6 +138,7 @@ export function GoalDetailScreen() {
       setContribAmount('');
       setContribNote('');
       showBanner({
+        kind: 'success',
         what: `+ ${fmtBDT(contribAmount)} toward ${goal!.name}`,
         why: 'Recorded as an expense transaction linked to this goal.',
         fix: `Saved is now ${fmtBDT(saved + Number(contribAmount))} of ${fmtBDT(goal!.target)}.`,

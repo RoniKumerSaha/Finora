@@ -110,7 +110,11 @@ export interface State {
   settings: Settings;
 }
 
+export type BannerKind = 'success' | 'info' | 'error';
+
 export interface Banner {
+  /** Visual treatment. Defaults to 'info' when unspecified. */
+  kind?: BannerKind;
   what: string;
   why: string;
   fix: string;

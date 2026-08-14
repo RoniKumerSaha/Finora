@@ -28,6 +28,7 @@ export function SettingsScreen() {
     if (!ok) return;
     update(seedDemo);
     showBanner({
+      kind: 'success',
       what: 'Demo data loaded',
       why: 'You\'re now seeing 3 accounts, 4 transactions, 1 goal, 1 investment.',
       fix: 'Open any module from the sidebar.',
@@ -48,6 +49,7 @@ export function SettingsScreen() {
       settings: { ...s.settings, onboardingComplete: true },
     }));
     showBanner({
+      kind: 'success',
       what: 'All data wiped',
       why: 'Your local store is now empty.',
       fix: 'Add an account to start tracking again.',
@@ -58,6 +60,7 @@ export function SettingsScreen() {
     const state = useStore.getState().state;
     const filename = downloadExport(state);
     showBanner({
+      kind: 'success',
       what: `Downloaded ${filename}`,
       why: 'This file contains every account, transaction, goal, debt, and investment from your local store.',
       fix: 'Keep it somewhere safe — it\'s the only way to restore from a wipe.',
@@ -73,6 +76,7 @@ export function SettingsScreen() {
       text = await file.text();
     } catch {
       showBanner({
+        kind: 'error',
         what: 'Could not read the file',
         why: 'The browser couldn\'t open the file you picked.',
         fix: 'Try a different file or copy-paste from TextEdit.',
@@ -84,9 +88,9 @@ export function SettingsScreen() {
       parsed = parseImport(text);
     } catch (err) {
       if (err instanceof ImportError) {
-        showBanner({ what: err.what, why: err.why, fix: err.fix });
+        showBanner({ kind: 'error', what: err.what, why: err.why, fix: err.fix });
       } else {
-        showBanner({ what: 'Import failed', why: (err as Error).message, fix: 'Try a different file.' });
+        showBanner({ kind: 'error', what: 'Import failed', why: (err as Error).message, fix: 'Try a different file.' });
       }
       return;
     }
@@ -99,6 +103,7 @@ export function SettingsScreen() {
     if (!ok) return;
     importAndReplace(parsed);
     showBanner({
+      kind: 'success',
       what: 'Backup restored',
       why: 'Your data is now identical to the backup file.',
       fix: 'Open Home to see the totals.',

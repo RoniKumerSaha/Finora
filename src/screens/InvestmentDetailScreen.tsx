@@ -96,6 +96,7 @@ export function InvestmentDetailScreen() {
       setContribNote('');
       const total = contributed + Number(contribAmount);
       showBanner({
+        kind: 'success',
         what: `+ ${fmtBDT(contribAmount)} toward ${inv!.name}`,
         why: 'Recorded as an expense transaction linked to this investment.',
         fix: `${fmtBDT(total)} contributed so far.`,
@@ -115,6 +116,7 @@ export function InvestmentDetailScreen() {
     if (!ok) return;
     update(s => investments.close(s, inv!.id));
     showBanner({
+      kind: 'success',
       what: `${inv!.name} closed`,
       why: 'It\'s been moved out of the active list.',
       fix: 'Open Investments to see closed items.',
@@ -130,6 +132,7 @@ export function InvestmentDetailScreen() {
     if (!ok) return;
     update(s => investments.rollover(s, inv!.id));
     showBanner({
+      kind: 'success',
       what: `${inv!.name} rolled over`,
       why: 'A new investment with the same terms starts after maturity.',
       fix: 'Open Investments to see the new one.',
@@ -146,6 +149,7 @@ export function InvestmentDetailScreen() {
     if (!ok) return;
     update(s => investments.remove(s, inv!.id));
     showBanner({
+      kind: 'success',
       what: 'Investment deleted',
       why: 'Linked contributions remain in your transactions.',
       fix: 'Open Home or Transactions to see them.',

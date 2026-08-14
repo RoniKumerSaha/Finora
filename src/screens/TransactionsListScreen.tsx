@@ -137,17 +137,23 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   })();
 
   return (
-    <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
-      <div className="flex items-center gap-3">
+    <Link
+      to={`/transactions/${tx.id}/edit`}
+      className="flex justify-between items-center py-3 border-b border-border last:border-0 hover:bg-surface-2 -mx-2 px-2 rounded transition group"
+    >
+      <div className="flex items-center gap-3 min-w-0">
         <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${accent}`}>
           {direction === 'in' ? '\u2191' : direction === 'out' ? '\u2193' : '\u21C4'}
         </div>
-        <div>
-          <div className="font-semibold text-[14px] leading-tight">{tx.note || cat?.name || tx.type}</div>
-          <div className="text-xs text-muted leading-tight mt-0.5">{sub}</div>
+        <div className="min-w-0">
+          <div className="font-semibold text-[14px] leading-tight truncate">{tx.note || cat?.name || tx.type}</div>
+          <div className="text-xs text-muted leading-tight mt-0.5 truncate">{sub}</div>
         </div>
       </div>
-      <div className={`font-bold tabular ${amtColor}`}>{fmtBDTSigned(tx.amount, direction)}</div>
-    </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <div className={`font-bold tabular ${amtColor}`}>{fmtBDTSigned(tx.amount, direction)}</div>
+        <span className="text-muted text-lg leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+      </div>
+    </Link>
   );
 }
