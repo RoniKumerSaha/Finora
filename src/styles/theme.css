@@ -58,7 +58,9 @@
   --radius-pill: 999px;
 
   /* Refined shadows: tightened spread + a hair more depth at modal.
-     card adds a subtle inset highlight via JS where used (see .card). */
+     card adds a subtle inset highlight via JS where used (see .card).
+     Note: --shadow-card is overridden per theme in [data-theme="light"]
+     (2026-08-14 light-parchment) to use a warm-brown ambient. */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.32);
   --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.32), 0 24px 60px rgba(0, 0, 0, 0.55);
   --shadow-nav: 0 1px 0 rgba(0, 0, 0, 0.32);
@@ -71,14 +73,14 @@
 /* v1 modal backdrop: darkened + 6px blur overlay. */
 :root {
   --overlay: rgba(15, 20, 25, 0.6);
-  /* Inset highlight for cards — a near-imperceptible top edge tint
-     that suggests a light source from above. */
-  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   /* Sidebar inner shadow — keeps nav feeling "cut from the wall". */
   --sidebar-inset: inset -1px 0 0 rgba(0, 0, 0, 0.16);
 }
 
 [data-theme="dark"] {
+  /* Card top-edge highlight (dark mode): subtle warm light from above. */
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  /* Card shadow (dark): two-layer ambient. */
   --bg:           #1E2A26;
   --surface:      #253229;
   --surface-2:    #2E3C34;
@@ -107,10 +109,14 @@
 }
 
 [data-theme="light"] {
-  --bg:           #F7F4EC;
-  --surface:      #FFFFFF;
-  --surface-2:    #F0EBDF;
-  --surface-3:    #E5DECB;
+  /* Card top-edge highlight (light mode): softer white against cream. */
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  /* Card shadow (light): warm brown ambient instead of pure black. */
+  --shadow-card: 0 1px 2px rgba(42, 38, 32, 0.06), 0 8px 24px rgba(42, 38, 32, 0.08);
+  --bg:           #EFE5D0;   /* warm parchment cream (2026-08-14 light-parchment) */
+  --surface:      #F8F2E3;   /* soft cream, lighter than bg (2026-08-14) */
+  --surface-2:    #F0E5CC;   /* warm cream, lockstep with new bg (2026-08-14) */
+  --surface-3:    #E0D4B6;   /* deepest cream (2026-08-14) */
   --ink:          #2A2620;
   --muted:        #7A6F5E;
   --muted-2:      #B5A992;
@@ -123,13 +129,13 @@
   --danger:       #B8473A;
   --danger-soft:  rgba(184, 71, 58, 0.14);
   --danger-title: #8B3A2E;
-  --danger-callout-bg: #FFF5F1;
+  --danger-callout-bg: #F5E6DD;   /* warm parchment-tinted (2026-08-14) */
   --warn:         #B6842E;
   --warn-soft:    rgba(182, 132, 46, 0.14);
   --success:      #558C6C;
   --success-soft: rgba(85, 140, 108, 0.16);
   --success-title:#3F7A5C;
-  --success-callout-bg: #F1F8F3;
-  --border:       #E5DECB;
-  --border-2:     #D8CFB8;
+  --success-callout-bg: #E8EFE5;  /* warm parchment-tinted (2026-08-14) */
+  --border:       #D8C9A6;   /* deeper for soft-cream cards (2026-08-14) */
+  --border-2:     #C8B98F;   /* deeper (2026-08-14) */
 }

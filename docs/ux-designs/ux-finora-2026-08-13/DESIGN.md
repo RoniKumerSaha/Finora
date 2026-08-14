@@ -33,17 +33,17 @@ colors:
   success-callout-bg: '#1A2620'    # dark ; real surface for success alerts
   success-callout-bg-light: '#F1F8F3' # light ; purer white tint (2026-08-14)
   bg: '#1E2A26'             # dark ; deep forest
-  bg-light: '#F7F4EC'       # light ; warm cream / parchment
+  bg-light: '#EFE5D0'       # light ; warm parchment cream (2026-08-14 light-parchment update)
   surface: '#253229'        # dark
-  surface-light: '#FFFFFF'
+  surface-light: '#F8F2E3'  # light ; soft cream, lighter than bg (2026-08-14 update)
   surface-2: '#2E3C34'      # dark
-  surface-2-light: '#F0EBDF'
+  surface-2-light: '#F0E5CC' # light ; warm cream in lockstep with new bg (2026-08-14 light-parchment)
   text: '#F1F3EF'           # dark
   text-light: '#2A2620'
   muted: '#94A59C'          # dark
   muted-light: '#7A6F5E'
   border: '#324139'         # dark
-  border-light: '#E5DECB'
+  border-light: '#D8C9A6'  # light ; deeper border for new soft-cream cards (2026-08-14 light-parchment)
 typography:
   heading: 'Fraunces'        # Google Fonts, variable opsz 9..144
   body: '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif'
@@ -96,7 +96,7 @@ elevation:
   # 2026-08-14 polish: every card carries an inset highlight to suggest
   # a soft top-light source — adds depth without color tint.
   card-inset: 'inset 0 1px 0 rgba(255,255,255,0.04)'  # dark
-  card-inset-light: 'inset 0 1px 0 rgba(255,255,255,0.5)'  # light
+  card-inset-light: 'inset 0 1px 0 rgba(255,255,255,0.35)'  # light ; 2026-08-14 update: less white against soft cream
   # 2026-08-14 polish: sidebar carries an inset right-edge so the nav
   # feels "cut from the wall" rather than floating.
   sidebar-inset: 'inset -1px 0 0 rgba(0,0,0,0.16)'
@@ -165,15 +165,15 @@ Each role has a `-soft` companion at ~12–18% alpha for chip fills, selected-st
 
 | Role | Dark | Light |
 |---|---|---|
-| **bg** | `#1E2A26` (deep forest) | `#F7F4EC` (warm cream / parchment) |
-| **surface** | `#253229` | `#FFFFFF` |
-| **surface-2** | `#2E3C34` | `#F0EBDF` |
-| **surface-3** | `#3A4A42` | `#E5DECB` |
+| **bg** | `#1E2A26` (deep forest) | `#EFE5D0` (warm parchment cream — 2026-08-14 update) |
+| **surface** | `#253229` | `#F8F2E3` (soft cream, lighter than bg — 2026-08-14) |
+| **surface-2** | `#2E3C34` | `#F0E5CC` (warm cream, lockstep with new bg — 2026-08-14) |
+| **surface-3** | `#3A4A42` | `#E0D4B6` (deepest cream — 2026-08-14) |
 | **ink** | `#F1F3EF` | `#2A2620` |
 | **muted** | `#94A59C` | `#7A6F5E` |
 | **muted-2** | `#647068` | `#B5A992` |
-| **border** | `#324139` | `#E5DECB` |
-| **border-2** | `#28332D` | `#D8CFB8` |
+| **border** | `#324139` | `#D8C9A6` (deeper for soft-cream cards — 2026-08-14) |
+| **border-2** | `#28332D` | `#C8B98F` (deeper — 2026-08-14) |
 | **overlay** | `rgba(15,20,25,0.6)` | `rgba(42,38,32,0.25)` |
 
 ### Color rules
@@ -185,7 +185,8 @@ Each role has a `-soft` companion at ~12–18% alpha for chip fills, selected-st
 - **Danger hierarchy uses saturation.** Inside a danger callout, the title is the lighter `#F08574`, the button is the saturated `#E06050`. Three same-hue elements (border + title + button) collapse into one flat warm slab.
 - **Each semantic role has a unique hue family.** Danger sits in warm-red; accent sits in warm-gold. They are *allowed* to be in the same family (parchment register) but never at the same hue and lightness. Hierarchy is carried by surface contrast and saturation, not by hue alone.
 - **Primary text on primary surfaces** uses `--primary-on` (dark ink in dark mode, white in light mode), never raw text color.
-- **Light mode is not "white mode."** The light bg is warm cream by design. Pure white is reserved for surfaces (cards, modals) layered on the cream.
+- **Light mode is not "white mode."** The light bg is warm parchment cream by design. Cards are a soft cream that is **lighter than** the bg (`#F8F2E3` on `#EFE5D0`, ~4% contrast) — never pure white. Pure white would create a sharp washed-out feel against the warm cream. The whole surface stack reads as one continuous warm parchment family; hierarchy is carried by border + shadow, not by surface contrast (2026-08-14 light-parchment update).
+- **Light-mode surface ladder is warm-cream cohesive.** When the bg warms, every related surface (cards, inputs, borders) warms in lockstep. Single-step surface jumps (~5% in L*), never large cold-to-warm swings. The whole palette moves as one register.
 
 ## Typography
 
