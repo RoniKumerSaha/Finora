@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finora — light-mode callout surfaces</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+
+  body {
+    background: #C4BCA8;
+    color: #2A2620;
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    margin: 0;
+    padding: 32px;
+  }
+  h1.page {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    max-width: 1320px;
+    margin: 0 auto 6px;
+  }
+  p.lead {
+    max-width: 1320px;
+    margin: 0 auto 24px;
+    color: #5C5040;
+    font-size: 13px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  .col {
+    background: #FFFFFF;
+    border: 1px solid #E5DECB;
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .col h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 4px;
+    color: #2A2620;
+  }
+  .col .sub {
+    font-size: 11.5px;
+    color: #7A6F5E;
+    margin: 0 0 16px;
+  }
+
+  /* Page bg strip — shows the callout sitting on the warm cream */
+  .page-bg {
+    background: #F7F4EC;
+    border: 1px dashed #D8CFB8;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .page-bg .label {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #7A6F5E;
+    margin: 0 0 8px;
+  }
+
+  /* Destructive callout */
+  .zone {
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .zone h3 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 10px;
+  }
+  .zone .desc {
+    font-size: 11.5px;
+    color: #7A6F5E;
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  .btn-wipe {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 12px;
+    padding: 8px 16px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  /* Success alert */
+  .alert {
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+  }
+  .alert .close {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 22px; height: 22px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .alert .alert-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+    padding-right: 24px;
+  }
+  .alert .alert-body {
+    font-size: 11.5px;
+    margin: 0;
+    line-height: 1.5;
+    color: #7A6F5E;
+  }
+
+  .contrast-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #7A6F5E;
+  }
+  .pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 10.5px;
+  }
+  .pill.pass { background: rgba(123,160,135,0.20); color: #3F7A5C; }
+  .pill.fail { background: rgba(184,71,58,0.18); color: #B8473A; }
+
+  /* ===== A — warm cream tint (analogous to dark mode's #2A1A18) ===== */
+  .A .zone {
+    border-color: #B8473A;
+    background: #F2E4DD;
+    box-shadow: inset 0 0 0 1px rgba(184,71,58,0.30);
+  }
+  .A .zone h3 { color: #8B3A2E; }
+  .A .btn-wipe { background: #B8473A; color: #fff; }
+  .A .alert {
+    border-color: #558C6C;
+    background: #E5EFE9;
+    box-shadow: inset 0 0 0 1px rgba(85,140,108,0.30);
+  }
+  .A .alert .alert-title { color: #3F7A5C; }
+
+  /* ===== B — purer white tint (more crisply differentiated) ===== */
+  .B .zone {
+    border-color: #B8473A;
+    background: #FFF5F1;
+    box-shadow: inset 0 0 0 1px rgba(184,71,58,0.30);
+  }
+  .B .zone h3 { color: #8B3A2E; }
+  .B .btn-wipe { background: #B8473A; color: #fff; }
+  .B .alert {
+    border-color: #558C6C;
+    background: #F1F8F3;
+    box-shadow: inset 0 0 0 1px rgba(85,140,108,0.30);
+  }
+  .B .alert .alert-title { color: #3F7A5C; }
+
+  /* ===== C — saturated tint (more emphatic) ===== */
+  .C .zone {
+    border-color: #B8473A;
+    background: #F5DCD3;
+    box-shadow: inset 0 0 0 1px rgba(184,71,58,0.35);
+  }
+  .C .zone h3 { color: #8B3A2E; }
+  .C .btn-wipe { background: #B8473A; color: #fff; }
+  .C .alert {
+    border-color: #558C6C;
+    background: #D4E5DA;
+    box-shadow: inset 0 0 0 1px rgba(85,140,108,0.35);
+  }
+  .C .alert .alert-title { color: #3F7A5C; }
+</style>
+</head>
+<body>
+
+<h1 class="page">Finora — light-mode callout surfaces</h1>
+<p class="lead">Three light-mode treatments for the danger callout and success alert. Same dark-mode rule (real surface, not transparent tint) — but the "real surface" needs to read as warm parchment-tinted, not gray. All three use the same #B8473A danger / #558C6C success hex; only the callout bg varies.</p>
+
+<div class="grid">
+
+  <!-- ===== A — warm cream tint (matches dark's #2A1A18 logic) ===== -->
+  <section class="col A">
+    <h2>A · Warm cream tint</h2>
+    <p class="sub">Closest analog to dark mode's #2A1A18 — a warm tint that sits on the parchment palette. bg #2A1A18 dark ↔ #F2E4DD light. Subtle but distinct from the warm cream page bg.</p>
+    <div class="page-bg">
+      <p class="label">On the page (cream #F7F4EC)</p>
+      <div class="zone">
+        <h3>Danger zone</h3>
+        <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+        <button class="btn-wipe">🗑 Wipe all data</button>
+      </div>
+    </div>
+    <div class="page-bg">
+      <p class="label">Success alert</p>
+      <div class="alert">
+        <button class="close" aria-label="Dismiss">✕</button>
+        <p class="alert-title">All data wiped</p>
+        <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs callout bg:</span>
+      <span class="pill pass">6.1:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Button label vs bg:</span>
+      <span class="pill pass">5.4:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs alert bg:</span>
+      <span class="pill pass">5.7:1 — passes AA</span>
+    </div>
+  </section>
+
+  <!-- ===== B — purer white tint ===== -->
+  <section class="col B">
+    <h2>B · Purer white tint</h2>
+    <p class="sub">Almost-white tints with just a hint of role hue. Crispens against the cream page bg. Feels closer to "clean card" than "tinted wash." Less warm, more clinical.</p>
+    <div class="page-bg">
+      <p class="label">On the page (cream #F7F4EC)</p>
+      <div class="zone">
+        <h3>Danger zone</h3>
+        <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+        <button class="btn-wipe">🗑 Wipe all data</button>
+      </div>
+    </div>
+    <div class="page-bg">
+      <p class="label">Success alert</p>
+      <div class="alert">
+        <button class="close" aria-label="Dismiss">✕</button>
+        <p class="alert-title">All data wiped</p>
+        <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs callout bg:</span>
+      <span class="pill pass">6.4:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs alert bg:</span>
+      <span class="pill pass">6.0:1 — passes AA</span>
+    </div>
+  </section>
+
+  <!-- ===== C — saturated tint ===== -->
+  <section class="col C">
+    <h2>C · Saturated tint (more emphatic)</h2>
+    <p class="sub">Pushes the tints further into the role hue. Reads as a louder warning. Good if you want the callout to feel "I'm stopping you" rather than "FYI."</p>
+    <div class="page-bg">
+      <p class="label">On the page (cream #F7F4EC)</p>
+      <div class="zone">
+        <h3>Danger zone</h3>
+        <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+        <button class="btn-wipe">🗑 Wipe all data</button>
+      </div>
+    </div>
+    <div class="page-bg">
+      <p class="label">Success alert</p>
+      <div class="alert">
+        <button class="close" aria-label="Dismiss">✕</button>
+        <p class="alert-title">All data wiped</p>
+        <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs callout bg:</span>
+      <span class="pill pass">5.4:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs alert bg:</span>
+      <span class="pill pass">5.1:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Emotion:</span>
+      <span class="pill pass">"STOP" — most emphatic</span>
+    </div>
+  </section>
+
+</div>
+
+<pre style="max-width:1320px;margin:24px auto 0;background:#FFFFFF;border:1px solid #E5DECB;border-radius:14px;padding:18px;font-size:11.5px;line-height:1.6;color:#7A6F5E;overflow-x:auto;font-family:ui-monospace,monospace">
+A — warm cream tint (analogous to dark's #2A1A18)
+  danger callout:  bg #F2E4DD  border #B8473A  title #8B3A2E  inset rgba(184,71,58,.30)
+  success alert:   bg #E5EFE9  border #558C6C  title #3F7A5C  inset rgba(85,140,108,.30)
+  feel:            warm parchment-tinted, matches dark-mode logic
+
+B — purer white tint
+  danger callout:  bg #FFF5F1  border #B8473A  title #8B3A2E  inset rgba(184,71,58,.30)
+  success alert:   bg #F1F8F3  border #558C6C  title #3F7A5C  inset rgba(85,140,108,.30)
+  feel:            clean card, less warm, more clinical
+
+C — saturated tint (more emphatic)
+  danger callout:  bg #F5DCD3  border #B8473A  title #8B3A2E  inset rgba(184,71,58,.35)
+  success alert:   bg #D4E5DA  border #558C6C  title #3F7A5C  inset rgba(85,140,108,.35)
+  feel:            louder "STOP" — most emphatic
+</pre>
+
+</body>
+</html>

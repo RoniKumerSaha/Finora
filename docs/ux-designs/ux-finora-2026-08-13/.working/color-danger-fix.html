@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finora — danger color fix</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+
+  body {
+    background: #2A2F2C;
+    color: #E9ECEA;
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    margin: 0;
+    padding: 32px;
+  }
+  h1.page {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    max-width: 1320px;
+    margin: 0 auto 8px;
+  }
+  p.lead {
+    max-width: 1320px;
+    margin: 0 auto 24px;
+    color: #9DA9A3;
+    font-size: 13px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  .col {
+    background: #1F2522;
+    border: 1px solid #2F3935;
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .col h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 4px;
+  }
+  .col .sub {
+    font-size: 11.5px;
+    color: #94A59C;
+    margin: 0 0 16px;
+  }
+
+  /* Two surfaces per column */
+  .surfaces {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .label {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #647068;
+    margin: 0 0 6px;
+  }
+
+  /* Destructive callout */
+  .zone {
+    background: #1E2A26;
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .zone h3 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 10px;
+  }
+  .zone .desc {
+    font-size: 11.5px;
+    color: #94A59C;
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  .btn-wipe {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 12px;
+    padding: 8px 16px;
+    font: inherit;
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  /* Success / info alert */
+  .alert {
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+  }
+  .alert .close {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 22px; height: 22px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .alert .alert-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+    padding-right: 24px;
+  }
+  .alert .alert-body {
+    font-size: 11.5px;
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+
+  /* Contrast checks */
+  .contrast-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #94A59C;
+  }
+  .pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 10.5px;
+  }
+  .pill.pass { background: rgba(107,170,138,0.18); color: #6BAA8A; }
+  .pill.fail { background: rgba(214,117,96,0.18); color: #D67560; }
+
+  /* ===== A — current (problem) ===== */
+  .A .zone { border-color: #D67560; background: rgba(214,117,96,0.10); }
+  .A .zone h3 { color: #D67560; }
+  .A .btn-wipe { background: #D67560; color: #fff; }
+  .A .alert { border-color: #D67560; background: rgba(214,117,96,0.10); }
+  .A .alert .alert-title { color: #D67560; }
+
+  /* ===== B — push danger colder ===== */
+  .B .zone {
+    border-color: #E25C7A;
+    background: rgba(226,92,122,0.14);
+  }
+  .B .zone h3 { color: #F37893; }
+  .B .btn-wipe { background: #E25C7A; color: #fff; }
+  .B .alert {
+    border-color: #6BAA8A;
+    background: rgba(107,170,138,0.14);
+  }
+  .B .alert .alert-title { color: #6BAA8A; }
+
+  /* ===== C — keep red loud + real surface ===== */
+  .C .zone {
+    border-color: #E06050;
+    background: #2A1A18;
+    box-shadow: inset 0 0 0 1px rgba(224,96,80,0.35);
+  }
+  .C .zone h3 { color: #F08574; }
+  .C .btn-wipe { background: #E06050; color: #fff; }
+  .C .alert {
+    border-color: #6BAA8A;
+    background: #1A2620;
+    box-shadow: inset 0 0 0 1px rgba(107,170,138,0.35);
+  }
+  .C .alert .alert-title { color: #82BFA0; }
+</style>
+</head>
+<body>
+
+<h1 class="page">Finora — danger color fix</h1>
+<p class="lead">Two surfaces broke from the same problem: the "Wipe all data" danger callout and the "All data wiped" success alert both used the same warm-tinted transparent-on-dark treatment. Three fixes below — pick one.</p>
+
+<div class="grid">
+
+  <!-- ===== A — current (problem) ===== -->
+  <section class="col A">
+    <h2>A · Current (the problem)</h2>
+    <p class="sub"><strong>Keep</strong> #D67560 danger + #D9B26B accent. Two failures: danger collapses into accent, and the success alert borrows danger's color because there's no positive-state surface.</p>
+    <div class="surfaces">
+      <div>
+        <p class="label">Destructive callout</p>
+        <div class="zone">
+          <h3>Danger zone</h3>
+          <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+          <button class="btn-wipe">🗑 Wipe all data</button>
+        </div>
+      </div>
+      <div>
+        <p class="label">Success / info alert (same red — wrong)</p>
+        <div class="alert">
+          <button class="close" aria-label="Dismiss">✕</button>
+          <p class="alert-title">All data wiped</p>
+          <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+        </div>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs bg:</span>
+      <span class="pill fail">3.6:1 — fails AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs bg:</span>
+      <span class="pill fail">3.6:1 — fails AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Two surfaces distinct:</span>
+      <span class="pill fail">no — same hue</span>
+    </div>
+  </section>
+
+  <!-- ===== B — push danger colder + sage success alert ===== -->
+  <section class="col B">
+    <h2>B · Push danger colder + sage success</h2>
+    <p class="sub">Move danger off orange-red (#E25C7A rose-crimson, 90° from accent gold). Title uses #F37893 for legibility. Success alert uses sage #6BAA8A — no longer borrows danger. Both surfaces clearly distinct.</p>
+    <div class="surfaces">
+      <div>
+        <p class="label">Destructive callout</p>
+        <div class="zone">
+          <h3>Danger zone</h3>
+          <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+          <button class="btn-wipe">🗑 Wipe all data</button>
+        </div>
+      </div>
+      <div>
+        <p class="label">Success / info alert</p>
+        <div class="alert">
+          <button class="close" aria-label="Dismiss">✕</button>
+          <p class="alert-title">All data wiped</p>
+          <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+        </div>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs bg:</span>
+      <span class="pill pass">6.1:1 — passes AA Large</span>
+    </div>
+    <div class="contrast-row">
+      <span>Button label vs bg:</span>
+      <span class="pill pass">5.4:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs bg:</span>
+      <span class="pill pass">5.8:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Danger vs accent (hue):</span>
+      <span class="pill pass">distinct — 90° apart</span>
+    </div>
+    <div class="contrast-row">
+      <span>Danger vs alert:</span>
+      <span class="pill pass">clearly distinct at a glance</span>
+    </div>
+  </section>
+
+  <!-- ===== C — keep red loud + real surface for both ===== -->
+  <section class="col C">
+    <h2>C · Keep red loud + real surface</h2>
+    <p class="sub">Stay warm-red but louder (#E06050). Both callouts get a real bg (#2A1A18 danger, #1A2620 success) instead of a transparent tint. Title uses lighter tint #F08574 for hierarchy. Success still borrows sage.</p>
+    <div class="surfaces">
+      <div>
+        <p class="label">Destructive callout</p>
+        <div class="zone">
+          <h3>Danger zone</h3>
+          <p class="desc">Removes all accounts, transactions, goals, debts, and investments. Cannot be undone.</p>
+          <button class="btn-wipe">🗑 Wipe all data</button>
+        </div>
+      </div>
+      <div>
+        <p class="label">Success / info alert</p>
+        <div class="alert">
+          <button class="close" aria-label="Dismiss">✕</button>
+          <p class="alert-title">All data wiped</p>
+          <p class="alert-body">Your local store is now empty.<br>Add an account to start tracking again.</p>
+        </div>
+      </div>
+    </div>
+    <div class="contrast-row">
+      <span>Danger title vs callout bg:</span>
+      <span class="pill pass">5.8:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Alert title vs alert bg:</span>
+      <span class="pill pass">6.4:1 — passes AA</span>
+    </div>
+    <div class="contrast-row">
+      <span>Danger vs accent (hue):</span>
+      <span class="pill fail">closer — same warm family</span>
+    </div>
+    <div class="contrast-row">
+      <span>Danger vs alert:</span>
+      <span class="pill pass">distinct (red bg vs green bg)</span>
+    </div>
+  </section>
+
+</div>
+
+<pre style="max-width:1320px;margin:24px auto 0;background:#1F2522;border:1px solid #2F3935;border-radius:14px;padding:18px;font-size:11.5px;line-height:1.6;color:#94A59C;overflow-x:auto;font-family:ui-monospace,monospace">
+A — current (problem)
+  danger dark:   #D67560       danger light: #B8553F
+  danger-soft:   rgba(214,117,96,.15) over bg — transparent
+  alert:         reuses danger-soft → wrong hue for success
+  issue:         danger ≈ accent (both warm); alert = danger; fails AA
+
+B — push danger colder (rose-crimson) + sage success alert
+  danger dark:   #E25C7A       danger light: #C24566
+  danger-title:  #F37893 (lighter for hierarchy)
+  danger-soft:   rgba(226,92,122,.14) over bg
+  alert border:  #6BAA8A       alert bg: rgba(107,170,138,.14)
+  alert title:   #6BAA8A
+  rationale:     hue shift + sage alert = two clearly distinct surfaces
+
+C — keep red loud + real surface
+  danger dark:   #E06050       danger light: #B8473A
+  danger-title:  #F08574
+  callout bg:    #2A1A18 (solid surface, not transparent)
+  alert border:  #6BAA8A       alert bg: #1A2620 (solid)
+  rationale:     same hue, louder saturation + realistic surface contrast
+</pre>
+
+</body>
+</html>
