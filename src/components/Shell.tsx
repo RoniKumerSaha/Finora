@@ -51,7 +51,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <aside className="bg-surface border-r border-border p-4 flex flex-col gap-[6px] sticky top-0 h-screen">
         <div className="flex items-center gap-3 px-2 pb-3 mb-2 border-b border-border">
           <img src={logoUrl} alt="Finora" className="w-9 h-9 rounded-[12px]" />
-          <div className="text-[17px] font-bold tracking-tight">
+          <div className="text-[22px] font-extrabold tracking-tight leading-none">
             fin<span className="text-primary">ora</span>
           </div>
         </div>
