@@ -167,13 +167,13 @@ export function GoalDetailScreen() {
       </div>
 
       {/* Header */}
-      <div className="flex justify-between items-end gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <div className="text-[13px] text-muted">Goal</div>
           <h1 className="heading h1-screen mt-1">{goal.name}</h1>
         </div>
         {mode === 'view' && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!completed && accs.length > 0 && (
               <button
                 type="button"
@@ -272,7 +272,7 @@ export function GoalDetailScreen() {
           <Field label="Target date">
             <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
           </Field>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="primary"
               type="submit"

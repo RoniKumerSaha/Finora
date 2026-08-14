@@ -34,7 +34,7 @@ export function TypePicker({
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-4 max-w-[780px]">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-full sm:max-w-[780px]">
       {items.map(it => {
         const isSel = selected === it.key;
         return (
@@ -43,14 +43,14 @@ export function TypePicker({
             type="button"
             onClick={() => onPick(it.key)}
             className={[
-              'rounded-card p-6 text-center transition cursor-pointer border',
+              'rounded-card p-4 sm:p-6 text-center transition cursor-pointer border',
               'bg-surface hover:bg-surface-2 active:translate-y-px',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               isSel ? 'border-primary' : 'border-border',
             ].join(' ')}
             style={isSel ? { boxShadow: 'var(--shadow-card), inset 0 0 0 1px var(--primary)' } : { boxShadow: 'var(--shadow-card)' }}
           >
-            <div className={`text-[44px] leading-none mb-2 ${it.glyphColor}`}>{it.glyph}</div>
+            <div className={`text-[40px] sm:text-[44px] leading-none mb-2 ${it.glyphColor}`}>{it.glyph}</div>
             <div className="font-bold text-[15px] tracking-tight">{it.label}</div>
             <div className="text-xs text-muted mt-1">{it.hint}</div>
           </button>
@@ -69,7 +69,7 @@ export function CategoryGrid({
     return <div className="text-muted text-sm">No categories yet.</div>;
   }
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
       {categories.map(c => {
         const sel = selectedId === c.id;
         return (

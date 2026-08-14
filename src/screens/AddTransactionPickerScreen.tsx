@@ -14,7 +14,7 @@ export function AddTransactionPickerScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-6 max-w-[780px]">
+    <div className="flex flex-col gap-6">
       <header>
         <h1 className="heading h1-screen">What happened?</h1>
         <div className="text-muted text-[13px] mt-1.5">Pick one to continue.</div>

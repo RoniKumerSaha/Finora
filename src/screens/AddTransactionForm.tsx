@@ -216,7 +216,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         )}
 
         {type === 'transfer' ? (
-          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 sm:items-center">
             <Field label="From">
               <Select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)}>
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -246,7 +246,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
             </Field>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Account">
               <Select value={accountId} onChange={e => setAccountId(e.target.value)}>
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}

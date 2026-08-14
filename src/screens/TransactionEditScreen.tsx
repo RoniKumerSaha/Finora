@@ -190,7 +190,7 @@ export function TransactionEditScreen() {
         )}
 
         {type === 'transfer' ? (
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="From">
               <Select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)}>
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -203,7 +203,7 @@ export function TransactionEditScreen() {
             </Field>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Account">
               <Select value={accountId} onChange={e => setAccountId(e.target.value)}>
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -268,13 +268,13 @@ export function TransactionEditScreen() {
           </div>
         )}
 
-        <div className="flex justify-between items-center mt-6">
-          <Button variant="danger" type="button" onClick={onDelete}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-2.5 mt-6">
+          <Button variant="danger" type="button" onClick={onDelete} className="w-full sm:w-auto">
             {'\u{1F5D1}'} Delete
           </Button>
           <div className="flex gap-2.5">
-            <Button variant="secondary" type="button" onClick={() => navigate('/transactions')}>Cancel</Button>
-            <Button variant="primary" type="submit" disabled={amountInvalid}>Save</Button>
+            <Button variant="secondary" type="button" onClick={() => navigate('/transactions')} className="flex-1 sm:flex-none">Cancel</Button>
+            <Button variant="primary" type="submit" disabled={amountInvalid} className="flex-1 sm:flex-none">Save</Button>
           </div>
         </div>
       </section>

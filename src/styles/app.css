@@ -129,3 +129,27 @@ main > * {
   from { opacity: 0; translate: -50% -12px; }
   to   { opacity: 1; translate: -50% 0; }
 }
+
+/* Modal open — scale(0.97 → 1) + opacity. Used by ConfirmDialog.
+   Pair with a backdrop fade so the whole overlay "lands" in unison. */
+@keyframes modal-pop-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes backdrop-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Theme cross-fade — when [data-theme] flips on <html>, App.tsx adds
+   `.theme-fade` to <html> for 250ms. While present, every themed
+   surface cross-fades background-color, color, and border-color
+   smoothly instead of snapping. The class is removed via setTimeout
+   once the transition completes so it doesn't permanently inflate the
+   specificity of `transition` declarations on individual components. */
+.theme-fade,
+.theme-fade *,
+.theme-fade *::before,
+.theme-fade *::after {
+  transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease, fill 250ms ease, stroke 250ms ease !important;
+}

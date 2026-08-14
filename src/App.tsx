@@ -44,19 +44,44 @@ export function App() {
   const recompute = useStore(s => s.recompute);
 
   // Reflect theme onto <html data-theme> so CSS custom properties switch.
-  // 'auto' listens to prefers-color-scheme.
+  // 'auto' listens to prefers-color-scheme. Each flip also cross-fades
+  // the UI (250ms) by toggling a `.theme-fade` class on <html>; without
+  // it the color swap is an instant snap that's noticeable on big
+  // surfaces. The class is removed once the transition completes so it
+  // doesn't permanently inflate transition specificity.
   useEffect(() => {
     const root = document.documentElement;
+    let cleanup: (() => void) | undefined;
+
+    function applyWithFade(resolved: 'dark' | 'light') {
+      // No-op if the theme hasn't actually changed — avoid fading on
+      // initial mount where [data-theme] is still at the default.
+      if (root.dataset.theme === resolved) return;
+      root.dataset.theme = resolved;
+      root.classList.add('theme-fade');
+      const t = window.setTimeout(() => {
+        root.classList.remove('theme-fade');
+      }, 260); // 250ms transition + small buffer
+      cleanup = () => {
+        window.clearTimeout(t);
+        root.classList.remove('theme-fade');
+      };
+    }
+
     if (theme === 'auto') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
-      root.dataset.theme = mql.matches ? 'dark' : 'light';
+      applyWithFade(mql.matches ? 'dark' : 'light');
       const onChange = (e: MediaQueryListEvent) => {
-        root.dataset.theme = e.matches ? 'dark' : 'light';
+        applyWithFade(e.matches ? 'dark' : 'light');
       };
       mql.addEventListener('change', onChange);
-      return () => mql.removeEventListener('change', onChange);
+      return () => {
+        mql.removeEventListener('change', onChange);
+        cleanup?.();
+      };
     }
-    root.dataset.theme = theme;
+    applyWithFade(theme);
+    return cleanup;
   }, [theme]);
 
   // Recompute derived fields on boot (status flips, paidSoFar cache).

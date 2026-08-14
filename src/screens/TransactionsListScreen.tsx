@@ -65,7 +65,7 @@ export function TransactionsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <h1 className="heading h1-screen">Transactions</h1>
           <div className="text-muted text-[13px] mt-1.5 tabular">

@@ -217,7 +217,7 @@ export function InvestmentDetailScreen() {
       </div>
 
       {/* Header */}
-      <div className="flex justify-between items-end gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <div className="text-[13px] text-muted flex items-center gap-2">
             <span>{invEmoji(inv.type)}</span>
@@ -230,7 +230,7 @@ export function InvestmentDetailScreen() {
           </div>
           <h1 className="heading h1-screen mt-1">{inv.name}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {isDps && status === 'active' && accs.length > 0 && (
             <button
               type="button"

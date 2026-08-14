@@ -53,7 +53,7 @@ export function InvestmentsListScreen() {
           </div>
         </section>
       ) : (
-        <div className="grid grid-cols-[2fr_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
           <section className="card">
             <div className="flex justify-between items-center mb-3.5">
               <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">Active</h2>

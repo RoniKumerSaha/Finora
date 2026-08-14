@@ -71,7 +71,11 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
         aria-label="Close dialog"
         onClick={() => onAnswer(false)}
         className="absolute inset-0 cursor-default"
-        style={{ background: 'var(--overlay)', backdropFilter: 'blur(8px)' }}
+        style={{
+          background: 'var(--overlay)',
+          backdropFilter: 'blur(8px)',
+          animation: 'backdrop-fade-in 180ms ease-out both',
+        }}
       />
       <div
         className="relative rounded-card w-[440px] max-w-full shadow-modal"
@@ -80,6 +84,7 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
           border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-modal), var(--card-inset)',
           padding: '28px',
+          animation: 'modal-pop-in 180ms ease-out both',
         }}
       >
         <h3

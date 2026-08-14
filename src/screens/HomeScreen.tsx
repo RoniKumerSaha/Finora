@@ -100,15 +100,17 @@ export function HomeScreen() {
         </div>
       </div>
 
-      {/* 3-up stat row — point-in-time. Balance, income, expense. */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* 3-up stat row — point-in-time. Balance, income, expense.
+         Stacks to a single column below sm (640px) so the 28px values
+         don't overflow on small viewports. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat label="Total balance"         value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} />
         <Stat label="Income (this month)"   value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
         <Stat label="Expenses (this month)" value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
       </div>
 
       {/* 3-up net row — debt, investments, net worth. Parallel to the row above. */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat
           label="Total debt"
           value={fmtDebtMagnitude(netDebt)}
@@ -137,8 +139,8 @@ export function HomeScreen() {
         />
       </div>
 
-      {/* Accounts + Recent activity */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Accounts + Recent activity — stacks on mobile. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
             ? <Empty msg="No accounts yet." cta="Add an account" to="/accounts/add" />
@@ -233,7 +235,7 @@ function Stat({ label, value, trend, tone }: { label: string; value: string; tre
   return (
     <div className="card">
       <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
-      <div className={`text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${color}`}>{value}</div>
+      <div className={`text-[24px] sm:text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${color} break-words`}>{value}</div>
       {trend && <div className="text-xs text-muted mt-2">{trend}</div>}
     </div>
   );

@@ -48,7 +48,7 @@ export function DebtsListScreen() {
         </section>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DebtGroup title="I owe"      rows={iOwe} tone="danger" />
             <DebtGroup title="Owed to me" rows={owed} tone="primary" />
           </div>

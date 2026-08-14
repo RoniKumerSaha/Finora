@@ -49,7 +49,7 @@ export function GoalsListScreen() {
           </div>
         </section>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {gs.map(g => {
             const saved = goalSavedFromTxns(g, state.transactions);
             const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
