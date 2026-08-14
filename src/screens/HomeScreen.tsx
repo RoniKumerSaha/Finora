@@ -1,21 +1,27 @@
 /**
- * HomeScreen — top-level dashboard.
+ * HomeScreen — top-level dashboard (thin snapshot).
+ *
+ * Spine: docs/ux-designs/ux-finora-2026-08-14-home-restructure/EXPERIENCE.md
+ *
+ * Home is the point-in-time snapshot. It shows what the user has
+ * *right now*: total balance, this month's income, this month's
+ * expense, accounts preview, recent activity. Period-bounded analytics
+ * (cash-flow chart, spending breakdown, net worth trajectory, and
+ * goals/debts/investments lists) live on /insights, reachable via the
+ * nav or the "See full Insights →" link at the bottom of this page.
  *
  * Visual target: docs/ux-designs/.../mockups/v1/index.html#home
  *
- * Layout matches v1 order:
- *   [demo banner ×  with dismiss]
- *   page title + meta line
- *   3-up stat row: Total balance · Income · Expenses
- *   2-up cards:    Accounts preview · Goals preview
- *   full-width:    Debts card with I owe / Owed to me summary
- *   full-width:    Investments card
- *   full-width:    Recent activity
+ * Layout (in order, top to bottom):
+ *   1. Onboarding callout (conditional)
+ *   2. Header + meta line
+ *   3. 3-up stat row: Total balance · Income (this month) · Expense (this month)
+ *   4. 2-up cards: Accounts preview · Recent activity
+ *   5. "See full Insights →" affordance
  *
- * 2026-08-14 polish: tighter spacing (24px section gap), stat row uses
- * the same .card primitive for consistency, refined money color rule
- * (income → primary, expense → danger, transfer → ink), and Fraunces
- * headings.
+ * 2026-08-14 restructure: removed the Goals preview card, the Debts
+ * card, and the Investments card. They are now duplicated exclusively
+ * on /insights. Added the "See full Insights →" link at the bottom.
  */
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -24,16 +30,9 @@ import {
   monthlyIncome,
   monthlyExpenses,
   accountBalance,
-  daysToMaturity,
-  investmentMaturityValueTyped,
-  goalSavedFromTxns,
-  dpsContributedSoFar,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
-import * as debts from '../domain/debts';
-import * as investments from '../domain/investments';
-import * as goals from '../domain/goals';
-import { fmtBDT, fmtBDTSigned, fmtDate, fmtRelative } from '../lib/format';
+import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
   const state = useStore(s => s.state);
@@ -51,23 +50,6 @@ export function HomeScreen() {
   const incomeCount = txs.filter(t => t.type === 'income' && startsInMonth(t.date, y, m)).length;
   const expenseCount = txs.filter(t => t.type === 'expense' && startsInMonth(t.date, y, m)).length;
 
-  const activeDebts = debts.list(state).filter(d => d.status === 'active');
-  const iOwe = activeDebts
-    .filter(d => d.direction === 'i_owe')
-    .reduce((s, d) => s + (Number(d.total) || 0) - (d.paidSoFar || 0), 0);
-  const owedToMe = activeDebts
-    .filter(d => d.direction === 'owed_to_me')
-    .reduce((s, d) => s + (d.total || 0) - (d.paidSoFar || 0), 0);
-
-  const allInvs = investments.list(state);
-  const activeInvs = allInvs.filter(i => i.status === 'active');
-  const closedInvs = allInvs.filter(i => i.status !== 'active');
-  const totalInvested = activeInvs.reduce(
-    (s, i) => s + (i.type === 'dps' ? dpsContributedSoFar(i, state.transactions) : (Number(i.principal) || 0)),
-    0
-  );
-
-  const activeGoals = goals.list(state);
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
   return (
@@ -83,15 +65,15 @@ export function HomeScreen() {
         </div>
       </div>
 
-      {/* 3-up stat row */}
+      {/* 3-up stat row — point-in-time. Balance, income, expense. */}
       <div className="grid grid-cols-3 gap-4">
-        <Stat label="Total balance"         value={fmtBDT(totalBalance)} trend={`across ${accList.length} accounts`} />
+        <Stat label="Total balance"         value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} />
         <Stat label="Income (this month)"   value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
         <Stat label="Expenses (this month)" value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
       </div>
 
-      {/* Accounts + Goals preview */}
-      <div className="grid grid-cols-[2fr_1fr] gap-4">
+      {/* Accounts + Recent activity */}
+      <div className="grid grid-cols-2 gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
             ? <Empty msg="No accounts yet." cta="Add an account" to="/accounts/add" />
@@ -104,108 +86,23 @@ export function HomeScreen() {
           }
         </Card>
 
-        <Card title="Goals" right={<ManageLink to="/goals" />}>
-          {activeGoals.length === 0
-            ? <Empty msg="No goals yet." cta="Set a goal" to="/goals/add" />
-            : activeGoals.slice(0, 3).map(g => {
-                const saved = goalSavedFromTxns(g, state.transactions);
-                const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
-                return (
-                  <Link
-                    key={g.id}
-                    to={`/goals/${g.id}`}
-                    className="block py-[18px] border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold text-[14px] tracking-tight">{g.name}</div>
-                      <div className="text-[11px] text-primary font-bold bg-primary-soft px-2.5 py-[3px] rounded-pill tabular">{pct}%</div>
-                    </div>
-                    <Bar pct={pct} />
-                    <div className="flex justify-between text-xs text-muted mt-2">
-                      <span className="tabular">{fmtBDT(saved)} / {fmtBDT(g.target)}</span>
-                      <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
-                    </div>
-                  </Link>
-                );
-              })
+        <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
+          {recentTx.length === 0
+            ? <Empty msg="No transactions yet." cta="Add a transaction" to="/transactions/new" />
+            : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
           }
         </Card>
       </div>
 
-      {/* Debts card */}
-      <Card title="Debts" right={<ManageLink to="/debts" />}>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <SummaryMicro label="I owe" amount={iOwe} sub={`${activeDebts.filter(d => d.direction === 'i_owe').length} active`} tone="danger" />
-          <SummaryMicro label="Owed to me" amount={owedToMe} sub={`${activeDebts.filter(d => d.direction === 'owed_to_me').length} active`} tone="primary" />
-        </div>
-        {activeDebts.length === 0 ? (
-          <Empty msg="No active debts." />
-        ) : (
-          activeDebts.slice(0, 3).map(d => {
-            const pct = d.total > 0 ? Math.min(100, Math.round((d.paidSoFar / d.total) * 100)) : 0;
-            const left = d.total - d.paidSoFar;
-            const danger = d.direction === 'i_owe';
-            return (
-              <div key={d.id} className="py-2.5 border-t border-border">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="font-semibold text-[14px] tracking-tight">{d.name}</div>
-                  <div className={`text-xs font-bold tabular ${danger ? 'text-danger' : 'text-primary'}`}>
-                    {danger ? '\u2212' : '+'} {fmtBDT(left)} left
-                  </div>
-                </div>
-                <Bar pct={pct} variant={danger ? 'danger' : 'primary'} />
-                <div className="text-[11.5px] text-muted mt-1.5 tabular">
-                  {fmtBDT(d.paidSoFar)} of {fmtBDT(d.total)}
-                  {d.dueDate ? ` · due ${fmtDate(d.dueDate)}` : ''}
-                  {d.person ? ` · ${d.person}` : ''}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </Card>
-
-      {/* Investments card */}
-      <Card title="Investments" right={<ManageLink to="/investments" />}>
-        <div className="mb-4">
-          <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Total invested</div>
-          <div className="text-[26px] font-bold text-accent mt-1 tabular tracking-tight">{fmtBDT(totalInvested)}</div>
-          <div className="text-xs text-muted mt-1">
-            across {activeInvs.length} active{closedInvs.length ? ` · ${closedInvs.length} closed` : ''}
-          </div>
-        </div>
-        {allInvs.length === 0 ? (
-          <Empty msg="No investments yet." cta="Add an investment" to="/investments/add" />
-        ) : (
-          allInvs.slice(0, 3).map(inv => {
-            const days = daysToMaturity(inv);
-            const mat = investmentMaturityValueTyped(inv);
-            const label = days > 0 ? `Matures in ${days}d` : days === 0 ? 'Matures today' : `Matured ${-days}d ago`;
-            return (
-              <div key={inv.id} className="py-2.5 border-t border-border">
-                <div className="flex justify-between items-center mb-1.5">
-                  <div className="font-semibold text-[14px] tracking-tight">{inv.name}</div>
-                  <div className="text-xs text-muted font-bold">{label}</div>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <div className="text-[13px] text-accent font-bold tabular">Maturity {fmtBDT(mat)}</div>
-                  <div className="text-[11.5px] text-muted tabular">
-                    {fmtBDT(inv.principal)} · {inv.rate}% · {inv.termMonths}mo{inv.institution ? ` · ${inv.institution}` : ''}
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </Card>
-
-      {/* Recent activity */}
-      <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
-        {recentTx.length === 0
-          ? <Empty msg="No transactions yet." cta="Add a transaction" to="/transactions/add" />
-          : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
-        }
-      </Card>
+      {/* Bridge to Insights */}
+      <div className="flex justify-end mt-2">
+        <Link
+          to="/insights"
+          className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2"
+        >
+          See full Insights {'\u2192'}
+        </Link>
+      </div>
     </div>
   );
 }
@@ -260,33 +157,6 @@ function Stat({ label, value, trend, tone }: { label: string; value: string; tre
       <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
       <div className={`text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${color}`}>{value}</div>
       {trend && <div className="text-xs text-muted mt-2">{trend}</div>}
-    </div>
-  );
-}
-
-function Bar({ pct, variant = 'primary' }: { pct: number; variant?: 'primary' | 'danger' }) {
-  const fill =
-    variant === 'danger'
-      ? 'bg-danger'
-      : 'bg-gradient-to-r from-primary to-accent';
-  return (
-    <div className="h-[10px] bg-surface-2 rounded-pill overflow-hidden">
-      <div className={`h-full rounded-pill ${fill}`} style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-function SummaryMicro({
-  label, amount, sub, tone,
-}: { label: string; amount: number; sub: string; tone: 'primary' | 'danger' }) {
-  const color = tone === 'danger' ? 'text-danger' : 'text-primary';
-  return (
-    <div>
-      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
-      <div className={`text-[22px] font-bold mt-1.5 tabular tracking-[-0.015em] leading-none ${color}`}>
-        {fmtBDT(amount)}
-      </div>
-      <div className="text-xs text-muted mt-1.5">{sub}</div>
     </div>
   );
 }
@@ -385,7 +255,7 @@ function DemoBanner() {
           onClick={() => { completeOnboarding(); setShow(false); }}
           className="text-primary font-semibold hover:underline underline-offset-2"
         >
-          Start using Finora \u2192
+          Start using Finora {'\u2192'}
         </button>
       </span>
       <button
