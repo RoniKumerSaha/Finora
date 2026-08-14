@@ -43,10 +43,13 @@
   --color-border: var(--border);
   --color-border-2: var(--border-2);
 
-  /* Type families — DESIGN.md.typography */
-  --font-heading: "Fraunces", Georgia, serif;
+  /* Type families — single system font everywhere for visual consistency.
+     Heading, body, and numeric all reference the same family; numeric
+     values still get tabular-nums via the .tabular utility where
+     alignment matters. */
+  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
-  --font-numeric: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-numeric: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
 
   /* Radii — refined for a more premium feel: 12/10/10/999.
      Cards pull in slightly (r-card 12) so dense lists don't feel

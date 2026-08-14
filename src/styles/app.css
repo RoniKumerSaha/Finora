@@ -49,9 +49,10 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--ink);
 }
 
-/* DESIGN.md.typography — Fraunces appears only in h1-display, h1-screen,
-   h3-modal roles. The .heading utility class is the single switch; do
-   not apply Fraunces outside these roles. */
+/* DESIGN.md.typography — single system font across all roles for
+   visual consistency. The .heading utility keeps the size/weight
+   rhythm but the family follows --font-heading (which is now the same
+   as --font-body). */
 .heading {
   font-family: var(--font-heading);
   font-weight: 600;
