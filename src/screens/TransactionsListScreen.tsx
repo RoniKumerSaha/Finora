@@ -131,7 +131,10 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
       : direction === 'out'
         ? 'text-danger bg-danger-soft'
         : 'text-accent bg-accent-soft';
-  const amtColor = direction === 'in' ? 'text-primary' : 'text-ink';
+  const amtColor =
+    direction === 'in' ? 'text-primary'  // income → green
+    : direction === 'out' ? 'text-danger'  // expense → red
+    : 'text-ink';                          // transfer → neutral
 
   const sub = (() => {
     if (direction === 'xfr') {

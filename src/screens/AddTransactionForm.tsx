@@ -282,10 +282,24 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         {type === 'expense' && activeDebts.length > 0 && (
           <div className="mt-5">
             <Field label="Linked debt (optional)" hint="Tag this transaction as a payment toward a debt.">
-              <Select value={linkedDebtId} onChange={e => setLinkedDebtId(e.target.value)}>
+              <Select value={linkedDebtId} onChange={e => {
+                setLinkedDebtId(e.target.value);
+                if (e.target.value) setLinkedInvestmentId('');
+              }}>
                 <option value="">— None —</option>
                 {activeDebts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
+              {linkedDebtId && (() => {
+                const d = state.debts.find(x => x.id === linkedDebtId);
+                if (!d) return null;
+                const paid = debtPaidSoFar(d, state.transactions);
+                const remaining = Math.max(0, (Number(d.total) || 0) - paid);
+                return (
+                  <div className="text-xs text-muted mt-1.5">
+                    Remaining: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
+                  </div>
+                );
+              })()}
             </Field>
           </div>
         )}
@@ -293,12 +307,26 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         {type === 'income' && activeDebts.filter(d => d.direction === 'owed_to_me').length > 0 && (
           <div className="mt-5">
             <Field label="Linked debt (optional)" hint="Tag this income as repayment of money someone owed you.">
-              <Select value={linkedDebtId} onChange={e => setLinkedDebtId(e.target.value)}>
+              <Select value={linkedDebtId} onChange={e => {
+                setLinkedDebtId(e.target.value);
+                if (e.target.value) setLinkedInvestmentId('');
+              }}>
                 <option value="">— None —</option>
                 {activeDebts
                   .filter(d => d.direction === 'owed_to_me')
                   .map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
+              {linkedDebtId && (() => {
+                const d = state.debts.find(x => x.id === linkedDebtId);
+                if (!d) return null;
+                const paid = debtPaidSoFar(d, state.transactions);
+                const remaining = Math.max(0, (Number(d.total) || 0) - paid);
+                return (
+                  <div className="text-xs text-muted mt-1.5">
+                    Remaining: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
+                  </div>
+                );
+              })()}
             </Field>
           </div>
         )}
@@ -306,12 +334,28 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
           <div className="mt-5">
             <Field label="Linked investment (optional)" hint="Tag this income as a payout from an investment.">
-              <Select value={linkedInvestmentId} onChange={e => setLinkedInvestmentId(e.target.value)}>
+              <Select value={linkedInvestmentId} onChange={e => {
+                setLinkedInvestmentId(e.target.value);
+                if (e.target.value) setLinkedDebtId('');
+              }}>
                 <option value="">— None —</option>
                 {state.investments
                   .filter(i => i.status !== 'closed')
                   .map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </Select>
+              {linkedInvestmentId && (() => {
+                const i = state.investments.find(x => x.id === linkedInvestmentId);
+                if (!i) return null;
+                const isDps = i.type === 'dps';
+                const base = isDps ? dpsCurrentValue(i, state.transactions) : investmentMaturityValue(i);
+                const paidOut = dpsPaidOutSoFar(i, state.transactions);
+                const remaining = Math.max(0, base - paidOut);
+                return (
+                  <div className="text-xs text-muted mt-1.5">
+                    {isDps ? 'Current value' : 'At maturity'}: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
+                  </div>
+                );
+              })()}
             </Field>
           </div>
         )}
@@ -328,7 +372,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 /* ---------- helpers ---------- */
 
 import * as debts from '../domain/debts';
-import { accountBalance } from '../domain/math';
+import { accountBalance, debtPaidSoFar, dpsCurrentValue, dpsPaidOutSoFar, investmentMaturityValue } from '../domain/math';
 import { fmtBDT } from '../lib/format';
 import type { State } from '../domain/types';
 
