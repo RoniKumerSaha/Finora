@@ -16,6 +16,7 @@ import { Shell } from './components/Shell';
 import { RoleAlertBanner } from './components/RoleAlertBanner';
 import { useStore } from './domain/store';
 import { HomeScreen } from './screens/HomeScreen';
+import { InsightsScreen } from './screens/InsightsScreen';
 import { TransactionsListScreen } from './screens/TransactionsListScreen';
 import { AddTransactionPickerScreen } from './screens/AddTransactionPickerScreen';
 import { AddExpenseScreen } from './screens/AddExpenseScreen';
@@ -67,6 +68,8 @@ export function App() {
         <Route element={<Shell><RoleAlertBanner /><Outlet /></Shell>}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<HomeScreen />} />
+
+          <Route path="/insights" element={<InsightsScreen />} />
 
           <Route path="/transactions" element={<TransactionsListScreen />} />
           <Route path="/transactions/new"                  element={<AddTransactionPickerScreen />} />

@@ -32,6 +32,7 @@ interface NavDef { to: string; label: string; icon: string }
 
 const NAV: NavDef[] = [
   { to: '/home',         label: 'Home',         icon: '\u2302' }, // ⌂
+  { to: '/insights',     label: 'Insights',     icon: '\u25C7' }, // ◇
   { to: '/transactions', label: 'Transactions', icon: '\u21C4' }, // ⇄
   { to: '/accounts',     label: 'Accounts',     icon: '\u25CE' }, // ◎
   { to: '/goals',        label: 'Goals',        icon: '\u2605' }, // ★
