@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-13 |
+| **Last Updated** | 2026-08-14 |
 
 ---
 
@@ -157,7 +157,7 @@ A user should be able to:
 ### Screens
 
 - **Dashboard:** Monthly totals, account balances, recent transactions, debts summary, investments summary.
-- **Transactions list:** All entries, sortable by date, filterable by type/account/category.
+- **Transactions list:** All entries, sortable by date, filterable by chip (single-select, click-again-to-reset to All). Filter chips: **All**, **Income**, **Expense**, **Transfer**, **Payouts** (transactions tagged with `linked_investment_id`), **Debt payments** (transactions tagged with `linked_debt_id`), **This month**, **Cash**. Transaction amount colors: green for income, red for expense, neutral (ink) for transfer — visible in both light and dark themes.
 - **Add transaction:** Amount → Type (Income/Expense) → Category → Account → Save.
 - **Accounts list:** Each account with its current balance.
 - **Account detail:** Balance + transaction history for that account.
@@ -168,8 +168,8 @@ A user should be able to:
 - **Add investment (3-step wizard):** Step 1 — Pick type (DPS / FDR / Other). Step 2 — Fill the fields (name, principal, rate, start date, term, payout account). Step 3 — Review calculated maturity value + Save.
 - **Maturity prompt:** Banner on an investment's detail screen when its maturity date is reached. Pre-fills an Income transaction on the linked account for the full payout amount.
 - **Roll-over:** Creates a new investment with same terms + 1 day after maturity date; old investment status becomes "rolled into X".
-- **Debts list:** Two sections — *I owe* and *Owed to me*. Each entry shows total, paid so far, progress bar.
-- **Debt detail / create:** Name, direction (I owe / Owed to me), total, paid so far (defaults to 0), optional due date, optional person/entity. Shows linked transactions.
+- **Debts list:** Two sections — *I owe* (active) and *Owed to me* (active). Each entry shows total, paid so far, progress bar. A separate **Completed (N)** section appears below the active lists once any debt is fully paid; rows show a green check, the total paid off, the person, and the name of the most-recently-used account. The header count shows "N active · M completed". Completely paid debts are hidden from the active lists so the active list stays focused on what's still owed.
+- **Debt detail / create:** Name, direction (I owe / Owed to me), total, paid so far (defaults to 0), optional due date, optional person/entity. Shows linked transactions. When the debt is fully paid, a green callout appears under the heading: *"Fully paid. Last transaction used {AccountName} — current balance: ৳X."* (the account is the most-recently-used account from the linked transactions; the balance is its live balance).
 - **Settings:** Theme (Dark / Light / Auto), App PIN, Export data, Import data, Delete all data, About.
 
 ---
@@ -287,11 +287,11 @@ A user should be able to:
 ### 8.13 Receive a Debt Repayment (Money Owed to Me)
 
 1. Tap **Add** → **Income**.
-2. Enter amount, choose category.
-3. Toggle **"Tag as debt payment →"** on → pick the debt Rina is being repaid for.
+2. Enter amount, choose category, choose the receiving account.
+3. Below the account picker, a **Linked debt (optional)** dropdown appears, filtered to debts with `direction = 'owed_to_me'`. Pick the debt Rina is being repaid for.
 4. Save.
 
-→ Income transaction created with `linked_debt_id`. Account balance rises. Debt's paid-so-far rises. Dashboard *Owed to Me* drops.
+→ Income transaction created with `linked_debt_id`. Account balance rises. Debt's `paid_so_far` rises. When `paid_so_far >= total`, the debt auto-completes. Dashboard *Owed to Me* drops.
 
 ### 8.14 Edit or Delete a Debt
 
@@ -302,8 +302,8 @@ A user should be able to:
 
 When the sum of linked transactions equals or exceeds the debt's total:
 
-- The debt shows a green **Paid off** badge on its card.
-- It moves to the bottom of its section (I owe / Owed to me), visually muted.
+- The debt's status becomes `completed`.
+- It is **removed** from the active *I owe* / *Owed to me* lists and surfaces in a separate **Completed (N)** section at the bottom of the Debts list. Each completed row shows a green check glyph, the total paid off, the person, and the most-recently-used account.
 - A toast: *"City Bank loan paid off. Nice."*
 - The dashboard *Total I owe* (or *Owed to Me*) drops to 0.
 
@@ -330,11 +330,11 @@ When the sum of linked transactions equals or exceeds the debt's total:
 When the maturity date arrives (or passes):
 
 1. The investment auto-flips to status **matured**.
-2. On the detail screen, a banner appears: *"Matured today — record the payout?"* (or *"Matured 3 days ago — record the payout?"* if late).
-3. Tap **Record payout** → app pre-fills an **Income** transaction on the payout account for the full calculated maturity value. User confirms or edits the amount (banks sometimes round or add a bonus).
+2. On the detail screen, the **When it matures** panel renders with **Record maturity payout**, **Roll over to a new term**, and (for FDR/savings) **Close this investment** buttons. The header copy switches to "Matured" once status = matured.
+3. Tap **Record maturity payout** → app pre-fills an **Income** transaction on the payout account for the remaining amount (maturity value minus any payouts already recorded). For DPS this is the current value (compounded to today); for FDR/savings this is the simple-interest maturity value. User confirms or edits the amount (banks sometimes round or add a bonus).
 4. Tap **Save**.
 
-→ Account balance rises by the payout. Investment status becomes **closed**. Dashboard *Total invested* drops by the maturity value.
+→ Account balance rises by the payout. For DPS, the investment auto-closes (status → `closed`). For FDR/savings, the user must tap **Close this investment** to retire the record. Dashboard *Total invested* drops by the maturity value.
 
 ### 8.19 Roll Over an Investment at Maturity
 
@@ -381,6 +381,14 @@ When the maturity date arrives (or passes):
 - Date (defaults to today)
 - Note (optional, one line)
 
+**Display colors for transaction amounts in lists and detail rows:**
+
+- **Income** → green (`text-primary` theme token)
+- **Expense** → red (`text-danger` theme token)
+- **Transfer** → neutral (`text-ink` theme token)
+
+These colors automatically adapt to the chosen theme (dark or light) since they reference the theme tokens. The same rule applies on the Home screen recent activity list and the Transactions list.
+
 **Type-specific:**
 
 | Type | Required fields | Effect on account |
@@ -394,6 +402,11 @@ When the maturity date arrives (or passes):
 - A Transfer is **not** income or expense.
 - Editing a transaction re-computes account balances and monthly totals.
 - Deleting a transaction is permanent after confirmation.
+- A single account is always set: the `Account` for income/expense, or both `From` and `To` for transfer. The account dropdown shows the current balance beneath it, and when an amount is entered, a live `→ after: ৳X` preview shows what the account balance will look like after the transaction is recorded (income adds, expense subtracts, transfer subtracts from From and adds to To).
+- For Transfer, the From and To accounts are picked from the same accounts list. The To dropdown excludes the currently selected From account. If the user picks a From that matches the current To (or vice versa), the other side auto-repicks so the form never holds a "from X to X" state.
+- **Linked debt (optional):** For Expense, an optional dropdown shows the user's active debts. For Income, the same dropdown shows only debts with `direction = 'owed_to_me'` (since receiving income from a debt is the only direction that makes sense). Selecting a debt shows the remaining amount below the dropdown.
+- **Linked investment (optional):** For Income, an optional dropdown shows the user's active investments (not yet closed). Selecting an investment shows the current value (DPS) or maturity value (FDR/savings) below the dropdown.
+- **Linked debt and Linked investment are mutually exclusive**: picking one clears the other. A transaction may only be tagged as one or the other (or neither), never both.
 
 ### 9.3 Accounts
 
@@ -513,8 +526,9 @@ A **debt** is a record with a total, a paid-so-far number, and a direction. The 
 
 **Auto-complete rule:**
 
-- When `paid_so_far >= total`, debt auto-completes.
-- Card shows a "Paid off" badge and moves to the bottom of its section, visually muted.
+- When `paid_so_far >= total`, debt auto-completes (status becomes `completed`).
+- The debt is removed from the active *I owe* / *Owed to me* lists and surfaced in a separate **Completed (N)** section at the bottom of the Debts list. Each completed row shows a green check, the total paid off, the person, and the most-recently-used account.
+- On the debt detail screen, a green callout appears under the heading: *"Fully paid. Last transaction used {AccountName} — current balance: ৳X."* (the account is the most-recently-used account from the linked transactions; the balance is its live balance).
 - Dashboard total drops by the debt's total.
 
 **Soft-archive:**
@@ -581,9 +595,15 @@ Maturity value = principal × (1 + rate/100 × term_months/12)
 | From | Event | To |
 |---|---|---|
 | `active` | Today >= maturity date | `matured` (auto) |
-| `matured` | User records payout Income | `closed` (auto) |
+| `matured` | User records payout Income | `closed` (auto, **DPS only** — for FDR/savings the user must tap Close manually after recording the payout) |
 | `matured` | User taps Roll over | `rolled_over` (old) + new `active` (new) |
 | `active` or `matured` | User taps Close + confirms | `closed` (manual) |
+
+**Maturity payout (DPS, FDR, savings):** Available for all three types once the investment has matured. The button on the detail screen is labeled **Record maturity payout** and pre-fills an Income transaction on the payout account for the remaining amount (maturity value minus any payouts already recorded). For DPS this is the current value (compounded to today); for FDR/savings this is the simple-interest maturity value. Disabled when the remaining amount is zero or no payout account is set.
+
+**Paid out stat:** A "Paid out" figure is shown in the Money card for any investment where `paid_out > 0`, with the hint *"Linked income transactions"*. This applies to DPS, FDR, and savings alike.
+
+**Close button:** Available for FDR/savings in any state (active or matured). For DPS, the Close button is hidden once any payout has been recorded (DPS Close is the rare "no-payout" path).
 
 **Dashboard role:**
 
