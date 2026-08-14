@@ -44,9 +44,9 @@
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   --font-numeric: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Radii — DESIGN.md.rounded (middle ground; was 24/14/999, now 18/12/10/999) */
-  --radius-card: 18px;
-  --radius-btn: 12px;
+  /* Radii — DESIGN.md.rounded (middle ground; was 24/14/999, now 10/8/10/999) */
+  --radius-card: 10px;
+  --radius-btn: 8px;
   --radius-input: 10px;
   --radius-pill: 999px;
 
