@@ -28,6 +28,7 @@ import {
   goalRequiredPerMonthDerived,
   dpsMaturityValue,
   dpsContributedSoFar,
+  dpsPaidOutSoFar,
   dpsCurrentValue,
   investmentMaturityValueTyped,
 } from './math';
@@ -293,6 +294,20 @@ describe('DPS — contributions aggregated from transactions', () => {
       tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd2', date: '2026-02-01' }), // other
     ];
     expect(dpsContributedSoFar(inv, txs)).toBe(10000);
+  });
+
+  it('dpsPaidOutSoFar sums linked income txns only (mirror)', () => {
+    const txs: Transaction[] = [
+      tx({ type: 'income',  amount: 30000, linkedInvestmentId: 'd1', date: '2026-08-01' }),
+      tx({ type: 'income',  amount: 12000, linkedInvestmentId: 'd1', date: '2026-09-01' }),
+      tx({ type: 'expense', amount: 5000,  linkedInvestmentId: 'd1', date: '2026-02-01' }), // ignored
+      tx({ type: 'income',  amount: 9999,  linkedInvestmentId: 'd2', date: '2026-08-01' }), // other
+    ];
+    expect(dpsPaidOutSoFar(inv, txs)).toBe(42000);
+  });
+
+  it('dpsPaidOutSoFar returns 0 when no payouts', () => {
+    expect(dpsPaidOutSoFar(inv, [])).toBe(0);
   });
 
   it('dpsCurrentValue compounds each contribution to today', () => {

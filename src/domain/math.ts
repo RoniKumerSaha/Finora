@@ -320,6 +320,25 @@ export function dpsContributedSoFar(investment: Investment, transactions: Transa
 }
 
 /**
+ * Sum of payouts received so far, from `income` transactions where
+ * `linkedInvestmentId === investment.id`. The mirror of
+ * dpsContributedSoFar — money coming back from the bank into one of
+ * the user's accounts.
+ *
+ * Used by the recompute layer to auto-close an investment when
+ * payouts >= contributions (R6: derived, never stored).
+ */
+export function dpsPaidOutSoFar(investment: Investment, transactions: Transaction[]): number {
+  if (!investment) return 0;
+  let total = 0;
+  for (const t of transactions) {
+    if (t.linkedInvestmentId !== investment.id) continue;
+    if (t.type === 'income') total += Number(t.amount) || 0;
+  }
+  return total;
+}
+
+/**
  * Current DPS value — future value of contributions made so far,
  * each compounded from its deposit month to today.
  *

@@ -10,6 +10,10 @@
  *
  * Used by every form screen. Pure presentational; validation happens
  * upstream in lib/errors.ts (AD-19).
+ *
+ * Number inputs: blur on wheel so the page scrolls instead of the value
+ * incrementing. Wheel-over-number-input is a footgun users hit when
+ * they scroll past the field without clicking out first.
  */
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
@@ -36,15 +40,19 @@ export function Field({
 
 /** Text input — v1 `.modal input` shape. */
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
+  const { className, onWheel, type, ...rest } = props;
+  const blurOnWheel = type === 'number' && !props.disabled;
   return (
     <input
-      {...props}
+      {...rest}
+      type={type}
+      onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
       className={[
         'w-full bg-surface-2 border border-border text-ink rounded-btn',
         'px-[14px] py-3 text-sm',
         'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
         'disabled:opacity-50',
-        props.className || '',
+        className || '',
       ].join(' ')}
     />
   );
@@ -52,14 +60,18 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
 
 /** Large "amount" input — used in add screens (v1 .num-input with 32px font). */
 export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {
+  const { className, onWheel, type, ...rest } = props;
+  const blurOnWheel = type === 'number' && !props.disabled;
   return (
     <input
-      {...props}
+      {...rest}
+      type={type}
+      onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
       className={[
         'w-full bg-surface-2 border border-border text-primary rounded-btn',
         'px-[14px] py-3.5 text-[32px] font-bold tabular',
         'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40',
-        props.className || '',
+        className || '',
       ].join(' ')}
     />
   );

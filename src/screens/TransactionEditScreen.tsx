@@ -11,7 +11,7 @@
  * Delete uses the existing ConfirmDialog flow; on success navigates
  * back to /transactions.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as accounts from '../domain/accounts';
@@ -57,6 +57,30 @@ export function TransactionEditScreen() {
   const [note, setNote] = useState(tx.note ?? '');
 
   const type: TxType = tx.type;
+
+  // Linked-investment payout prefill (income only): when the user picks a
+  // linkedInvestmentId, mirror its payoutAccountId into accountId. Skip
+  // if the investment has no payoutAccountId set.
+  const linkedInv = type === 'income' && linkedInvestmentId
+    ? state.investments.find(i => i.id === linkedInvestmentId)
+    : undefined;
+  useEffect(() => {
+    if (type !== 'income' || !linkedInv?.payoutAccountId) return;
+    if (accountId !== linkedInv.payoutAccountId) {
+      setAccountId(linkedInv.payoutAccountId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedInvestmentId, type]);
+
+  const payoutMismatch = !!(
+    type === 'income'
+    && linkedInv?.payoutAccountId
+    && accountId !== linkedInv.payoutAccountId
+  );
+  const payoutAccName = linkedInv?.payoutAccountId
+    ? state.accounts.find(a => a.id === linkedInv.payoutAccountId)?.name
+    : undefined;
+  const selectedAccName = state.accounts.find(a => a.id === accountId)?.name;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -181,6 +205,15 @@ export function TransactionEditScreen() {
             <Field label="Date">
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </Field>
+          </div>
+        )}
+
+        {type === 'income' && payoutMismatch && (
+          <div className="mt-4 text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+            <strong>Heads up:</strong> payout account for <span className="font-semibold">{linkedInv?.name}</span> is{' '}
+            <span className="font-semibold">{payoutAccName}</span>. You're sending this income to{' '}
+            <span className="font-semibold">{selectedAccName}</span>. Saving will record the payout as Income to{' '}
+            {selectedAccName}, not {payoutAccName}.
           </div>
         )}
 
