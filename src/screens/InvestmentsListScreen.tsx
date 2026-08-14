@@ -3,11 +3,17 @@
  * summarizes total invested and "to mature" totals.
  *
  * Visual target: docs/ux-designs/.../mockups/v2/dark.html#investments
+ * Each row is a link to /investments/:id. DPS shows a "X/mo" chip and
+ * uses the type-aware maturity value (annuity-due).
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
-import { investmentMaturityValue, daysToMaturity } from '../domain/math';
+import {
+  investmentMaturityValueTyped,
+  daysToMaturity,
+  dpsContributedSoFar,
+} from '../domain/math';
 import { fmtBDT } from '../lib/format';
 
 const MIDDOT = '\u00B7';
@@ -17,8 +23,9 @@ export function InvestmentsListScreen() {
   const invs = investments.list(state);
   const active = invs.filter(i => i.status === 'active');
   const closed = invs.filter(i => i.status !== 'active');
-  const totalInvested = active.reduce((s, i) => s + (Number(i.principal) || 0), 0);
-  const totalMaturity = active.reduce((s, i) => s + investmentMaturityValue(i), 0);
+  const totalInvested = active.reduce((s, i) =>
+    s + (i.type === 'dps' ? dpsContributedSoFar(i, state.transactions) : (Number(i.principal) || 0)), 0);
+  const totalMaturity = active.reduce((s, i) => s + investmentMaturityValueTyped(i), 0);
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -46,9 +53,13 @@ export function InvestmentsListScreen() {
               <h2 className="text-xs text-muted uppercase tracking-wider font-semibold m-0">Active</h2>
             </div>
             <div>
-              {active.map(inv => <InvRow key={inv.id} inv={inv} />)}
+              {active.map(inv => <InvRow key={inv.id} inv={inv} contributed={dpsContributedSoFar(inv, state.transactions)} />)}
               {closed.map(inv => (
-                <div key={inv.id} className="py-2 border-t border-border opacity-55">
+                <Link
+                  key={inv.id}
+                  to={`/investments/${inv.id}`}
+                  className="block py-2 border-t border-border opacity-55 hover:opacity-100 transition"
+                >
                   <div className="flex justify-between items-center mb-1">
                     <div className="font-semibold text-sm">
                       {invEmoji(inv.type)} {inv.name}
@@ -58,7 +69,7 @@ export function InvestmentsListScreen() {
                   <div className="text-[11px] text-muted">
                     {fmtBDT(inv.principal)} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -76,7 +87,7 @@ export function InvestmentsListScreen() {
               </div>
             </div>
             <div className="text-xs text-muted mt-3.5 leading-relaxed">
-              <strong className="text-ink">How it works:</strong> The maturity value is calculated from principal, rate, and term — it doesn't tick up daily. When the bank pays out, record the payout as Income to bring the money back to your account.
+              <strong className="text-ink">How it works:</strong> For DPS, maturity is computed from monthly contributions at the stated rate. For FDR and savings, simple interest is used. When the bank pays out, record the payout as Income to bring the money back to your account.
             </div>
           </section>
         </div>
@@ -91,15 +102,22 @@ function invEmoji(type: string): string {
   return '\u{1F4DC}';                       // 📜
 }
 
-function InvRow({ inv }: { inv: any }) {
+function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
   const days = daysToMaturity(inv);
-  const mat = investmentMaturityValue(inv);
+  const mat = investmentMaturityValueTyped(inv);
+  const isDps = inv.type === 'dps';
   const label =
     days > 0 ? `Matures in ${days}d`
     : days === 0 ? 'Matures today'
     : `Matured ${-days}d ago`;
+  const amountLine = isDps
+    ? `${fmtBDT(contributed)} ${MIDDOT} ${inv.monthlyContribution ? `${fmtBDT(inv.monthlyContribution)}/mo` : ''}`
+    : fmtBDT(inv.principal);
   return (
-    <div className="py-2 border-t border-border first:border-0">
+    <Link
+      to={`/investments/${inv.id}`}
+      className="block py-2 border-t border-border first:border-0 hover:bg-surface-2 -mx-2 px-2 rounded transition"
+    >
       <div className="flex justify-between items-center mb-1">
         <div className="font-semibold text-sm">
           {invEmoji(inv.type)} {inv.name}
@@ -111,8 +129,8 @@ function InvRow({ inv }: { inv: any }) {
         <div className="text-[11px] text-muted">{label}</div>
       </div>
       <div className="text-[11px] text-muted mt-0.5">
-        {fmtBDT(inv.principal)} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
+        {amountLine} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
       </div>
-    </div>
+    </Link>
   );
 }

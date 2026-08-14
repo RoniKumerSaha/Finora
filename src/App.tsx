@@ -27,10 +27,13 @@ import { AccountAddScreen } from './screens/AccountAddScreen';
 import { AccountEditScreen } from './screens/AccountEditScreen';
 import { GoalsListScreen } from './screens/GoalsListScreen';
 import { GoalAddScreen } from './screens/GoalAddScreen';
+import { GoalDetailScreen } from './screens/GoalDetailScreen';
 import { DebtsListScreen } from './screens/DebtsListScreen';
 import { DebtAddScreen } from './screens/DebtAddScreen';
 import { InvestmentsListScreen } from './screens/InvestmentsListScreen';
 import { InvestmentAddScreen } from './screens/InvestmentAddScreen';
+import { InvestmentDetailScreen } from './screens/InvestmentDetailScreen';
+import { InvestmentEditScreen } from './screens/InvestmentEditScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 
@@ -77,12 +80,15 @@ export function App() {
 
           <Route path="/goals" element={<GoalsListScreen />} />
           <Route path="/goals/add" element={<GoalAddScreen />} />
+          <Route path="/goals/:id" element={<GoalDetailScreen />} />
 
           <Route path="/debts" element={<DebtsListScreen />} />
           <Route path="/debts/add" element={<DebtAddScreen />} />
 
           <Route path="/investments" element={<InvestmentsListScreen />} />
           <Route path="/investments/add" element={<InvestmentAddScreen />} />
+          <Route path="/investments/:id" element={<InvestmentDetailScreen />} />
+          <Route path="/investments/:id/edit" element={<InvestmentEditScreen />} />
 
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />

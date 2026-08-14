@@ -52,6 +52,7 @@ export const incomeExpenseTxSchema = z.object({
   note: z.string().optional(),
   linkedDebtId: z.string().optional(),
   linkedInvestmentId: z.string().optional(),
+  linkedGoalId: z.string().optional(),
 });
 
 export const transactionSchema = z.union([transferTxSchema, incomeExpenseTxSchema]);

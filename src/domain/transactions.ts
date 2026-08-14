@@ -38,6 +38,7 @@ export interface AddTxInput {
   categoryId?: string;
   linkedDebtId?: string;
   linkedInvestmentId?: string;
+  linkedGoalId?: string;
   note?: string;
 }
 
@@ -73,6 +74,7 @@ export function add(state: State, input: AddTxInput): State {
     categoryId: input.categoryId,
     linkedDebtId: input.linkedDebtId,
     linkedInvestmentId: input.linkedInvestmentId,
+    linkedGoalId: input.linkedGoalId,
     note: input.note?.trim() || undefined,
   };
   return { ...state, transactions: [...state.transactions, tx] };

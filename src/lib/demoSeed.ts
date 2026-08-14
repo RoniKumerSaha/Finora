@@ -66,9 +66,9 @@ export function seedDemo(state: State): State {
   const goalVacationId  = uid();
 
   const goals = [
-    { id: goalEmergencyId, name: 'Emergency fund (6 months)', target: 300000, saved: 145000, targetDate: dateOffset(365),  createdAt: dateOffset(-150) },
-    { id: goalLaptopId,    name: 'New laptop',                target: 120000, saved: 38000,  targetDate: dateOffset(180),  createdAt: dateOffset(-90)  },
-    { id: goalVacationId,  name: 'Cox\u2019s Bazar trip',     target: 40000,  saved: 40000,  targetDate: dateOffset(60),   createdAt: dateOffset(-120) },
+    { id: goalEmergencyId, name: 'Emergency fund (6 months)', target: 300000, saved: 0, targetDate: dateOffset(365),  createdAt: dateOffset(-150) },
+    { id: goalLaptopId,    name: 'New laptop',                target: 120000, saved: 0, targetDate: dateOffset(180),  createdAt: dateOffset(-90)  },
+    { id: goalVacationId,  name: 'Cox\u2019s Bazar trip',     target: 40000,  saved: 0, targetDate: dateOffset(60),   createdAt: dateOffset(-120) },
   ];
 
   // ---------- debts ----------
@@ -90,7 +90,7 @@ export function seedDemo(state: State): State {
   const investments = [
     {
       id: dpsId, name: 'DBBL DPS #1', type: 'dps' as const,
-      principal: 50000, rate: 8,
+      principal: 0, monthlyContribution: 5000, rate: 8,
       startDate: dateOffset(-540), termMonths: 60,
       payoutAccountId: bankId, institution: 'DBBL',
       status: 'active' as const, createdAt: dateOffset(-540),
@@ -150,6 +150,40 @@ export function seedDemo(state: State): State {
 
     // Karim pays us back partially — drove by direction='owed_to_me'
     { id: uid(), type: 'income', amount: 8000, date: dateOffset(-20), accountId: bkashId, categoryId: catGifts, linkedDebtId: debtKarimId, note: 'Karim — partial payback' },
+
+    // --- DPS monthly contributions (R6 + dpsContributedSoFar) ---
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-540), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #1' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-510), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #2' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-480), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #3' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-450), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #4' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-420), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #5' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-390), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #6' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-360), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #7' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-330), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #8' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-300), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #9' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-270), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #10' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-240), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #11' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-210), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #12' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-180), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #13' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-150), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #14' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-120), accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #15' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-90),  accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #16' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-60),  accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #17' },
+    { id: uid(), type: 'expense', amount: 5000, date: dateOffset(-30),  accountId: bankId,   linkedInvestmentId: dpsId, note: 'DPS installment #18' },
+
+    // --- Goal contributions (R6 — sums into goalSavedFromTxns) ---
+    { id: uid(), type: 'expense', amount: 5000,  date: dateOffset(-150), accountId: bankId,  categoryId: catGifts, linkedGoalId: goalEmergencyId, note: 'Emergency fund contribution' },
+    { id: uid(), type: 'expense', amount: 10000, date: dateOffset(-90),  accountId: bankId,  categoryId: catGifts, linkedGoalId: goalEmergencyId, note: 'Emergency fund contribution' },
+    { id: uid(), type: 'expense', amount: 15000, date: dateOffset(-60),  accountId: bankId,  categoryId: catGifts, linkedGoalId: goalEmergencyId, note: 'Emergency fund contribution' },
+    { id: uid(), type: 'expense', amount: 20000, date: dateOffset(-30),  accountId: bankId,  categoryId: catGifts, linkedGoalId: goalEmergencyId, note: 'Emergency fund contribution' },
+
+    { id: uid(), type: 'expense', amount: 8000,  date: dateOffset(-90),  accountId: bkashId, categoryId: catShopping, linkedGoalId: goalLaptopId, note: 'Laptop fund — September' },
+    { id: uid(), type: 'expense', amount: 10000, date: dateOffset(-60),  accountId: bkashId, categoryId: catShopping, linkedGoalId: goalLaptopId, note: 'Laptop fund — October' },
+    { id: uid(), type: 'expense', amount: 12000, date: dateOffset(-30),  accountId: bankId,  categoryId: catShopping, linkedGoalId: goalLaptopId, note: 'Laptop fund — November' },
+
+    { id: uid(), type: 'expense', amount: 8000,  date: dateOffset(-120), accountId: bkashId, categoryId: catGifts, linkedGoalId: goalVacationId, note: 'Cox\u2019s Bazar — saving up' },
+    { id: uid(), type: 'expense', amount: 12000, date: dateOffset(-90),  accountId: bkashId, categoryId: catGifts, linkedGoalId: goalVacationId, note: 'Cox\u2019s Bazar — saving up' },
+    { id: uid(), type: 'expense', amount: 20000, date: dateOffset(-30),  accountId: bankId,  categoryId: catGifts, linkedGoalId: goalVacationId, note: 'Cox\u2019s Bazar — saving up' },
   ];
 
   return {

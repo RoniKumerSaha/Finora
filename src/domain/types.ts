@@ -41,6 +41,7 @@ export interface Transaction {
   categoryId?: string;
   linkedDebtId?: string;
   linkedInvestmentId?: string;
+  linkedGoalId?: string;     // contribution to a savings goal (expense)
   note?: string;
 }
 
@@ -48,6 +49,9 @@ export interface Goal {
   id: string;
   name: string;
   target: number;
+  /** Deprecated — kept for v1 reads; `saved` is now derived from
+   *  transactions where `linkedGoalId === goal.id` (R6 discipline).
+   *  Writers should never set this directly. */
   saved: number;
   targetDate: ISODate;
   createdAt: ISODate;
@@ -69,7 +73,11 @@ export interface Investment {
   id: string;
   name: string;
   type: InvestmentType;
+  /** For FDR/savings: lump-sum deposit. For DPS: ignored; contributions
+   *  come through linked expense transactions. */
   principal: number;
+  /** DPS only: required monthly contribution in BDT. Ignored for FDR/savings. */
+  monthlyContribution?: number;
   rate: number;              // percent, e.g. 8.5
   startDate: ISODate;
   termMonths: number;

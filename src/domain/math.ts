@@ -243,3 +243,112 @@ export function daysToMaturity(investment: Investment, now: string | Date = new 
   if (!mat) return 0;
   return daysBetween(today(now), mat);
 }
+
+// ---------- Goals (R5 — derived `saved`) ----------
+
+/**
+ * R6 (derived): sum of `expense` transactions where `linkedGoalId === goal.id`.
+ * `goal.saved` is the legacy stored field; this is the source of truth.
+ */
+export function goalSavedFromTxns(goal: Goal, transactions: Transaction[]): number {
+  if (!goal) return 0;
+  let total = 0;
+  for (const t of transactions) {
+    if (t.linkedGoalId !== goal.id) continue;
+    if (t.type === 'expense') total += Number(t.amount) || 0;
+  }
+  return total;
+}
+
+/** Convenience: progress ratio (0..1) considering derived saved. */
+export function goalProgress(goal: Goal, transactions: Transaction[]): number {
+  if (!goal) return 0;
+  const target = Number(goal.target) || 0;
+  if (target <= 0) return 1;
+  const saved = goalSavedFromTxns(goal, transactions);
+  return Math.min(1, saved / target);
+}
+
+/** R5 wrapper using the derived saved amount. */
+export function goalRequiredPerMonthDerived(
+  goal: Goal,
+  transactions: Transaction[],
+  now: string | Date = new Date()
+): number {
+  const saved = goalSavedFromTxns(goal, transactions);
+  return goalRequiredPerMonth(goal, saved, now);
+}
+
+// ---------- Investments (R9, R10 — DPS support) ----------
+
+/**
+ * R9-DPS: maturity value of a DPS account under monthly compound interest.
+ * Formula: annuity-due (contributions at start of each month).
+ *   M = monthlyContribution
+ *   r = rate / 100 / 12  (monthly rate)
+ *   T = termMonths
+ *   FV = M * ((1+r)^T - 1) / r * (1+r)
+ *
+ * If `monthlyContribution` is missing or zero, returns 0.
+ * For non-DPS types, returns 0 (use `investmentMaturityValue` for simple-interest).
+ */
+export function dpsMaturityValue(investment: Investment): number {
+  if (!investment || investment.type !== 'dps') return 0;
+  const M = Number(investment.monthlyContribution) || 0;
+  if (M <= 0) return 0;
+  const T = Math.floor(Number(investment.termMonths) || 0);
+  if (T <= 0) return 0;
+  const r = (Number(investment.rate) || 0) / 100 / 12;
+  if (r === 0) return M * T; // no interest — straight sum of contributions
+  const factor = (Math.pow(1 + r, T) - 1) / r * (1 + r);
+  return M * factor;
+}
+
+/**
+ * Sum of DPS contributions made so far, from `expense` transactions
+ * where `linkedInvestmentId === investment.id`. This is the principal
+ * the user has actually paid in (not the projected maturity value).
+ */
+export function dpsContributedSoFar(investment: Investment, transactions: Transaction[]): number {
+  if (!investment) return 0;
+  let total = 0;
+  for (const t of transactions) {
+    if (t.linkedInvestmentId !== investment.id) continue;
+    if (t.type === 'expense') total += Number(t.amount) || 0;
+  }
+  return total;
+}
+
+/**
+ * Current DPS value — future value of contributions made so far,
+ * each compounded from its deposit month to today.
+ *
+ * This is what the bank would pay out if you closed the account today.
+ *
+ *   `k` = months from each contribution to today (using monthsBetween)
+ *   currentValue = sum over contributions of: M * (1+r)^k
+ */
+export function dpsCurrentValue(investment: Investment, transactions: Transaction[], now: string | Date = new Date()): number {
+  if (!investment || investment.type !== 'dps') return 0;
+  const r = (Number(investment.rate) || 0) / 100 / 12;
+  let total = 0;
+  for (const t of transactions) {
+    if (t.linkedInvestmentId !== investment.id) continue;
+    if (t.type !== 'expense') continue;
+    const k = monthsBetween(t.date, now);
+    if (k < 0) continue;
+    const amt = Number(t.amount) || 0;
+    total += amt * Math.pow(1 + r, k);
+  }
+  return total;
+}
+
+/**
+ * Type-aware maturity value. For DPS: annuity-due. For FDR/savings:
+ * simple-interest (preserves R9 behavior).
+ */
+export function investmentMaturityValueTyped(investment: Investment): number {
+  if (!investment) return 0;
+  if (investment.type === 'dps') return dpsMaturityValue(investment);
+  return investmentMaturityValue(investment);
+}

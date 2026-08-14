@@ -3,11 +3,15 @@
  *
  * Visual target: docs/ux-designs/.../mockups/v2/dark.html#goals
  * Each card: name + percent chip in a row, gradient bar, two-line
- * meta (saved/target and by-date).
+ * meta (saved/target and by-date). Cards link to /goals/:id for detail.
+ *
+ * The saved amount is derived from transaction history (R6), so the
+ * card shows the live aggregate, not the stale stored field.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
+import { goalSavedFromTxns } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
 
 export function GoalsListScreen() {
@@ -41,9 +45,14 @@ export function GoalsListScreen() {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[14px]">
           {gs.map(g => {
-            const pct = Math.min(100, Math.round(((Number(g.saved) || 0) / (Number(g.target) || 1)) * 100));
+            const saved = goalSavedFromTxns(g, state.transactions);
+            const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
             return (
-              <section key={g.id} className="bg-surface border border-border rounded-card p-5 shadow-card">
+              <Link
+                key={g.id}
+                to={`/goals/${g.id}`}
+                className="block bg-surface border border-border rounded-card p-5 shadow-card hover:border-primary transition"
+              >
                 <div className="flex justify-between items-center">
                   <div className="font-semibold">{g.name}</div>
                   <div className="text-[11px] text-primary font-bold bg-primary-soft px-2 py-0.5 rounded-pill">{pct}%</div>
@@ -52,10 +61,10 @@ export function GoalsListScreen() {
                   <div className="h-full bg-gradient-to-r from-primary to-accent rounded-pill" style={{ width: `${pct}%` }} />
                 </div>
                 <div className="flex justify-between text-xs text-muted mt-1.5">
-                  <span>{fmtBDT(g.saved || 0)} / {fmtBDT(g.target)}</span>
+                  <span>{fmtBDT(saved)} / {fmtBDT(g.target)}</span>
                   <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
                 </div>
-              </section>
+              </Link>
             );
           })}
         </div>

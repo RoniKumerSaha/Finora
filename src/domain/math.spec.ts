@@ -23,8 +23,15 @@ import {
   investmentMaturityDate,
   deriveInvestmentStatus,
   daysToMaturity,
+  goalSavedFromTxns,
+  goalProgress,
+  goalRequiredPerMonthDerived,
+  dpsMaturityValue,
+  dpsContributedSoFar,
+  dpsCurrentValue,
+  investmentMaturityValueTyped,
 } from './math';
-import type { Account, Debt, Investment, Transaction } from './types';
+import type { Account, Debt, Goal, Investment, Transaction } from './types';
 
 const NOW = '2026-08-13';
 
@@ -187,5 +194,151 @@ describe('R9 / R10 — investment maturity', () => {
   it('daysToMaturity negative when past', () => {
     expect(daysToMaturity(inv({}), NOW)).toBeLessThan(0);
     expect(daysToMaturity(inv({ termMonths: 36 }), NOW)).toBeGreaterThan(0);
+  });
+});
+
+// ---------- R6 — goal saved derived from transactions ----------
+
+describe('R6 — goal saved (derived)', () => {
+  const goal: Goal = {
+    id: 'g1', name: 'g', target: 1000, saved: 0, targetDate: '2099-01-01', createdAt: NOW,
+  };
+  it('aggregates only expense txns linked to the goal', () => {
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 100, linkedGoalId: 'g1' }),
+      tx({ type: 'expense', amount: 250, linkedGoalId: 'g1' }),
+      tx({ type: 'income',  amount: 999, linkedGoalId: 'g1' }),  // ignored
+      tx({ type: 'expense', amount: 50,  linkedGoalId: 'g2' }),  // other goal
+      tx({ type: 'expense', amount: 7,   linkedGoalId: undefined }),
+    ];
+    expect(goalSavedFromTxns(goal, txs)).toBe(350);
+  });
+  it('zero when no linked txns', () => {
+    expect(goalSavedFromTxns(goal, [])).toBe(0);
+  });
+  it('goalProgress caps at 1.0', () => {
+    const txs = [tx({ type: 'expense', amount: 9999, linkedGoalId: 'g1' })];
+    expect(goalProgress(goal, txs)).toBe(1);
+  });
+  it('goalRequiredPerMonthDerived uses derived saved, not stored field', () => {
+    // Goal with targetDate ~6 months out from 2026-08-13:
+    //   targetDate = 2027-02-13, target = 1200, derived saved = 200
+    //   remaining = 1000, months left = 6
+    //   → 1000 / 6 ≈ 166.67 / month
+    const g: Goal = {
+      id: 'g2', name: 'g', target: 1200, saved: 0,  // stored is 0
+      targetDate: '2027-02-13', createdAt: NOW,
+    };
+    const txs = [
+      tx({ type: 'expense', amount: 200, linkedGoalId: 'g2', date: '2026-08-01' }),
+    ];
+    expect(goalRequiredPerMonthDerived(g, txs, NOW)).toBeCloseTo(1000 / 6, 5);
+  });
+});
+
+// ---------- R9-DPS — annuity-due maturity ----------
+
+describe('R9-DPS — DPS maturity value (annuity-due)', () => {
+  const dps = (over: Partial<Investment>): Investment => ({
+    id: 'd1', name: 'DPS', type: 'dps', principal: 0,
+    monthlyContribution: 5000, rate: 8, startDate: '2026-01-01',
+    termMonths: 12, status: 'active', createdAt: NOW,
+    ...over,
+  });
+
+  it('returns 0 when monthlyContribution is missing', () => {
+    expect(dpsMaturityValue(dps({ monthlyContribution: undefined }))).toBe(0);
+  });
+  it('returns 0 for non-DPS types', () => {
+    expect(dpsMaturityValue(dps({ type: 'fdr', monthlyContribution: 5000 }))).toBe(0);
+  });
+  it('zero rate: straight sum of contributions', () => {
+    expect(dpsMaturityValue(dps({ rate: 0, monthlyContribution: 5000, termMonths: 12 }))).toBe(60000);
+  });
+  it('annuity-due at 8% / 12 months ≈ 62,664', () => {
+    // M=5000, r=8/100/12, T=12
+    // FV = M * ((1+r)^T - 1) / r * (1+r)
+    // Spot-check: 5000 * ((1.0066667^12 - 1) / 0.0066667) * 1.0066667
+    //   ≈ 5000 * 12.44993 * 1.0066667
+    //   ≈ 62,664
+    const v = dpsMaturityValue(dps({ monthlyContribution: 5000, rate: 8, termMonths: 12 }));
+    expect(v).toBeGreaterThan(62000);
+    expect(v).toBeLessThan(63200);
+  });
+  it('matures larger than total contributions at any positive rate', () => {
+    const v = dpsMaturityValue(dps({ monthlyContribution: 5000, rate: 8, termMonths: 12 }));
+    expect(v).toBeGreaterThan(60000);  // > pure sum
+  });
+  it('larger rate → larger maturity', () => {
+    const low = dpsMaturityValue(dps({ rate: 5 }));
+    const high = dpsMaturityValue(dps({ rate: 12 }));
+    expect(high).toBeGreaterThan(low);
+  });
+});
+
+// ---------- DPS contributions + current value ----------
+
+describe('DPS — contributions aggregated from transactions', () => {
+  const inv: Investment = {
+    id: 'd1', name: 'DPS', type: 'dps', principal: 0,
+    monthlyContribution: 5000, rate: 8, startDate: '2026-01-01',
+    termMonths: 12, status: 'active', createdAt: '2026-01-01',
+  };
+
+  it('dpsContributedSoFar sums linked expense txns only', () => {
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-02-01' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-03-01' }),
+      tx({ type: 'income',  amount: 5000, linkedInvestmentId: 'd1', date: '2026-04-01' }), // ignored
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd2', date: '2026-02-01' }), // other
+    ];
+    expect(dpsContributedSoFar(inv, txs)).toBe(10000);
+  });
+
+  it('dpsCurrentValue compounds each contribution to today', () => {
+    // Two contributions: 5000 paid 6 months ago, 5000 paid 3 months ago.
+    // r = 8/100/12 ≈ 0.0066667
+    // value = 5000*(1+r)^6 + 5000*(1+r)^3
+    //   ≈ 5000*1.04067 + 5000*1.02013
+    //   ≈ 5203.4 + 5100.6
+    //   ≈ 10,304
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-02-13' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-05-13' }),
+    ];
+    const v = dpsCurrentValue(inv, txs, NOW);
+    expect(v).toBeGreaterThan(10300);
+    expect(v).toBeLessThan(10400);
+  });
+
+  it('dpsCurrentValue excludes future-dated contributions', () => {
+    const txs = [tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2099-01-01' })];
+    expect(dpsCurrentValue(inv, txs, NOW)).toBe(0);
+  });
+
+  it('dpsContribution embeddings with future date are not compounded', () => {
+    // Negative monthsBetween → skipped
+    const txs = [tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2027-01-01' })];
+    expect(dpsCurrentValue(inv, txs, NOW)).toBe(0);
+  });
+});
+
+describe('investmentMaturityValueTyped — type-aware dispatch', () => {
+  it('routes DPS to annuity-due', () => {
+    const dps: Investment = {
+      id: 'd1', name: 'DPS', type: 'dps', principal: 0,
+      monthlyContribution: 5000, rate: 8, startDate: '2026-01-01',
+      termMonths: 12, status: 'active', createdAt: NOW,
+    };
+    expect(investmentMaturityValueTyped(dps)).toBe(dpsMaturityValue(dps));
+    expect(investmentMaturityValueTyped(dps)).toBeGreaterThan(60000);
+  });
+  it('routes FDR to simple-interest (R9)', () => {
+    const fdr: Investment = {
+      id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+      rate: 8, startDate: '2026-01-01', termMonths: 12,
+      status: 'active', createdAt: NOW,
+    };
+    expect(investmentMaturityValueTyped(fdr)).toBe(108000);
   });
 });

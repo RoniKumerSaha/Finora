@@ -20,7 +20,15 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../domain/store';
-import { monthlyIncome, monthlyExpenses, accountBalance, daysToMaturity, investmentMaturityValue } from '../domain/math';
+import {
+  monthlyIncome,
+  monthlyExpenses,
+  accountBalance,
+  daysToMaturity,
+  investmentMaturityValueTyped,
+  goalSavedFromTxns,
+  dpsContributedSoFar,
+} from '../domain/math';
 import * as accounts from '../domain/accounts';
 import * as debts from '../domain/debts';
 import * as investments from '../domain/investments';
@@ -54,7 +62,10 @@ export function HomeScreen() {
   const allInvs = investments.list(state);
   const activeInvs = allInvs.filter(i => i.status === 'active');
   const closedInvs = allInvs.filter(i => i.status !== 'active');
-  const totalInvested = activeInvs.reduce((s, i) => s + (Number(i.principal) || 0), 0);
+  const totalInvested = activeInvs.reduce(
+    (s, i) => s + (i.type === 'dps' ? dpsContributedSoFar(i, state.transactions) : (Number(i.principal) || 0)),
+    0
+  );
 
   const activeGoals = goals.list(state);
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
@@ -95,19 +106,24 @@ export function HomeScreen() {
           {activeGoals.length === 0
             ? <Empty msg="No goals yet." cta="Set a goal" to="/goals/add" />
             : activeGoals.slice(0, 3).map(g => {
-                const pct = Math.min(100, Math.round(((Number(g.saved) || 0) / (Number(g.target) || 1)) * 100));
+                const saved = goalSavedFromTxns(g, state.transactions);
+                const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
                 return (
-                  <div key={g.id} className="py-[18px] border-b border-border last:border-0">
+                  <Link
+                    key={g.id}
+                    to={`/goals/${g.id}`}
+                    className="block py-[18px] border-b border-border last:border-0 hover:bg-surface-2 -mx-2 px-2 rounded transition"
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-semibold text-sm">{g.name}</div>
                       <div className="text-xs text-primary font-bold bg-primary-soft px-2.5 py-[3px] rounded-pill">{pct}%</div>
                     </div>
                     <Bar pct={pct} />
                     <div className="flex justify-between text-xs text-muted mt-1.5">
-                      <span>{fmtBDT(g.saved || 0)} / {fmtBDT(g.target)}</span>
+                      <span>{fmtBDT(saved)} / {fmtBDT(g.target)}</span>
                       <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
           }
@@ -161,7 +177,7 @@ export function HomeScreen() {
         ) : (
           allInvs.slice(0, 3).map(inv => {
             const days = daysToMaturity(inv);
-            const mat = investmentMaturityValue(inv);
+            const mat = investmentMaturityValueTyped(inv);
             const label = days > 0 ? `Matures in ${days}d` : days === 0 ? 'Matures today' : `Matured ${-days}d ago`;
             return (
               <div key={inv.id} className="py-2.5 border-t border-border">
