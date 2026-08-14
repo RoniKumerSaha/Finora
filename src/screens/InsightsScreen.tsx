@@ -246,10 +246,21 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
   const innerH = H - PAD_T - PAD_B;
 
   const max = Math.max(1, ...bars.flatMap(b => [b.income, b.expense]));
-  const monthWidth = innerW / Math.max(1, bars.length);
-  const barWidth = Math.max(2, Math.min(10, (monthWidth - 16) / 2));
+  const stepX = bars.length > 1 ? innerW / (bars.length - 1) : 0;
 
-  const total = bars.reduce((s, b) => s + b.expense, 0);
+  const xy = (i: number, v: number) => {
+    const x = bars.length === 1 ? PAD_L + innerW / 2 : PAD_L + i * stepX;
+    const y = PAD_T + innerH * (1 - v / max);
+    return [x, y] as const;
+  };
+
+  const incomeLine = bars.map((b, i) => xy(i, b.income).join(',')).join(' ');
+  const expenseLine = bars.map((b, i) => xy(i, b.expense).join(',')).join(' ');
+
+  const totalIncome = bars.reduce((s, b) => s + b.income, 0);
+
+  const hoverBar = hover !== null ? bars[hover] : null;
+  const hoverX = hover !== null ? xy(hover, 0)[0] : 0;
 
   return (
     <div className="card">
@@ -258,8 +269,15 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
           <h2 className="heading h3-modal">Cash flow</h2>
           <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Income & expense by month</div>
         </div>
-        <div className="text-[13px] text-muted tabular">
-          {total > 0 ? `Total expense ${fmtBDT(total)}` : '—'}
+        <div className="flex items-center gap-3 text-[12px] tabular">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            <span className="text-muted">Income</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-danger" />
+            <span className="text-muted">Expense</span>
+          </span>
         </div>
       </div>
       {bars.length === 0 ? (
@@ -277,7 +295,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
             aria-label={`Income and expense by month, ${bars.length} months`}
             onMouseLeave={() => setHover(null)}
           >
-            <title>Cash flow grouped bar chart.</title>
+            <title>Cash flow line chart.</title>
             {/* Y-axis */}
             <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={PAD_T + innerH} stroke="var(--border)" />
             <line x1={PAD_L} y1={PAD_T + innerH} x2={W - PAD_R} y2={PAD_T + innerH} stroke="var(--border)" />
@@ -296,43 +314,59 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
                 />
               );
             })}
-            {/* Bars */}
+            {/* Income line */}
+            <polyline
+              points={incomeLine}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity={hover === null ? 1 : 0.55}
+            />
+            {/* Expense line */}
+            <polyline
+              points={expenseLine}
+              fill="none"
+              stroke="var(--danger)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity={hover === null ? 1 : 0.55}
+            />
+            {/* Hit areas + dots */}
             {bars.map((b, i) => {
-              const x0 = PAD_L + i * monthWidth;
-              const incH = (b.income / max) * innerH;
-              const expH = (b.expense / max) * innerH;
-              const incX = x0 + (monthWidth - 2 * barWidth - 8) / 2;
-              const expX = incX + barWidth + 8;
+              const [incX, incY] = xy(i, b.income);
+              const [expX, expY] = xy(i, b.expense);
               const isHover = hover === i;
               return (
-                <g
-                  key={`${b.year}-${b.month}`}
-                  onMouseEnter={() => setHover(i)}
-                  onMouseMove={() => setHover(i)}
-                >
-                  <rect x={x0} y={PAD_T} width={monthWidth} height={innerH} fill="transparent" />
+                <g key={`${b.year}-${b.month}`}>
+                  {/* Wide invisible hit strip for hover */}
                   <rect
-                    x={incX}
-                    y={PAD_T + innerH - incH}
-                    width={barWidth}
-                    height={incH}
-                    fill="var(--primary)"
-                    opacity={hover === null || isHover ? 1 : 0.5}
-                    rx={1}
+                    x={PAD_L + i * stepX - stepX / 2}
+                    y={PAD_T}
+                    width={stepX || innerW}
+                    height={innerH}
+                    fill="transparent"
+                    onMouseEnter={() => setHover(i)}
+                    onMouseMove={() => setHover(i)}
                   />
-                  <rect
-                    x={expX}
-                    y={PAD_T + innerH - expH}
-                    width={barWidth}
-                    height={expH}
+                  <circle
+                    cx={incX} cy={incY} r={isHover ? 5 : 3}
+                    fill="var(--primary)"
+                    stroke="var(--primary-on)"
+                    strokeWidth={isHover ? 2 : 0}
+                  />
+                  <circle
+                    cx={expX} cy={expY} r={isHover ? 5 : 3}
                     fill="var(--danger)"
-                    opacity={hover === null || isHover ? 1 : 0.5}
-                    rx={1}
+                    stroke="var(--primary-on)"
+                    strokeWidth={isHover ? 2 : 0}
                   />
                   {/* X labels — every other for dense ranges */}
                   {(bars.length <= 6 || i % 2 === 0) && (
                     <text
-                      x={x0 + monthWidth / 2}
+                      x={incX}
                       y={H - 6}
                       textAnchor="middle"
                       fontSize="10"
@@ -347,9 +381,9 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
             {/* Hover guide */}
             {hover !== null && (
               <line
-                x1={PAD_L + hover * monthWidth + monthWidth / 2}
+                x1={hoverX}
                 y1={PAD_T}
-                x2={PAD_L + hover * monthWidth + monthWidth / 2}
+                x2={hoverX}
                 y2={PAD_T + innerH}
                 stroke="var(--muted)"
                 strokeWidth="1"
@@ -357,14 +391,14 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
             )}
           </svg>
           {/* Tooltip */}
-          {hover !== null && bars[hover] && (
+          {hoverBar && (
             <div
               className="text-[11px] pointer-events-none"
               role="tooltip"
               style={{
                 position: 'relative',
                 marginTop: '-32px',
-                marginLeft: `${Math.max(0, Math.min(W - 180, (hover / Math.max(1, bars.length)) * innerW + PAD_L - 60))}px`,
+                marginLeft: `${Math.max(0, Math.min(W - 180, hoverX - 60))}px`,
                 display: 'inline-block',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
@@ -374,16 +408,17 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
                 fontFamily: 'var(--font-numeric)',
               }}
             >
-              <div className="text-muted">{bars[hover].label}</div>
-              <div className="text-primary tabular">+ {fmtBDT(bars[hover].income)}</div>
-              <div className="text-danger tabular">{'\u2212'} {fmtBDT(bars[hover].expense)}</div>
+              <div className="text-muted">{hoverBar.label}</div>
+              <div className="text-primary tabular">+ {fmtBDT(hoverBar.income)}</div>
+              <div className="text-danger tabular">{'\u2212'} {fmtBDT(hoverBar.expense)}</div>
             </div>
           )}
-          {totalMonths > cappedAt && (
-            <div className="text-[11px] text-muted mt-2">
-              Showing last {cappedAt} of {totalMonths} months.
-            </div>
-          )}
+          <div className="flex justify-between items-center text-[11px] text-muted mt-2 tabular">
+            <span>{totalIncome > 0 ? `Total income ${fmtBDT(totalIncome)}` : ''}</span>
+            {totalMonths > cappedAt && (
+              <span>Showing last {cappedAt} of {totalMonths} months</span>
+            )}
+          </div>
         </>
       )}
     </div>
@@ -434,6 +469,7 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
 
 function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
   const { points } = data;
+  const [hover, setHover] = useState<number | null>(null);
   const W = 480;
   const H = 220;
   const PAD_L = 16;
@@ -447,16 +483,13 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
   const minVal = Math.min(0, ...values);
   const maxVal = Math.max(1, ...values);
   const range = maxVal - minVal || 1;
+  const zeroY = PAD_T + innerH * (1 - (0 - minVal) / range);
 
-  const xy = (i: number, v: number) => {
-    const x = points.length === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (points.length - 1)) * innerW;
-    const y = PAD_T + innerH * (1 - (v - minVal) / range);
-    return [x, y] as const;
-  };
+  const monthWidth = innerW / Math.max(1, points.length);
+  const barWidth = Math.max(2, Math.min(28, (monthWidth - 8) * 0.6));
 
-  const polyline = points.map((p, i) => xy(i, p.value).join(',')).join(' ');
-  const [lastX, lastY] = points.length > 0 ? xy(points.length - 1, points[points.length - 1].value) : [0, 0];
   const lastPoint = points[points.length - 1];
+  const hoverPoint = hover !== null ? points[hover] : null;
 
   return (
     <div className="card">
@@ -475,68 +508,126 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
           cta={{ to: '/accounts/add', label: 'Add an account' }}
         />
       ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Net worth trajectory">
-          <title>Net worth trajectory line chart.</title>
-          {[0, 0.25, 0.5, 0.75, 1].map(t => {
-            const y = PAD_T + innerH * (1 - t);
-            return (
+        <>
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            width="100%"
+            height={H}
+            role="img"
+            aria-label="Net worth by month"
+            onMouseLeave={() => setHover(null)}
+          >
+            <title>Net worth bar chart.</title>
+            {/* Y ticks */}
+            {[0, 0.25, 0.5, 0.75, 1].map(t => {
+              const y = PAD_T + innerH * (1 - t);
+              return (
+                <line
+                  key={t}
+                  x1={PAD_L}
+                  y1={y}
+                  x2={W - PAD_R}
+                  y2={y}
+                  stroke="var(--border-2)"
+                  strokeDasharray="2 4"
+                />
+              );
+            })}
+            {/* Zero line (if range crosses 0) */}
+            {minVal < 0 && (
               <line
-                key={t}
                 x1={PAD_L}
-                y1={y}
+                y1={zeroY}
                 x2={W - PAD_R}
-                y2={y}
-                stroke="var(--border-2)"
-                strokeDasharray="2 4"
+                y2={zeroY}
+                stroke="var(--muted)"
+                strokeWidth="1"
               />
-            );
-          })}
-          <polyline
-            points={polyline}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth="2"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          {points.length > 0 && (
-            <g>
-              <circle cx={lastX} cy={lastY} r="6" fill="var(--primary)" />
-              <circle cx={lastX} cy={lastY} r="3" fill="var(--primary-on)" />
-              {(() => {
-                // If the last-point label would overflow the right edge,
-                // anchor it to the right and place it *to the left* of
-                // the dot. Otherwise anchor to start and place to the right.
-                const labelText = `${lastPoint?.label ?? ''}: ${fmtBDT(lastPoint?.value ?? 0)}`;
-                const approxTextWidth = labelText.length * 6.2; // crude px estimate at 11px
-                const overflowsRight = lastX + 10 + approxTextWidth > W - 4;
-                return (
-                  <text
-                    x={overflowsRight ? lastX - 10 : lastX + 10}
-                    y={lastY - 8}
-                    fontSize="11"
-                    fill="var(--ink)"
-                    fontFamily="var(--font-numeric)"
-                    textAnchor={overflowsRight ? 'end' : 'start'}
-                  >
-                    {labelText}
-                  </text>
-                );
-              })()}
-            </g>
+            )}
+            {/* Bars */}
+            {points.map((p, i) => {
+              const x0 = PAD_L + i * monthWidth + (monthWidth - barWidth) / 2;
+              const v = p.value;
+              const y = PAD_T + innerH * (1 - (v - minVal) / range);
+              const top = Math.min(y, zeroY);
+              const height = Math.max(1, Math.abs(y - zeroY));
+              const isHover = hover === i;
+              const isLast = i === points.length - 1;
+              const fill = v < 0
+                ? 'var(--danger)'
+                : isHover || isLast
+                  ? 'var(--primary)'
+                  : 'var(--primary)';
+              const opacity = v < 0 ? 1 : (isHover || isLast ? 1 : 0.7);
+              const labelText = `${p.label}: ${fmtBDT(p.value)}`;
+              const approxTextWidth = labelText.length * 6.2;
+              const labelRight = x0 + barWidth / 2 + approxTextWidth / 2 + 4;
+              const labelLeft = x0 + barWidth / 2 - approxTextWidth / 2 - 4;
+              const labelOverflowsRight = labelRight > W - 4;
+              const labelOverflowsLeft = labelLeft < PAD_L;
+              return (
+                <g key={`${p.year}-${p.month}`}>
+                  <rect
+                    x={PAD_L + i * monthWidth}
+                    y={PAD_T}
+                    width={monthWidth}
+                    height={innerH}
+                    fill="transparent"
+                    onMouseEnter={() => setHover(i)}
+                    onMouseMove={() => setHover(i)}
+                  />
+                  <rect
+                    x={x0}
+                    y={top}
+                    width={barWidth}
+                    height={height}
+                    fill={fill}
+                    opacity={opacity}
+                    rx={2}
+                  />
+                  {/* Hover label */}
+                  {isHover && (() => {
+                    const cx = x0 + barWidth / 2;
+                    let tx = cx;
+                    let anchor: 'start' | 'middle' | 'end' = 'middle';
+                    if (labelOverflowsRight) { tx = x0 + barWidth; anchor = 'end'; }
+                    else if (labelOverflowsLeft) { tx = x0; anchor = 'start'; }
+                    return (
+                      <text
+                        x={tx}
+                        y={top - 6}
+                        fontSize="11"
+                        fill="var(--ink)"
+                        fontFamily="var(--font-numeric)"
+                        textAnchor={anchor}
+                      >
+                        {labelText}
+                      </text>
+                    );
+                  })()}
+                  {/* X labels — every other for dense ranges */}
+                  {(points.length <= 6 || i % 2 === 0) && (
+                    <text
+                      x={x0 + barWidth / 2}
+                      y={H - 6}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill="var(--muted)"
+                    >
+                      {p.label.split(' ')[0]}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+          {/* Bottom legend */}
+          {hoverPoint && (
+            <div className="text-[11px] text-muted mt-2 tabular">
+              {hoverPoint.label}: <span className="text-ink font-semibold">{fmtBDT(hoverPoint.value)}</span>
+            </div>
           )}
-          {/* X labels — first and last only */}
-          {points.length > 0 && (
-            <>
-              <text x={PAD_L} y={H - 6} fontSize="10" fill="var(--muted)">
-                {points[0].label.split(' ')[0]}
-              </text>
-              <text x={W - PAD_R} y={H - 6} fontSize="10" fill="var(--muted)" textAnchor="end">
-                {points[points.length - 1].label.split(' ')[0]}
-              </text>
-            </>
-          )}
-        </svg>
+        </>
       )}
     </div>
   );
