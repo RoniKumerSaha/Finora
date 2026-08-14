@@ -36,6 +36,8 @@
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-success-title: var(--success-title);
@@ -103,6 +105,8 @@
   --danger-callout-bg: #2A1A18;
   --warn:         #F4B860;
   --warn-soft:    rgba(244, 184, 96, 0.15);
+  --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
+  --info-soft:    rgba(111, 168, 220, 0.18);
   --success:      #6BAA8A;
   --success-soft: rgba(107, 170, 138, 0.18);
   --success-title:#82BFA0;
@@ -135,6 +139,8 @@
   --danger-callout-bg: #F5E6DD;   /* warm parchment-tinted (2026-08-14) */
   --warn:         #B6842E;
   --warn-soft:    rgba(182, 132, 46, 0.14);
+  --info:         #2E6BAA;   /* deep steel-blue, readable on cream (light) */
+  --info-soft:    rgba(46, 107, 170, 0.12);
   --success:      #558C6C;
   --success-soft: rgba(85, 140, 108, 0.16);
   --success-title:#3F7A5C;

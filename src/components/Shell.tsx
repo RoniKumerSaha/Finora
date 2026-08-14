@@ -46,18 +46,23 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logoUrl from '../assets/finora-logo.svg';
+import {
+  NavHome, NavInsights, NavTransactions, NavAccounts,
+  NavGoals, NavInvestments, NavDebts, NavSettings,
+  Menu, Close,
+} from './icons/Icons';
 
-interface NavDef { to: string; label: string; icon: string }
+interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element }
 
 const NAV: NavDef[] = [
-  { to: '/home',         label: 'Home',         icon: '\u2302' }, // ⌂
-  { to: '/insights',     label: 'Insights',     icon: '\u25C7' }, // ◇
-  { to: '/transactions', label: 'Transactions', icon: '\u21C4' }, // ⇄
-  { to: '/accounts',     label: 'Accounts',     icon: '\u25CE' }, // ◎
-  { to: '/goals',        label: 'Goals',        icon: '\u2605' }, // ★
-  { to: '/investments',  label: 'Investments',  icon: '\u{1F3E6}' }, // 🏦
-  { to: '/debts',        label: 'Debts',        icon: '\u25D0' }, // ◐
-  { to: '/settings',     label: 'Settings',     icon: '\u2699' }, // ⚙
+  { to: '/home',         label: 'Home',         Icon: NavHome },
+  { to: '/insights',     label: 'Insights',     Icon: NavInsights },
+  { to: '/transactions', label: 'Transactions', Icon: NavTransactions },
+  { to: '/accounts',     label: 'Accounts',     Icon: NavAccounts },
+  { to: '/goals',        label: 'Goals',        Icon: NavGoals },
+  { to: '/investments',  label: 'Investments',  Icon: NavInvestments },
+  { to: '/debts',        label: 'Debts',        Icon: NavDebts },
+  { to: '/settings',     label: 'Settings',     Icon: NavSettings },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -120,7 +125,7 @@ export function Shell({ children }: { children: ReactNode }) {
           aria-expanded={drawerOpen}
           className="w-10 h-10 -ml-2 inline-flex items-center justify-center rounded-md text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
-          <span aria-hidden className="text-[22px] leading-none">{'\u2630'}</span>
+          <Menu className="w-6 h-6" />
         </button>
         <div className="flex-1 flex items-center justify-center gap-2.5">
           <img src={logoUrl} alt="Finora" className="w-7 h-7 rounded-[8px]" />
@@ -180,7 +185,7 @@ export function Shell({ children }: { children: ReactNode }) {
               aria-label="Close menu"
               className="md:hidden w-9 h-9 inline-flex items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              <span aria-hidden className="text-lg leading-none">{'\u2715'}</span>
+              <Close className="w-5 h-5" />
             </button>
           </div>
 
@@ -210,7 +215,7 @@ export function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItem({ to, label, icon }: NavDef) {
+function NavItem({ to, label, Icon }: NavDef) {
   return (
     <NavLink
       to={to}
@@ -231,9 +236,7 @@ function NavItem({ to, label, icon }: NavDef) {
               className="absolute left-0 top-1/2 -translate-y-1/2 h-[22px] w-[4px] rounded-r-full bg-primary"
             />
           )}
-          <span className="w-[18px] inline-flex items-center justify-center text-[15px] leading-none" aria-hidden>
-            {icon}
-          </span>
+          <Icon className="w-[18px] h-[18px] shrink-0" />
           <span>{label}</span>
         </>
       )}

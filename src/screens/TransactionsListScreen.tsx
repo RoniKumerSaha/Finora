@@ -31,6 +31,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as transactions from '../domain/transactions';
+import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight } from '../components/icons/Icons';
 import { fmtBDTSigned, fmtDate } from '../lib/format';
 
 type FilterKey = 'all' | 'income' | 'expense' | 'transfer' | 'payouts' | 'debtPayments' | 'thisMonth' | 'cash';
@@ -226,8 +227,10 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
         style={{ background: 'var(--primary)' }}
       />
       <div className="flex items-center gap-3 min-w-0">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${accent}`}>
-          {direction === 'in' ? '\u2191' : direction === 'out' ? '\u2193' : '\u21C4'}
+        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accent}`}>
+          {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
+          {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
+          {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">
@@ -238,7 +241,7 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <div className={`font-bold tabular text-[14px] ${amtColor}`}>{fmtBDTSigned(tx.amount, direction)}</div>
-        <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+        <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
       </div>
     </Link>
   );

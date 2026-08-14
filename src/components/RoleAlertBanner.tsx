@@ -26,6 +26,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../domain/store';
 import type { BannerKind } from '../domain/types';
+import { Close } from './icons/Icons';
 
 const FADE_OUT_MS = 400;
 const TOTAL_MS = 9000;
@@ -78,7 +79,7 @@ export function RoleAlertBanner() {
         aria-label="Dismiss"
         className="absolute top-2.5 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md text-sm text-muted hover:bg-surface-3 hover:text-ink transition"
       >
-        {'\u2715'}
+        <Close className="w-4 h-4" />
       </button>
     </div>
   );

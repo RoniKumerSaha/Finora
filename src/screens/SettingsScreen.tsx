@@ -148,7 +148,7 @@ export function SettingsScreen() {
                         : 'bg-surface text-muted border-border hover:text-ink hover:bg-surface-2',
                     ].join(' ')}
                   >
-                    {t}
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
                 );
               })}

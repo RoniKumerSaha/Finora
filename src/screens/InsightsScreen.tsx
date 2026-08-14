@@ -40,6 +40,7 @@ import {
 } from '../domain/insights';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { dpsContributedSoFar } from '../domain/math';
+import { ArrowUp, ArrowDown, ChevronRight } from '../components/icons/Icons';
 import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -685,7 +686,7 @@ function GoalRow({ goal }: { goal: ReturnType<typeof goalsForInsights>[number] }
           <span>by {fmtDate(goal.targetDate)}</span>
         </div>
       </div>
-      <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden>{'\u203A'}</span>
+      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
     </Link>
   );
 }
@@ -725,8 +726,8 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
         className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
         style={{ background: 'var(--primary)' }}
       />
-      <div className={`w-8 h-8 rounded-[10px] grid place-items-center text-sm font-bold shrink-0 ${chipBg}`}>
-        {isOwed ? '\u2191' : '\u2193'}
+      <div className={`w-8 h-8 rounded-[10px] grid place-items-center shrink-0 ${chipBg}`}>
+        {isOwed ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center gap-3">
@@ -743,7 +744,7 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
           <span>{debt.eta}</span>
         </div>
       </div>
-      <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden>{'\u203A'}</span>
+      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
     </Link>
   );
 }
@@ -824,7 +825,7 @@ function InvestmentRow({ inv }: { inv: ReturnType<typeof investmentsForInsights>
           {' '}{MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo
         </div>
       </div>
-      <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden>{'\u203A'}</span>
+      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
     </Link>
   );
 }

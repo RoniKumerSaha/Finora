@@ -32,6 +32,7 @@ import { Button } from '../components/Button';
 import { Field, Input, Select, Textarea, AmountInput } from '../components/Field';
 import { CategoryGrid, PresetChips } from '../components/TypePicker';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { ArrowLeftRight } from '../components/icons/Icons';
 import type { TxType } from '../domain/types';
 
 interface AddTransactionFormProps {
@@ -230,7 +231,9 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                 )}
               </div>
             </Field>
-            <div className="text-[24px] text-accent text-center pt-6">{'⇄'}</div>
+            <div className="flex items-center justify-center self-center text-accent">
+              <ArrowLeftRight className="w-7 h-7" strokeWidth={1.75} />
+            </div>
             <Field label="To">
               <Select value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
                 {accs.filter(a => a.id !== fromAccountId).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}

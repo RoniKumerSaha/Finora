@@ -20,6 +20,7 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
+import { ArrowUp, ArrowDown, Check, ChevronRight } from '../components/icons/Icons';
 import { fmtBDT, fmtDate } from '../lib/format';
 
 export function DebtsListScreen() {
@@ -103,8 +104,8 @@ function CompletedSection({ rows }: { rows: any[] }) {
               />
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-[10px] grid place-items-center font-bold bg-success-soft text-success">
-                    {'\u2713'}
+                  <div className="w-9 h-9 rounded-[10px] grid place-items-center bg-success-soft text-success">
+                    <Check className="w-[18px] h-[18px]" strokeWidth={2} />
                   </div>
                   <div className="min-w-0">
                     <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
@@ -116,7 +117,7 @@ function CompletedSection({ rows }: { rows: any[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+                  <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
                 </div>
               </div>
             </Link>
@@ -159,8 +160,8 @@ function DebtGroup({
                 />
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${iconBg}`}>
-                      {tone === 'danger' ? '\u2193' : '\u2191'}
+                    <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${iconBg}`}>
+                      {tone === 'danger' ? <ArrowDown className="w-[18px] h-[18px]" /> : <ArrowUp className="w-[18px] h-[18px]" />}
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
@@ -175,7 +176,7 @@ function DebtGroup({
                     <div className={`font-bold tabular text-[14px] ${amtColor}`}>
                       {tone === 'danger' ? '\u2212' : '+'} {fmtBDT(left)}
                     </div>
-                    <span className="text-muted text-base leading-none opacity-0 group-hover:opacity-100 transition" aria-hidden="true">{'\u203A'}</span>
+                    <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
                   </div>
                 </div>
                 <div className="mt-2 h-2 bg-surface-2 rounded-pill overflow-hidden">

@@ -15,6 +15,7 @@
  */
 import type { Category } from '../domain/types';
 import { emojiForCategory } from '../lib/categoryEmoji';
+import { ArrowUp, ArrowDown, ArrowLeftRight } from './icons/Icons';
 
 /* ---------- Type picker (Income / Expense / Transfer cards) ---------- */
 
@@ -25,18 +26,19 @@ export function TypePicker({
     key: 'income' | 'expense' | 'transfer';
     label: string;
     hint: string;
-    glyph: string;
+    Icon: (props: any) => JSX.Element;
     glyphColor: string;
   }> = [
-    { key: 'income',   label: 'Income',   hint: 'Money received',        glyph: '\u2191', glyphColor: 'text-primary' },
-    { key: 'expense',  label: 'Expense',  hint: 'Money spent',           glyph: '\u2193', glyphColor: 'text-danger'  },
-    { key: 'transfer', label: 'Transfer', hint: 'Between your accounts', glyph: '\u21C4', glyphColor: 'text-accent'  },
+    { key: 'income',   label: 'Income',   hint: 'Money received',        Icon: ArrowUp,         glyphColor: 'text-primary' },
+    { key: 'expense',  label: 'Expense',  hint: 'Money spent',           Icon: ArrowDown,       glyphColor: 'text-danger'  },
+    { key: 'transfer', label: 'Transfer', hint: 'Between your accounts', Icon: ArrowLeftRight,  glyphColor: 'text-accent'  },
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-full sm:max-w-[780px]">
       {items.map(it => {
         const isSel = selected === it.key;
+        const Icon = it.Icon;
         return (
           <button
             key={it.key}
@@ -50,7 +52,7 @@ export function TypePicker({
             ].join(' ')}
             style={isSel ? { boxShadow: 'var(--shadow-card), inset 0 0 0 1px var(--primary)' } : { boxShadow: 'var(--shadow-card)' }}
           >
-            <div className={`text-[40px] sm:text-[44px] leading-none mb-2 ${it.glyphColor}`}>{it.glyph}</div>
+            <Icon className={`w-11 h-11 sm:w-12 sm:h-12 mx-auto mb-2 ${it.glyphColor}`} strokeWidth={1.75} />
             <div className="font-bold text-[15px] tracking-tight">{it.label}</div>
             <div className="text-xs text-muted mt-1">{it.hint}</div>
           </button>

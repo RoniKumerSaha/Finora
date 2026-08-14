@@ -42,6 +42,8 @@ import {
   debtPaidSoFar,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass } from '../components/AccountTypeIcon';
+import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
@@ -149,7 +151,7 @@ export function HomeScreen() {
             : accList.slice(0, 4).map(a => {
                 const bal = accountBalance(a, txs);
                 return (
-                  <AcctRow key={a.id} icon={<AccountIcon name={a.name} />} name={a.name} type={accountTypeLabel(a.type)} balance={bal} />
+                  <AcctRow key={a.id} icon={<AccountTypeIcon type={a.type} />} name={a.name} type={accountTypeLabel(a.type)} balance={bal} tone={accountTone(a.type)} />
                 );
               })
           }
@@ -190,16 +192,6 @@ function fmtDebtMagnitude(n: number): string {
 function startsInMonth(iso: string, y: number, m: number): boolean {
   const d = new Date(iso + 'T00:00:00Z');
   return d.getUTCFullYear() === y && d.getUTCMonth() + 1 === m;
-}
-
-function accountTypeLabel(t: string): string {
-  switch (t) {
-    case 'cash': return 'Cash';
-    case 'bank': return 'Bank Account';
-    case 'mobile_wallet': return 'Mobile Wallet';
-    case 'card': return 'Card';
-    default: return 'Other';
-  }
 }
 
 /* ---------- tiny presentational atoms ---------- */
@@ -244,11 +236,11 @@ function Stat({ label, value, trend, tone }: { label: string; value: string; tre
   );
 }
 
-function AcctRow({ icon, name, type, balance }: { icon: React.ReactNode; name: string; type: string; balance: number }) {
+function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; name: string; type: string; balance: number; tone?: import('../components/AccountTypeIcon').AccountTone }) {
   return (
     <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-[10px] bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
+        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accountTileClass(tone ?? 'muted')}`}>
           {icon}
         </div>
         <div>
@@ -259,11 +251,6 @@ function AcctRow({ icon, name, type, balance }: { icon: React.ReactNode; name: s
       <div className="font-bold tabular text-[14px]">{fmtBDT(balance)}</div>
     </div>
   );
-}
-
-function AccountIcon({ name }: { name: string }) {
-  const ch = (name.trim()[0] || '\u09F3').toUpperCase();
-  return <span>{ch}</span>;
 }
 
 function TxRow({ tx, state }: { tx: any; state: any }) {
@@ -284,8 +271,10 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   return (
     <div className="flex justify-between items-center py-3.5 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center font-bold ${accent}`}>
-          {direction === 'in' ? '\u2191' : direction === 'out' ? '\u2193' : '\u21C4'}
+        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accent}`}>
+          {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
+          {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
+          {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
         </div>
         <div>
           <div className="font-semibold text-[14px] leading-tight tracking-tight">{tx.note || cat?.name || tx.type}</div>
@@ -347,7 +336,7 @@ function DemoBanner() {
         aria-label="Dismiss banner"
         className="ml-auto w-7 h-7 inline-flex items-center justify-center rounded-md text-muted hover:bg-surface-3 hover:text-ink transition"
       >
-        {'\u2715'}
+        <Close className="w-4 h-4" />
       </button>
     </div>
   );

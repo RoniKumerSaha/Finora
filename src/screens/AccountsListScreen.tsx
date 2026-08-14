@@ -24,6 +24,7 @@ import * as accounts from '../domain/accounts';
 import { accountBalance } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import { RowMenu } from '../components/RowMenu';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass } from '../components/AccountTypeIcon';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT } from '../lib/format';
@@ -103,8 +104,8 @@ export function AccountsListScreen() {
                     style={{ background: 'var(--primary)' }}
                   />
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-[10px] bg-surface-2 grid place-items-center text-primary font-bold text-[13px]">
-                      {(a.name.trim()[0] || '\u09F3').toUpperCase()}
+                    <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accountTileClass(accountTone(a.type))}`}>
+                      <AccountTypeIcon type={a.type} />
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight tracking-tight">{a.name}</div>
@@ -132,14 +133,4 @@ export function AccountsListScreen() {
       {dialog}
     </div>
   );
-}
-
-function accountTypeLabel(t: string): string {
-  switch (t) {
-    case 'cash': return 'Cash';
-    case 'bank': return 'Bank Account';
-    case 'mobile_wallet': return 'Mobile Wallet';
-    case 'card': return 'Card';
-    default: return 'Other';
-  }
 }
