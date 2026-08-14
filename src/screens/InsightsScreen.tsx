@@ -463,7 +463,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">Net worth</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Total balance over time</div>
+          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Assets {'\u2212'} liabilities</div>
         </div>
         <div className="text-[22px] font-bold tabular text-ink">
           {lastPoint ? fmtBDT(lastPoint.value) : '—'}
@@ -503,15 +503,26 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
             <g>
               <circle cx={lastX} cy={lastY} r="6" fill="var(--primary)" />
               <circle cx={lastX} cy={lastY} r="3" fill="var(--primary-on)" />
-              <text
-                x={Math.min(W - 8, lastX + 10)}
-                y={lastY - 8}
-                fontSize="11"
-                fill="var(--ink)"
-                fontFamily="var(--font-numeric)"
-              >
-                {lastPoint?.label}: {fmtBDT(lastPoint?.value ?? 0)}
-              </text>
+              {(() => {
+                // If the last-point label would overflow the right edge,
+                // anchor it to the right and place it *to the left* of
+                // the dot. Otherwise anchor to start and place to the right.
+                const labelText = `${lastPoint?.label ?? ''}: ${fmtBDT(lastPoint?.value ?? 0)}`;
+                const approxTextWidth = labelText.length * 6.2; // crude px estimate at 11px
+                const overflowsRight = lastX + 10 + approxTextWidth > W - 4;
+                return (
+                  <text
+                    x={overflowsRight ? lastX - 10 : lastX + 10}
+                    y={lastY - 8}
+                    fontSize="11"
+                    fill="var(--ink)"
+                    fontFamily="var(--font-numeric)"
+                    textAnchor={overflowsRight ? 'end' : 'start'}
+                  >
+                    {labelText}
+                  </text>
+                );
+              })()}
             </g>
           )}
           {/* X labels — first and last only */}

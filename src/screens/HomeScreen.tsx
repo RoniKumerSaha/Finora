@@ -5,23 +5,31 @@
  *
  * Home is the point-in-time snapshot. It shows what the user has
  * *right now*: total balance, this month's income, this month's
- * expense, accounts preview, recent activity. Period-bounded analytics
- * (cash-flow chart, spending breakdown, net worth trajectory, and
- * goals/debts/investments lists) live on /insights, reachable via the
- * nav or the "See full Insights →" link at the bottom of this page.
+ * expense, total debt, total investments, net worth, accounts preview,
+ * recent activity. Period-bounded analytics (cash-flow chart, spending
+ * breakdown, net worth trajectory, and goals/debts/investments lists)
+ * live on /insights, reachable via the nav or the "See full Insights →"
+ * link at the bottom of this page.
  *
  * Visual target: docs/ux-designs/.../mockups/v1/index.html#home
  *
  * Layout (in order, top to bottom):
  *   1. Onboarding callout (conditional)
  *   2. Header + meta line
- *   3. 3-up stat row: Total balance · Income (this month) · Expense (this month)
- *   4. 2-up cards: Accounts preview · Recent activity
- *   5. "See full Insights →" affordance
+ *   3. 3-up stat row #1: Total balance · Income (this month) · Expense (this month)
+ *   4. 3-up stat row #2: Total debt · Total investments · Net worth
+ *   5. 2-up cards: Accounts preview · Recent activity
+ *   6. "See full Insights →" affordance
  *
  * 2026-08-14 restructure: removed the Goals preview card, the Debts
  * card, and the Investments card. They are now duplicated exclusively
  * on /insights. Added the "See full Insights →" link at the bottom.
+ * 2026-08-14 net-row: added a second 3-up stat row underneath the
+ * first one. Total debt is NET (I owe − Owed to me, signed),
+ * Total investments is the active-pricipal sum (DPS-aware via
+ * dpsContributedSoFar, simple `principal` for FDR/savings), Net worth
+ * is total balance + active investments + receivables (money owed to
+ * me still outstanding) − money I still owe.
  */
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -30,6 +38,8 @@ import {
   monthlyIncome,
   monthlyExpenses,
   accountBalance,
+  dpsContributedSoFar,
+  debtPaidSoFar,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
@@ -49,6 +59,31 @@ export function HomeScreen() {
   const expenses = monthlyExpenses(txs, y, m);
   const incomeCount = txs.filter(t => t.type === 'income' && startsInMonth(t.date, y, m)).length;
   const expenseCount = txs.filter(t => t.type === 'expense' && startsInMonth(t.date, y, m)).length;
+
+  // Debts — sum of remaining (= total − paid) for active debts, split by direction.
+  const activeDebts = state.debts.filter(d => d.status === 'active');
+  const remainingOn = (d: typeof activeDebts[number]) => Math.max(0, (Number(d.total) || 0) - debtPaidSoFar(d, txs));
+  const debtIOweRemaining      = activeDebts.filter(d => d.direction === 'i_owe').reduce((s, d) => s + remainingOn(d), 0);
+  const debtOwedToMeRemaining  = activeDebts.filter(d => d.direction === 'owed_to_me').reduce((s, d) => s + remainingOn(d), 0);
+  const netDebt                = debtIOweRemaining - debtOwedToMeRemaining; // signed: + = I owe net, − = owed to me net
+  const activeDebtCount = activeDebts.length;
+
+  // Investments — sum of active principals. DPS-aware: dpsContributedSoFar
+  // for DPS (real money paid in), `Number(inv.principal)` for FDR/savings.
+  const activeInvestments = state.investments.filter(inv => inv.status === 'active');
+  const totalInvestment = activeInvestments.reduce((s, inv) => {
+    if (inv.type === 'dps') return s + dpsContributedSoFar(inv, txs);
+    return s + (Number(inv.principal) || 0);
+  }, 0);
+  const investmentCount = activeInvestments.length;
+
+  // Net worth = assets − liabilities, standard personal-finance convention.
+  //   Assets   = cash on hand + active investments + receivables
+  //              (money owed to me still outstanding)
+  //   Liabs    = money I still owe
+  // The "Total debt" tile separately surfaces the *net* of owe/owed-to-me.
+  const netWorth =
+    totalBalance + totalInvestment + debtOwedToMeRemaining - debtIOweRemaining;
 
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
@@ -70,6 +105,36 @@ export function HomeScreen() {
         <Stat label="Total balance"         value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} />
         <Stat label="Income (this month)"   value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
         <Stat label="Expenses (this month)" value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
+      </div>
+
+      {/* 3-up net row — debt, investments, net worth. Parallel to the row above. */}
+      <div className="grid grid-cols-3 gap-4">
+        <Stat
+          label="Total debt"
+          value={fmtSignedDebt(netDebt)}
+          trend={
+            activeDebtCount === 0
+              ? 'no active debts'
+              : netDebt === 0
+                ? 'balanced'
+                : netDebt > 0
+                  ? `you owe net ${fmtBDT(Math.abs(netDebt))}`
+                  : `owed to you net ${fmtBDT(Math.abs(netDebt))}`
+          }
+          tone={netDebt > 0 ? 'out' : netDebt < 0 ? 'in' : 'neutral'}
+        />
+        <Stat
+          label="Total investments"
+          value={fmtBDT(totalInvestment)}
+          trend={investmentCount === 0 ? 'none yet' : `across ${investmentCount} ${investmentCount === 1 ? 'investment' : 'investments'}`}
+          tone="accent"
+        />
+        <Stat
+          label="Net worth"
+          value={fmtBDT(netWorth)}
+          trend={netWorth >= 0 ? 'assets \u2212 liabilities' : 'liabilities exceed assets'}
+          tone="neutral"
+        />
       </div>
 
       {/* Accounts + Recent activity */}
@@ -108,6 +173,24 @@ export function HomeScreen() {
 }
 
 /* ---------- helpers ---------- */
+
+/**
+ * Signed BDT for the Total debt tile, driven by the *value's* sign:
+ *   positive net debt → "− ৳ 90,000" (you owe)
+ *   negative net debt → "+ ৳ 90,000" (they owe you)
+ *   zero            → "৳ 0"
+ *
+ * Note: `fmtBDTSigned` from lib/format.ts encodes sign via the `sign`
+ * parameter alone and takes Math.abs() of the value internally — meant
+ * for transaction rows where 'out' = "this was an expense", not "this
+ * number is negative". Mismatched for a debt figure, so we render the
+ * sign character from the value directly.
+ */
+function fmtSignedDebt(n: number): string {
+  if (n === 0) return fmtBDT(0);
+  const prefix = n > 0 ? '\u2212 ' : '+ ';
+  return prefix + fmtBDT(Math.abs(n));
+}
 
 function startsInMonth(iso: string, y: number, m: number): boolean {
   const d = new Date(iso + 'T00:00:00Z');
@@ -150,8 +233,12 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
   );
 }
 
-function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' }) {
-  const color = tone === 'out' ? 'text-danger' : tone === 'in' ? 'text-primary' : 'text-ink';
+function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' }) {
+  const color =
+    tone === 'out'    ? 'text-danger' :
+    tone === 'in'     ? 'text-primary' :
+    tone === 'accent' ? 'text-accent' :
+                        'text-ink';
   return (
     <div className="card">
       <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
