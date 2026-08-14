@@ -43,7 +43,7 @@ export function TypePicker({
             type="button"
             onClick={() => onPick(it.key)}
             className={[
-              'rounded-card p-6 text-center transition cursor-pointer border text-left',
+              'rounded-card p-6 text-center transition cursor-pointer border',
               'bg-surface hover:bg-surface-2 active:translate-y-px',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               isSel ? 'border-primary' : 'border-border',

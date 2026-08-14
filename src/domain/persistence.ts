@@ -4,9 +4,59 @@
  * Key: finora:v1. JSON.stringify with 2-space indent per AD-10.
  * Returns DEFAULT_STATE when missing or unparseable.
  */
-import type { State } from './types';
+import type { Category, State } from './types';
 
 const KEY = 'finora:v1';
+
+/**
+ * Canonical income and expense categories shipped with the app. These
+ * appear in every user's category picker regardless of whether they've
+ * reset to demo data, so existing users see new categories added in
+ * future releases without losing anything they've created themselves.
+ *
+ * Adding to this list is a one-liner — existing installs get them on
+ * their next load via `mergeDefaults`.
+ */
+const DEFAULT_INCOME_CATEGORIES: ReadonlyArray<{ name: string }> = [
+  { name: 'Salary' },
+  { name: 'Freelance' },
+  { name: 'Business' },
+  { name: 'Gift' },
+  { name: 'Other Income' },
+];
+
+const DEFAULT_EXPENSE_CATEGORIES: ReadonlyArray<{ name: string }> = [
+  { name: 'Rent' },
+  { name: 'Food & Dining' },
+  { name: 'Transport' },
+  { name: 'Utilities' },
+  { name: 'Shopping' },
+  { name: 'Gifts & Family' },
+  { name: 'Phone & Internet' },
+  { name: 'Health' },
+  { name: 'Education' },
+  { name: 'Travel' },
+];
+
+/**
+ * Build the default Category[] list. IDs are stable string seeds so
+ * they're recognisable across loads (useful for tests / debugging),
+ * not cryptographic uids. Real users get fresh uids via uid() — these
+ * are only the defaults.
+ */
+function buildDefaultCategories(): Category[] {
+  const inc = DEFAULT_INCOME_CATEGORIES.map((c, i) => ({
+    id: `default-inc-${i}-${c.name.toLowerCase().replace(/[^a-z]+/g, '-')}`,
+    type: 'income' as const,
+    name: c.name,
+  }));
+  const exp = DEFAULT_EXPENSE_CATEGORIES.map((c, i) => ({
+    id: `default-exp-${i}-${c.name.toLowerCase().replace(/[^a-z]+/g, '-')}`,
+    type: 'expense' as const,
+    name: c.name,
+  }));
+  return [...inc, ...exp];
+}
 
 export const DEFAULT_STATE: State = {
   version: 1,
@@ -15,7 +65,7 @@ export const DEFAULT_STATE: State = {
   goals: [],
   debts: [],
   investments: [],
-  categories: [],
+  categories: buildDefaultCategories(),
   settings: { theme: 'dark', onboardingComplete: false },
 };
 
@@ -24,7 +74,8 @@ export function load(): State {
     const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(KEY) : null;
     if (!raw) return { ...DEFAULT_STATE };
     const parsed = JSON.parse(raw);
-    return validate(parsed) ? merge(parsed) : { ...DEFAULT_STATE };
+    if (!validate(parsed)) return { ...DEFAULT_STATE };
+    return mergeDefaults(parsed);
   } catch {
     return { ...DEFAULT_STATE };
   }
@@ -48,10 +99,26 @@ function validate(s: unknown): s is Partial<State> {
     .every(k => Array.isArray(obj[k]) || (k === 'settings' && typeof obj[k] === 'object'));
 }
 
-function merge(s: Partial<State>): State {
-  return {
+/**
+ * Merge persisted state on top of DEFAULT_STATE, and additionally add
+ * any *new* default categories the user is missing. Existing categories
+ * (matched by `name`) are preserved (keeping their ids and any of the
+ * user's edits); new defaults are appended.
+ */
+function mergeDefaults(s: Partial<State>): State {
+  const merged: State = {
     ...DEFAULT_STATE,
     ...s,
     settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
   };
+  merged.categories = mergeCategories(merged.categories ?? []);
+  return merged;
+}
+
+function mergeCategories(existing: Category[]): Category[] {
+  const existingNames = new Set(existing.map(c => c.name.toLowerCase()));
+  const additions = buildDefaultCategories().filter(
+    c => !existingNames.has(c.name.toLowerCase())
+  );
+  return [...existing, ...additions];
 }

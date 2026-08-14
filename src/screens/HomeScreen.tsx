@@ -111,7 +111,7 @@ export function HomeScreen() {
       <div className="grid grid-cols-3 gap-4">
         <Stat
           label="Total debt"
-          value={fmtSignedDebt(netDebt)}
+          value={fmtDebtMagnitude(netDebt)}
           trend={
             activeDebtCount === 0
               ? 'no active debts'
@@ -175,21 +175,12 @@ export function HomeScreen() {
 /* ---------- helpers ---------- */
 
 /**
- * Signed BDT for the Total debt tile, driven by the *value's* sign:
- *   positive net debt → "− ৳ 90,000" (you owe)
- *   negative net debt → "+ ৳ 90,000" (they owe you)
- *   zero            → "৳ 0"
- *
- * Note: `fmtBDTSigned` from lib/format.ts encodes sign via the `sign`
- * parameter alone and takes Math.abs() of the value internally — meant
- * for transaction rows where 'out' = "this was an expense", not "this
- * number is negative". Mismatched for a debt figure, so we render the
- * sign character from the value directly.
+ * BDT for the Total debt tile — always positive. The direction is
+ * communicated by the caption ("you owe net" / "owed to you net"),
+ * not by a sign prefix, so the value reads as a clean magnitude.
  */
-function fmtSignedDebt(n: number): string {
-  if (n === 0) return fmtBDT(0);
-  const prefix = n > 0 ? '\u2212 ' : '+ ';
-  return prefix + fmtBDT(Math.abs(n));
+function fmtDebtMagnitude(n: number): string {
+  return fmtBDT(Math.abs(n));
 }
 
 function startsInMonth(iso: string, y: number, m: number): boolean {
