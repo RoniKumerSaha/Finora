@@ -18,15 +18,17 @@ import { useStore } from '../domain/store';
 import * as transactions from '../domain/transactions';
 import { fmtBDTSigned, fmtDate } from '../lib/format';
 
-type FilterKey = 'all' | 'income' | 'expense' | 'transfer' | 'thisMonth' | 'cash';
+type FilterKey = 'all' | 'income' | 'expense' | 'transfer' | 'payouts' | 'debtPayments' | 'thisMonth' | 'cash';
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',       label: 'All' },
-  { key: 'income',    label: 'Income' },
-  { key: 'expense',   label: 'Expense' },
-  { key: 'transfer',  label: 'Transfer' },
-  { key: 'thisMonth', label: 'This month' },
-  { key: 'cash',      label: 'Cash' },
+  { key: 'all',           label: 'All' },
+  { key: 'income',        label: 'Income' },
+  { key: 'expense',       label: 'Expense' },
+  { key: 'transfer',      label: 'Transfer' },
+  { key: 'payouts',       label: 'Payouts' },
+  { key: 'debtPayments',  label: 'Debt payments' },
+  { key: 'thisMonth',     label: 'This month' },
+  { key: 'cash',          label: 'Cash' },
 ];
 
 export function TransactionsListScreen() {
@@ -43,6 +45,8 @@ export function TransactionsListScreen() {
         case 'income':    return tx.type === 'income';
         case 'expense':   return tx.type === 'expense';
         case 'transfer':  return tx.type === 'transfer';
+        case 'payouts':       return !!tx.linkedInvestmentId;
+        case 'debtPayments':  return !!tx.linkedDebtId;
         case 'thisMonth': return tx.date.startsWith(ym);
         case 'cash': {
           const acc =

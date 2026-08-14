@@ -78,7 +78,7 @@ export function InvestmentDetailScreen() {
     t => t.linkedInvestmentId === inv.id && t.type === 'income'
   );
   const contributed = isDps ? dpsContributedSoFar(inv, state.transactions) : 0;
-  const paidOut = isDps ? dpsPaidOutSoFar(inv, state.transactions) : 0;
+  const paidOut = dpsPaidOutSoFar(inv, state.transactions);
   const currentValue = isDps ? dpsCurrentValue(inv, state.transactions) : 0;
   const expectedInterest = isDps
     ? Math.max(0, dpsMaturityValue(inv) - (Number(inv.monthlyContribution) || 0) * (Number(inv.termMonths) || 0))
@@ -166,21 +166,27 @@ export function InvestmentDetailScreen() {
   }
 
   function onRecordPayout() {
-    // DPS-specific: deep-link to the Add Income form with everything
-    // prefilled so the user records the actual bank payout as a single
-    // income transaction. Saving the form auto-closes this DPS via
-    // recompute (when payouts >= contributions).
+    // Deep-link to the Add Income form with everything prefilled so the
+    // user records the actual bank payout as a single income transaction.
+    // Saving the form auto-closes the investment via recompute (when
+    // payouts >= remaining).
     //
-    // Prefill is the *remaining* amount = current value - paidOut so far.
-    // If the user already recorded some payouts along the way, the next
-    // one only covers what the bank still owes.
+    // What "remaining" means depends on the type:
+    //   - DPS: currentValue (compounded to today) - paidOut so far.
+    //     The bank can pay out early at the current value, and the user
+    //     may have already recorded partial payouts.
+    //   - FDR / savings: maturityValue (principal + simple interest) -
+    //     paidOut so far. The bank pays the full maturity value on the
+    //     maturity date; subtract anything already taken.
     if (!inv?.payoutAccountId) return;
-    const remaining = Math.max(0, currentValue - paidOut);
+    const remainingBase = isDps ? currentValue : projected;
+    const remaining = Math.max(0, remainingBase - paidOut);
+    const label = isDps ? 'DPS payout' : 'maturity payout';
     const params = new URLSearchParams({
       amount: String(Math.round(remaining)),
       accountId: inv.payoutAccountId,
       linkedInvestmentId: inv.id,
-      note: `DPS maturity payout — ${inv.name}`,
+      note: `${label} — ${inv.name}`,
     });
     navigate(`/transactions/new/income?${params.toString()}`);
   }
@@ -287,10 +293,10 @@ export function InvestmentDetailScreen() {
             <>
               <Stat label="Contributed so far" value={fmtBDT(contributed)} />
               <Stat label="Current value" value={fmtBDT(currentValue)} hint="Compounded to today" />
-              {paidOut > 0 && (
-                <Stat label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
-              )}
             </>
+          )}
+          {paidOut > 0 && (
+            <Stat label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
           )}
           <Stat
             label={isDps ? 'Projected at maturity' : 'Maturity value'}
@@ -317,16 +323,16 @@ export function InvestmentDetailScreen() {
       {/* DPS contribution form is rendered as a modal (see ContributeModal at end of file). */}
 
       {/* Status actions */}
-      {status === 'active' && (
+      {(status === 'active' || status === 'matured') && (
         <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-          <h2 className="heading h3-modal mb-3">When it matures</h2>
+          <h2 className="heading h3-modal mb-3">{status === 'matured' ? 'Matured' : 'When it matures'}</h2>
           {isDps ? (
             <>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="primary"
                   onClick={onRecordPayout}
-                  disabled={!inv.payoutAccountId}
+                  disabled={!inv.payoutAccountId || currentValue - paidOut <= 0}
                 >
                   Record maturity payout
                 </Button>
@@ -356,13 +362,32 @@ export function InvestmentDetailScreen() {
           ) : (
             <>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  onClick={onRecordPayout}
+                  disabled={!inv.payoutAccountId || projected - paidOut <= 0}
+                >
+                  Record maturity payout
+                </Button>
                 <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
                 <Button variant="secondary" onClick={onClose}>Close this investment</Button>
               </div>
+              {!inv.payoutAccountId && (
+                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+                  Set a <strong>payout account</strong> on this {inv.type.toUpperCase()} to record the maturity payout.{' '}
+                  <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
+                  to add one — without it, the bank has nowhere to send the money back.
+                </div>
+              )}
               <p className="text-[12px] text-muted mt-3 leading-relaxed">
+                <strong>Record maturity payout</strong> opens the income form with the maturity amount
+                ({fmtBDT(projected)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, projected - paidOut))})
+                pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
+                which then shows in the Paid out row above and in the Activity log below.
+                <br />
                 <strong>Roll over</strong> creates a fresh investment starting the day after maturity.
                 <br />
-                <strong>Close</strong> marks this one done; record any payout as Income to bring the money back.
+                <strong>Close</strong> marks this one done manually — useful if you already received the money outside the app and just want to retire the record.
               </p>
             </>
           )}

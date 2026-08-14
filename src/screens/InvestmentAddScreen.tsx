@@ -4,6 +4,10 @@
  * Type-aware: when type === 'dps', the form shows a monthlyContribution
  * field and the "principal" field is hidden (DPS is contribution-based).
  * Maturity preview uses annuity-due for DPS, simple interest otherwise.
+ *
+ * The payout-account dropdown shows the live balance beneath it, matching
+ * the transfer form's From/To pattern so users see what'll receive the
+ * maturity value.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +16,8 @@ import * as investments from '../domain/investments';
 import * as accounts from '../domain/accounts';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
+import { accountBalance } from '../domain/math';
+import { fmtBDT } from '../lib/format';
 import type { InvestmentType } from '../domain/types';
 
 export function InvestmentAddScreen() {
@@ -128,6 +134,11 @@ export function InvestmentAddScreen() {
           <option value="">— None —</option>
           {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </Select>
+        {payoutAccountId && (
+          <div className="text-xs text-muted mt-1.5">
+            Balance: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions))}
+          </div>
+        )}
       </Field>
       <Field label="Institution (optional)">
         <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
