@@ -6,6 +6,16 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
 
+/**
+ * SettingsScreen — local-only app preferences.
+ *
+ * Spine: docs/ux-designs/ux-finora-2026-08-14-about-section/EXPERIENCE.md
+ *
+ * Two-column layout on desktop (>=768px): existing controls on the
+ * left, an About panel on the right. On narrow viewports the layout
+ * collapses to a single column with About rendered after the Danger
+ * zone.
+ */
 export function SettingsScreen() {
   const theme = useStore(s => s.state.settings.theme);
   const setTheme = useStore(s => s.setTheme);
@@ -111,79 +121,152 @@ export function SettingsScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-[640px]">
+    <div className="flex flex-col gap-6 max-w-[1100px]">
       <div>
         <h1 className="heading h1-screen">Settings</h1>
         <div className="text-muted text-[13px] mt-1.5">Theme, backup, demo data, and reset.</div>
       </div>
 
-      <section className="card">
-        <h2 className="heading h3-modal mb-4">Theme</h2>
-        <div className="flex gap-2 flex-wrap">
-          {(['dark', 'light', 'auto'] as Theme[]).map(t => {
-            const active = theme === t;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTheme(t)}
-                className={[
-                  'px-4 py-2.5 rounded-btn text-[13.5px] font-bold transition border',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                  active
-                    ? 'bg-primary text-primary-on border-primary'
-                    : 'bg-surface text-muted border-border hover:text-ink hover:bg-surface-2',
-                ].join(' ')}
-              >
-                {t}
-              </button>
-            );
-          })}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
+        {/* Left column — existing controls */}
+        <div className="flex flex-col gap-6">
+          <section className="card">
+            <h2 className="heading h3-modal mb-4">Theme</h2>
+            <div className="flex gap-2 flex-wrap">
+              {(['dark', 'light', 'auto'] as Theme[]).map(t => {
+                const active = theme === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTheme(t)}
+                    className={[
+                      'px-4 py-2.5 rounded-btn text-[13.5px] font-bold transition border',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                      active
+                        ? 'bg-primary text-primary-on border-primary'
+                        : 'bg-surface text-muted border-border hover:text-ink hover:bg-surface-2',
+                    ].join(' ')}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="card">
+            <h2 className="heading h3-modal mb-4">Backup</h2>
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="primary" onClick={onExport}>Export backup</Button>
+              <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Import backup</Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={onImportFile}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-muted mt-4">
+              Exports save to <code>finora-backup-YYYY-MM-DD.json</code>. Import replaces all data after confirmation.
+            </p>
+          </section>
+
+          <section className="card">
+            <h2 className="heading h3-modal mb-4">Demo data</h2>
+            <p className="text-[13px] text-muted mb-4">
+              Load a small sample dataset (3 accounts, 4 transactions, 1 goal, 1 DPS) so the app isn't empty.
+            </p>
+            <Button variant="primary" onClick={onSeedDemo}>Load demo data</Button>
+          </section>
+
+          <section
+            className="rounded-card p-6"
+            style={{
+              background: 'var(--danger-callout-bg)',
+              border: '1px solid var(--danger)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+            }}
+          >
+            <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
+            <p className="text-[13px] text-muted mb-4">
+              Removes every account, transaction, goal, debt, and investment. Your onboarding state is kept.
+            </p>
+            <Button variant="danger" onClick={onWipe}>Wipe all data</Button>
+          </section>
         </div>
-      </section>
 
-      <section className="card">
-        <h2 className="heading h3-modal mb-4">Backup</h2>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="primary" onClick={onExport}>Export backup</Button>
-          <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Import backup</Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            onChange={onImportFile}
-            className="hidden"
-          />
-        </div>
-        <p className="text-xs text-muted mt-4">
-          Exports save to <code>finora-backup-YYYY-MM-DD.json</code>. Import replaces all data after confirmation.
-        </p>
-      </section>
-
-      <section className="card">
-        <h2 className="heading h3-modal mb-4">Demo data</h2>
-        <p className="text-[13px] text-muted mb-4">
-          Load a small sample dataset (3 accounts, 4 transactions, 1 goal, 1 DPS) so the app isn't empty.
-        </p>
-        <Button variant="primary" onClick={onSeedDemo}>Load demo data</Button>
-      </section>
-
-      <section
-        className="rounded-card p-6"
-        style={{
-          background: 'var(--danger-callout-bg)',
-          border: '1px solid var(--danger)',
-          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
-        }}
-      >
-        <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-        <p className="text-[13px] text-muted mb-4">
-          Removes every account, transaction, goal, debt, and investment. Your onboarding state is kept.
-        </p>
-        <Button variant="danger" onClick={onWipe}>Wipe all data</Button>
-      </section>
+        {/* Right column — About */}
+        <AboutPanel onReset={onWipe} />
+      </div>
 
       {dialog}
+    </div>
+  );
+}
+
+/* ---------- About panel ---------- */
+
+function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
+  const entryCount = useStore(s =>
+    s.state.accounts.length +
+    s.state.transactions.length +
+    s.state.goals.length +
+    s.state.debts.length +
+    s.state.investments.length
+  );
+
+  // VITE_APP_VERSION is set at build time when a release is cut.
+  // Hard-coded fallback matches package.json "version" (1.0.0).
+  const version = (import.meta as any).env?.VITE_APP_VERSION || '1.0.0';
+
+  return (
+    <aside className="card">
+      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
+        About
+      </h2>
+
+      <div className="heading h3-modal mb-2">Finora</div>
+      <p className="text-[13px] text-muted leading-[1.5] mb-5">
+        A Bangladesh-first personal finance notebook. Local-only, single user, one currency (BDT ৳).
+      </p>
+
+      <dl className="flex flex-col gap-3 text-[12.5px] mb-5">
+        <MetaRow label="Version" value={`v${version}`} />
+        <MetaRow
+          label="Privacy"
+          value="All data lives in your browser. No accounts, no cloud, no telemetry."
+          block
+        />
+        <MetaRow
+          label="Storage"
+          value={
+            entryCount === 0
+              ? 'localStorage · empty'
+              : `localStorage · ${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`
+          }
+        />
+      </dl>
+
+      <div className="pt-4 border-t border-border flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={onReset}
+          className="self-start text-primary text-[12.5px] font-semibold hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+        >
+          Reset {'\u2192'}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function MetaRow({ label, value, block }: { label: string; value: string; block?: boolean }) {
+  return (
+    <div className={block ? 'flex flex-col gap-1' : 'flex justify-between items-baseline gap-3'}>
+      <dt className="text-muted">{label}</dt>
+      <dd className={block ? 'text-ink leading-[1.45]' : 'text-ink text-right'}>{value}</dd>
     </div>
   );
 }
