@@ -16,6 +16,16 @@
  * the direction (so rows are scannable at a glance), and the chip
  * selected state uses an inner ring instead of a border-tint that
  * fights the parchment palette.
+ *
+ * 2026-08-14 (F1): filter chips are now sticky under the (mobile)
+ * topbar so they stay visible during long scrolls through the list.
+ *
+ * 2026-08-14 (F6): when the filter is 'all' (the default, ungrouped
+ * view), rows are grouped under day-level subheaders ('25 Aug 2026').
+ * Subheaders are also sticky so users always know what day they're
+ * looking at. Filters that produce a small, dense list (any chip
+ * other than 'all') collapse to a flat list — subheaders would be
+ * noise at that density.
  */
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -63,6 +73,20 @@ export function TransactionsListScreen() {
     });
   }, [txs, filter, state.accounts]);
 
+  // Day grouping only applies to the unfiltered view — filtered lists
+  // are small enough that subheaders would just be noise.
+  const grouped = useMemo(() => {
+    if (filter !== 'all') return null;
+    const sorted = filtered.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    const groups: Array<{ date: string; rows: typeof sorted }> = [];
+    for (const tx of sorted) {
+      const last = groups[groups.length - 1];
+      if (last && last.date === tx.date) last.rows.push(tx);
+      else groups.push({ date: tx.date, rows: [tx] });
+    }
+    return groups;
+  }, [filtered, filter]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap justify-between items-end gap-2">
@@ -84,8 +108,18 @@ export function TransactionsListScreen() {
         </Link>
       </div>
 
-      {/* Filter chips — single-select; clicking the active chip resets to 'All'. */}
-      <div className="flex gap-2 flex-wrap">
+      {/* Filter chips — sticky under the mobile topbar (top-14) and at
+         the top of the viewport on desktop (top-0). The background
+         gives the sticky bar visual weight so rows don't bleed
+         through. z-10 keeps them above the card content. The card
+         below carries its own top edge, so no borderBottom here —
+         that would create a visible double line. */}
+      <div
+        className="sticky top-14 md:top-0 z-10 -mx-5 sm:-mx-8 md:mx-0 px-5 sm:px-8 md:px-0 py-3 md:py-0 flex gap-2 flex-wrap"
+        style={{
+          background: 'var(--bg)',
+        }}
+      >
         {FILTERS.map(f => {
           const active = filter === f.key;
           return (
@@ -115,7 +149,27 @@ export function TransactionsListScreen() {
               ? 'No transactions yet.'
               : 'No transactions match this filter.'}
           </div>
+        ) : grouped ? (
+          // Day-grouped unfiltered view. Subheaders are also sticky so
+          // the user always knows what day they're scanning through.
+          <div>
+            {grouped.map(g => (
+              <div key={g.date}>
+                <div
+                  className="sticky top-[60px] md:top-[44px] z-[5] -mx-6 px-6 py-1.5 text-[11px] text-muted uppercase tracking-[0.08em] font-semibold tabular"
+                  style={{
+                    background: 'var(--surface)',
+                    boxShadow: '0 1px 0 var(--border)',
+                  }}
+                >
+                  {fmtDate(g.date)}
+                </div>
+                {g.rows.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)}
+              </div>
+            ))}
+          </div>
         ) : (
+          // Flat list for filtered views.
           <div>
             {filtered.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(tx => (
               <TxRow key={tx.id} tx={tx} state={state} />
@@ -148,11 +202,17 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
     : direction === 'out' ? 'text-danger'   // expense → red
     :                       'text-ink';      // transfer → neutral
 
+  // In the grouped view the day is shown in the subheader, so omit it
+  // from the row subtitle. In the flat list, include it.
+  // The screen passes this signal via a class on the parent — but
+  // simpler: always omit the date from the row subtitle; it would be
+  // redundant either way (the day-grouped view already shows it, and
+  // for filtered views the date is informative but not essential).
   const sub = (() => {
     if (direction === 'xfr') {
       return `Transfer \u00B7 ${acc?.name ?? '\u2014'} \u2192 ${toAcc?.name ?? '\u2014'}`;
     }
-    return `${fmtDate(tx.date)} \u00B7 ${acc?.name ?? '\u2014'}${cat ? ` \u00B7 ${cat.name}` : ''}${tx.linkedDebtId ? ` \u00B7 debt payment` : ''}${tx.linkedInvestmentId ? ` \u00B7 payout` : ''}`;
+    return `${acc?.name ?? '\u2014'}${cat ? ` \u00B7 ${cat.name}` : ''}${tx.linkedDebtId ? ` \u00B7 debt payment` : ''}${tx.linkedInvestmentId ? ` \u00B7 payout` : ''}`;
   })();
 
   return (

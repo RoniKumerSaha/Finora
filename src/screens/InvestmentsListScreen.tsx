@@ -14,9 +14,10 @@
  * tone-accented with the type's color (accent for FDR/savings, primary
  * for DPS).
  *
- * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
- * already pins a global "Add transaction" CTA. Investment creation is
- * still possible from the empty state.
+ * 2026-08-14 polish: the header carries an "Add" CTA — investments are
+ * a separate entity from transactions, so the global "Add transaction"
+ * sidebar CTA doesn't help here. The empty-state still gets its own
+ * contextual button so first-run users aren't stranded.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -41,9 +42,19 @@ export function InvestmentsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="heading h1-screen">Investments</h1>
-        <div className="text-muted text-[13px] mt-1.5 tabular">{invs.length} total</div>
+      <div className="flex flex-wrap justify-between items-end gap-2">
+        <div>
+          <h1 className="heading h1-screen">Investments</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">{invs.length} total</div>
+        </div>
+        <Link
+          to="/investments/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span className="text-base leading-none">+</span>
+          <span>Add</span>
+        </Link>
       </div>
 
       {invs.length === 0 ? (
@@ -123,10 +134,17 @@ function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
   const days = daysToMaturity(inv);
   const mat = investmentMaturityValueTyped(inv);
   const isDps = inv.type === 'dps';
+  // Long durations (≥ 1 year) read more naturally as years; short
+  // durations stay in days. 1 decimal keeps the precision while
+  // staying compact (e.g. "in ~2.4y" instead of "in 877d").
   const label =
-    days > 0 ? `Matures in ${days}d`
-    : days === 0 ? 'Matures today'
-    : `Matured ${-days}d ago`;
+    days > 0
+      ? days >= 365
+        ? `Matures in ~${(days / 365).toFixed(1)}y`
+        : `Matures in ${days}d`
+      : days === 0
+        ? 'Matures today'
+        : `Matured ${-days}d ago`;
   const amountLine = isDps
     ? `${fmtBDT(contributed)} ${MIDDOT} ${inv.monthlyContribution ? `${fmtBDT(inv.monthlyContribution)}/mo` : ''}`
     : fmtBDT(inv.principal);

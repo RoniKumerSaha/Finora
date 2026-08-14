@@ -100,17 +100,11 @@ export function HomeScreen() {
         </div>
       </div>
 
-      {/* 3-up stat row — point-in-time. Balance, income, expense.
-         Stacks to a single column below sm (640px) so the 28px values
-         don't overflow on small viewports. */}
+      {/* Row 1 — point-in-time assets: Total balance, Total debt, Total investments.
+         These are the "where my money lives right now" trio. Stacks to a
+         single column below sm (640px) so the 28px values don't overflow. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Total balance"         value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} />
-        <Stat label="Income (this month)"   value={fmtBDT(income)}        trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
-        <Stat label="Expenses (this month)" value={fmtBDT(expenses)}     trend={`${expenseCount} entries`} tone="out" />
-      </div>
-
-      {/* 3-up net row — debt, investments, net worth. Parallel to the row above. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Stat label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} tone="primary" />
         <Stat
           label="Total debt"
           value={fmtDebtMagnitude(netDebt)}
@@ -131,6 +125,14 @@ export function HomeScreen() {
           trend={investmentCount === 0 ? 'none yet' : `across ${investmentCount} ${investmentCount === 1 ? 'investment' : 'investments'}`}
           tone="accent"
         />
+      </div>
+
+      {/* Row 2 — this-month activity + net worth: Income, Expense, Net worth.
+         The income/expense pair are the action-oriented duo; net worth
+         closes the section as the derived summary. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Stat label="Income (this month)"   value={fmtBDT(income)}    trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
+        <Stat label="Expenses (this month)" value={fmtBDT(expenses)} trend={`${expenseCount} entries`} tone="out" />
         <Stat
           label="Net worth"
           value={fmtBDT(netWorth)}
@@ -226,11 +228,12 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
   );
 }
 
-function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' }) {
+function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' }) {
   const color =
     tone === 'out'    ? 'text-danger' :
     tone === 'in'     ? 'text-primary' :
     tone === 'accent' ? 'text-accent' :
+    tone === 'primary' ? 'text-primary' :
                         'text-ink';
   return (
     <div className="card">

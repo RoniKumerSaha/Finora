@@ -12,9 +12,10 @@
  * height (8px), refined row hover, and a left-edge accent dot that
  * fades in on row hover.
  *
- * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
- * already pins a global "Add transaction" CTA. Adding debts is still
- * possible from the empty state.
+ * 2026-08-14 polish: the header carries an "Add" CTA — debts are a
+ * separate entity from transactions, so the global "Add transaction"
+ * sidebar CTA doesn't help here. The empty-state still gets its own
+ * contextual button so first-run users aren't stranded.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -33,11 +34,21 @@ export function DebtsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="heading h1-screen">Debts</h1>
-        <div className="text-muted text-[13px] mt-1.5 tabular">
-          {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
+      <div className="flex flex-wrap justify-between items-end gap-2">
+        <div>
+          <h1 className="heading h1-screen">Debts</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">
+            {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
+          </div>
         </div>
+        <Link
+          to="/debts/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span className="text-base leading-none">+</span>
+          <span>Add</span>
+        </Link>
       </div>
 
       {ds.length === 0 ? (
@@ -123,7 +134,9 @@ function DebtGroup({
     <section className="card">
       <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3.5">{title}</h2>
       {rows.length === 0 ? (
-        <div className="text-muted text-sm py-6 text-center">Nothing here.</div>
+        <div className="text-muted text-sm py-6 text-center">
+          {tone === 'primary' ? 'Nothing owed to you \u2014 nice!' : 'Nothing here.'}
+        </div>
       ) : (
         <div>
           {rows.map(d => {

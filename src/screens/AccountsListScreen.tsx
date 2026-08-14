@@ -13,9 +13,10 @@
  * and destructive actions live behind a `⋯` overflow menu instead of
  * being permanently visible red links.
  *
- * 2026-08-14 polish (dedupe Add): the header Add button is gone —
- * Shell already pins a global "Add transaction" CTA. The empty-state
- * still gets a contextual button so first-run users aren't stranded.
+ * 2026-08-14 polish: the header carries an "Add" CTA — accounts are a
+ * separate entity from transactions, so the global "Add transaction"
+ * sidebar CTA doesn't help here. The empty-state still gets its own
+ * contextual button so first-run users aren't stranded.
  */
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -60,9 +61,19 @@ export function AccountsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="heading h1-screen">Accounts</h1>
-        <div className="text-muted text-[13px] mt-1.5 tabular">{accs.length} total</div>
+      <div className="flex flex-wrap justify-between items-end gap-2">
+        <div>
+          <h1 className="heading h1-screen">Accounts</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">{accs.length} total</div>
+        </div>
+        <Link
+          to="/accounts/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span className="text-base leading-none">+</span>
+          <span>Add</span>
+        </Link>
       </div>
 
       <section className="card">
@@ -98,7 +109,7 @@ export function AccountsListScreen() {
                     <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight tracking-tight">{a.name}</div>
                       <div className="text-xs text-muted leading-tight mt-1 tabular">
-                        {accountTypeLabel(a.type)} · opens at {fmtBDT(a.openingBalance)}
+                        {accountTypeLabel(a.type)}{a.openingBalance > 0 ? ` · opens at ${fmtBDT(a.openingBalance)}` : ''}
                       </div>
                     </div>
                   </div>

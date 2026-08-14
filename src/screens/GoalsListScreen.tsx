@@ -12,9 +12,10 @@
  * 12px, 24px padding, refined shadow), the progress bar is slightly
  * taller, and hover affordance is subtle border + lift.
  *
- * 2026-08-14 polish (dedupe Add): header Add button removed — Shell
- * already pins a global "Add transaction" CTA. Goal creation is still
- * possible from the empty state.
+ * 2026-08-14 polish: header carries an "Add" CTA — goals are a
+ * separate entity from transactions, so the global "Add transaction"
+ * sidebar CTA doesn't help here. The empty state has its own contextual
+ * button.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -28,9 +29,19 @@ export function GoalsListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="heading h1-screen">Goals</h1>
-        <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
+      <div className="flex flex-wrap justify-between items-end gap-2">
+        <div>
+          <h1 className="heading h1-screen">Goals</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
+        </div>
+        <Link
+          to="/goals/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span className="text-base leading-none">+</span>
+          <span>Add</span>
+        </Link>
       </div>
 
       {gs.length === 0 ? (

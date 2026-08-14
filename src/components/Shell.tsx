@@ -202,7 +202,7 @@ export function Shell({ children }: { children: ReactNode }) {
           )}
         </aside>
 
-        <main className="px-5 sm:px-8 md:px-10 py-6 md:py-8 overflow-x-auto max-w-[1280px]">
+        <main className="px-5 sm:px-8 md:px-10 py-6 md:py-8 max-w-[1280px]">
           {children}
         </main>
       </div>
