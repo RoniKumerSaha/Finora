@@ -26,7 +26,7 @@ export function DebtAddScreen() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      showBanner({ what: 'Debt name is required', why: 'Debts without a name cannot be tracked.', fix: 'Enter a name (e.g. "Loan from Rahim").' });
+      showBanner({ what: 'Debt name is required', why: 'Debts without a name cannot be tracked.', fix: 'Enter a name (e.g. "Loan from a friend").' });
       return;
     }
     if (!(Number(total) > 0)) {
@@ -59,7 +59,7 @@ export function DebtAddScreen() {
           </Select>
         </Field>
         <Field label="Name">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from Rahim, advance to Karim…" autoFocus />
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from a friend, advance to a colleague…" autoFocus />
         </Field>
         <Field label="Total amount" error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
@@ -73,7 +73,7 @@ export function DebtAddScreen() {
           />
         </Field>
         <Field label="Person (optional)">
-          <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Rahim, Karim…" />
+          <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Friend, family…" />
         </Field>
         <Field label="Due date (optional)">
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />

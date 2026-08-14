@@ -22,7 +22,7 @@ export function OnboardingScreen() {
         </p>
       </div>
       <ol className="flex flex-col gap-3 text-[13.5px] leading-relaxed">
-        <li><span className="text-primary font-bold tabular">①</span> Create an account (cash, bank, bKash, …)</li>
+        <li><span className="text-primary font-bold tabular">①</span> Create an account (cash, bank, mobile wallet, …)</li>
         <li><span className="text-primary font-bold tabular">②</span> Log a transaction to see balances update</li>
         <li><span className="text-primary font-bold tabular">③</span> Add a goal, debt, or investment</li>
       </ol>

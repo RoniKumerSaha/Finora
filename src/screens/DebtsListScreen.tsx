@@ -144,7 +144,11 @@ function DebtGroup({
             const pct = d.total > 0 ? Math.min(100, Math.round(((d.paidSoFar || 0) / d.total) * 100)) : 0;
             const left = d.total - (d.paidSoFar || 0);
             const iconBg = tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-primary-soft text-primary';
-            const barFill = tone === 'danger' ? 'bg-danger' : 'bg-gradient-to-r from-primary to-accent';
+            // Gradient pattern matches the goal cards (primary → accent for
+            // progress-positive, danger → warn for progress-negative). i_owe
+            // (you're paying it down) reads as a "progress" semantic too, so
+            // we give it the same gradient treatment instead of flat red.
+            const barFill = tone === 'danger' ? 'bg-gradient-to-r from-danger to-warn' : 'bg-gradient-to-r from-primary to-accent';
             const amtColor = tone === 'danger' ? 'text-danger' : 'text-primary';
             const accentColor = tone === 'danger' ? 'var(--danger)' : 'var(--primary)';
             return (

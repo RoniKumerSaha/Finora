@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Finora · Transaction Category Tags Mock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ---- Design tokens (mirror src/styles/theme.css) ---- */
+  :root {
+    --bg:           #1E2A26;
+    --surface:      #253229;
+    --surface-2:    #2E3C34;
+    --ink:          #F1F3EF;
+    --muted:        #94A59C;
+    --primary:      #5DBFA0;
+    --primary-soft: rgba(93, 191, 160, 0.18);
+    --accent:       #D9B26B;
+    --accent-soft:  rgba(217, 178, 107, 0.18);
+    --danger:       #C76A5A;
+    --danger-soft:  rgba(199, 106, 90, 0.18);
+    --info:         #6FA8DC;
+    --info-soft:    rgba(111, 168, 220, 0.18);
+    --success:      #6BAA8A;
+    --success-soft: rgba(107, 170, 138, 0.18);
+    --border:       #324139;
+    --r-card: 12px; --r-pill: 999px;
+    --shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    font-size: 14px; line-height: 1.5; }
+
+  .page { max-width: 880px; margin: 0 auto; padding: 32px 24px 96px; }
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .lede { color: var(--muted); font-size: 13.5px; margin: 0 0 28px; max-width: 640px; }
+
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
+       color: var(--muted); margin: 32px 0 14px; font-weight: 700; }
+  h2 .num { color: var(--primary); margin-right: 8px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    padding: 8px 0;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* ---- Transaction row ---- */
+  .row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    transition: background 0.15s;
+  }
+  .row:hover { background: rgba(255,255,255,0.02); }
+  .row:last-child { border-bottom: 0; }
+
+  .row .left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .row .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: grid; place-items: center; flex-shrink: 0;
+    font-weight: 700;
+  }
+  .row .icon.in  { background: var(--primary-soft); color: var(--primary); }
+  .row .icon.out { background: var(--danger-soft);  color: var(--danger);  }
+  .row .icon.xfr { background: var(--accent-soft);  color: var(--accent);  }
+
+  .row .meta { min-width: 0; }
+  .row .title {
+    font-weight: 600; font-size: 14px; line-height: 1.25; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .row .sub {
+    color: var(--muted); font-size: 12px; margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .row .right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .row .amt { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .row .amt.in  { color: var(--primary); }
+  .row .amt.out { color: var(--danger); }
+  .row .chev {
+    color: var(--muted); width: 16px; height: 16px;
+    border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor;
+    transform: rotate(45deg); display: inline-block; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .row:hover .chev { opacity: 1; }
+
+  /* ---- SVG arrow icons inside the tile ---- */
+  .row .icon svg { width: 18px; height: 18px; }
+
+  /* ---- Tag pill ---- */
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+  .tag svg { width: 10px; height: 10px; }
+
+  /* Tag tone variants. Each tone pairs the existing app palette with
+     a tone-aware text/background combo. */
+  .tag.payout   { background: var(--accent-soft);  color: var(--accent);  }
+  .tag.debt     { background: var(--info-soft);    color: var(--info);    }
+  .tag.debt-out { background: var(--primary-soft); color: var(--primary); }
+  .tag.goal     { background: var(--success-soft); color: var(--success); }
+  .tag.muted    { background: rgba(148, 165, 156, 0.12); color: var(--muted); }
+
+  /* ---- Subheader (day group) ---- */
+  .subhead {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 700;
+    background: var(--surface);
+    padding: 10px 20px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ---- Comparison table ---- */
+  .compare {
+    display: grid; grid-template-columns: 180px 1fr; gap: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-card); padding: 18px 22px;
+    margin-bottom: 12px;
+  }
+  .compare .label { color: var(--muted); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em; padding-top: 8px; }
+  .compare .swatches { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  /* ---- Swatch chart (just the pills, for at-a-glance review) ---- */
+  .swatch-only {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-card); padding: 18px 22px;
+  }
+
+  /* ---- Side-by-side before/after row ---- */
+  .before-after {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .before-after .col {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-card); overflow: hidden;
+  }
+  .before-after .col h3 {
+    margin: 0; padding: 10px 16px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .before-after .col .row { border-bottom: 0; padding: 14px 16px; }
+  .before-after .col .row + .row { border-top: 1px solid var(--border); }
+
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+
+  /* accent dot on hover (matches current app pattern) */
+  .row .accent-dot {
+    position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 24px; border-radius: 0 3px 3px 0;
+    background: var(--primary); opacity: 0; transition: opacity 0.15s;
+  }
+  .row:hover .accent-dot { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Transaction category tags</h1>
+  <p class="lede">
+    Replace the trailing <code>· payout</code> / <code>· debt</code> plain text with small pill tags. The tags read as typed
+    classifications instead of ambiguous metadata, and they match the chip vocabulary already used elsewhere in the app
+    (Active status, percent chips, type picker).
+  </p>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">01</span> Before / After</h2>
+  <div class="before-after">
+
+    <div class="col">
+      <h3>Today — plain text</h3>
+      <div class="row">
+        <span class="accent-dot"></span>
+        <div class="left">
+          <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+          <div class="meta">
+            <div class="title">DPS installment #16</div>
+            <div class="sub">DBBL Bank · payout</div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="amt out">− ৳ 6,000</div>
+          <span class="chev"></span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="accent-dot"></span>
+        <div class="left">
+          <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+          <div class="meta">
+            <div class="title">Partial payment — Rahim</div>
+            <div class="sub">Cash wallet · debt payment</div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="amt out">− ৳ 8,000</div>
+          <span class="chev"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <h3>Proposed — pill tags</h3>
+      <div class="row">
+        <span class="accent-dot"></span>
+        <div class="left">
+          <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+          <div class="meta">
+            <div class="title">DPS installment #16 <span class="tag payout">Payout</span></div>
+            <div class="sub">DBBL Bank</div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="amt out">− ৳ 6,000</div>
+          <span class="chev"></span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="accent-dot"></span>
+        <div class="left">
+          <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+          <div class="meta">
+            <div class="title">Partial payment <span class="tag debt-out">Debt payment</span></div>
+            <div class="sub">Cash wallet · Rahim (cousin)</div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="amt out">− ৳ 8,000</div>
+          <span class="chev"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">02</span> Tag palette</h2>
+  <div class="swatch-only">
+    <span class="tag payout">Payout</span>
+    <span class="tag debt">Debt received</span>
+    <span class="tag debt-out">Debt payment</span>
+    <span class="tag goal">Goal</span>
+    <span class="tag muted">Category fallback</span>
+  </div>
+  <p class="note">
+    Each tag's tone is semantic:
+    <strong>payout</strong> = accent (matches the gold "to mature" treatment in investments),
+    <strong>debt payment</strong> = primary (you're paying down debt — a savings-positive action),
+    <strong>debt received</strong> = info (someone is paying you back),
+    <strong>goal</strong> = success (you're saving toward something).
+  </p>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">03</span> Tone rationale</h2>
+  <div class="compare">
+    <div class="label">Payout</div>
+    <div class="swatches">
+      <span class="tag payout">Payout</span>
+      <span style="color: var(--muted); font-size: 12.5px;">→ maturity-linked investment income; matches the gold investment card.</span>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="label">Debt payment</div>
+    <div class="swatches">
+      <span class="tag debt-out">Debt payment</span>
+      <span style="color: var(--muted); font-size: 12.5px;">→ you're paying down debt; primary green (savings-positive).</span>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="label">Debt received</div>
+    <div class="swatches">
+      <span class="tag debt">Debt received</span>
+      <span style="color: var(--muted); font-size: 12.5px;">→ someone is paying you back; info blue (distinct from payout).</span>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="label">Goal</div>
+    <div class="swatches">
+      <span class="tag goal">Goal</span>
+      <span style="color: var(--muted); font-size: 12.5px;">→ contribution toward a savings goal; success green.</span>
+    </div>
+  </div>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">04</span> In context — full day group</h2>
+  <div class="card">
+    <div class="subhead">25 Aug 2026</div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">Salary <span class="tag muted">Income</span></div>
+          <div class="sub">BRAC Salary Account</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt in">+ ৳ 60,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">DPS installment #16 <span class="tag payout">Payout</span></div>
+          <div class="sub">DBBL Bank · DPS Jumbo</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt out">− ৳ 6,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">Partial payment <span class="tag debt-out">Debt payment</span></div>
+          <div class="sub">Cash wallet · Rahim (cousin)</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt out">− ৳ 8,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">Monthly contribution <span class="tag goal">Goal</span></div>
+          <div class="sub">DBBL Bank · Parents' house</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt out">− ৳ 5,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">Karim payback <span class="tag debt">Debt received</span></div>
+          <div class="sub">bKash</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt in">+ ৳ 8,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon xfr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h14"/><path d="m14 5 3 3-3 3"/><path d="M21 16H7"/><path d="m10 13-3 3 3 3"/></svg></div>
+        <div class="meta">
+          <div class="title">Cash out for groceries</div>
+          <div class="sub">bKash → Cash</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt">৳ 3,000</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="accent-dot"></span>
+      <div class="left">
+        <div class="icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m5 12 7 7 7-7" fill="currentColor"/></svg></div>
+        <div class="meta">
+          <div class="title">Groceries — Shwapno</div>
+          <div class="sub">Cash wallet</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="amt out">− ৳ 2,400</div>
+        <span class="chev"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">05</span> How the pill is built</h2>
+  <p class="note" style="margin-bottom: 12px;">
+    Compact pill that sits inline with the title (next to the row's name, not below the subtitle).
+    Color comes from the existing palette — no new tokens. Tone picks automatically based on
+    <code>tx.linkedInvestmentId</code>, <code>tx.linkedDebtId</code>, or <code>tx.linkedGoalId</code>,
+    with direction logic for debt (i_owe = primary green, owed_to_me = info blue).
+  </p>
+  <div class="card">
+    <div style="padding: 18px 20px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12.5px; line-height: 1.7; color: var(--muted); white-space: pre;">.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tag.payout   { background: var(--accent-soft);  color: var(--accent);  }
+.tag.debt     { background: var(--info-soft);    color: var(--info);    }
+.tag.debt-out { background: var(--primary-soft); color: var(--primary); }
+.tag.goal     { background: var(--success-soft); color: var(--success); }
+.tag.muted    { background: rgba(148,165,156,.12); color: var(--muted); }</div>
+  </div>
+
+  <!-- =========================================================== -->
+  <h2><span class="num">06</span> Spec decisions</h2>
+  <ul style="color: var(--muted); font-size: 13px; line-height: 1.7; padding-left: 20px;">
+    <li><strong style="color: var(--ink);">Position:</strong> inline with title, right of the row name. Stays visible on hover/collapse, doesn't fight the subtitle.</li>
+    <li><strong style="color: var(--ink);">Subtitle cleanup:</strong> removes the redundant trailing <code>· payout</code> / <code>· debt</code> text — the tag replaces it. Account name stays in the subtitle.</li>
+    <li><strong style="color: var(--ink);">Precedence:</strong> investment &gt; debt &gt; goal if somehow linked to multiple (rare; current data model doesn't allow it, but cheap to be defensive).</li>
+    <li><strong style="color: var(--ink);">A11y:</strong> pill text is semantic ("Payout", "Debt payment") so it reads correctly to screen readers; tone is supplementary, not the only signal.</li>
+    <li><strong style="color: var(--ink);">Where to apply:</strong> transactions list (grouped + flat) and home "Recent activity" — both use the same <code>&lt;TxRow&gt;</code> so they stay in sync automatically.</li>
+  </ul>
+
+</div>
+</body>
+</html>

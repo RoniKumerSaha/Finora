@@ -34,7 +34,7 @@ export function AccountEditScreen() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      showBanner({ what: 'Account name is required', why: 'Accounts without a name cannot be identified in lists or transactions.', fix: 'Enter a name (e.g. "Cash", "DBBL Bank").' });
+      showBanner({ what: 'Account name is required', why: 'Accounts without a name cannot be identified in lists or transactions.', fix: 'Enter a name (e.g. "Cash", "Main Bank").' });
       return;
     }
     try {

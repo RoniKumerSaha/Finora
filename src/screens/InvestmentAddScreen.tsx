@@ -69,7 +69,7 @@ export function InvestmentAddScreen() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      showBanner({ what: 'Investment name is required', why: 'Investments without a name cannot be tracked.', fix: 'Enter a name (e.g. "DBBL DPS #1").' });
+      showBanner({ what: 'Investment name is required', why: 'Investments without a name cannot be tracked.', fix: 'Enter a name (e.g. "DPS #1").' });
       return;
     }
     if (!isDps && !(Number(principal) > 0)) {
@@ -115,7 +115,7 @@ export function InvestmentAddScreen() {
 
       <section className="card flex flex-col gap-5">
         <Field label="Name">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="DBBL DPS #1, EBL FDR…" autoFocus />
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="DPS #1, Main FDR…" autoFocus />
         </Field>
         <Field label="Type">
           <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
@@ -170,7 +170,7 @@ export function InvestmentAddScreen() {
           )}
         </Field>
         <Field label="Institution (optional)">
-          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
+          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="Bank name…" />
         </Field>
         {matPreview != null && (
           <div

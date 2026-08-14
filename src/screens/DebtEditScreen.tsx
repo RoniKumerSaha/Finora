@@ -85,7 +85,7 @@ export function DebtEditScreen() {
         kind: 'error',
         what: 'Debt name is required',
         why: 'Debts without a name cannot be tracked.',
-        fix: 'Enter a name (e.g. "Loan from Rahim").',
+        fix: 'Enter a name (e.g. "Loan from a friend").',
       });
       return;
     }

@@ -455,7 +455,7 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
               <div className="mt-1 h-1.5 rounded-pill overflow-hidden bg-surface-2">
                 <div
                   className="h-full rounded-pill"
-                  style={{ width: `${(r.amount / max) * 100}%`, background: 'var(--accent)' }}
+                  style={{ width: `${(r.amount / max) * 100}%`, background: 'linear-gradient(90deg, var(--accent), var(--primary))' }}
                 />
               </div>
             </div>
@@ -713,7 +713,12 @@ function DebtsCard({ debts }: { debts: ReturnType<typeof debtsForInsights> }) {
 
 function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }) {
   const isOwed = debt.direction === 'owed_to_me';
-  const trackColor = isOwed ? 'var(--primary)' : 'var(--danger)';
+  // Gradient matches the goal-card treatment: progress-positive uses
+  // primary → accent; debt-reduction (i_owe) uses danger → warn. The
+  // gradient gives the bar visual depth at the small 1.5px height.
+  const trackColor = isOwed
+    ? 'linear-gradient(90deg, var(--primary), var(--accent))'
+    : 'linear-gradient(90deg, var(--danger), var(--warn))';
   const chipBg = isOwed ? 'bg-primary-soft text-primary' : 'bg-danger-soft text-danger';
   const remainingColor = isOwed ? 'text-primary' : 'text-danger';
   return (

@@ -26,7 +26,7 @@ export function AccountAddScreen() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      showBanner({ what: 'Account name is required', why: 'Accounts without a name cannot be identified in lists or transactions.', fix: 'Enter a name (e.g. "Cash", "DBBL Bank").' });
+      showBanner({ what: 'Account name is required', why: 'Accounts without a name cannot be identified in lists or transactions.', fix: 'Enter a name (e.g. "Cash", "Main Bank").' });
       return;
     }
     try {
@@ -49,7 +49,7 @@ export function AccountAddScreen() {
       </header>
       <section className="card flex flex-col gap-5">
         <Field label="Name">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Cash, bKash, DBBL Bank…" autoFocus />
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Cash, Wallet, Main Bank…" autoFocus />
         </Field>
         <Field label="Type">
           <Select value={type} onChange={e => setType(e.target.value as AccountType)}>

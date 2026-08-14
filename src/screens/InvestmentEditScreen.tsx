@@ -166,7 +166,7 @@ export function InvestmentEditScreen() {
           </Select>
         </Field>
         <Field label="Institution (optional)">
-          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="DBBL, EBL, BRAC Bank…" />
+          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="Bank name…" />
         </Field>
         <div className="flex gap-2">
           <Button
