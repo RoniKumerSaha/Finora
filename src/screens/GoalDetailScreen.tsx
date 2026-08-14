@@ -12,11 +12,13 @@
  *   - Edit (toggled inline): name, target, targetDate; banner explains
  *     that the "saved" amount is derived and won't be edited.
  *
- * Contribute inline: account picker + amount + date — calls
+ * Contribute via modal: opens from the header button before Edit.
+ * Hidden once the goal is completed. Submits through
  * `goals.addContribution()` which creates a linked expense transaction.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
@@ -32,6 +34,7 @@ import { fmtBDT, fmtDate, fmtDateShort } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
+import type { Account } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -50,11 +53,12 @@ export function GoalDetailScreen() {
   const [target, setTarget] = useState(String(goal?.target ?? ''));
   const [targetDate, setTargetDate] = useState(goal?.targetDate ?? '');
 
-  // Contribution form state.
+  // Contribution form state (rendered inside ContributeModal).
   const [contribAmount, setContribAmount] = useState('');
   const [contribDate, setContribDate] = useState(new Date().toISOString().slice(0, 10));
   const [contribAccount, setContribAccount] = useState(accs[0]?.id ?? '');
   const [contribNote, setContribNote] = useState('');
+  const [showContributeForm, setShowContributeForm] = useState(false);
 
   if (!goal) {
     return (
@@ -162,6 +166,15 @@ export function GoalDetailScreen() {
         </div>
         {mode === 'view' && (
           <div className="flex gap-2">
+            {!completed && accs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowContributeForm(true)}
+                className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-primary text-primary-on hover:opacity-90"
+              >
+                + Add a contribution
+              </button>
+            )}
             <Button variant="secondary" onClick={() => setMode('edit')}>Edit</Button>
           </div>
         )}
@@ -250,36 +263,7 @@ export function GoalDetailScreen() {
         </form>
       )}
 
-      {/* Add contribution (inline) */}
-      {!completed && mode === 'view' && accs.length > 0 && (
-        <form onSubmit={onContribute} className="bg-surface border border-border rounded-card p-6 shadow-card flex flex-col gap-5">
-          <h2 className="heading h3-modal">Add a contribution</h2>
-          <p className="text-[13px] text-muted -mt-3">
-            Records an expense from the chosen account and links it to this goal.
-          </p>
-          <Field label="Amount">
-            <Input type="number" inputMode="decimal" value={contribAmount} onChange={e => setContribAmount(e.target.value)} placeholder="5000" autoFocus />
-          </Field>
-          <Field label="Date">
-            <Input type="date" value={contribDate} onChange={e => setContribDate(e.target.value)} />
-          </Field>
-          <Field label="From account">
-            <select
-              value={contribAccount}
-              onChange={e => setContribAccount(e.target.value)}
-              className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
-            >
-              {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Note (optional)">
-            <Input value={contribNote} onChange={e => setContribNote(e.target.value)} placeholder="December saving…" />
-          </Field>
-          <div className="flex gap-2">
-            <Button variant="primary" type="submit">Record contribution</Button>
-          </div>
-        </form>
-      )}
+      {/* Add contribution is rendered as a modal (see ContributeModal at end of file). */}
 
       {/* Contribution history */}
       {txs.length > 0 && (
@@ -317,6 +301,139 @@ export function GoalDetailScreen() {
       </section>
 
       {dialog}
+      {!completed && mode === 'view' && accs.length > 0 && showContributeForm && (
+        <ContributeModal
+          accountOptions={accs}
+          contribAmount={contribAmount}
+          setContribAmount={setContribAmount}
+          contribDate={contribDate}
+          setContribDate={setContribDate}
+          contribAccount={contribAccount}
+          setContribAccount={setContribAccount}
+          contribNote={contribNote}
+          setContribNote={setContribNote}
+          onClose={() => { setShowContributeForm(false); setContribAmount(''); setContribNote(''); }}
+          onSubmit={onContribute}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * ContributeModal — modal for recording a goal contribution.
+ *
+ * Rendered via portal into document.body. Escape and backdrop click
+ * close without recording. Submit is handled by the parent, which
+ * also closes the modal on success.
+ */
+interface ContributeModalProps {
+  accountOptions: Account[];
+  contribAmount: string;
+  setContribAmount: (v: string) => void;
+  contribDate: string;
+  setContribDate: (v: string) => void;
+  contribAccount: string;
+  setContribAccount: (v: string) => void;
+  contribNote: string;
+  setContribNote: (v: string) => void;
+  onClose: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+function ContributeModal({
+  accountOptions,
+  contribAmount,
+  setContribAmount,
+  contribDate,
+  setContribDate,
+  contribAccount,
+  setContribAccount,
+  contribNote,
+  setContribNote,
+  onClose,
+  onSubmit,
+}: ContributeModalProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="goal-contribute-title"
+    >
+      <button
+        type="button"
+        aria-label="Close dialog"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+        style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
+      />
+      <form
+        onSubmit={onSubmit}
+        className="relative bg-surface border border-border rounded-card p-7 w-[420px] max-w-[90vw] shadow-modal flex flex-col gap-5"
+      >
+        <h3 id="goal-contribute-title" className="heading h3-modal m-0">Add a contribution</h3>
+        <p className="text-[13px] text-muted m-0 -mt-3">
+          Records an expense from the chosen account and links it to this goal.
+        </p>
+        <Field label="Amount">
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={contribAmount}
+            onChange={e => setContribAmount(e.target.value)}
+            placeholder="5000"
+            autoFocus
+          />
+        </Field>
+        <Field label="Date">
+          <Input type="date" value={contribDate} onChange={e => setContribDate(e.target.value)} />
+        </Field>
+        <Field label="From account">
+          <select
+            value={contribAccount}
+            onChange={e => setContribAccount(e.target.value)}
+            className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
+          >
+            {accountOptions.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Note (optional)">
+          <Input
+            value={contribNote}
+            onChange={e => setContribNote(e.target.value)}
+            placeholder="December saving…"
+          />
+        </Field>
+        <div className="flex gap-2.5 justify-end mt-2">
+          <button
+            type="button"
+            ref={cancelRef}
+            onClick={onClose}
+            className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
+          >
+            Cancel
+          </button>
+          <Button variant="primary" type="submit">Record contribution</Button>
+        </div>
+      </form>
+    </div>,
+    document.body,
   );
 }

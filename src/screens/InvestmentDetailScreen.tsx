@@ -16,7 +16,8 @@
  *   - Contribution history
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
@@ -27,6 +28,7 @@ import {
   investmentMaturityDate,
   investmentMaturityValueTyped,
   dpsContributedSoFar,
+  dpsPaidOutSoFar,
   dpsCurrentValue,
   dpsMaturityValue,
 } from '../domain/math';
@@ -34,6 +36,7 @@ import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
+import type { Account, Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -52,6 +55,7 @@ export function InvestmentDetailScreen() {
   const [contribDate, setContribDate] = useState(new Date().toISOString().slice(0, 10));
   const [contribAccount, setContribAccount] = useState(accs[0]?.id ?? '');
   const [contribNote, setContribNote] = useState('');
+  const [showContributeForm, setShowContributeForm] = useState(false);
 
   if (!inv) {
     return (
@@ -67,8 +71,14 @@ export function InvestmentDetailScreen() {
   const days = daysToMaturity(inv);
   const projected = investmentMaturityValueTyped(inv);
   const isDps = inv.type === 'dps';
-  const contribs = state.transactions.filter(t => t.linkedInvestmentId === inv.id && t.type === 'expense');
+  const contribs = state.transactions.filter(
+    t => t.linkedInvestmentId === inv.id && t.type === 'expense'
+  );
+  const payouts = state.transactions.filter(
+    t => t.linkedInvestmentId === inv.id && t.type === 'income'
+  );
   const contributed = isDps ? dpsContributedSoFar(inv, state.transactions) : 0;
+  const paidOut = isDps ? dpsPaidOutSoFar(inv, state.transactions) : 0;
   const currentValue = isDps ? dpsCurrentValue(inv, state.transactions) : 0;
   const expectedInterest = isDps
     ? Math.max(0, dpsMaturityValue(inv) - (Number(inv.monthlyContribution) || 0) * (Number(inv.termMonths) || 0))
@@ -78,11 +88,21 @@ export function InvestmentDetailScreen() {
   async function onContribute(e: React.FormEvent) {
     e.preventDefault();
     if (!(Number(contribAmount) > 0)) {
-      showBanner({ what: 'Amount must be greater than zero', why: 'You can\'t contribute nothing.', fix: 'Enter a positive amount.' });
+      showBanner({
+        kind: 'error',
+        what: 'Amount must be greater than zero',
+        why: 'You can\'t contribute nothing.',
+        fix: 'Enter a positive amount.',
+      });
       return;
     }
     if (!contribAccount) {
-      showBanner({ what: 'Pick an account', why: 'Contributions need an account to come from.', fix: 'Select the source account.' });
+      showBanner({
+        kind: 'error',
+        what: 'Pick an account',
+        why: 'Contributions need an account to come from.',
+        fix: 'Select the source account.',
+      });
       return;
     }
     try {
@@ -94,6 +114,7 @@ export function InvestmentDetailScreen() {
       }));
       setContribAmount('');
       setContribNote('');
+      setShowContributeForm(false);
       const total = contributed + Number(contribAmount);
       showBanner({
         kind: 'success',
@@ -102,7 +123,12 @@ export function InvestmentDetailScreen() {
         fix: `${fmtBDT(total)} contributed so far.`,
       });
     } catch (err) {
-      showBanner({ what: 'Could not record contribution', why: (err as Error).message, fix: 'Try again.' });
+      showBanner({
+        kind: 'error',
+        what: 'Could not record contribution',
+        why: (err as Error).message,
+        fix: 'Try again.',
+      });
     }
   }
 
@@ -137,6 +163,26 @@ export function InvestmentDetailScreen() {
       why: 'A new investment with the same terms starts after maturity.',
       fix: 'Open Investments to see the new one.',
     });
+  }
+
+  function onRecordPayout() {
+    // DPS-specific: deep-link to the Add Income form with everything
+    // prefilled so the user records the actual bank payout as a single
+    // income transaction. Saving the form auto-closes this DPS via
+    // recompute (when payouts >= contributions).
+    //
+    // Prefill is the *remaining* amount = current value - paidOut so far.
+    // If the user already recorded some payouts along the way, the next
+    // one only covers what the bank still owes.
+    if (!inv?.payoutAccountId) return;
+    const remaining = Math.max(0, currentValue - paidOut);
+    const params = new URLSearchParams({
+      amount: String(Math.round(remaining)),
+      accountId: inv.payoutAccountId,
+      linkedInvestmentId: inv.id,
+      note: `DPS maturity payout — ${inv.name}`,
+    });
+    navigate(`/transactions/new/income?${params.toString()}`);
   }
 
   async function onDelete() {
@@ -178,6 +224,15 @@ export function InvestmentDetailScreen() {
           <h1 className="heading h1-screen mt-1">{inv.name}</h1>
         </div>
         <div className="flex gap-2">
+          {isDps && status === 'active' && accs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowContributeForm(true)}
+              className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-primary text-primary-on hover:opacity-90"
+            >
+              + Add a contribution
+            </button>
+          )}
           {status === 'active' && (
             <Link to={`/investments/${inv!.id}/edit`} className="inline-flex items-center justify-center gap-2 px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2">
               Edit
@@ -232,6 +287,9 @@ export function InvestmentDetailScreen() {
             <>
               <Stat label="Contributed so far" value={fmtBDT(contributed)} />
               <Stat label="Current value" value={fmtBDT(currentValue)} hint="Compounded to today" />
+              {paidOut > 0 && (
+                <Stat label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
+              )}
             </>
           )}
           <Stat
@@ -256,69 +314,83 @@ export function InvestmentDetailScreen() {
         )}
       </section>
 
-      {/* DPS contribute form */}
-      {isDps && status === 'active' && accs.length > 0 && (
-        <form onSubmit={onContribute} className="bg-surface border border-border rounded-card p-6 shadow-card flex flex-col gap-5">
-          <h2 className="heading h3-modal">Add a contribution</h2>
-          <p className="text-[13px] text-muted -mt-3">
-            Records an expense from the chosen account and links it to this DPS.
-          </p>
-          <Field label="Amount" hint={`Plan: ${fmtBDT(inv.monthlyContribution || 0)} / month`}>
-            <Input type="number" inputMode="decimal" value={contribAmount} onChange={e => setContribAmount(e.target.value)} placeholder={String(inv.monthlyContribution || 0)} autoFocus />
-          </Field>
-          <Field label="Date">
-            <Input type="date" value={contribDate} onChange={e => setContribDate(e.target.value)} />
-          </Field>
-          <Field label="From account">
-            <select
-              value={contribAccount}
-              onChange={e => setContribAccount(e.target.value)}
-              className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
-            >
-              {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Note (optional)">
-            <Input value={contribNote} onChange={e => setContribNote(e.target.value)} placeholder="October installment…" />
-          </Field>
-          <div className="flex gap-2">
-            <Button variant="primary" type="submit">Record contribution</Button>
-          </div>
-        </form>
-      )}
+      {/* DPS contribution form is rendered as a modal (see ContributeModal at end of file). */}
 
       {/* Status actions */}
       {status === 'active' && (
         <section className="bg-surface border border-border rounded-card p-6 shadow-card">
           <h2 className="heading h3-modal mb-3">When it matures</h2>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
-            <Button variant="secondary" onClick={onClose}>Close this investment</Button>
-          </div>
-          <p className="text-[12px] text-muted mt-3 leading-relaxed">
-            <strong>Roll over</strong> creates a fresh investment starting the day after maturity.
-            <br />
-            <strong>Close</strong> marks this one done; payouts should still be recorded as Income to bring the money back.
-          </p>
+          {isDps ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  onClick={onRecordPayout}
+                  disabled={!inv.payoutAccountId}
+                >
+                  Record maturity payout
+                </Button>
+                <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
+                {paidOut === 0 && (
+                  <Button variant="secondary" onClick={onClose}>Close this investment</Button>
+                )}
+              </div>
+              {!inv.payoutAccountId && (
+                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+                  Set a <strong>payout account</strong> on this DPS to record payouts.{' '}
+                  <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
+                  to add one — without it, the bank has nowhere to send the money back.
+                </div>
+              )}
+              <p className="text-[12px] text-muted mt-3 leading-relaxed">
+                <strong>Record maturity payout</strong> opens the income form with the remaining amount
+                (current value {fmtBDT(currentValue)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, currentValue - paidOut))})
+                pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
+                and auto-closes this DPS once contributions have been fully paid back.
+                <br />
+                <strong>Roll over</strong> starts a fresh DPS the day after this one ends.
+                <br />
+                <strong>Close</strong> is for marking the account done without recording a payout (rare).
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
+                <Button variant="secondary" onClick={onClose}>Close this investment</Button>
+              </div>
+              <p className="text-[12px] text-muted mt-3 leading-relaxed">
+                <strong>Roll over</strong> creates a fresh investment starting the day after maturity.
+                <br />
+                <strong>Close</strong> marks this one done; record any payout as Income to bring the money back.
+              </p>
+            </>
+          )}
         </section>
       )}
 
-      {/* Contribution history */}
-      {contribs.length > 0 && (
+      {/* Contribution + payout history */}
+      {(contribs.length > 0 || payouts.length > 0) && (
         <section className="bg-surface border border-border rounded-card p-6 shadow-card">
-          <h2 className="heading h3-modal mb-3">Contribution history</h2>
+          <h2 className="heading h3-modal mb-3">Activity</h2>
           <div className="divide-y divide-border">
-            {contribs
+            {[...contribs, ...payouts]
               .slice()
               .sort((a, b) => b.date.localeCompare(a.date))
               .map(t => {
                 const acc = accs.find(a => a.id === t.accountId);
+                const tag = t.type === 'income' ? 'payout' : 'contribution';
                 return (
                   <div key={t.id} className="py-2.5 flex justify-between items-center">
                     <div>
                       <div className="text-[13px] font-semibold tabular">{fmtBDT(t.amount)}</div>
                       <div className="text-[11px] text-muted">{fmtDate(t.date)} {acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}</div>
                     </div>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill ${
+                      t.type === 'income'
+                        ? 'bg-success-soft text-success'
+                        : 'bg-primary-soft text-primary'
+                    }`}>{tag}</span>
                   </div>
                 );
               })}
@@ -339,6 +411,22 @@ export function InvestmentDetailScreen() {
       </section>
 
       {dialog}
+      {isDps && status === 'active' && accs.length > 0 && showContributeForm && (
+        <ContributeModal
+          investment={inv}
+          accountOptions={accs}
+          contribAmount={contribAmount}
+          setContribAmount={setContribAmount}
+          contribDate={contribDate}
+          setContribDate={setContribDate}
+          contribAccount={contribAccount}
+          setContribAccount={setContribAccount}
+          contribNote={contribNote}
+          setContribNote={setContribNote}
+          onClose={() => { setShowContributeForm(false); setContribAmount(''); setContribNote(''); }}
+          onSubmit={onContribute}
+        />
+      )}
     </div>
   );
 }
@@ -370,4 +458,125 @@ function invEmoji(type: string): string {
   if (type === 'dps') return '\u{1F4C5}';
   if (type === 'fdr') return '\u{1F3E6}';
   return '\u{1F4DC}';
+}
+
+/**
+ * ContributeModal — modal for recording a DPS contribution.
+ *
+ * Rendered into document.body via portal so it overlays the rest of
+ * the page. Escape and backdrop click close the modal without
+ * recording. Submit is handled by the parent (onSubmit), which also
+ * closes the modal on success.
+ */
+interface ContributeModalProps {
+  investment: Investment;
+  accountOptions: Account[];
+  contribAmount: string;
+  setContribAmount: (v: string) => void;
+  contribDate: string;
+  setContribDate: (v: string) => void;
+  contribAccount: string;
+  setContribAccount: (v: string) => void;
+  contribNote: string;
+  setContribNote: (v: string) => void;
+  onClose: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+function ContributeModal({
+  investment,
+  accountOptions,
+  contribAmount,
+  setContribAmount,
+  contribDate,
+  setContribDate,
+  contribAccount,
+  setContribAccount,
+  contribNote,
+  setContribNote,
+  onClose,
+  onSubmit,
+}: ContributeModalProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contribute-title"
+    >
+      <button
+        type="button"
+        aria-label="Close dialog"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+        style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
+      />
+      <form
+        onSubmit={onSubmit}
+        className="relative bg-surface border border-border rounded-card p-7 w-[420px] max-w-[90vw] shadow-modal flex flex-col gap-5"
+      >
+        <h3 id="contribute-title" className="heading h3-modal m-0">Add a contribution</h3>
+        <p className="text-[13px] text-muted m-0 -mt-3">
+          Records an expense from the chosen account and links it to this DPS.
+        </p>
+        <Field label="Amount" hint={`Plan: ${fmtBDT(investment.monthlyContribution || 0)} / month`}>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={contribAmount}
+            onChange={e => setContribAmount(e.target.value)}
+            placeholder={String(investment.monthlyContribution || 0)}
+            autoFocus
+          />
+        </Field>
+        <Field label="Date">
+          <Input type="date" value={contribDate} onChange={e => setContribDate(e.target.value)} />
+        </Field>
+        <Field label="From account">
+          <select
+            value={contribAccount}
+            onChange={e => setContribAccount(e.target.value)}
+            className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
+          >
+            {accountOptions.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Note (optional)">
+          <Input
+            value={contribNote}
+            onChange={e => setContribNote(e.target.value)}
+            placeholder="October installment…"
+          />
+        </Field>
+        <div className="flex gap-2.5 justify-end mt-2">
+          <button
+            type="button"
+            ref={cancelRef}
+            onClick={onClose}
+            className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
+          >
+            Cancel
+          </button>
+          <Button variant="primary" type="submit">Record contribution</Button>
+        </div>
+      </form>
+    </div>,
+    document.body,
+  );
 }
