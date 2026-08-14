@@ -4,6 +4,7 @@ import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { DebtDirection } from '../domain/types';
 
 export function DebtAddScreen() {
@@ -15,6 +16,12 @@ export function DebtAddScreen() {
   const [total, setTotal] = useState('');
   const [person, setPerson] = useState('');
   const [dueDate, setDueDate] = useState('');
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
+  const totalInvalid = !isPositiveMoney(total);
+  const totalErrorClass = totalInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,8 +61,16 @@ export function DebtAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from Rahim, advance to Karim…" autoFocus />
         </Field>
-        <Field label="Total amount">
-          <Input type="number" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} placeholder="10000" />
+        <Field label="Total amount" error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={total}
+            onChange={e => setTotal(e.target.value)}
+            placeholder="10000"
+            aria-invalid={totalInvalid || undefined}
+            className={totalErrorClass}
+          />
         </Field>
         <Field label="Person (optional)">
           <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Rahim, Karim…" />
@@ -64,7 +79,7 @@ export function DebtAddScreen() {
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit">Save debt</Button>
+          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()}>Save debt</Button>
           <Button variant="ghost" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>

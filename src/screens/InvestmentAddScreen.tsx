@@ -21,6 +21,7 @@ import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { accountBalance } from '../domain/math';
 import { fmtBDT } from '../lib/format';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { InvestmentType } from '../domain/types';
 
 export function InvestmentAddScreen() {
@@ -41,6 +42,13 @@ export function InvestmentAddScreen() {
   const [institution, setInstitution] = useState('');
 
   const isDps = type === 'dps';
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
+  // Principal applies only to non-DPS (FDR / savings); monthlyContribution
+  // applies only to DPS. Each field independently validates.
+  const principalInvalid = !isPositiveMoney(principal);
+  const monthlyInvalid = !isPositiveMoney(monthlyContribution);
+  const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
 
   const matPreview = (() => {
     const T = Number(termMonths);
@@ -117,12 +125,28 @@ export function InvestmentAddScreen() {
           </Select>
         </Field>
         {isDps ? (
-          <Field label="Monthly contribution" hint="What you pay each month into this DPS.">
-            <Input type="number" inputMode="decimal" value={monthlyContribution} onChange={e => setMonthlyContribution(e.target.value)} placeholder="5000" />
+          <Field label="Monthly contribution" hint="What you pay each month into this DPS." error={monthlyInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={monthlyContribution}
+              onChange={e => setMonthlyContribution(e.target.value)}
+              placeholder="5000"
+              aria-invalid={monthlyInvalid || undefined}
+              className={monthlyInvalid ? invalidClass : ''}
+            />
           </Field>
         ) : (
-          <Field label="Principal" hint="The amount you're placing into this investment.">
-            <Input type="number" inputMode="decimal" value={principal} onChange={e => setPrincipal(e.target.value)} placeholder="100000" />
+          <Field label="Principal" hint="The amount you're placing into this investment." error={principalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={principal}
+              onChange={e => setPrincipal(e.target.value)}
+              placeholder="100000"
+              aria-invalid={principalInvalid || undefined}
+              className={principalInvalid ? invalidClass : ''}
+            />
           </Field>
         )}
         <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
@@ -171,7 +195,18 @@ export function InvestmentAddScreen() {
           </div>
         )}
         <div className="flex gap-2">
-          <Button variant="primary" type="submit">Save investment</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={
+              !name.trim()
+              || (isDps ? monthlyInvalid : principalInvalid)
+              || !(Number(rate) >= 0)
+              || !(Number(termMonths) > 0)
+            }
+          >
+            Save investment
+          </Button>
           <Button variant="ghost" onClick={() => navigate('/investments')}>Cancel</Button>
         </div>
       </section>

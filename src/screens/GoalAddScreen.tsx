@@ -4,6 +4,12 @@ import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
+import {
+  isPositiveMoney,
+  isNonNegativeMoney,
+  POSITIVE_MONEY_ERROR,
+  NON_NEGATIVE_MONEY_ERROR,
+} from '../lib/validation';
 
 export function GoalAddScreen() {
   const navigate = useNavigate();
@@ -13,6 +19,13 @@ export function GoalAddScreen() {
   const [target, setTarget] = useState('');
   const [saved, setSaved] = useState('0');
   const [targetDate, setTargetDate] = useState('');
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
+  // Target uses > 0, "already saved" uses >= 0 (a fresh goal can have
+  // zero saved).
+  const targetInvalid = !isPositiveMoney(target);
+  const savedInvalid = !isNonNegativeMoney(saved);
+  const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,17 +59,42 @@ export function GoalAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency fund, laptop…" autoFocus />
         </Field>
-        <Field label="Target amount">
-          <Input type="number" inputMode="decimal" value={target} onChange={e => setTarget(e.target.value)} placeholder="50000" />
+        <Field label="Target amount" error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={target}
+            onChange={e => setTarget(e.target.value)}
+            placeholder="50000"
+            aria-invalid={targetInvalid || undefined}
+            className={targetInvalid ? invalidClass : ''}
+          />
         </Field>
-        <Field label="Already saved (optional)" hint="What you've already saved toward this goal.">
-          <Input type="number" inputMode="decimal" value={saved} onChange={e => setSaved(e.target.value)} />
+        <Field
+          label="Already saved (optional)"
+          hint="What you've already saved toward this goal."
+          error={savedInvalid ? NON_NEGATIVE_MONEY_ERROR : undefined}
+        >
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={saved}
+            onChange={e => setSaved(e.target.value)}
+            aria-invalid={savedInvalid || undefined}
+            className={savedInvalid ? invalidClass : ''}
+          />
         </Field>
         <Field label="Target date">
           <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit">Save goal</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={targetInvalid || savedInvalid || !name.trim() || !targetDate}
+          >
+            Save goal
+          </Button>
           <Button variant="ghost" onClick={() => navigate('/goals')}>Cancel</Button>
         </div>
       </section>

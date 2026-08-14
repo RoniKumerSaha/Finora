@@ -22,6 +22,7 @@ import { fmtBDT } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { DebtDirection } from '../domain/types';
 
 export function DebtEditScreen() {
@@ -38,6 +39,13 @@ export function DebtEditScreen() {
   const [total, setTotal] = useState(String(debt?.total ?? ''));
   const [person, setPerson] = useState(debt?.person ?? '');
   const [dueDate, setDueDate] = useState(debt?.dueDate ?? '');
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
+  // value is always valid; user can break it by typing a negative.
+  const totalInvalid = !isPositiveMoney(total);
+  const totalErrorClass = totalInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   if (!debt) {
     return (
@@ -202,8 +210,15 @@ export function DebtEditScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
         </Field>
-        <Field label="Total amount">
-          <Input type="number" inputMode="decimal" value={total} onChange={e => setTotal(e.target.value)} />
+        <Field label="Total amount" error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={total}
+            onChange={e => setTotal(e.target.value)}
+            aria-invalid={totalInvalid || undefined}
+            className={totalErrorClass}
+          />
         </Field>
         <Field label="Person (optional)">
           <Input value={person} onChange={e => setPerson(e.target.value)} />
@@ -212,7 +227,7 @@ export function DebtEditScreen() {
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit">Save changes</Button>
+          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()}>Save changes</Button>
           <Button variant="ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>

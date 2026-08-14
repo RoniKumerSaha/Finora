@@ -31,6 +31,7 @@ import * as transactions from '../domain/transactions';
 import { Button } from '../components/Button';
 import { Field, Input, Select, Textarea, AmountInput } from '../components/Field';
 import { CategoryGrid, PresetChips } from '../components/TypePicker';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { TxType } from '../domain/types';
 
 interface AddTransactionFormProps {
@@ -124,6 +125,13 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
     : undefined;
   const selectedAccName = state.accounts.find(a => a.id === accountId)?.name;
 
+  // Inline negative-amount guard (spine: ux-finora-2026-08-14-negative-guard).
+  // Transactions use the strict > 0 rule (zero is meaningless).
+  const amountInvalid = !isPositiveMoney(amount);
+  const amountErrorClass = amountInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!(Number(amount) > 0)) {
@@ -173,7 +181,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
       </div>
 
       <section className="card">
-        <Field label="Amount">
+        <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <AmountInput
             type="number"
             inputMode="decimal"
@@ -181,6 +189,8 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
             onChange={e => setAmount(e.target.value)}
             placeholder={type === 'transfer' ? '5,000' : type === 'expense' ? '250' : '60,000'}
             autoFocus
+            aria-invalid={amountInvalid || undefined}
+            className={amountErrorClass}
           />
           {type === 'expense' && (
             <>
@@ -362,7 +372,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 
         <div className="flex justify-end gap-2.5 mt-6">
           <Button variant="secondary" type="button" onClick={() => navigate('/transactions/new')}>Cancel</Button>
-          <Button variant="primary" type="submit">Save</Button>
+          <Button variant="primary" type="submit" disabled={amountInvalid}>Save</Button>
         </div>
       </section>
     </form>

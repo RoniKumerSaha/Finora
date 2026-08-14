@@ -5,6 +5,7 @@ import * as accounts from '../domain/accounts';
 import type { AccountType } from '../domain/types';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
+import { isNonNegativeMoney, NON_NEGATIVE_MONEY_ERROR } from '../lib/validation';
 
 export function AccountAddScreen() {
   const navigate = useNavigate();
@@ -13,6 +14,14 @@ export function AccountAddScreen() {
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('cash');
   const [openingBalance, setOpeningBalance] = useState('0');
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
+  // Opening balance uses the >= 0 rule; a fresh account can legitimately
+  // start at zero.
+  const openingInvalid = !isNonNegativeMoney(openingBalance);
+  const openingErrorClass = openingInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,11 +56,18 @@ export function AccountAddScreen() {
             {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
           </Select>
         </Field>
-        <Field label="Opening balance" hint="What you already had in this account at the moment you start tracking.">
-          <Input type="number" inputMode="decimal" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} />
+        <Field label="Opening balance" hint="What you already had in this account at the moment you start tracking." error={openingInvalid ? NON_NEGATIVE_MONEY_ERROR : undefined}>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={openingBalance}
+            onChange={e => setOpeningBalance(e.target.value)}
+            aria-invalid={openingInvalid || undefined}
+            className={openingErrorClass}
+          />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit">Save account</Button>
+          <Button variant="primary" type="submit" disabled={openingInvalid || !name.trim()}>Save account</Button>
           <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
         </div>
       </section>

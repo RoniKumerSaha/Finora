@@ -34,6 +34,7 @@ import { fmtBDT, fmtDate, fmtDateShort } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { Account } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -76,6 +77,13 @@ export function GoalDetailScreen() {
   const completed = isGoalCompleted(goal, saved);
   const expired = isGoalExpired(goal);
   const requiredPerMonth = completed ? 0 : goalRequiredPerMonthDerived(goal, state.transactions);
+
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
+  // value is valid; user can break it by typing a negative target.
+  const targetInvalid = !isPositiveMoney(target);
+  const targetErrorClass = targetInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   function onSaveEdit(e: React.FormEvent) {
     e.preventDefault();
@@ -251,14 +259,27 @@ export function GoalDetailScreen() {
           <Field label="Name">
             <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
           </Field>
-          <Field label="Target amount">
-            <Input type="number" inputMode="decimal" value={target} onChange={e => setTarget(e.target.value)} />
+          <Field label="Target amount" error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={target}
+              onChange={e => setTarget(e.target.value)}
+              aria-invalid={targetInvalid || undefined}
+              className={targetErrorClass}
+            />
           </Field>
           <Field label="Target date">
             <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
           </Field>
           <div className="flex gap-2">
-            <Button variant="primary" type="submit">Save changes</Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={targetInvalid || !name.trim() || !targetDate}
+            >
+              Save changes
+            </Button>
             <Button variant="ghost" onClick={() => setMode('view')}>Cancel</Button>
           </div>
         </form>
@@ -361,6 +382,12 @@ function ContributeModal({
 }: ContributeModalProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
+  // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
+  const amountInvalid = !isPositiveMoney(contribAmount);
+  const amountErrorClass = amountInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
+
   useEffect(() => {
     cancelRef.current?.focus();
     function onKey(e: KeyboardEvent) {
@@ -395,7 +422,7 @@ function ContributeModal({
         <p className="text-[13px] text-muted m-0 -mt-3">
           Records an expense from the chosen account and links it to this goal.
         </p>
-        <Field label="Amount">
+        <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"
@@ -403,6 +430,8 @@ function ContributeModal({
             onChange={e => setContribAmount(e.target.value)}
             placeholder="5000"
             autoFocus
+            aria-invalid={amountInvalid || undefined}
+            className={amountErrorClass}
           />
         </Field>
         <Field label="Date">
@@ -435,7 +464,7 @@ function ContributeModal({
           >
             Cancel
           </button>
-          <Button variant="primary" type="submit">Record contribution</Button>
+          <Button variant="primary" type="submit" disabled={amountInvalid}>Record contribution</Button>
         </div>
       </form>
     </div>,

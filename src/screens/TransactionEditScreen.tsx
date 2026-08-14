@@ -24,6 +24,7 @@ import { Field, Input, Select, Textarea, AmountInput } from '../components/Field
 import { CategoryGrid } from '../components/TypePicker';
 import { useConfirm } from '../components/ConfirmDialog';
 import { fmtDateShort } from '../lib/format';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { TxType } from '../domain/types';
 
 export function TransactionEditScreen() {
@@ -80,6 +81,12 @@ export function TransactionEditScreen() {
     ? state.accounts.find(a => a.id === linkedInv.payoutAccountId)?.name
     : undefined;
   const selectedAccName = state.accounts.find(a => a.id === accountId)?.name;
+
+  // Inline negative-amount guard (spine: ux-finora-2026-08-14-negative-guard).
+  const amountInvalid = !isPositiveMoney(amount);
+  const amountErrorClass = amountInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,13 +165,15 @@ export function TransactionEditScreen() {
       </header>
 
       <section className="card">
-        <Field label="Amount">
+        <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <AmountInput
             type="number"
             inputMode="decimal"
             value={amount}
             onChange={e => setAmount(e.target.value)}
             autoFocus
+            aria-invalid={amountInvalid || undefined}
+            className={amountErrorClass}
           />
         </Field>
 
@@ -265,7 +274,7 @@ export function TransactionEditScreen() {
           </Button>
           <div className="flex gap-2.5">
             <Button variant="secondary" type="button" onClick={() => navigate('/transactions')}>Cancel</Button>
-            <Button variant="primary" type="submit">Save</Button>
+            <Button variant="primary" type="submit" disabled={amountInvalid}>Save</Button>
           </div>
         </div>
       </section>
