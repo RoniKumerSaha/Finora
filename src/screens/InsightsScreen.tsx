@@ -39,6 +39,7 @@ import {
   type DateRangeKey,
 } from '../domain/insights';
 import { fmtBDT, fmtDate } from '../lib/format';
+import { dpsContributedSoFar } from '../domain/math';
 import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -648,13 +649,33 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
 // ---------- Investments ----------
 
 function InvestmentsCard({ investments }: { investments: ReturnType<typeof investmentsForInsights> }) {
-  const total = investments.reduce((s, i) => s + i.maturityValue, 0);
+  const state = useStore(s => s.state);
+  const totalActive = investments.reduce((s, i) => {
+    if (i.type === 'dps') {
+      const inv = state.investments.find(x => x.id === i.id);
+      return s + (inv ? dpsContributedSoFar(inv, state.transactions) : 0);
+    }
+    return s + (Number(i.principal) || 0);
+  }, 0);
+  const totalMaturity = investments.reduce((s, i) => s + i.maturityValue, 0);
+  const hasAny = investments.length > 0;
   return (
     <div className="card">
-      <div className="flex justify-between items-end mb-3">
+      <div className="flex justify-between items-end mb-3 gap-6">
         <h2 className="heading h3-modal">Investments</h2>
-        <div className="text-[13px] font-bold tabular text-accent">
-          {total > 0 ? fmtBDT(total) : '—'}
+        <div className="grid grid-cols-2 gap-x-6 text-right">
+          <div>
+            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Active</div>
+            <div className="text-[20px] font-bold tabular text-accent mt-1 leading-none tracking-[-0.02em]">
+              {fmtBDT(totalActive)}
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">To mature</div>
+            <div className="text-[20px] font-bold tabular text-primary mt-1 leading-none tracking-[-0.02em]">
+              {hasAny ? fmtBDT(totalMaturity) : '\u2014'}
+            </div>
+          </div>
         </div>
       </div>
       {investments.length === 0 ? (
