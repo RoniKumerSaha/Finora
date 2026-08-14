@@ -22,7 +22,7 @@ export function Button({ variant = 'secondary', children, className, ...rest }: 
   const variantClass = {
     primary:   'bg-primary text-primary-on hover:opacity-90',
     secondary: 'bg-surface text-ink border border-border hover:bg-surface-2',
-    danger:    'bg-danger-soft text-danger border border-danger hover:opacity-80',
+    danger:    'bg-danger text-white border border-danger hover:opacity-90',
     ghost:     'text-muted hover:text-ink hover:bg-surface-2',
   }[variant];
   return <button type="button" {...rest} className={[base, variantClass, className || ''].join(' ')}>{children}</button>;
