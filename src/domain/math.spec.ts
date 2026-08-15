@@ -20,6 +20,7 @@ import {
   debtPaidSoFar,
   isDebtCompleted,
   investmentMaturityValue,
+  investmentMaturityValueFromDays,
   investmentMaturityDate,
   deriveInvestmentStatus,
   daysToMaturity,
@@ -355,5 +356,109 @@ describe('investmentMaturityValueTyped — type-aware dispatch', () => {
       status: 'active', createdAt: NOW,
     };
     expect(investmentMaturityValueTyped(fdr)).toBe(108000);
+  });
+});
+
+// ---------- Days-based FDR maturity (short-term deposits) ----------
+
+describe('investmentMaturityValueFromDays — days-based FDR formula', () => {
+  const fdrDays = (over: Partial<Investment>): Investment => ({
+    id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+    rate: 9, startDate: '2026-08-01', termMonths: 0, termDays: 30,
+    status: 'active', createdAt: NOW,
+    ...over,
+  });
+
+  it('principal × (1 + rate/100 × days/365)', () => {
+    // 100000 × (1 + 9/100 × 30/365) ≈ 100739.73
+    expect(investmentMaturityValueFromDays(fdrDays({}))).toBeCloseTo(100739.7260, 2);
+  });
+  it('zero rate → straight principal', () => {
+    expect(investmentMaturityValueFromDays(fdrDays({ rate: 0, termDays: 15 }))).toBe(100000);
+  });
+  it('365-day term should match a 12-month term at the same rate', () => {
+    // 365/365 = 1, so it's equivalent to a full year at that rate.
+    const days = investmentMaturityValueFromDays(fdrDays({ termDays: 365, rate: 8 }));
+    const months = investmentMaturityValue({
+      ...fdrDays({ rate: 8, termDays: undefined }),
+      termMonths: 12,
+    });
+    expect(days).toBeCloseTo(months, 4);
+  });
+  it('returns 0 when termDays is missing or zero', () => {
+    expect(investmentMaturityValueFromDays(fdrDays({ termDays: undefined }))).toBe(0);
+    expect(investmentMaturityValueFromDays(fdrDays({ termDays: 0 }))).toBe(0);
+  });
+  it('returns 0 for non-positive principal', () => {
+    expect(investmentMaturityValueFromDays(fdrDays({ principal: 0 }))).toBe(0);
+  });
+  it('larger days → larger maturity at positive rate', () => {
+    const short = investmentMaturityValueFromDays(fdrDays({ termDays: 7 }));
+    const long = investmentMaturityValueFromDays(fdrDays({ termDays: 60 }));
+    expect(long).toBeGreaterThan(short);
+  });
+});
+
+describe('investmentMaturityDate — dispatches on termDays', () => {
+  const base: Investment = {
+    id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+    rate: 9, startDate: '2026-01-15', termMonths: 12,
+    status: 'active', createdAt: '2026-01-15',
+  };
+
+  it('uses termDays when set, ignoring termMonths', () => {
+    const d = investmentMaturityDate({ ...base, termMonths: 99, termDays: 10 });
+    expect(d?.toISOString().slice(0, 10)).toBe('2026-01-25');
+  });
+  it('falls back to termMonths when termDays is missing or zero', () => {
+    const a = investmentMaturityDate(base);
+    const b = investmentMaturityDate({ ...base, termDays: 0 });
+    expect(a?.toISOString().slice(0, 10)).toBe('2027-01-15');
+    expect(b?.toISOString().slice(0, 10)).toBe('2027-01-15');
+  });
+  it('crosses months correctly with days', () => {
+    const d = investmentMaturityDate({ ...base, startDate: '2026-01-25', termDays: 10 });
+    expect(d?.toISOString().slice(0, 10)).toBe('2026-02-04');
+  });
+});
+
+describe('investmentMaturityValueTyped — routes FDR/savings to days formula when termDays set', () => {
+  it('uses days-based formula when termDays > 0', () => {
+    const fdr: Investment = {
+      id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+      rate: 9, startDate: '2026-08-01', termMonths: 0, termDays: 30,
+      status: 'active', createdAt: NOW,
+    };
+    expect(investmentMaturityValueTyped(fdr))
+      .toBeCloseTo(investmentMaturityValueFromDays(fdr), 6);
+  });
+  it('still uses months formula when termDays missing', () => {
+    const fdr: Investment = {
+      id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+      rate: 8, startDate: '2026-01-01', termMonths: 12,
+      status: 'active', createdAt: NOW,
+    };
+    expect(investmentMaturityValueTyped(fdr)).toBe(108000);
+  });
+  it('savings type also dispatches on termDays', () => {
+    const sav: Investment = {
+      id: 's1', name: 'Savings', type: 'savings', principal: 50000,
+      rate: 7, startDate: '2026-08-01', termMonths: 0, termDays: 90,
+      status: 'active', createdAt: NOW,
+    };
+    expect(investmentMaturityValueTyped(sav))
+      .toBeCloseTo(investmentMaturityValueFromDays(sav), 6);
+  });
+});
+
+describe('daysToMaturity — works for termDays investments', () => {
+  it('counts calendar days from today to startDate + termDays', () => {
+    const fdr: Investment = {
+      id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+      rate: 9, startDate: '2026-08-01', termMonths: 0, termDays: 30,
+      status: 'active', createdAt: '2026-08-01',
+    };
+    // NOW = 2026-08-13, so 30 - 12 = 18 days remaining.
+    expect(daysToMaturity(fdr, NOW)).toBe(18);
   });
 });

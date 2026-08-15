@@ -34,7 +34,13 @@ export function InvestmentEditScreen() {
   const [monthlyContribution, setMonthlyContribution] = useState(String(inv?.monthlyContribution ?? 0));
   const [rate, setRate] = useState(String(inv?.rate ?? ''));
   const [startDate, setStartDate] = useState(inv?.startDate ?? new Date().toISOString().slice(0, 10));
+  // Pre-select useDays when the existing record already carries a termDays
+  // value. Falls back to months otherwise.
   const [termMonths, setTermMonths] = useState(String(inv?.termMonths ?? ''));
+  const [termDays, setTermDays] = useState(String(inv?.termDays ?? ''));
+  const [useDays, setUseDays] = useState(
+    !!(inv?.termDays != null && Number(inv.termDays) > 0)
+  );
   const [payoutAccountId, setPayoutAccountId] = useState(inv?.payoutAccountId ?? '');
   const [institution, setInstitution] = useState(inv?.institution ?? '');
 
@@ -57,7 +63,17 @@ export function InvestmentEditScreen() {
   // disabled, so we don't apply the invalid class to it.
   const principalInvalid = type !== 'dps' && !isPositiveMoney(principal);
   const monthlyInvalid = type === 'dps' && !dpsLocked && !isPositiveMoney(monthlyContribution);
+  const termInDays = type !== 'dps' && useDays;
+  const termValid = termInDays
+    ? Number(termDays) > 0
+    : Number(termMonths) > 0;
   const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
+
+  function toggleUseDays(next: boolean) {
+    setUseDays(next);
+    if (next) setTermMonths('');
+    else setTermDays('');
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +89,12 @@ export function InvestmentEditScreen() {
       showBanner({ what: 'Rate must be non-negative', why: 'Negative rates are not supported in V1.', fix: 'Enter 0 or a positive percent.' });
       return;
     }
-    if (!(Number(termMonths) > 0)) {
+    if (termInDays) {
+      if (!(Number(termDays) > 0)) {
+        showBanner({ what: 'Term must be a positive number of days', why: 'A zero-day term has no maturity date.', fix: 'Enter the term in days.' });
+        return;
+      }
+    } else if (!(Number(termMonths) > 0)) {
       showBanner({ what: 'Term must be a positive number of months', why: 'A zero-month term has no maturity date.', fix: 'Enter the term in months.' });
       return;
     }
@@ -89,7 +110,8 @@ export function InvestmentEditScreen() {
         monthlyContribution: type === 'dps' ? Number(monthlyContribution) || 0 : undefined,
         rate: Number(rate),
         startDate,
-        termMonths: Number(termMonths),
+        termMonths: termInDays ? 0 : Number(termMonths),
+        termDays: termInDays ? Number(termDays) : undefined,
         payoutAccountId: payoutAccountId || undefined,
         institution: institution.trim() || undefined,
       }));
@@ -156,9 +178,26 @@ export function InvestmentEditScreen() {
         <Field label="Start date">
           <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </Field>
-        <Field label="Term (months)">
-          <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} />
-        </Field>
+        {type !== 'dps' && (
+          <label className="flex items-center gap-2 text-[13px] text-muted -mt-2">
+            <input
+              type="checkbox"
+              checked={useDays}
+              onChange={e => toggleUseDays(e.target.checked)}
+              className="accent-[var(--accent)]"
+            />
+            <span>Use days instead of months (for short-term terms &lt; 1 month)</span>
+          </label>
+        )}
+        {termInDays ? (
+          <Field label="Term (days)" hint="For short-term deposits under a month. Maturity = start + this many days.">
+            <Input type="number" inputMode="numeric" value={termDays} onChange={e => setTermDays(e.target.value)} placeholder="15" />
+          </Field>
+        ) : (
+          <Field label="Term (months)">
+            <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} />
+          </Field>
+        )}
         <Field label="Payout account (optional)" hint="Where the matured value lands.">
           <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
             <option value="">— None —</option>
@@ -177,7 +216,7 @@ export function InvestmentEditScreen() {
               || principalInvalid
               || monthlyInvalid
               || !(Number(rate) >= 0)
-              || !(Number(termMonths) > 0)
+              || !termValid
             }
           >
             Save changes

@@ -92,9 +92,13 @@ export const investmentSchema = z.object({
   }),
   startDate: isoDate,
   termMonths: z.coerce.number().refine(positive, { message: 'Term must be a positive number of months.' }),
+  termDays: z.coerce.number().refine(positive, { message: 'Term must be a positive number of days.' }).optional(),
   payoutAccountId: z.string().optional(),
   institution: z.string().optional(),
-});
+}).refine(
+  d => (d.termMonths > 0) !== (d.termDays != null && d.termDays > 0),
+  { message: 'Set either term in months OR term in days, not both.', path: ['termDays'] }
+);
 export type InvestmentInput = z.infer<typeof investmentSchema>;
 
 // ---------- Export / Import envelope ----------

@@ -38,10 +38,15 @@ export function InvestmentAddScreen() {
   const [rate, setRate] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [termMonths, setTermMonths] = useState('');
+  const [termDays, setTermDays] = useState('');
+  /** FDR/savings only: when true, show termDays field instead of termMonths.
+   *  Always false for DPS. */
+  const [useDays, setUseDays] = useState(false);
   const [payoutAccountId, setPayoutAccountId] = useState(accs[0]?.id ?? '');
   const [institution, setInstitution] = useState('');
 
   const isDps = type === 'dps';
+  const termInDays = !isDps && useDays;
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
   // Principal applies only to non-DPS (FDR / savings); monthlyContribution
@@ -51,10 +56,11 @@ export function InvestmentAddScreen() {
   const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
 
   const matPreview = (() => {
-    const T = Number(termMonths);
     const r = Number(rate);
-    if (!(T > 0) || !(r >= 0)) return null;
+    if (!(r >= 0)) return null;
     if (isDps) {
+      const T = Number(termMonths);
+      if (!(T > 0)) return null;
       const M = Number(monthlyContribution);
       if (!(M > 0)) return null;
       if (r === 0) return M * T;
@@ -63,8 +69,27 @@ export function InvestmentAddScreen() {
     }
     const P = Number(principal);
     if (!(P > 0)) return null;
+    if (termInDays) {
+      const D = Number(termDays);
+      if (!(D > 0)) return null;
+      return P * (1 + (r / 100) * (D / 365));
+    }
+    const T = Number(termMonths);
+    if (!(T > 0)) return null;
     return P * (1 + (r / 100) * (T / 12));
   })();
+
+  /** True when the active term field has a positive value. */
+  const termValid = termInDays
+    ? Number(termDays) > 0
+    : Number(termMonths) > 0;
+
+  /** Reset the unused term field when toggling, to avoid stale state. */
+  function toggleUseDays(next: boolean) {
+    setUseDays(next);
+    if (next) setTermMonths('');
+    else setTermDays('');
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,7 +109,12 @@ export function InvestmentAddScreen() {
       showBanner({ what: 'Rate must be a non-negative number', why: 'Negative rates aren\'t supported in V1.', fix: 'Enter 0 or a positive percent.' });
       return;
     }
-    if (!(Number(termMonths) > 0)) {
+    if (termInDays) {
+      if (!(Number(termDays) > 0)) {
+        showBanner({ what: 'Term must be a positive number of days', why: 'A zero-day term has no maturity date.', fix: 'Enter the term in days, e.g. 15 for a 2-week FDR.' });
+        return;
+      }
+    } else if (!(Number(termMonths) > 0)) {
       showBanner({ what: 'Term must be a positive number of months', why: 'A zero-month term has no maturity date.', fix: 'Enter the term in months, e.g. 12 for 1 year.' });
       return;
     }
@@ -96,7 +126,8 @@ export function InvestmentAddScreen() {
         monthlyContribution: isDps ? Number(monthlyContribution) : undefined,
         rate: Number(rate),
         startDate,
-        termMonths: Number(termMonths),
+        termMonths: termInDays ? 0 : Number(termMonths),
+        termDays: termInDays ? Number(termDays) : undefined,
         payoutAccountId: payoutAccountId || undefined,
         institution: institution.trim() || undefined,
       }));
@@ -155,9 +186,26 @@ export function InvestmentAddScreen() {
         <Field label="Start date">
           <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </Field>
-        <Field label="Term (months)">
-          <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
-        </Field>
+        {!isDps && (
+          <label className="flex items-center gap-2 text-[13px] text-muted -mt-2">
+            <input
+              type="checkbox"
+              checked={useDays}
+              onChange={e => toggleUseDays(e.target.checked)}
+              className="accent-[var(--accent)]"
+            />
+            <span>Use days instead of months (for short-term terms &lt; 1 month)</span>
+          </label>
+        )}
+        {termInDays ? (
+          <Field label="Term (days)" hint="For short-term deposits under a month. Maturity = start + this many days.">
+            <Input type="number" inputMode="numeric" value={termDays} onChange={e => setTermDays(e.target.value)} placeholder="15" />
+          </Field>
+        ) : (
+          <Field label="Term (months)">
+            <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
+          </Field>
+        )}
         <Field label="Payout account (optional)" hint="Where the matured value lands.">
           <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
             <option value="">— None —</option>
@@ -190,7 +238,9 @@ export function InvestmentAddScreen() {
             <div className="text-muted text-[12.5px] mt-1">
               {isDps
                 ? 'Annuity-due: monthly contribution compounded at the stated rate for the full term.'
-                : 'Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.'}
+                : termInDays
+                  ? 'Formula: principal × (1 + rate/100 × termDays/365). Simple interest, no compounding.'
+                  : 'Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.'}
             </div>
           </div>
         )}
@@ -202,7 +252,7 @@ export function InvestmentAddScreen() {
               !name.trim()
               || (isDps ? monthlyInvalid : principalInvalid)
               || !(Number(rate) >= 0)
-              || !(Number(termMonths) > 0)
+              || !termValid
             }
           >
             Save investment

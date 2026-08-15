@@ -16,7 +16,8 @@
  *                          storing derived values in the state
  *   R7  Debt paid_so_far  → debtPaidSoFar()
  *   R8  Debt completion   → isDebtCompleted()
- *   R9  Investment value  → investmentMaturityValue()
+ *   R9  Investment value  → investmentMaturityValue() (months-based)
+ *                          investmentMaturityValueFromDays() (days-based, FDR/savings)
  *   R10 Investment status → deriveInvestmentStatus()
  *
  * Date conventions:
@@ -204,13 +205,44 @@ export function investmentMaturityValue(investment: Investment): number {
 }
 
 /**
- * R10 supporting: maturity date = start_date + term_months (calendar add).
- * Day-of-month is clamped to the last day of the target month so that
- * e.g. Jan 31 + 1 month = Feb 28 (not Mar 3).
+ * Days-based maturity value for short-term FDR/savings (sub-1-month terms).
+ *
+ * Formula: principal × (1 + rate/100 × termDays/365)
+ *
+ * This is the symmetric partner of `investmentMaturityValue` for the rare
+ * case where a user opens an FDR with a term shorter than a month — most
+ * banks express these in days rather than months (e.g. a 15-day FDR).
+ *
+ * Same simple-interest display model as R9: no daily accrual, no
+ * compounding. Use only when `investment.termDays` is set; otherwise
+ * callers should use `investmentMaturityValue`.
+ */
+export function investmentMaturityValueFromDays(investment: Investment): number {
+  if (!investment) return 0;
+  const days = Number(investment.termDays) || 0;
+  if (!(days > 0)) return 0;
+  const principal = Number(investment.principal) || 0;
+  const rate = Number(investment.rate) || 0;
+  return principal * (1 + (rate / 100) * (days / 365));
+}
+
+/**
+ * R10 supporting: maturity date. Dispatches on which term field is set:
+ *   - `termDays` set → start_date + termDays (calendar-day arithmetic)
+ *   - `termMonths` set → start_date + term_months (calendar-month add,
+ *     day-of-month clamped to the last day of the target month so that
+ *     e.g. Jan 31 + 1 month = Feb 28, not Mar 3)
+ *
+ * `termDays` wins when both happen to be set (the schema enforces XOR;
+ * this is a defensive fallback for old data that may carry both).
  */
 export function investmentMaturityDate(investment: Investment): Date | null {
   if (!investment?.startDate) return null;
   const start = parseISODate(investment.startDate);
+  const days = Number(investment.termDays) || 0;
+  if (days > 0) {
+    return new Date(start.getTime() + days * 86_400_000);
+  }
   const startDay = start.getUTCDate();
   const targetMonth = start.getUTCMonth() + (Number(investment.termMonths) || 0);
   const yearShift = Math.floor(targetMonth / 12);
@@ -363,11 +395,17 @@ export function dpsCurrentValue(investment: Investment, transactions: Transactio
 }
 
 /**
- * Type-aware maturity value. For DPS: annuity-due. For FDR/savings:
- * simple-interest (preserves R9 behavior).
+ * Type-aware maturity value. Dispatches on type AND on which term field
+ * the user filled in:
+ *   - DPS  → always annuity-due via dpsMaturityValue() (months-based).
+ *   - FDR/savings with `termDays` set → simple-interest days formula.
+ *   - FDR/savings otherwise → simple-interest months formula (R9).
  */
 export function investmentMaturityValueTyped(investment: Investment): number {
   if (!investment) return 0;
   if (investment.type === 'dps') return dpsMaturityValue(investment);
+  if (investment.termDays != null && Number(investment.termDays) > 0) {
+    return investmentMaturityValueFromDays(investment);
+  }
   return investmentMaturityValue(investment);
 }

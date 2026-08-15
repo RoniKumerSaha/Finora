@@ -44,7 +44,11 @@ export interface AddInvestmentInput {
   monthlyContribution?: number;
   rate: number;
   startDate: string;
+  /** Term in whole months. Mutually exclusive with `termDays`. */
   termMonths: number;
+  /** Term in whole calendar days (FDR/savings only — for sub-1-month terms).
+   *  Mutually exclusive with `termMonths`: exactly one must be set. */
+  termDays?: number;
   payoutAccountId?: string;
   institution?: string;
 }
@@ -55,7 +59,19 @@ export function add(state: State, input: AddInvestmentInput): State {
     throw new InvestmentError('Principal must be positive for FDR and savings.');
   }
   if (!(Number(input.rate) >= 0)) throw new InvestmentError('Rate must be non-negative.');
-  if (!(Number(input.termMonths) > 0)) throw new InvestmentError('Term must be positive (months).');
+
+  const months = Number(input.termMonths) || 0;
+  const days = input.termDays != null ? Number(input.termDays) || 0 : 0;
+  const hasMonths = months > 0;
+  const hasDays = days > 0;
+  if (hasMonths === hasDays) {
+    // Both set or neither set — schema also catches this; defense-in-depth.
+    throw new InvestmentError('Set exactly one of termMonths or termDays.');
+  }
+  if (input.type === 'dps' && hasDays) {
+    throw new InvestmentError('DPS requires term in months, not days.');
+  }
+
   if (input.type === 'dps'
       && input.monthlyContribution != null
       && !(Number(input.monthlyContribution) > 0)) {
@@ -71,7 +87,8 @@ export function add(state: State, input: AddInvestmentInput): State {
       : undefined,
     rate: Number(input.rate),
     startDate: input.startDate,
-    termMonths: Number(input.termMonths),
+    termMonths: hasMonths ? months : 0,
+    termDays: hasDays ? days : undefined,
     payoutAccountId: input.payoutAccountId,
     institution: input.institution?.trim() || undefined,
     status: 'active',
@@ -154,6 +171,7 @@ export function rollover(state: State, oldId: string): State {
     rate: old.rate,
     startDate: nextStart,
     termMonths: old.termMonths,
+    termDays: old.termDays,
     payoutAccountId: old.payoutAccountId,
     institution: old.institution,
     status: 'active',

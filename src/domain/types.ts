@@ -80,7 +80,13 @@ export interface Investment {
   monthlyContribution?: number;
   rate: number;              // percent, e.g. 8.5
   startDate: ISODate;
+  /** Term in whole months. Mutually exclusive with `termDays`: exactly one
+   *  must be set (DPS requires `termMonths`; FDR/savings may use either). */
   termMonths: number;
+  /** Term in whole calendar days. Used for short-term FDR/savings (< 1 month).
+   *  When set, `termMonths` is ignored for both value and date calculations.
+   *  Optional — most investments continue to use `termMonths`. */
+  termDays?: number;
   payoutAccountId?: string;
   institution?: string;
   status: InvestmentStatus;
