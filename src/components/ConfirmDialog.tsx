@@ -50,14 +50,21 @@ export function useConfirm() {
 function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v: boolean) => void }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
+  // Keep the latest onAnswer in a ref so the keyboard handler below
+  // never sees a stale closure, without re-running on every parent render
+  // (parents commonly pass a fresh `answer` reference each render, which
+  // would otherwise re-trigger the focus shift below).
+  const onAnswerRef = useRef(onAnswer);
+  useEffect(() => { onAnswerRef.current = onAnswer; }, [onAnswer]);
+
   useEffect(() => {
     cancelRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); onAnswer(false); }
+      if (e.key === 'Escape') { e.preventDefault(); onAnswerRef.current(false); }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onAnswer]);
+  }, []);
 
   return createPortal(
     <div

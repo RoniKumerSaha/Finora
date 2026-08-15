@@ -380,25 +380,28 @@ function ContributeModal({
   onClose,
   onSubmit,
 }: ContributeModalProps) {
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
   const amountInvalid = !isPositiveMoney(contribAmount);
   const amountErrorClass = amountInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
 
+  // Stable ref for onClose so the keyboard handler below doesn't
+  // re-attach on every parent render (parent passes a fresh arrow each
+  // time). Initial focus on Cancel is set once on mount; the Amount
+  // input still gets initial focus via its `autoFocus` prop.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
-    cancelRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
 
   return createPortal(
     <div
@@ -458,7 +461,6 @@ function ContributeModal({
         <div className="flex gap-2.5 justify-end mt-2">
           <button
             type="button"
-            ref={cancelRef}
             onClick={onClose}
             className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
           >
