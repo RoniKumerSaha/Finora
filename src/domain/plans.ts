@@ -335,7 +335,6 @@ export function removeEventItem(state: State, id: string, catId: string, itemId:
 
 export interface MonthSummary {
   plannedIncome: number;
-  plannedSpend: number;
   totalBudget: number;
   saved: number;
   overflow: number;
@@ -348,25 +347,24 @@ export interface MonthSummary {
 }
 
 export function summariseMonthPlan(plan: MonthPlan): MonthSummary {
-  let plannedSpend = 0;
+  let plannedTotal = 0;
   let totalBudget = 0;
   let overCount = 0;
   const plannedIncome = Number(plan.plannedIncome) || 0;
   for (const c of plan.categories) {
     const planned = Number(c.planned) || 0;
     const budget = Number(c.budget) || 0;
-    plannedSpend += planned;
+    plannedTotal += planned;
     totalBudget += budget;
     if (planned > budget) overCount++;
   }
   // Saving = what's left over after planned spending. Clamped to 0:
   // a deficit (spend > income) means no saving — the user is over budget.
-  const saved = Math.max(0, plannedIncome - plannedSpend);
-  const shortfall = Math.max(0, plannedSpend - plannedIncome);
+  const saved = Math.max(0, plannedIncome - plannedTotal);
+  const shortfall = Math.max(0, plannedTotal - plannedIncome);
   const deficit = shortfall > 0;
   return {
     plannedIncome,
-    plannedSpend,
     totalBudget,
     saved,
     overflow: shortfall,

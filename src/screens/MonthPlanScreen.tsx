@@ -22,14 +22,13 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
-import { categoryFillStatus, CATEGORY_FILL, formatPct, pctOf } from '../components/planner/jarVisuals';
 import type { PlanCategory } from '../domain/types';
+import { CardTotalChecker } from './plan/CardTotalChecker';
 
 export function MonthPlanScreen() {
   const state = useStore(s => s.state);
   const savePlan = useStore(s => s.saveMonthPlan);
   const resetPlan = useStore(s => s.resetMonthPlan);
-  const patchPlan = useStore(s => s.patchMonthPlan);
   const addCategory = useStore(s => s.addMonthCategory);
   const updateCategory = useStore(s => s.updateMonthCategory);
   const removeCategory = useStore(s => s.removeMonthCategory);
@@ -41,7 +40,6 @@ export function MonthPlanScreen() {
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const plan = plans.ensureMonthPlan(state, activeKey);
-  const summary = plans.summariseMonthPlan(plan);
 
   function shiftMonth(delta: number) {
     setActiveKey(plans.shiftMonthKey(activeKey, delta));
@@ -100,76 +98,7 @@ export function MonthPlanScreen() {
           </span>
         </div>
         <div className="hidden sm:block h-5 w-px bg-border" aria-hidden />
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
-          <IncomePill
-            value={summary.plannedIncome}
-            onCommit={n => patchPlan(activeKey, { plannedIncome: n })}
-          />
-          {(() => {
-            // Mirror the cards: 3-step palette (blue / green / red) so
-            // the strip stays in lockstep with the ring colours.
-            const over = summary.totalBudget > 0 && summary.plannedSpend > summary.totalBudget;
-            const tight = summary.totalBudget > 0 && !over && summary.plannedSpend >= summary.totalBudget * 0.8;
-            const spentColor = over ? 'var(--danger)' : tight ? 'var(--success)' : 'var(--info)';
-            return (
-              <span
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
-                style={{
-                  background: 'var(--summary-pill-bg)',
-                  border: '1px solid var(--summary-pill-border)',
-                }}
-              >
-                <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Spent</span>
-                <span className="font-bold text-[15px] tabular" style={{ color: spentColor }}>{fmtBDT(summary.plannedSpend)}</span>
-                <span className="text-[12px] text-muted">/ {fmtBDT(summary.totalBudget)}</span>
-              </span>
-            );
-          })()}
-          {(() => {
-            // Saving wears the same frosted-pill treatment as the other
-            // stats. Positive → success pill; deficit → danger pill;
-            // zero → muted. Mirrors the Event Planner strip exactly.
-            if (summary.saved > 0) {
-              return (
-                <span
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
-                  style={{
-                    background: 'var(--summary-pill-bg)',
-                    border: '1px solid var(--summary-pill-border)',
-                  }}
-                >
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Saved</span>
-                  <span className="font-bold text-[15px] tabular" style={{ color: 'var(--success-title)' }}>{fmtBDT(summary.saved)}</span>
-                </span>
-              );
-            }
-            if (summary.deficit) {
-              return (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
-                  background: 'var(--danger-callout-bg)',
-                  border: '1px solid color-mix(in srgb, var(--danger) 35%, transparent)',
-                }}>
-                  <span aria-hidden>⚠</span>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold" style={{ color: 'var(--danger-title)' }}>Over income</span>
-                  <span className="font-bold text-[15px] tabular" style={{ color: 'var(--danger-title)' }}>{fmtBDT(Math.abs(summary.saved))}</span>
-                </span>
-              );
-            }
-            return (
-              <span
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
-                style={{
-                  background: 'var(--summary-pill-bg)',
-                  border: '1px solid var(--summary-pill-border)',
-                }}
-              >
-                <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Saved</span>
-                <span className="font-bold text-[15px] tabular text-muted">৳ 0</span>
-              </span>
-            );
-          })()}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <Button variant="ghost" onClick={async () => {
             // Reset wipes income + every item back to the plan's saved
             // state — confirm before discarding the working draft.
@@ -189,29 +118,23 @@ export function MonthPlanScreen() {
         </div>
       </div>
 
-      {summary.deficit && (
-        <div
-          className="text-[12.5px] rounded-pill px-3.5 py-2 inline-flex items-center gap-2"
-          style={{
-            background: 'var(--danger-callout-bg)',
-            border: '1px solid var(--danger)',
-            color: 'var(--danger-title)',
-            boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
-          }}
-        >
-          <span aria-hidden>⚠️</span>
-          <span>
-            You're planning to spend <b className="text-ink">{fmtBDT(summary.shortfall)}</b> more than your income this month.
-          </span>
-        </div>
-      )}
+      {/* Deficit warning removed: income is no longer a per-plan surface,
+          so the "planning to spend more than income" comparison no
+          longer applies. */}
+
+      {/* Card-total checker — multi-select checklist for a quick sum
+          of selected items in this month. Sits between the summary
+          strip and the items grid so it's the first thing the user
+          sees when they want to know "if I pay these today, how
+          much?". */}
+      <CardTotalChecker activeKey={activeKey} />
 
       {/* Grid panel: sits on --bg (page). Items use --surface-2 so each
           card visually lifts off the panel — the previous version
           had cards matching the panel exactly and only borders
           separated them. */}
       <div className="rounded-card border border-border p-6" style={{ background: 'var(--bg)' }}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {plan.categories.map(c => (
             <JarTile
               key={c.id}
@@ -224,7 +147,7 @@ export function MonthPlanScreen() {
                 const ok = await confirm({
                   title: `Delete “${c.name}”?`,
                   body: 'This item will be removed from this month\u2019s plan.',
-                  dangerText: 'Planned and budget values for this item are removed.',
+                  dangerText: 'The budget value for this item is removed.',
                   confirmLabel: 'Delete',
                   danger: true,
                 });
@@ -254,7 +177,7 @@ export function MonthPlanScreen() {
           cat={selectedCat}
           onUpdate={patch => updateCategory(activeKey, selectedCat.id, patch)}
           onRemove={() => { removeCategory(activeKey, selectedCat.id); setSelectedCatId(null); }}
-          onEmpty={() => updateCategory(activeKey, selectedCat.id, { planned: 0, budget: 0 })}
+          onEmpty={() => updateCategory(activeKey, selectedCat.id, { budget: 0 })}
           onClose={() => setSelectedCatId(null)}
         />
       )}
@@ -274,59 +197,39 @@ export function MonthPlanScreen() {
   );
 }
 
-/* ── Editable income pill ────────────────────────────────────────── */
-
-function IncomePill({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
-  // Frosted pill that doubles as the income editor. Click the number
-  // to type, Enter commits, blur commits — no per-pill save button,
-  // because the parent Save plan button is the single save surface
-  // for the whole screen. Editing the input mutates the plan via
-  // `patchPlan({ plannedIncome })`, which marks the plan dirty; the
-  // page-level Save plan button is the only thing that clears dirty.
-  const [draft, setDraft] = useState(String(value ?? ''));
-  useEffect(() => { setDraft(String(value ?? '')); }, [value]);
-
-  function commit() {
-    const n = clampNonNegative(draft);
-    setDraft(String(n));
-    if (n !== value) onCommit(n);
-  }
-
-  return (
-    <span
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
-      style={{
-        background: 'var(--summary-pill-bg)',
-        border: '1px solid var(--summary-pill-border)',
-      }}
-    >
-      <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold" style={{ color: 'var(--info)' }}>Income</span>
-      <span className="font-bold text-[15px] tabular flex items-center gap-0.5" style={{ color: 'var(--info)' }}>
-        <span>৳</span>
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); }
-          }}
-          onBlur={commit}
-          placeholder="0"
-          aria-label="Income"
-          className="bg-transparent border-0 border-b border-dashed focus:outline-none tabular w-[80px] text-right"
-          style={{
-            color: 'var(--info)',
-            borderColor: 'color-mix(in srgb, var(--info) 35%, transparent)',
-          }}
-        />
-      </span>
-    </span>
-  );
-}
+/* ── Editable income pill (removed: income is no longer a per-plan
+      field on this surface — the user only needs the items grid
+      and the deficit warning now). ──────────────────────────────── */
 
 /* ── Sub-components ──────────────────────────────────────────────── */
+
+// Tonal palette used to paint the ring of a budget-less item.
+// Deterministic per id (same item always gets the same colour).
+// Picks the same family as the Event Planner category tone palette
+// so the planners feel of-a-piece, minus the danger/success tones
+// (those read as status alerts, not decoration).
+const TONE_COLOR_VARS: ReadonlyArray<string> = [
+  'var(--primary)', 'var(--accent)', 'var(--info)',
+  'var(--warn)', 'var(--cyan)', 'var(--orange)',
+];
+
+/**
+ * Pick a stable random colour from the tonal palette based on the
+ * category id. Used for budget-less items so their ring still reads
+ * as a card (full + coloured) rather than an empty hole.
+ *
+ * The hash is trivial (sum of char codes modded into the palette
+ * length) because distribution across 7 buckets doesn't need to be
+ * cryptographic — we just want each id to land somewhere stable and
+ * different-looking from its neighbours.
+ */
+function randomToneColor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h + id.charCodeAt(i)) | 0;
+  const idx = Math.abs(h) % TONE_COLOR_VARS.length;
+  return TONE_COLOR_VARS[idx];
+}
+
 
 function MonthPager({ activeKey, onShift }: { activeKey: string; onShift: (d: number) => void }) {
   return (
@@ -354,22 +257,15 @@ function JarTile({ cat, selected, onSelect, onRemove }: {
   onSelect: () => void;
   onRemove: () => void;
 }) {
-  const planned = Number(cat.planned) || 0;
   const budget = Number(cat.budget) || 0;
-  const pct = pctOf(planned, budget);
-  const overflow = budget > 0 && planned > budget;
-  // 3-step category palette (blue / green / red) — keeps the ring in
-  // lockstep with the Event Planner category cards.
-  const status = categoryFillStatus(pct, overflow, budget);
-  // Conic-gradient rings don't accept fill > 100% cleanly, so cap
-  // visually at full and let the colour swap to red for overflow.
-  const ringPct = Math.min(100, pct);
-  const fillColor = CATEGORY_FILL[status].color;
   const hasBudget = budget > 0;
+  // Every card's ring fills 100% with a stable random colour drawn
+  // from the tonal palette (deterministic on the id, so reloads don't
+  // reshuffle the assignment). Planned-vs-budget no longer drives the
+  // ring — the body text shows the budget figure instead.
+  const ringColor = randomToneColor(cat.id);
   // Inner disc is slightly smaller than the outer ring so the donut
-  // has a clear, readable band. When there's no budget we keep the
-  // disc opaque but make the surrounding track nearly transparent so
-  // the card reads as "no budget yet" rather than "0% filled".
+  // has a clear, readable band.
   const ringOuter = 'w-[68px] h-[68px]';
   const ringInner = 'w-[56px] h-[56px]';
 
@@ -389,19 +285,15 @@ function JarTile({ cat, selected, onSelect, onRemove }: {
         }}
       >
         {/* Progress ring. Two layered circles: an outer conic-gradient
-            ring (the track + sweep) and an inner solid disc with the
-            emoji. A solid track on top is the only reliable way to
-            avoid the conic-gradient's transparency showing through and
-            making the unfilled portion look like a "cut". When there's
-            no budget the entire ring stays muted so the card reads as
-            "unset", not as "0% of an empty jar". */}
+            ring and an inner solid disc with the emoji. Always fills
+            to 100% with a stable random colour from the tonal palette
+            so every card reads the same — there's no more planned-vs-
+            budget math driving the ring. */}
         <span
           aria-hidden
           className={`${ringOuter} rounded-full shrink-0 relative`}
           style={{
-            background: hasBudget
-              ? `conic-gradient(${fillColor} 0% ${ringPct}%, color-mix(in srgb, var(--border) 35%, var(--surface)) ${ringPct}% 100%)`
-              : `conic-gradient(color-mix(in srgb, var(--border) 35%, var(--surface)) 0% 100%)`,
+            background: ringColor,
           }}
         >
           <span
@@ -412,42 +304,27 @@ function JarTile({ cat, selected, onSelect, onRemove }: {
           </span>
         </span>
 
-        {/* Body — name (2-line clamp), planned amount, status row.
-            The budget number is hidden on the card because the ring
-            already conveys budget vs planned visually; showing it twice
-            adds noise. The budget value is set / edited inside the
-            modal only. */}
-        <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+        {/* Body — title (2-line clamp) and budget figure. The card
+            shows title + budget only; the ring does the fill work
+            visually so we don't repeat the percentage in text. When
+            there's no budget the figure slot reads an em-dash so the
+            layout doesn't shift. Single horizontal row to keep the
+            number from wrapping on narrow grid columns (4-up at md+). */}
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div
-            className="text-[14px] font-semibold text-ink leading-snug"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              wordBreak: 'break-word',
-            }}
+            className="text-[14px] font-semibold text-ink leading-snug truncate"
+            title={cat.name}
           >
             {cat.name}
           </div>
-          <div className="font-bold text-[15px] text-ink tabular leading-none">
-            {fmtBDT(planned)}
+          <div className="flex items-baseline gap-1 min-w-0">
+            <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+              Budget
+            </span>
+            <span className="font-bold text-[15px] text-ink tabular leading-none whitespace-nowrap truncate">
+              {hasBudget ? fmtBDT(budget) : '—'}
+            </span>
           </div>
-          {hasBudget ? (() => {
-            const f = formatPct(pct, overflow);
-            return (
-              <div
-                className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none tabular"
-                style={{ color: fillColor }}
-              >
-                {f.number} {f.verb}
-              </div>
-            );
-          })() : (
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none text-muted">
-              Tap to set a budget
-            </div>
-          )}
         </div>
       </button>
 
@@ -478,10 +355,13 @@ function NewItemModal({ onSave, onClose }: {
   // Local drafts so the user can type freely without committing half-
   // typed values to the store (the existing JarEditorModal uses the
   // same pattern). Escape closes; Enter submits the form.
+  //
+  // Create flow is budget-only: a fresh item starts at planned=0 and
+  // the user can bump the planned amount later (e.g. via the card
+  // total checker on /plan/month). No second field here.
   const [emoji, setEmoji] = useState('🛒');
   const [name, setName] = useState('');
   const [budgetText, setBudgetText] = useState('');
-  const [plannedText, setPlannedText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => {
@@ -498,7 +378,7 @@ function NewItemModal({ onSave, onClose }: {
       emoji,
       name: name.trim(),
       budget: clampNonNegative(budgetText),
-      planned: clampNonNegative(plannedText),
+      planned: 0,
     });
   }
 
@@ -544,7 +424,7 @@ function NewItemModal({ onSave, onClose }: {
         <div className="mb-4 pr-8">
           <h3 id="new-item-title" className="heading h3-modal m-0">Add new item</h3>
           <div className="text-muted text-[12.5px] mt-1">
-            Pick an icon, name the item, set the budget. You can edit any of these later.
+            Pick an icon, name the item, set the budget. You can edit the budget later.
           </div>
         </div>
 
@@ -562,28 +442,16 @@ function NewItemModal({ onSave, onClose }: {
               autoFocus
             />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Budget (optional)">
-              <Input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                value={budgetText}
-                onChange={e => setBudgetText(e.target.value)}
-                placeholder="0"
-              />
-            </Field>
-            <Field label="Already spent (optional)">
-              <Input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                value={plannedText}
-                onChange={e => setPlannedText(e.target.value)}
-                placeholder="0"
-              />
-            </Field>
-          </div>
+          <Field label="Budget (optional)">
+            <Input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              value={budgetText}
+              onChange={e => setBudgetText(e.target.value)}
+              placeholder="0"
+            />
+          </Field>
 
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -608,22 +476,21 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
   // Zero values render as empty drafts (placeholder takes over) so
   // the field doesn't pre-place "0" when the user means "not set".
   // Empty still commits as 0 via clampNonNegative in the change path.
+  //
+  // Edit flow is budget-only: planned is read-only here (set when the
+  // item is created or implicitly bumped by ticking it in the card
+  // total checker on /plan/month). Keeps the modal surface small and
+  // matches the create flow.
   const [budgetText, setBudgetText] = useState(cat.budget > 0 ? String(cat.budget) : '');
-  const [plannedText, setPlannedText] = useState(cat.planned > 0 ? String(cat.planned) : '');
   // Re-seed drafts when the modal opens for a different item.
   useEffect(() => {
     setBudgetText(cat.budget > 0 ? String(cat.budget) : '');
-    setPlannedText(cat.planned > 0 ? String(cat.planned) : '');
   }, [cat.id]);
 
-  const planned = Number(cat.planned) || 0;
   const budget = Number(cat.budget) || 0;
-  const pct = budget > 0 ? Math.round((planned / budget) * 100) : 0;
-  const overflow = budget > 0 && planned > budget;
-  // 3-step category palette (blue / green / red) — same as the card
-  // so the mini-preview in the editor matches what the user sees in the
-  // grid. Mirrors the Event Planner category cards.
-  const status = categoryFillStatus(pct, overflow, budget);
+  // Mini-preview mirrors the card: the ring is a solid 100% colour
+  // drawn from the same random palette, no planned-vs-budget math.
+  const ringColor = randomToneColor(cat.id);
 
   return createPortal(
     <div
@@ -670,7 +537,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
             <h3 id="item-editor-title" className="heading h3-modal m-0">
               {cat.emoji} {cat.name}
             </h3>
-            <div className="text-muted text-[12.5px] mt-1">Set the budget, plan the spend.</div>
+            <div className="text-muted text-[12.5px] mt-1">Set the budget.</div>
           </div>
           <span
             className="text-[11px] font-bold uppercase tracking-[0.04em] px-2.5 py-1 rounded-pill whitespace-nowrap flex items-center gap-1.5"
@@ -680,16 +547,15 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               border: '1px solid var(--border)',
             }}
           >
-            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: CATEGORY_FILL[status].color }} />
-            {budget > 0 ? (overflow ? `${pct}% overflowing` : `${pct}% filled`) : 'No budget'}
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: ringColor }} />
+            {budget > 0 ? 'Budget set' : 'No budget'}
           </span>
         </div>
 
-        {/* Mini-preview — mirrors the ring-based card in the grid so
-            the user can confirm the colour ramp matches. Same 68px
-            ring + body layout. The track colour resolves against the
-            card surface so the unfilled portion always reads as a
-            clean ring rather than a "cut" through the gradient. */}
+        {/* Mini-preview — mirrors the card in the grid. Same 68px
+            ring + body layout. Ring is a solid 100% fill in the
+            item's stable random colour so the preview matches what
+            the user sees on the grid card. */}
         <div className="my-3 flex justify-center">
           <div
             className="w-full max-w-[300px] min-h-[110px] rounded-card border px-4 py-3 flex items-center gap-3"
@@ -703,9 +569,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               aria-hidden
               className="w-[68px] h-[68px] rounded-full shrink-0 relative"
               style={{
-                background: budget > 0
-                  ? `conic-gradient(${CATEGORY_FILL[status].color} 0% ${Math.min(100, pct)}%, color-mix(in srgb, var(--border) 35%, var(--surface-2)) ${Math.min(100, pct)}% 100%)`
-                  : `conic-gradient(color-mix(in srgb, var(--border) 35%, var(--surface-2)) 0% 100%)`,
+                background: ringColor,
               }}
             >
               <span
@@ -715,42 +579,29 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
                 {cat.emoji}
               </span>
             </span>
-            <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div
-                className="text-[14px] font-semibold text-ink leading-snug"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  wordBreak: 'break-word',
-                }}
+                className="text-[14px] font-semibold text-ink leading-snug truncate"
+                title={cat.name}
               >
                 {cat.name}
               </div>
-              <div className="font-bold text-[15px] text-ink tabular leading-none">
-                {fmtBDT(planned)}
+              <div className="flex items-baseline gap-1 min-w-0">
+                <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+                  Budget
+                </span>
+                <span className="font-bold text-[15px] text-ink tabular leading-none whitespace-nowrap truncate">
+                  {budget > 0 ? fmtBDT(budget) : '—'}
+                </span>
               </div>
-              {budget > 0 ? (() => {
-                const f = formatPct(pct, overflow);
-                return (
-                  <div
-                    className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none tabular"
-                    style={{ color: CATEGORY_FILL[status].color }}
-                  >
-                    {f.number} {f.verb}
-                  </div>
-                );
-              })() : (
-                <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none text-muted">
-                  Tap to set a budget
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* Budget field only. Planned is no longer edited here — it's
+            set at create time (0) and updated elsewhere; the card's
+            title-and-budget body reflects that. */}
+        <div className="grid grid-cols-1 gap-3">
           <Field label="Budget">
             <Input
               type="number"
@@ -767,27 +618,11 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               }}
             />
           </Field>
-          <Field label="Spent">
-            <Input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              value={plannedText}
-              placeholder="0"
-              onChange={e => {
-                const raw = e.target.value;
-                setPlannedText(raw);
-                const n = clampNonNegative(raw);
-                if (raw !== '' && raw !== '-') onUpdate({ planned: n });
-                else if (raw === '') onUpdate({ planned: 0 });
-              }}
-            />
-          </Field>
         </div>
 
         {/* Primary action row — only the safe actions. */}
         <div className="flex justify-end gap-2 mt-5">
-          <Button variant="ghost" onClick={onEmpty}>Empty item</Button>
+          <Button variant="ghost" onClick={onEmpty}>Clear budget</Button>
           <Button variant="primary" onClick={onClose}>Save</Button>
         </div>
 

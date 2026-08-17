@@ -5,11 +5,9 @@
  * feature screen. Nothing here writes to the ledger — plans are
  * separate from `state.transactions`.
  *
- * 2026-08-17 polish: each card now carries a hero summary block —
- * Income / Spend / Saved stat tiles for the month, and per-event
- * rows with days-to-go for the events list. The cards still sit in
- * the same two-column grid so the page reads as one cohesive unit
- * even with the added detail.
+ * 2026-08-17 polish: each card carries a hero summary block —
+ * Income / Saved stat tiles for the month, and per-event rows with
+ * days-to-go for the events list.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -60,13 +58,13 @@ export function PlanScreen() {
             Fill items by category. Save the plan, reset when you want a fresh start — no history kept.
           </p>
 
-          {/* Stat tiles — Income / Spend / Saved. Each tile carries a
-              label + bold figure, with the spend tile coloured by
-              deficit vs on-track status. When there's no plan yet the
-              tiles render em-dashes so the layout doesn't shift. */}
+          {/* Stat tiles — Income / Saved. Two tiles so the user can
+              see at a glance what's coming in vs what's left over.
+              When there's no plan yet the tiles render em-dashes so
+              the layout doesn't shift. */}
           {monthSummary ? (
             <>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <StatTile
                   label="Income"
                   value={fmtBDT(monthSummary.plannedIncome)}
@@ -74,16 +72,10 @@ export function PlanScreen() {
                   empty={monthSummary.plannedIncome === 0}
                 />
                 <StatTile
-                  label="Spend"
-                  value={fmtBDT(monthSummary.plannedSpend)}
-                  tone={monthSummary.deficit ? 'danger' : monthSummary.overCount > 0 ? 'warn' : 'success'}
-                  empty={monthSummary.plannedSpend === 0}
-                />
-                <StatTile
                   label="Saved"
                   value={fmtBDT(monthSummary.saved)}
                   tone={monthSummary.deficit ? 'danger' : 'success'}
-                  empty={monthSummary.plannedIncome === 0 && monthSummary.plannedSpend === 0}
+                  empty={monthSummary.plannedIncome === 0 && monthSummary.saved === 0}
                 />
               </div>
 
