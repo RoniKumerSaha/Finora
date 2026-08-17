@@ -169,7 +169,7 @@ export function SettingsScreen() {
               />
             </div>
             <p className="text-xs text-muted mt-4">
-              Exports save to <code>finora-backup-YYYY-MM-DD.json</code>. Import replaces all data after confirmation.
+              Save a JSON file to your device. Use Import to restore from a backup later (replaces all data after confirmation).
             </p>
           </section>
 
@@ -191,7 +191,7 @@ export function SettingsScreen() {
           >
             <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
             <p className="text-[13px] text-muted mb-4">
-              Removes every account, transaction, goal, debt, and investment. Your onboarding state is kept.
+              This permanently deletes every account, transaction, goal, debt, and investment on this device. Export first if unsure.
             </p>
             <Button variant="danger" onClick={onWipe}>Wipe all data</Button>
           </section>
@@ -243,8 +243,8 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
           label="Storage"
           value={
             entryCount === 0
-              ? 'localStorage · empty'
-              : `localStorage · ${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`
+              ? 'Saved on this device only'
+              : `Saved on this device · ${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`
           }
         />
       </dl>
@@ -255,7 +255,7 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
           onClick={onReset}
           className="self-start text-primary text-[12.5px] font-semibold hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
         >
-          Reset {'\u2192'}
+          Erase everything and start over {'\u2192'}
         </button>
       </div>
     </aside>

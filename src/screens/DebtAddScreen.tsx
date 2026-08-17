@@ -52,7 +52,7 @@ export function DebtAddScreen() {
         <div className="text-muted text-[13px] mt-1.5">Track what you owe or what others owe you.</div>
       </header>
       <section className="card flex flex-col gap-5">
-        <Field label="Direction">
+        <Field label="Direction" hint="Pick 'I owe' for loans you took. 'Owed to me' for money you lent.">
           <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
             <option value="i_owe">I owe (you borrowed)</option>
             <option value="owed_to_me">Owed to me (you lent)</option>
@@ -61,7 +61,7 @@ export function DebtAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from a friend, advance to a colleague…" autoFocus />
         </Field>
-        <Field label="Total amount" error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+        <Field label="Total amount" hint="Total amount — principal, not total repayments expected." error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"

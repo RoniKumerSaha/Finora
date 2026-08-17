@@ -51,7 +51,7 @@ export function AccountAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Cash, Wallet, Main Bank…" autoFocus />
         </Field>
-        <Field label="Type">
+        <Field label="Type" hint="Cash, bank account, or mobile wallet.">
           <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
             {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
           </Select>

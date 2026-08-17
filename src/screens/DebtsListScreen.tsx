@@ -56,6 +56,7 @@ export function DebtsListScreen() {
         <section className="card">
           <div className="py-10 text-center text-muted">
             <div className="text-[14px] font-semibold text-ink">No debts yet.</div>
+            <div className="text-[12.5px] mt-2">Add a debt to track who owes whom.</div>
           </div>
         </section>
       ) : (
@@ -170,8 +171,8 @@ function DebtGroup({
                     <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
                       <div className="text-xs text-muted leading-tight mt-1 truncate tabular">
-                        {fmtBDT(d.paidSoFar || 0)} / {fmtBDT(d.total)}
-                        {d.dueDate ? ` \u00B7 by ${fmtDate(d.dueDate)}` : ''}
+                        Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
+                        {d.dueDate ? ` \u00B7 due ${fmtDate(d.dueDate)}` : ''}
                         {d.person ? ` \u00B7 ${d.person}` : ''}
                       </div>
                     </div>
@@ -186,6 +187,7 @@ function DebtGroup({
                 <div className="mt-2 h-2 bg-surface-2 rounded-pill overflow-hidden">
                   <div className={`h-full rounded-pill ${barFill}`} style={{ width: `${pct}%` }} />
                 </div>
+                <div className="text-[10.5px] text-muted mt-1 tabular">{pct}% paid</div>
               </Link>
             );
           })}

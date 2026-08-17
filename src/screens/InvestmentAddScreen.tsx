@@ -180,7 +180,7 @@ export function InvestmentAddScreen() {
             />
           </Field>
         )}
-        <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
+        <Field label="Rate (% per year)" hint="Annual rate. Simple interest for FDR/savings (compounded monthly for DPS).">
           <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="8" />
         </Field>
         <Field label="Start date">
@@ -202,7 +202,7 @@ export function InvestmentAddScreen() {
             <Input type="number" inputMode="numeric" value={termDays} onChange={e => setTermDays(e.target.value)} placeholder="15" />
           </Field>
         ) : (
-          <Field label="Term (months)">
+          <Field label="Term (months)" hint="Use the same number of months as your bank contract.">
             <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
           </Field>
         )}
@@ -217,7 +217,7 @@ export function InvestmentAddScreen() {
             </div>
           )}
         </Field>
-        <Field label="Institution (optional)">
+        <Field label="Institution (optional)" hint="Bank or NBFI holding this investment.">
           <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="Bank name…" />
         </Field>
         {matPreview != null && (
@@ -231,9 +231,9 @@ export function InvestmentAddScreen() {
             }}
           >
             <div>
-              <strong style={{ color: 'var(--accent)' }}>Review:</strong> You'll receive{' '}
+              <strong style={{ color: 'var(--accent)' }}>Review:</strong> You'll receive about{' '}
               <strong className="tabular">৳{Math.round(matPreview).toLocaleString('en-IN')}</strong>{' '}
-              at maturity.
+              at maturity <span className="opacity-70">(projection — actual payout may differ).</span>
             </div>
             <div className="text-muted text-[12.5px] mt-1">
               {isDps

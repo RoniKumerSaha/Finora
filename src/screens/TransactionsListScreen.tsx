@@ -149,7 +149,7 @@ export function TransactionsListScreen() {
           <div className="py-10 text-center text-muted text-sm">
             {filter === 'all'
               ? 'No transactions yet.'
-              : 'No transactions match this filter.'}
+              : 'No transactions match this filter. Try a different filter, or add a new transaction.'}
           </div>
         ) : grouped ? (
           // Day-grouped unfiltered view. Subheaders are also sticky so

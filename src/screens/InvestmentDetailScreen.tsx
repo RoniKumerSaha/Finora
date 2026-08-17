@@ -294,17 +294,17 @@ export function InvestmentDetailScreen() {
           {isDps && (
             <>
               <Stat label="Contributed so far" value={fmtBDT(contributed)} />
-              <Stat label="Current value" value={fmtBDT(currentValue)} hint="Compounded to today" />
+              <Stat label="Current value" value={fmtBDT(currentValue)} hint="What the bank would pay you if you cashed out today." />
             </>
           )}
           {paidOut > 0 && (
             <Stat label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
           )}
           <Stat
-            label={isDps ? 'Projected at maturity' : 'Maturity value'}
+            label={isDps ? 'Estimated payout when the term ends' : 'Maturity value'}
             value={fmtBDT(projected)}
             accent
-            hint={isDps ? 'If you complete every month' : 'Simple interest'}
+            hint={isDps ? 'If you pay every installment on time.' : 'Simple interest.'}
           />
           <Stat label="Expected interest" value={fmtBDT(expectedInterest)} />
           <Stat label="Rate" value={`${inv.rate}% / yr`} />
@@ -357,29 +357,29 @@ export function InvestmentDetailScreen() {
                   onClick={onRecordPayout}
                   disabled={!inv.payoutAccountId || currentValue - paidOut <= 0}
                 >
-                  Record maturity payout
+                  Record bank payout
                 </Button>
-                <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
+                <Button variant="secondary" onClick={onRollover}>Renew for another term</Button>
                 {paidOut === 0 && (
-                  <Button variant="secondary" onClick={onClose}>Close this investment</Button>
+                  <Button variant="secondary" onClick={onClose}>Mark as done (no payout)</Button>
                 )}
               </div>
               {!inv.payoutAccountId && (
                 <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-                  Set a <strong>payout account</strong> on this DPS to record payouts.{' '}
+                  Choose which <strong>account receives the money</strong> when the bank pays out this DPS.{' '}
                   <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
                   to add one — without it, the bank has nowhere to send the money back.
                 </div>
               )}
               <p className="text-[12px] text-muted mt-3 leading-relaxed">
-                <strong>Record maturity payout</strong> opens the income form with the remaining amount
+                <strong>Record bank payout</strong> opens the income form with the remaining amount
                 (current value {fmtBDT(currentValue)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, currentValue - paidOut))})
                 pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
                 and auto-closes this DPS once contributions have been fully paid back.
                 <br />
-                <strong>Roll over</strong> starts a fresh DPS the day after this one ends.
+                <strong>Renew for another term</strong> starts a fresh DPS the day after this one ends.
                 <br />
-                <strong>Close</strong> is for marking the account done without recording a payout (rare).
+                <strong>Mark as done</strong> is for retiring the record without recording a payout (rare).
               </p>
             </>
           ) : (
@@ -390,27 +390,27 @@ export function InvestmentDetailScreen() {
                   onClick={onRecordPayout}
                   disabled={!inv.payoutAccountId || projected - paidOut <= 0}
                 >
-                  Record maturity payout
+                  Record bank payout
                 </Button>
-                <Button variant="secondary" onClick={onRollover}>Roll over to a new term</Button>
-                <Button variant="secondary" onClick={onClose}>Close this investment</Button>
+                <Button variant="secondary" onClick={onRollover}>Renew for another term</Button>
+                <Button variant="secondary" onClick={onClose}>Mark as done (no payout)</Button>
               </div>
               {!inv.payoutAccountId && (
                 <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-                  Set a <strong>payout account</strong> on this {inv.type.toUpperCase()} to record the maturity payout.{' '}
+                  Choose which <strong>account receives the money</strong> when the bank pays out this {inv.type.toUpperCase()}.{' '}
                   <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
                   to add one — without it, the bank has nowhere to send the money back.
                 </div>
               )}
               <p className="text-[12px] text-muted mt-3 leading-relaxed">
-                <strong>Record maturity payout</strong> opens the income form with the maturity amount
+                <strong>Record bank payout</strong> opens the income form with the maturity amount
                 ({fmtBDT(projected)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, projected - paidOut))})
                 pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
                 which then shows in the Paid out row above and in the Activity log below.
                 <br />
-                <strong>Roll over</strong> creates a fresh investment starting the day after maturity.
+                <strong>Renew for another term</strong> creates a fresh investment starting the day after maturity.
                 <br />
-                <strong>Close</strong> marks this one done manually — useful if you already received the money outside the app and just want to retire the record.
+                <strong>Mark as done</strong> retires this record manually — useful if you already received the money outside the app.
               </p>
             </>
           )}

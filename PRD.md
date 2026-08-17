@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-17 |
+| **Last Updated** | 2026-08-17 (help text sweep) |
 
 ---
 
@@ -680,6 +680,92 @@ CSV export is **not required** for V1. JSON is sufficient and lossless.
 - Confirmation: *"This permanently deletes all your transactions, accounts, goals, debts, and investments on this device. This cannot be undone."*
 - Buttons: **Cancel** | **Delete everything**.
 - The app does **not** require an export before deletion.
+
+### 9.13 Inline Help Text (added 2026-08-17)
+
+A first-time user should not need external documentation to understand the form fields they fill in, the metrics they see, or the jargon the app uses. Help text is the answer: short, in-place, never obstructing.
+
+**Where help lives:**
+
+| Location | Form | When shown |
+|---|---|---|
+| Form fields | Small muted line below the input (`Field.hint`) | Always, unless a validation error is showing |
+| KPI tiles & cards | Tooltip on the label + sentence in the trend / caption area | Always; tooltip on hover/focus |
+| Derived figures (e.g. "৳X at maturity") | Inline label "Projection:" + "(projection)" suffix on amount lines | Always when the figure is not real money in hand |
+| Empty states | One short sentence + CTA | When the list is empty |
+| Settings helpers | Sentence under the section heading | Always |
+
+**Copy conventions:**
+
+- **Tone:** second person, present tense, never condescending. One sentence, ≤ 14 words.
+- **Clarity over jargon.** Prefer ordinary words. When a term must appear (DPS, FDR, payout, rollover, maturity), pair it with a one-phrase explanation the first time.
+- **No marketing language.** Never begin with "Pro tip" / "Did you know?" / "Just". Never apologise.
+- **All money labels say whether they are real now or projected.** Real = nothing extra. Projected = "(projection)" suffix or a leading "If you complete every installment…" sentence.
+- **No abbreviations in help copy:** write "per month" not "/mo", "annual" not "/yr", "estimated" not "est.".
+
+**Glossary (used inline, never the only explanation):**
+
+| Term | Plain-English pairing |
+|---|---|
+| DPS | monthly savings plan |
+| FDR | one-time fixed-term deposit |
+| Payout | the bank paying the matured value back into an account |
+| Maturity | the date the bank pays out the investment |
+| Rollover | renewing the investment for another term, the day after it matures |
+| Net worth | what you own minus what you owe |
+
+**Form-field copy table (Tier 1 — high impact):**
+
+| Screen | Field | Current | Replacement hint |
+|---|---|---|---|
+| AccountAdd / Edit | Type | — | "Cash, bank account, or mobile wallet." |
+| AccountEdit | Opening balance | — | "Changing this adjusts the account's starting balance only." |
+| DebtAdd | Direction | — | "Pick 'I owe' for loans you took. 'Owed to me' for money you lent." |
+| DebtAdd | Total amount | — | "Total amount — principal, not total repayments expected." |
+| DebtEdit | Direction | — | "Changing direction flips how linked payments are interpreted." |
+| DebtEdit | Total amount | — | "Repayments are tracked via linked transactions, not here." |
+| GoalAdd | Target amount | — | "Total amount you want to reach by the deadline." |
+| GoalAdd | Target date | — | "Drives the 'save ৳X / month' suggestion on the goal." |
+| InvestmentAdd / Edit | Rate | "Annual interest rate, e.g. 8 for 8%." | "Annual rate. Simple interest for FDR/savings (compounded monthly for DPS)." |
+| InvestmentAdd | Term (months) | — | "Use the same number of months as your bank contract." |
+| InvestmentAdd | Use days | "Use days instead of months…" | "Use days for terms like 30, 60, or 90 days (shorter than a month)." |
+| InvestmentAdd | Maturity preview | "Review: You'll receive ৳X at maturity." | "Review: You'll receive about ৳X at maturity (projection — actual payout may differ)." |
+| InvestmentAdd | Institution | — | "Bank or NBFI holding this investment." |
+| InvestmentEdit | Term (months) | — | "Changing this shifts the maturity date forward." |
+| AddTransactionForm | Linked investment | "Payout from an investment" | "Selecting one routes the money to that investment's payout account." |
+| AddTransactionForm | Balance preview | (unlabeled) | (small caps label) "Projected balance after save" |
+| TransactionEdit | Note | — | "Add or change a note. Leave blank to remove." |
+| TransactionEdit | Linked debt / investment | — | "Link if this entry is a payment toward that debt / payout from that investment." |
+
+**Read-only-screen copy table (Tier 2 — captions + tooltips):**
+
+| Screen | Element | Current | Replacement |
+|---|---|---|---|
+| Home | Total balance caption | "across N accounts" | "Sum of money in all your accounts right now." |
+| Home | Total investments caption | "across N investments" | "Money locked in active DPS, FDR & savings schemes." |
+| Home | Empty state | "No transactions yet." | "Add income, expenses, or transfers to start tracking." |
+| InvestmentsList | "How it works" callout | already strong | (no change — this is the model) |
+| InvestmentDetail | Current-value hint | "Compounded to today" | "What the bank would pay you if you cashed out today." |
+| InvestmentDetail | At-maturity label | "Projected at maturity" | "Estimated payout when the term ends." |
+| InvestmentDetail | "Record maturity payout" button | — | "Record bank payout" |
+| InvestmentDetail | "Roll over" button | — | "Renew for another term" |
+| DebtsList | Row subtitle "৳X / ৳Y" | — | "Paid ৳X of ৳Y total" |
+| DebtsList | Progress bar | unlabelled | "X% paid" caption |
+| DebtsList | Empty state | "No debts yet." | "Add a debt to track who owes whom." |
+| TransactionsList | Filtered empty state | "No transactions match this filter." | "Try a different filter or add a new transaction." |
+| Settings | Backup helper | — | "Save a JSON file to your device. Use Import to restore." |
+| Settings | About "Storage" value | "empty" | "Saved on this device only" |
+| Settings | Danger zone copy | "Wipe all data" | "This permanently deletes everything. Export first if unsure." |
+
+**Acceptance criteria:**
+
+- Every screen listed in the copy tables shows its replacement copy in a build of the app.
+- `Field.hint` is used; no hand-rolled `<div className="text-xs text-muted">` blocks under fields.
+- Every projected amount (current-vs-mature DPS rows, net worth projection, AddTransactionForm balance preview, Investment maturity "Review" block) carries a visible "projection" suffix or label.
+- Jargon (DPS / FDR / payout / rollover / maturity) either is spelled out on first appearance in the user flow or is paired with a one-line glossary hint at that spot.
+- No help text begins with the words "Pro tip", "Just", "Try to", "Did you know", or "Make sure".
+- All existing 113 tests pass; no test that asserts DOM text is updated unless the change is acknowledged in the test.
+- Quick visual sweep (manual or automated) confirms every form screen still fits its default mobile width (≤ 360 CSS px) with the new copy — i.e. no hint wraps to more than 2 lines.
 
 ---
 

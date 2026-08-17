@@ -226,7 +226,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                 Balance: {fmtAccountBalance(fromAccountId, state)}
                 {Number(amount) > 0 && (
                   <span className="text-ink/70">
-                    {' '}→ after: {fmtBDT(accountBalance(accs.find(a => a.id === fromAccountId), state.transactions) - Number(amount))}
+                    {' '}→ projected balance after save: {fmtBDT(accountBalance(accs.find(a => a.id === fromAccountId), state.transactions) - Number(amount))}
                   </span>
                 )}
               </div>
@@ -242,7 +242,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                 Balance: {fmtAccountBalance(toAccountId, state)}
                 {Number(amount) > 0 && (
                   <span className="text-ink/70">
-                    {' '}→ after: {fmtBDT(accountBalance(accs.find(a => a.id === toAccountId), state.transactions) + Number(amount))}
+                    {' '}→ projected balance after save: {fmtBDT(accountBalance(accs.find(a => a.id === toAccountId), state.transactions) + Number(amount))}
                   </span>
                 )}
               </div>
@@ -259,7 +259,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                   Balance: {fmtAccountBalance(accountId, state)}
                   {Number(amount) > 0 && (
                     <span className="text-ink/70">
-                      {' '}→ after: {fmtBDT(afterBalance(accountId, Number(amount), type, state))}
+                      {' '}→ projected balance after save: {fmtBDT(afterBalance(accountId, Number(amount), type, state))}
                     </span>
                   )}
                 </div>
@@ -346,7 +346,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 
         {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
           <div className="mt-5">
-            <Field label="Linked investment (optional)" hint="Tag this income as a payout from an investment.">
+            <Field label="Linked investment (optional)" hint="Selecting one routes the money to that investment's payout account.">
               <Select value={linkedInvestmentId} onChange={e => {
                 setLinkedInvestmentId(e.target.value);
                 if (e.target.value) setLinkedDebtId('');
@@ -365,7 +365,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                 const remaining = Math.max(0, base - paidOut);
                 return (
                   <div className="text-xs text-muted mt-1.5">
-                    {isDps ? 'Current value' : 'At maturity'}: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
+                    {isDps ? 'Current value' : 'At maturity'} (projection): <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
                   </div>
                 );
               })()}

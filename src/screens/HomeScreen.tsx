@@ -113,7 +113,7 @@ export function HomeScreen() {
          These are the "where my money lives right now" trio. Stacks to a
          single column below sm (640px) so the 28px values don't overflow. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `across ${accList.length} accounts`} tone="primary" />
+        <Stat label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}.`} tone="primary" />
         <Stat
           label="Total debt"
           value={fmtDebtMagnitude(netDebt)}
@@ -131,7 +131,7 @@ export function HomeScreen() {
         <Stat
           label="Total investments"
           value={fmtBDT(totalInvestment)}
-          trend={investmentCount === 0 ? 'none yet' : `across ${investmentCount} ${investmentCount === 1 ? 'investment' : 'investments'}`}
+          trend={investmentCount === 0 ? 'none yet' : `Money locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'} (DPS, FDR, savings).`}
           tone="accent"
         />
       </div>
@@ -152,7 +152,7 @@ export function HomeScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
-            ? <Empty msg="No accounts yet." cta="Add an account" to="/accounts/add" />
+            ? <Empty msg="Add an account to track balances, transactions, and net worth." cta="Add an account" to="/accounts/add" />
             : accList.slice(0, 4).map(a => {
                 const bal = accountBalance(a, txs);
                 return (

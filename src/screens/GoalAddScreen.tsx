@@ -59,7 +59,7 @@ export function GoalAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency fund, laptop…" autoFocus />
         </Field>
-        <Field label="Target amount" error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+        <Field label="Target amount" hint="Total amount you want to reach by the deadline." error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"
@@ -84,7 +84,7 @@ export function GoalAddScreen() {
             className={savedInvalid ? invalidClass : ''}
           />
         </Field>
-        <Field label="Target date">
+        <Field label="Target date" hint="Drives the 'save ৳X / month' suggestion on the goal.">
           <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
         </Field>
         <div className="flex gap-2">

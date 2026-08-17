@@ -233,14 +233,14 @@ export function TransactionEditScreen() {
         )}
 
         <div className="mt-5">
-          <Field label="Note">
+          <Field label="Note" hint="Add or change a note. Leave blank to remove.">
             <Textarea value={note} onChange={e => setNote(e.target.value)} />
           </Field>
         </div>
 
         {type === 'expense' && activeDebts.length > 0 && (
           <div className="mt-5">
-            <Field label="Linked debt (optional)">
+            <Field label="Linked debt (optional)" hint="Link if this entry is a payment toward that debt.">
               <Select value={linkedDebtId} onChange={e => {
                 setLinkedDebtId(e.target.value);
                 if (e.target.value) setLinkedInvestmentId('');
@@ -254,7 +254,7 @@ export function TransactionEditScreen() {
 
         {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
           <div className="mt-5">
-            <Field label="Linked investment (optional)">
+            <Field label="Linked investment (optional)" hint="Link if this income is a payout from that investment.">
               <Select value={linkedInvestmentId} onChange={e => {
                 setLinkedInvestmentId(e.target.value);
                 if (e.target.value) setLinkedDebtId('');

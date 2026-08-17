@@ -201,7 +201,7 @@ export function DebtEditScreen() {
       </div>
 
       <section className="card flex flex-col gap-5">
-        <Field label="Direction">
+        <Field label="Direction" hint="Changing direction flips how linked payments are interpreted.">
           <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
             <option value="i_owe">I owe (you borrowed)</option>
             <option value="owed_to_me">Owed to me (you lent)</option>
@@ -210,7 +210,7 @@ export function DebtEditScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
         </Field>
-        <Field label="Total amount" error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+        <Field label="Total amount" hint="Repayments are tracked via linked transactions, not here." error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"

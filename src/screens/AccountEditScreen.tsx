@@ -57,12 +57,12 @@ export function AccountEditScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
         </Field>
-        <Field label="Type">
+        <Field label="Type" hint="Cash, bank account, or mobile wallet.">
           <Select value={type} onChange={e => setType(e.target.value as AccountType)}>
             {accounts.ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
           </Select>
         </Field>
-        <Field label="Opening balance" error={openingInvalid ? NON_NEGATIVE_MONEY_ERROR : undefined}>
+        <Field label="Opening balance" hint="Changing this adjusts the account's starting balance only." error={openingInvalid ? NON_NEGATIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"

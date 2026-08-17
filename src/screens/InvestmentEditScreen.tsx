@@ -172,7 +172,7 @@ export function InvestmentEditScreen() {
             />
           </Field>
         )}
-        <Field label="Rate (% per year)" hint="Annual interest rate, e.g. 8 for 8%.">
+        <Field label="Rate (% per year)" hint="Annual rate. Simple interest for FDR/savings (compounded monthly for DPS).">
           <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} />
         </Field>
         <Field label="Start date">
@@ -194,7 +194,7 @@ export function InvestmentEditScreen() {
             <Input type="number" inputMode="numeric" value={termDays} onChange={e => setTermDays(e.target.value)} placeholder="15" />
           </Field>
         ) : (
-          <Field label="Term (months)">
+          <Field label="Term (months)" hint="Changing this shifts the maturity date forward.">
             <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} />
           </Field>
         )}

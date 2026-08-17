@@ -110,7 +110,7 @@ export function AccountsListScreen() {
                     <div className="min-w-0">
                       <div className="font-semibold text-[14px] leading-tight tracking-tight">{a.name}</div>
                       <div className="text-xs text-muted leading-tight mt-1 tabular">
-                        {accountTypeLabel(a.type)}{a.openingBalance > 0 ? ` · opens at ${fmtBDT(a.openingBalance)}` : ''}
+                        {accountTypeLabel(a.type)}{a.openingBalance > 0 ? ` · starting balance ${fmtBDT(a.openingBalance)}` : ''}
                       </div>
                     </div>
                   </div>
