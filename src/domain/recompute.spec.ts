@@ -19,6 +19,8 @@ const baseState = (over: Partial<State> = {}): State => ({
   debts: [],
   investments: [],
   categories: [],
+  monthPlans: [],
+  eventPlans: [],
   settings: { theme: 'auto', onboardingComplete: true },
   ...over,
 });

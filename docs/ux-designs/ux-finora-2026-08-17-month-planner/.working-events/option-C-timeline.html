@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Event Planner — Timeline Cascade (Generic)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --primary-soft: #2D4135;
+    --accent: #D4A574;
+    --accent-soft: #3A2F22;
+    --danger: #C26B5C;
+    --danger-soft: #3A2A28;
+    --warn:   #C7A85F;
+    --info:   #6E94B5;
+    --success: #6FB386;
+    --violet: #A78BFA;
+    --border: #3A463E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 18px; }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 480px; line-height: 1.5; }
+
+  /* ── EVENT SWITCHER (the key genericizing element) ── */
+  .switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .switcher button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    font-family: Inter;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color .15s, background .15s;
+  }
+  .switcher button:hover { color: var(--ink); }
+  .switcher button.selected {
+    background: var(--primary);
+    color: #0D1612;
+  }
+  .switcher .add {
+    color: var(--muted);
+    padding: 7px 10px;
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  /* ── SAVE / RESET (same semantics as Option G) ── */
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px;
+  }
+  .actions .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .actions .status .dot {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: var(--warn);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent);
+  }
+  .actions .status.saved .dot {
+    background: var(--success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 25%, transparent);
+  }
+  .actions .status.saved { color: var(--ink); }
+  .actions-buttons { display: flex; gap: 8px; }
+  .actions button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: Inter;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .actions button.save {
+    background: var(--primary);
+    color: #0D1612;
+    border-color: var(--primary);
+  }
+  .actions button.reset:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* ── SUMMARY ── */
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .sum-cell { padding: 0 16px; border-left: 1px solid var(--border); }
+  .sum-cell:first-child { border-left: 0; padding-left: 0; }
+  .sum-cell .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .sum-cell .val { font-family: Fraunces, serif; font-size: 22px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .sum-cell.budget .val { color: var(--ink); }
+  .sum-cell.spent .val { color: var(--accent); }
+  .sum-cell.left .val { color: var(--success); }
+  .sum-cell.days .val { color: var(--primary); }
+
+  /* ── LAYOUT: timeline + cascade ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 22px;
+  }
+
+  /* ── TIMELINE (LEFT) ── */
+  .timeline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 18px;
+    position: relative;
+  }
+  .timeline h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: Inter; font-weight: 600; margin-bottom: 18px; }
+  .tl-track {
+    position: absolute;
+    left: 28px;
+    top: 56px;
+    bottom: 22px;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-marks { display: flex; flex-direction: column; gap: 14px; position: relative; }
+  .tl-mark { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 4px 0; }
+  .tl-mark .dot {
+    width: 14px; height: 14px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .tl-mark .body { display: flex; flex-direction: column; }
+  .tl-mark .body .when { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  .tl-mark .body .what { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .tl-mark.paid .dot { background: var(--success); border-color: var(--success); }
+  .tl-mark.due .dot { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent); }
+  .tl-mark.overdue .dot { background: var(--danger); border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent); }
+  .tl-mark.future .dot { background: var(--surface-2); }
+  .tl-mark:hover .what { color: var(--primary); }
+
+  /* ── CASCADE (RIGHT) ── */
+  .cascade { display: flex; flex-direction: column; gap: 14px; }
+
+  .cat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cat-card:hover { transform: translateY(-1px); border-color: var(--ink-2); }
+  .cat-card.selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+
+  .cat-card .head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .cat-card .head-row .left { display: flex; align-items: center; gap: 10px; }
+  .cat-card .em { font-size: 22px; }
+  .cat-card .name { font-family: Fraunces, serif; font-size: 18px; font-weight: 700; }
+  .cat-card .head-row .right { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+  .cat-card .when-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .cat-card .when-chip.due { background: color-mix(in srgb, var(--warn) 18%, transparent); border-color: var(--warn); color: var(--warn); }
+  .cat-card .when-chip.overdue { background: color-mix(in srgb, var(--danger) 20%, transparent); border-color: var(--danger); color: var(--danger); }
+  .cat-card .when-chip.paid { background: color-mix(in srgb, var(--success) 18%, transparent); border-color: var(--success); color: var(--success); }
+
+  .cat-card .bar-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .cat-card .bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .cat-card .bar i { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+  .cat-card.over .bar i { background: var(--danger); }
+  .cat-card .amt { font-family: Fraunces, serif; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cat-card .cap { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .cat-card .progress-foot {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-top: 6px;
+  }
+  .cat-card .progress-foot b { color: var(--ink); font-weight: 600; }
+
+  .cat-card .line-items {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .li {
+    display: grid;
+    grid-template-columns: 20px 1fr auto 28px;
+    gap: 8px;
+    align-items: center;
+    font-size: 12.5px;
+    padding: 4px 0;
+  }
+  .li input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+  .li .name { color: var(--ink); }
+  .li.done .name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--border); }
+  .li .amt { font-family: Fraunces, serif; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .li .x { color: var(--muted); cursor: pointer; text-align: right; }
+  .li .x:hover { color: var(--danger); }
+
+  .cat-card.add {
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 26px;
+  }
+  .cat-card.add:hover { border-color: var(--primary); color: var(--primary); }
+
+  .hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Plan an event</h1>
+      <div class="sub">A timeline of what needs paying · when · and a cascade of categories. Same shape, whatever the event.</div>
+    </div>
+    <div class="switcher">
+      <button class="selected">🏖️ Cox's Bazar trip</button>
+      <button>💍 Wedding</button>
+      <button>🕌 Eid</button>
+      <button class="add" title="new event">+</button>
+    </div>
+  </div>
+
+  <!-- SAVE / RESET -->
+  <div class="actions">
+    <div class="status">
+      <span class="dot"></span>
+      <span><b style="color:var(--ink);">Unsaved changes</b> — you've tweaked 1 category since the last save.</span>
+    </div>
+    <div class="actions-buttons">
+      <button class="reset">Reset</button>
+      <button class="save">Save plan</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div class="sum-cell budget"><div class="lbl">Total budget</div><div class="val">৳ 80,000</div></div>
+    <div class="sum-cell spent"><div class="lbl">Spent / planned</div><div class="val">৳ 38k / 80k</div></div>
+    <div class="sum-cell left"><div class="lbl">Left to plan</div><div class="val">৳ 42,000</div></div>
+    <div class="sum-cell days"><div class="lbl">Days to go</div><div class="val">32</div></div>
+  </div>
+
+  <div class="layout">
+
+    <!-- TIMELINE -->
+    <div class="timeline">
+      <h2>Upcoming</h2>
+      <div class="tl-track"></div>
+      <div class="tl-marks">
+        <div class="tl-mark overdue">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">10 Aug · 7 days ago</div>
+            <div class="what">🏨 Hotel advance</div>
+          </div>
+        </div>
+        <div class="tl-mark due">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">22 Aug · in 5 days</div>
+            <div class="what">🚆 Train tickets</div>
+          </div>
+        </div>
+        <div class="tl-mark paid">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">1 Sep · in 15 days</div>
+            <div class="what">🎒 Gear shopping</div>
+          </div>
+        </div>
+        <div class="tl-mark future">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">10 Sep · in 24 days</div>
+            <div class="what">🍽️ Food budget</div>
+          </div>
+        </div>
+        <div class="tl-mark future">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">15 Sep · in 29 days</div>
+            <div class="what">🎢 Activities</div>
+          </div>
+        </div>
+        <div class="tl-mark future">
+          <div class="dot"></div>
+          <div class="body">
+            <div class="when">18 Sep · TRIP STARTS</div>
+            <div class="what">🏖️ Cox's Bazar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASCADE -->
+    <div class="cascade">
+      <div class="cat-card over">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🏨</span>
+            <span class="name">Hotel</span>
+          </div>
+          <div class="right">
+            <span class="when-chip overdue">overdue 7 days</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 100%;"></i></div>
+          <div class="amt">৳ 22k</div>
+          <div class="cap">/ 20k · over</div>
+        </div>
+        <div class="progress-foot">
+          <span>1 of 2 items paid</span>
+          <span>Was due: <b>10 Aug</b></span>
+        </div>
+      </div>
+
+      <div class="cat-card selected">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🚆</span>
+            <span class="name">Transport</span>
+          </div>
+          <div class="right">
+            <span class="when-chip due">Due 22 Aug</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 40%;"></i></div>
+          <div class="amt">৳ 6,000</div>
+          <div class="cap">/ 15k</div>
+        </div>
+        <div class="progress-foot">
+          <span>1 of 3 items paid · 1 due</span>
+          <span>Next milestone: <b>22 Aug</b></span>
+        </div>
+
+        <div class="line-items">
+          <div class="li done"><input type="checkbox" checked /><div class="name">Train tickets (4 × return)</div><div class="amt">৳ 4,800</div><div class="x">×</div></div>
+          <div class="li"><input type="checkbox" /><div class="name">Local transport — due 22 Aug</div><div class="amt">৳ 1,200</div><div class="x">×</div></div>
+          <div class="li"><input type="checkbox" /><div class="name">Airport pickup</div><div class="amt">৳ 2,500</div><div class="x">×</div></div>
+        </div>
+      </div>
+
+      <div class="cat-card">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🍽️</span>
+            <span class="name">Food</span>
+          </div>
+          <div class="right">
+            <span class="when-chip">starts 10 Sep</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 30%;"></i></div>
+          <div class="amt">৳ 6,000</div>
+          <div class="cap">/ 20k</div>
+        </div>
+        <div class="progress-foot">
+          <span>1 of 3 items planned</span>
+          <span>Start: <b>10 Sep</b></span>
+        </div>
+      </div>
+
+      <div class="cat-card">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🎒</span>
+            <span class="name">Gear</span>
+          </div>
+          <div class="right">
+            <span class="when-chip paid">paid in full</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 100%;"></i></div>
+          <div class="amt">৳ 3,500</div>
+          <div class="cap">/ 3.5k</div>
+        </div>
+        <div class="progress-foot">
+          <span>2 of 2 items paid · done</span>
+          <span>Done: <b>5 Aug</b></span>
+        </div>
+      </div>
+
+      <div class="cat-card">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🎢</span>
+            <span class="name">Activities</span>
+          </div>
+          <div class="right">
+            <span class="when-chip">starts 15 Sep</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 0%;"></i></div>
+          <div class="amt">৳ 0</div>
+          <div class="cap">/ 10k</div>
+        </div>
+        <div class="progress-foot">
+          <span>0 of 2 items planned</span>
+          <span>Start: <b>15 Sep</b></span>
+        </div>
+      </div>
+
+      <div class="cat-card">
+        <div class="head-row">
+          <div class="left">
+            <span class="em">🎁</span>
+            <span class="name">Souvenirs</span>
+          </div>
+          <div class="right">
+            <span class="when-chip">starts 18 Sep</span>
+          </div>
+        </div>
+        <div class="bar-row">
+          <div class="bar"><i style="width: 0%;"></i></div>
+          <div class="amt">৳ 0</div>
+          <div class="cap">/ 8k</div>
+        </div>
+        <div class="progress-foot">
+          <span>0 of 1 items planned</span>
+          <span>Start: <b>18 Sep</b></span>
+        </div>
+      </div>
+
+      <div class="cat-card add">+ new category</div>
+    </div>
+  </div>
+
+  <div class="hint">
+    ⓘ Tap any event chip above to switch plans — <b style="color:var(--ink);">Cox's Bazar trip</b> · <b style="color:var(--ink);">Wedding</b> · <b style="color:var(--ink);">Eid</b>. Each has its own budget, categories, and milestones. Tap a date chip on a card to re-schedule.
+  </div>
+
+</div>
+</body>
+</html>

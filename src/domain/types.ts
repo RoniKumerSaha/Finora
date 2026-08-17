@@ -105,6 +105,66 @@ export interface Settings {
   onboardingComplete: boolean;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Plan types — pure-scratch planner (PRD §9.14 Month, §9.15 Event).
+   Strictly separate from `transactions` — these never touch the ledger.
+   Persisted via the same localStorage blob as State.
+   ──────────────────────────────────────────────────────────────────────*/
+
+/** Emoji + label pair for a PlanCategory. Emoji is free-text. */
+export interface PlanCategory {
+  id: string;
+  emoji: string;
+  name: string;
+  /** Planned spend target for the month / event. Always ≥ 0. */
+  budget: number;
+  /** What the user actually plans to put in this jar. Always ≥ 0. */
+  planned: number;
+  /** Tonal hint for the chip in the grid. Driven by `tone` or auto. */
+  tone?: 'primary' | 'accent' | 'info' | 'warn' | 'violet' | 'danger' | 'success';
+}
+
+/** A single line item inside a PlanCategory (e.g. "Café × 4 = 800"). */
+export interface PlanItem {
+  id: string;
+  label: string;
+  amount: number;
+  done: boolean;
+}
+
+/** Month Planner: one plan per month identified by ISO YYYY-MM. */
+export interface MonthPlan {
+  /** "YYYY-MM" */
+  key: string;
+  plannedIncome: number;
+  /** Categories as ordered at save time. Order is purely cosmetic. */
+  categories: PlanCategory[];
+  /** Optional last-saved ISO timestamp. Null if the plan was never saved. */
+  savedAt?: ISODate | null;
+  /** Ture means the draft has changes since the last `savedAt`. */
+  dirty: boolean;
+}
+
+/** Event Planner: each event is its own plan with a date and a list. */
+export interface EventPlan {
+  id: string;
+  name: string;
+  /** Date the event happens. ISO YYYY-MM-DD. */
+  eventDate: ISODate;
+  /** Optional short label like "wedding" / "trip" — purely cosmetic. */
+  emoji?: string;
+  /** Total spend budget for the event. */
+  budget: number;
+  /** What the user actually plans to spend. */
+  planned: number;
+  /** Itemised categories — mirrors MonthPlanner. Categories know their
+   *  own internal line items via `PlanItem[]`. */
+  categories: Array<PlanCategory & { items: PlanItem[]; dueDate?: ISODate }>;
+  /** Optional last-saved ISO timestamp. */
+  savedAt?: ISODate | null;
+  dirty: boolean;
+}
+
 export interface State {
   version: 1;
   accounts: Account[];
@@ -113,6 +173,10 @@ export interface State {
   debts: Debt[];
   investments: Investment[];
   categories: Category[];
+  /** Per-month planning scratchpads. Keyed by `monthPlan.key` (YYYY-MM). */
+  monthPlans: MonthPlan[];
+  /** Independent event scratchpads. Each event is its own plan. */
+  eventPlans: EventPlan[];
   settings: Settings;
 }
 

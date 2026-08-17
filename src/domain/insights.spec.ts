@@ -32,6 +32,8 @@ function makeState(overrides: Partial<State> = {}): State {
       { id: 'rent', type: 'expense', name: 'Rent' },
       { id: 'salary', type: 'income', name: 'Salary' },
     ],
+    monthPlans: [],
+    eventPlans: [],
     settings: { theme: 'auto', onboardingComplete: true },
     ...overrides,
   };

@@ -38,6 +38,10 @@ import { InvestmentDetailScreen } from './screens/InvestmentDetailScreen';
 import { InvestmentEditScreen } from './screens/InvestmentEditScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
+import { PlanScreen } from './screens/PlanScreen';
+import { MonthPlanScreen } from './screens/MonthPlanScreen';
+import { EventPlanScreen } from './screens/EventPlanScreen';
+import { EventPlanDetailScreen } from './screens/EventPlanDetailScreen';
 
 export function App() {
   const theme = useStore(s => s.state.settings.theme);
@@ -122,6 +126,11 @@ export function App() {
 
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
+
+          <Route path="/plan" element={<PlanScreen />} />
+          <Route path="/plan/month" element={<MonthPlanScreen />} />
+          <Route path="/plan/event" element={<EventPlanScreen />} />
+          <Route path="/plan/event/:id" element={<EventPlanDetailScreen />} />
 
           <Route path="*" element={<div className="p-8 text-muted">Not found.</div>} />
         </Route>

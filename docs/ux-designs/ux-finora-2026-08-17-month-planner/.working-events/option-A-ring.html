@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Event Planner — Option A: Countdown Ring</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --primary-soft: #2D4135;
+    --accent: #D4A574;
+    --accent-soft: #3A2F22;
+    --danger: #C26B5C;
+    --warn:   #C7A85F;
+    --info:   #6E94B5;
+    --success: #6FB386;
+    --violet: #A78BFA;
+    --border: #3A463E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 420px; line-height: 1.5; }
+
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .pager button {
+    background: transparent; color: var(--ink); border: 0;
+    width: 26px; height: 26px; border-radius: 999px; cursor: pointer; font-size: 14px;
+  }
+  .pager button:hover { background: var(--surface-2); }
+  .pager .current { color: var(--ink); font-weight: 600; font-size: 13px; padding: 0 8px; }
+
+  /* ── COUNTDOWN RING (HERO) ── */
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .ring-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+  }
+  .ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .ring-track { stroke: var(--surface-2); }
+  .ring-progress {
+    stroke: var(--primary);
+    stroke-linecap: round;
+    transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-progress.warn { stroke: var(--warn); }
+  .ring-progress.over { stroke: var(--danger); }
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .ring-label .days {
+    font-family: Fraunces, serif;
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .ring-label .unit {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .ring-label .until {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  .hero-info { display: flex; flex-direction: column; gap: 14px; }
+  .hero-info .em-rub { font-size: 32px; }
+  .hero-info h2 { font-size: 26px; margin-top: 4px; }
+  .hero-info .event-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .hero-info .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .stat {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .stat .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .stat .val { font-family: Fraunces, serif; font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat.spent .val { color: var(--accent); }
+  .stat.left .val { color: var(--success); }
+  .stat.pct .val { color: var(--primary); }
+
+  /* ── CATEGORY CHIPS ── */
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .section-head h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: Inter; font-weight: 600; }
+  .section-head .meta { color: var(--muted); font-size: 12px; }
+
+  .cats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .cat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cat:hover { transform: translateY(-1px); border-color: var(--ink-2); }
+  .cat.selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .cat .top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cat .em { font-size: 18px; }
+  .cat .name { font-size: 13px; font-weight: 700; }
+  .cat .meter {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .cat .meter i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--primary);
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+  .cat .meter.warn i { background: var(--warn); }
+  .cat .meter.over i { background: var(--danger); }
+  .cat .nums {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cat .nums .amt { font-weight: 700; color: var(--ink); }
+  .cat .nums .cap { color: var(--muted); }
+  .cat.add {
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .cat.add:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ── EDITOR ── */
+  .editor {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 14px;
+  }
+  .editor .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .editor h2 { font-size: 18px; }
+  .editor .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .field {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .field .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .field input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 4px 0 0;
+    font-family: Fraunces, serif;
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  .field.due input { color: var(--accent); }
+  .field.paid input { color: var(--success); }
+
+  .checklist-head { display: flex; justify-content: space-between; align-items: baseline; padding-top: 6px; margin-bottom: 8px; }
+  .checklist-head h3 { font-family: Inter; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .checklist-head .note { font-size: 11.5px; color: var(--muted); }
+
+  .checklist { display: flex; flex-direction: column; }
+  .check {
+    display: grid;
+    grid-template-columns: 24px 1fr 100px 28px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  .check:last-child { border-bottom: 1px solid var(--border); }
+  .check input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .check input[type="text"] {
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 4px 0;
+    font-family: Inter;
+    font-size: 13px;
+    outline: none;
+  }
+  .check input[type="text"]:focus { color: var(--primary); }
+  .check.done input[type="text"] { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--border); }
+  .check .amt {
+    text-align: right;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    font-family: Fraunces, serif;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  .check .x { color: var(--muted); cursor: pointer; text-align: right; font-size: 14px; }
+  .check .x:hover { color: var(--danger); }
+
+  .add-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 100px 28px;
+    gap: 12px;
+    align-items: center;
+    padding-top: 8px;
+  }
+  .add-row .placeholder { color: var(--muted); font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+  }
+  .footer .link {
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border: 0;
+    font-size: 12.5px;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 3px;
+  }
+  .footer .link:hover { color: var(--danger); }
+  .footer button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-family: Inter;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Plan my event</h1>
+      <div class="sub">A countdown ring shows days left and overall budget health. Tap a category to plan its line items.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">Wedding · 14 Dec 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- HERO with countdown ring -->
+  <div class="hero">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 220 220">
+        <circle class="ring-track" cx="110" cy="110" r="92" fill="none" stroke-width="14" />
+        <!-- 82% filled = 0.82 * 2π * 92 = 474.5 of 580.2 -->
+        <circle class="ring-progress" cx="110" cy="110" r="92" fill="none" stroke-width="14"
+                stroke-dasharray="578.05" stroke-dashoffset="104.05" />
+      </svg>
+      <div class="ring-label">
+        <div class="days">119</div>
+        <div class="unit">days to go</div>
+        <div class="until">14 Dec 2026 · Sat</div>
+      </div>
+    </div>
+
+    <div class="hero-info">
+      <div>
+        <span class="em-rub">💍</span>
+        <h2>Wedding · Riad & Maisha</h2>
+        <div class="event-meta">340 guests · 14 Dec 2026 · Dhaka</div>
+      </div>
+      <div class="stats">
+        <div class="stat spent"><div class="lbl">Spent / planned</div><div class="val">৳ 4.1L / 5L</div></div>
+        <div class="stat left"><div class="lbl">Left to plan</div><div class="val">৳ 92,000</div></div>
+        <div class="stat pct"><div class="lbl">Days used</div><div class="val">82%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY CHIPS -->
+  <div class="section-head">
+    <h2>Categories</h2>
+    <div class="meta">8 of 12 planned</div>
+  </div>
+
+  <div class="cats">
+    <div class="cat" style="--tone: var(--primary);">
+      <div class="top"><span class="em">🏛️</span><span class="name">Venue</span></div>
+      <div class="meter"><i style="width: 100%;"></i></div>
+      <div class="nums"><span class="amt">৳ 1.5L</span><span class="cap">/ 1.5L</span></div>
+    </div>
+
+    <div class="cat selected">
+      <div class="top"><span class="em">🍽️</span><span class="name">Catering</span></div>
+      <div class="meter"><i style="width: 75%;"></i></div>
+      <div class="nums"><span class="amt">৳ 1.5L</span><span class="cap">/ 2L</span></div>
+    </div>
+
+    <div class="cat">
+      <div class="top"><span class="em">📸</span><span class="name">Photo</span></div>
+      <div class="meter warn"><i style="width: 90%;"></i></div>
+      <div class="nums"><span class="amt">৳ 72,000</span><span class="cap">/ 80k</span></div>
+    </div>
+
+    <div class="cat">
+      <div class="top"><span class="em">👗</span><span class="name">Outfits</span></div>
+      <div class="meter over"><i style="width: 100%;"></i></div>
+      <div class="nums"><span class="amt">৳ 95,000</span><span class="cap">/ 80k · over</span></div>
+    </div>
+
+    <div class="cat">
+      <div class="top"><span class="em">💐</span><span class="name">Flowers</span></div>
+      <div class="meter"><i style="width: 30%;"></i></div>
+      <div class="nums"><span class="amt">৳ 12,000</span><span class="cap">/ 40k</span></div>
+    </div>
+
+    <div class="cat">
+      <div class="top"><span class="em">🎵</span><span class="name">Music</span></div>
+      <div class="meter"><i style="width: 0%;"></i></div>
+      <div class="nums"><span class="amt">৳ 0</span><span class="cap">/ 25k</span></div>
+    </div>
+
+    <div class="cat">
+      <div class="top"><span class="em">🎂</span><span class="name">Cake</span></div>
+      <div class="meter"><i style="width: 100%;"></i></div>
+      <div class="nums"><span class="amt">৳ 8,000</span><span class="cap">/ 8k</span></div>
+    </div>
+
+    <div class="cat add">+ new category</div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor">
+    <div class="top">
+      <div>
+        <h2>🍽️ Catering</h2>
+        <div class="sub">Track line items, what's paid, what's due</div>
+      </div>
+      <div style="color: var(--muted); font-size: 12px;">3 of 6 items locked</div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <div class="lbl">Budget</div>
+        <input type="number" value="200000" />
+      </div>
+      <div class="field paid">
+        <div class="lbl">Paid so far</div>
+        <input type="number" value="95000" />
+      </div>
+      <div class="field due">
+        <div class="lbl">Due next</div>
+        <input type="number" value="55000" />
+      </div>
+    </div>
+
+    <div class="checklist-head">
+      <h3>Line items</h3>
+      <div class="note">tick when paid</div>
+    </div>
+
+    <div class="checklist">
+      <div class="check done">
+        <input type="checkbox" checked />
+        <input type="text" value="Advance (60%)" />
+        <input class="amt" type="number" value="60000" />
+        <div class="x">×</div>
+      </div>
+      <div class="check done">
+        <input type="checkbox" checked />
+        <input type="text" value="Tasting fee" />
+        <input class="amt" type="number" value="15000" />
+        <div class="x">×</div>
+      </div>
+      <div class="check done">
+        <input type="checkbox" checked />
+        <input type="text" value="Tentative menu lock" />
+        <input class="amt" type="number" value="20000" />
+        <div class="x">×</div>
+      </div>
+      <div class="check">
+        <input type="checkbox" />
+        <input type="text" value="Second installment" />
+        <input class="amt" type="number" value="55000" />
+        <div class="x">×</div>
+      </div>
+      <div class="check">
+        <input type="checkbox" />
+        <input type="text" value="Final count (7 days out)" />
+        <input class="amt" type="number" value="40000" />
+        <div class="x">×</div>
+      </div>
+      <div class="check">
+        <input type="checkbox" />
+        <input type="text" value="Service charge" />
+        <input class="amt" type="number" value="10000" />
+        <div class="x">×</div>
+      </div>
+    </div>
+
+    <div class="add-row">
+      <div></div>
+      <div class="placeholder">+ add a line — e.g. "Tip for captain"</div>
+      <div></div>
+      <div></div>
+    </div>
+
+    <div class="footer">
+      <button class="link">delete category</button>
+      <button>save category</button>
+    </div>
+  </div>
+
+  <div class="hint">
+    The ring wakes up when you cross 75% budget used or hop under 30 days remaining — color turns warn amber, then danger red if you overshoot.
+  </div>
+
+</div>
+</body>
+</html>

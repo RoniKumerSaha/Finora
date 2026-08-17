@@ -48,7 +48,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import logoUrl from '../assets/finora-logo.svg';
 import {
   NavHome, NavInsights, NavTransactions, NavAccounts,
-  NavGoals, NavInvestments, NavDebts, NavSettings,
+  NavGoals, NavInvestments, NavDebts, NavPlan, NavSettings,
   Menu, Close,
 } from './icons/Icons';
 
@@ -56,6 +56,7 @@ interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element 
 
 const NAV: NavDef[] = [
   { to: '/home',         label: 'Home',         Icon: NavHome },
+  { to: '/plan',         label: 'Plan',         Icon: NavPlan },
   { to: '/insights',     label: 'Insights',     Icon: NavInsights },
   { to: '/transactions', label: 'Transactions', Icon: NavTransactions },
   { to: '/accounts',     label: 'Accounts',     Icon: NavAccounts },

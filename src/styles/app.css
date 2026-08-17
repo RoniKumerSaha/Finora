@@ -30,6 +30,16 @@ input[type="number"]::-webkit-inner-spin-button {
   margin: 0;
 }
 
+/* Native date picker icon — dark on cream in light mode, white on
+   charcoal in dark mode. We can't recolour the indicator directly in
+   WebKit, so we invert the calendar glyph and bump opacity so it reads
+   against the dark surface without looking washed-out. Light mode
+   inherits the browser default (already legible on cream). */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.92);
+  cursor: pointer;
+}
+
 /* Refined scrollbar — narrower, more elegant. */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }

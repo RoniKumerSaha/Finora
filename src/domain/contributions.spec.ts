@@ -23,6 +23,8 @@ const baseState = (): State => ({
   debts: [],
   investments: [],
   categories: [],
+  monthPlans: [],
+  eventPlans: [],
   settings: { theme: 'auto', onboardingComplete: true },
 });
 

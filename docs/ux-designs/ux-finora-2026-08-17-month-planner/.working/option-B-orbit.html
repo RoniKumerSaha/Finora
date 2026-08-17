@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Month Planner — Option B: Pie Donut</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --primary-soft: #2D4135;
+    --accent: #D4A574;
+    --accent-soft: #3A2F22;
+    --danger: #C26B5C;
+    --warn:   #C7A85F;
+    --info:   #6E94B5;
+    --success: #6FB386;
+    --border: #3A463E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  .head { display:flex; justify-content:space-between; align-items:end; margin-bottom: 20px; }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .pager { display:flex; align-items:center; gap:10px; color: var(--muted); font-size:13px; }
+  .pager button {
+    background: transparent; color: var(--ink); border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px;
+  }
+  .pager .current { color: var(--ink); font-weight: 600; font-size: 14px; padding: 0 6px; }
+
+  /* Hero card */
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 28px;
+    margin-bottom: 20px;
+  }
+  .donut-wrap {
+    position: relative;
+    height: 280px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+  .donut { transform: rotate(-90deg); }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    text-align: center;
+  }
+  .donut-center .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;}
+  .donut-center .val { font-family: Fraunces, serif; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--success); }
+  .donut-center .pct { color: var(--muted); font-size: 12px; }
+
+  .legend-grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 18px;
+    align-content: center;
+  }
+  .leg {
+    display:flex; align-items:center; gap: 10px;
+    background: var(--surface-2);
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink:0; }
+  .leg-name { font-size: 13px; font-weight: 600; flex:1; min-width: 0; }
+  .leg-amt { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .leg-pct { font-size: 12.5px; color: var(--ink); font-weight: 600; min-width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Inline editor */
+  .editor {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .editor h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; font-family: Inter; font-weight: 600; }
+
+  .form-row {
+    display:grid;
+    grid-template-columns: 56px 1fr 130px 130px 110px;
+    gap: 10px;
+    align-items:center;
+    margin-bottom: 8px;
+  }
+  .form-row .emoji-btn {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .form-row input[type="text"], .form-row input[type="number"] {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .form-row input:focus { outline: none; border-color: var(--primary); }
+
+  /* Quick expenses — chip-like inputs */
+  .quick {
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .quick input {
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    font-family: Inter, sans-serif;
+    font-size: 12.5px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    width: 70px;
+    font-variant-numeric: tabular-nums;
+  }
+  .quick input:focus { background: var(--bg); outline: none; }
+  .quick input::placeholder { color: var(--muted); }
+
+  .form-row .status {
+    text-align: right;
+    font-size: 12.5px;
+    color: var(--success);
+    font-weight: 600;
+  }
+  .form-row .status.over { color: var(--accent); }
+
+  .add-line {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .add-line button {
+    background: transparent;
+    color: var(--primary);
+    border: 0;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12.5px;
+    font-family: Inter;
+  }
+
+  /* Footer compute */
+  .calc {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .calc div { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .calc div b { display:block; font-family: Fraunces, serif; font-size: 20px; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; font-weight: 700; }
+  .calc div b.save { color: var(--success); }
+  .calc div b.over { color: var(--accent); }
+
+  .note {
+    background: var(--warn-soft, #3A2F22);
+    border: 1px dashed #C7A85F;
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-top: 16px;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Plan a month</h1>
+      <div class="sub">A scratch donut of where each taka might go. Nothing saved to your ledger.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">August 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="donut-wrap">
+      <svg class="donut" viewBox="0 0 200 200" width="260" height="260">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#2E3A33" stroke-width="22"/>
+        <!-- Groceries 22% (start 0%) -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#5C8C72" stroke-width="22"
+                stroke-dasharray="110.5 502.6" stroke-dashoffset="0"/>
+        <!-- Eating out 9% (after 110.5) -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#D4A574" stroke-width="22"
+                stroke-dasharray="45.2 502.6" stroke-dashoffset="-110.5"/>
+        <!-- Transport 10% -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#C26B5C" stroke-width="22"
+                stroke-dasharray="50.3 502.6" stroke-dashoffset="-155.7"/>
+        <!-- Shopping 6% -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#6E94B5" stroke-width="22"
+                stroke-dasharray="30.2 502.6" stroke-dashoffset="-206"/>
+        <!-- Bills 19% -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#C7A85F" stroke-width="22"
+                stroke-dasharray="95.5 502.6" stroke-dashoffset="-236.2"/>
+        <!-- Fun 8% -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#A78BFA" stroke-width="22"
+                stroke-dasharray="40.2 502.6" stroke-dashoffset="-331.7"/>
+        <!-- Savings slice 26% (green) -->
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#6FB386" stroke-width="22"
+                stroke-dasharray="130.7 502.6" stroke-dashoffset="-371.9"/>
+      </svg>
+      <div class="donut-center">
+        <div class="lbl">You'd save</div>
+        <div class="val">৳ 18,000</div>
+        <div class="pct">26% of income</div>
+      </div>
+    </div>
+
+    <div class="legend-grid">
+      <div class="leg"><span class="swatch" style="background:#5C8C72"></span><span class="leg-name">Groceries</span><span class="leg-amt">৳14,500</span><span class="leg-pct">22%</span></div>
+      <div class="leg"><span class="swatch" style="background:#D4A574"></span><span class="leg-name">Eating out</span><span class="leg-amt">৳6,000</span><span class="leg-pct">9%</span></div>
+      <div class="leg"><span class="swatch" style="background:#C26B5C"></span><span class="leg-name">Transport</span><span class="leg-amt">৳6,500</span><span class="leg-pct">10%</span></div>
+      <div class="leg"><span class="swatch" style="background:#6E94B5"></span><span class="leg-name">Shopping</span><span class="leg-amt">৳4,000</span><span class="leg-pct">6%</span></div>
+      <div class="leg"><span class="swatch" style="background:#C7A85F"></span><span class="leg-name">Bills</span><span class="leg-amt">৳12,500</span><span class="leg-pct">19%</span></div>
+      <div class="leg"><span class="swatch" style="background:#A78BFA"></span><span class="leg-name">Fun</span><span class="leg-amt">৳5,000</span><span class="leg-pct">8%</span></div>
+      <div class="leg"><span class="swatch" style="background:#6FB386"></span><span class="leg-name">Saved (gap)</span><span class="leg-amt">৳18,000</span><span class="leg-pct">26%</span></div>
+    </div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor">
+    <h2>Tweak the slice</h2>
+
+    <div class="form-row">
+      <button class="emoji-btn">🛒</button>
+      <input type="text" value="Groceries" />
+      <input type="number" value="14500" />
+      <div class="quick">
+        <input placeholder="week 1" />
+        <input placeholder="week 2" />
+        <input placeholder="week 3" />
+      </div>
+      <div class="status">−৳500</div>
+    </div>
+
+    <div class="form-row">
+      <button class="emoji-btn">🍱</button>
+      <input type="text" value="Eating out" />
+      <input type="number" value="6000" />
+      <div class="quick">
+        <input placeholder="café 1" />
+        <input placeholder="café 2" />
+        <input placeholder="dinner" />
+      </div>
+      <div class="status">budget ok</div>
+    </div>
+
+    <div class="form-row">
+      <button class="emoji-btn">🚗</button>
+      <input type="text" value="Transport" />
+      <input type="number" value="6500" />
+      <div class="quick">
+        <input placeholder="fuel" />
+        <input placeholder="rickshaw" />
+      </div>
+      <div class="status over">+৳1,500</div>
+    </div>
+
+    <div class="form-row">
+      <button class="emoji-btn">🛍️</button>
+      <input type="text" value="Shopping" />
+      <input type="number" value="4000" />
+      <div class="quick">
+        <input placeholder="clothes" />
+        <input placeholder="misc" />
+      </div>
+      <div class="status">budget ok</div>
+    </div>
+
+    <div class="add-line">
+      <button>+ add another category</button>
+      &nbsp;·&nbsp;
+      Tap an emoji to swap it. Tap an amount to type a new one.
+    </div>
+
+    <div class="calc">
+      <div>Income planned <b>৳ 80,000</b></div>
+      <div>Total budgeted <b>৳ 46,500</b></div>
+      <div>Remaining <b>৳ 33,500</b></div>
+      <div>Would save <b class="save">৳ 18,000</b></div>
+    </div>
+
+    <div class="note">
+      ⓘ The donut shifts as you edit. If you cross your income line the donut splits between "spent" and "you'd save" (green). The whole thing is a scratchpad — the only thing saved is the plan itself.
+    </div>
+  </div>
+</div>
+</body>
+</html>

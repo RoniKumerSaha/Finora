@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Month Planner — Option E: Jars + River (Hybrid)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --surface-3: #3A463E;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --primary-soft: #2D4135;
+    --accent: #D4A574;
+    --accent-soft: #3A2F22;
+    --danger: #C26B5C;
+    --warn:   #C7A85F;
+    --info:   #6E94B5;
+    --success: #6FB386;
+    --border: #3A463E;
+    /* Per-jar tones */
+    --jar-primary: #5C8C72;
+    --jar-accent:  #D4A574;
+    --jar-info:    #6E94B5;
+    --jar-warn:    #C7A85F;
+    --jar-danger:  #C26B5C;
+    --jar-violet:  #A78BFA;
+    --jar-success: #6FB386;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* Header */
+  .head { display:flex; justify-content:space-between; align-items:end; margin-bottom: 22px; }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .pager { display:flex; align-items:center; gap:10px; color: var(--muted); font-size:13px; }
+  .pager button {
+    background: transparent; color: var(--ink); border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px;
+  }
+  .pager .current { color: var(--ink); font-weight: 600; font-size: 14px; padding: 0 6px; }
+
+  /* Totals row */
+  .totals {
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .t {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .t::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent-bar, var(--accent));
+  }
+  .t.in    { --accent-bar: var(--primary); }
+  .t.budget{ --accent-bar: var(--warn); }
+  .t.save  { --accent-bar: var(--success); }
+  .t.left  { --accent-bar: var(--info); }
+  .t .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .t .val { font-family: Fraunces, serif; font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .t.in .val     { color: var(--primary); }
+  .t.budget .val { color: var(--warn); }
+  .t.save .val   { color: var(--success); }
+  .t.left .val   { color: var(--info); }
+  .t .sub { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+
+  /* MAIN: 2-col grid: jars left, river right */
+  .stage {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .panel h2 {
+    font-family: Inter;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  /* ============ JARS PANEL ============ */
+  .jars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .jar {
+    border-radius: 12px 12px 28px 28px;
+    border: 1px solid var(--border);
+    position: relative;
+    height: 180px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+    background: var(--surface-2);
+  }
+  .jar:hover { transform: translateY(-2px); }
+  .jar.selected {
+    box-shadow: 0 0 0 2px var(--primary), 0 6px 14px rgba(0,0,0,0.35);
+    transform: translateY(-2px);
+  }
+
+  /* Per-tone fill level — driven by data-pct */
+  .jar .fill {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--jar-primary);
+    transition: height .35s cubic-bezier(.4,.0,.2,1);
+    border-radius: 0 0 28px 28px;
+  }
+  .jar[data-tone="primary"] .fill { background: linear-gradient(180deg, var(--jar-primary) 0%, color-mix(in srgb, var(--jar-primary) 70%, black) 100%); }
+  .jar[data-tone="accent"]  .fill { background: linear-gradient(180deg, var(--jar-accent) 0%, color-mix(in srgb, var(--jar-accent) 70%, black) 100%); }
+  .jar[data-tone="info"]    .fill { background: linear-gradient(180deg, var(--jar-info) 0%, color-mix(in srgb, var(--jar-info) 70%, black) 100%); }
+  .jar[data-tone="warn"]    .fill { background: linear-gradient(180deg, var(--jar-warn) 0%, color-mix(in srgb, var(--jar-warn) 70%, black) 100%); }
+  .jar[data-tone="violet"]  .fill { background: linear-gradient(180deg, var(--jar-violet) 0%, color-mix(in srgb, var(--jar-violet) 70%, black) 100%); }
+  .jar[data-tone="success"] .fill { background: linear-gradient(180deg, var(--jar-success) 0%, color-mix(in srgb, var(--jar-success) 70%, black) 100%); }
+  .jar[data-tone="danger"]  .fill { background: linear-gradient(180deg, var(--jar-danger) 0%, color-mix(in srgb, var(--jar-danger) 70%, black) 100%); }
+
+  .jar .label {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    z-index: 2;
+  }
+  .jar .label .em { font-size: 17px; }
+  .jar .label .x {
+    margin-left: auto;
+    opacity: 0.6;
+    font-size: 11px;
+    cursor: pointer;
+    background: rgba(0,0,0,0.25);
+    border-radius: 4px;
+    width: 20px; height: 20px;
+    display:flex; align-items:center; justify-content:center;
+    transition: opacity .12s;
+  }
+  .jar .label .x:hover { opacity: 1; }
+
+  .jar .pct {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 10px;
+    font-family: Fraunces, serif;
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.45);
+    z-index: 2;
+  }
+  .jar .pct small {
+    display: block;
+    font-size: 10px;
+    font-family: Inter;
+    font-weight: 500;
+    color: rgba(255,255,255,0.78);
+    text-shadow: none;
+    margin-top: 1px;
+  }
+  .jar .pct .over {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 10px;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .jar-empty {
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    border-radius: 12px 12px 28px 28px;
+    height: 180px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .jar-empty:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Jar editor (slides under jars) */
+  .editor {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--border);
+    display: none;
+  }
+  .editor.show { display: block; }
+  .editor-head {
+    display:flex; align-items:center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .editor-head .emoji-btn {
+    width: 38px; height: 38px;
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .editor-head .name-input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: Fraunces, serif;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .editor-head .name-input:focus { outline: none; border-color: var(--primary); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .field-cell {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .field-cell .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .field-cell input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 4px 0 0;
+    font-family: Fraunces, serif;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .field-cell input:focus { outline: none; }
+  .field-cell.budget input { color: var(--warn); }
+  .field-cell.planned input { color: var(--accent); }
+
+  .quick-rows {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .quick-rows input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    width: 90px;
+  }
+  .quick-rows input::placeholder { color: var(--muted); }
+  .quick-rows input:focus { outline: none; border-color: var(--primary); }
+  .quick-rows .add-chip {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .editor-actions {
+    display:flex; justify-content: flex-end; gap: 10px;
+    margin-top: 14px;
+  }
+  .editor-actions button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Inter;
+    font-size: 12.5px;
+  }
+  .editor-actions .ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  /* ============ RIVER PANEL ============ */
+  .river-svg {
+    width: 100%;
+    height: 240px;
+    display: block;
+  }
+
+  /* Annotation row beneath river */
+  .river-info {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .r-info {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .r-info .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .r-info .val { font-family: Fraunces, serif; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+  .legend {
+    display:flex; flex-wrap: wrap; gap: 14px; margin-top: 14px;
+    color: var(--muted); font-size: 11.5px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  /* Empty-jars CTA row at bottom */
+  .cta-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .cta-row b { color: var(--ink); }
+  .cta-row button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Inter;
+    font-size: 12.5px;
+  }
+
+  /* Hint at very bottom */
+  .hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .hint kbd {
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Plan my month</h1>
+      <div class="sub">Jars on the left hold your categories. The river on the right shows how this month will flow.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">August 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- TOTALS -->
+  <div class="totals">
+    <div class="t in"><div class="lbl">Income planned</div><div class="val">৳ 80,000</div><div class="sub">salary + side gigs</div></div>
+    <div class="t budget"><div class="lbl">Budgeted</div><div class="val">৳ 62,000</div><div class="sub">across 7 jars</div></div>
+    <div class="t save"><div class="lbl">Saved (planned)</div><div class="val">৳ 18,000</div><div class="sub">22% of income</div></div>
+    <div class="t left"><div class="lbl">Spent (planned)</div><div class="val">৳ 44,000</div><div class="sub">across 7 jars</div></div>
+  </div>
+
+  <!-- MAIN: jars + river -->
+  <div class="stage">
+
+    <!-- JARS PANEL -->
+    <div class="panel">
+      <h2>The jars · tap one to edit</h2>
+      <div class="jars">
+        <div class="jar" data-tone="primary" data-pct="72">
+          <div class="fill" style="height:72%"></div>
+          <div class="label"><span class="em">🛒</span> Groceries <span class="x">×</span></div>
+          <div class="pct">৳ 14,500 <small>of ৳ 20k</small></div>
+        </div>
+        <div class="jar selected" data-tone="accent" data-pct="80">
+          <div class="fill" style="height:80%"></div>
+          <div class="label"><span class="em">🍱</span> Eating out <span class="x">×</span></div>
+          <div class="pct">৳ 4,800 <small>of ৳ 6k · 80%</small></div>
+        </div>
+        <div class="jar" data-tone="info" data-pct="108">
+          <div class="fill" style="height:100%"></div>
+          <div class="label"><span class="em">🚗</span> Transport <span class="x">×</span></div>
+          <div class="pct">৳ 5,300 <span class="over">over</span><small>over ৳ 5k budget</small></div>
+        </div>
+        <div class="jar" data-tone="warn" data-pct="40">
+          <div class="fill" style="height:40%"></div>
+          <div class="label"><span class="em">🛍️</span> Shopping <span class="x">×</span></div>
+          <div class="pct">৳ 3,200 <small>of ৳ 8k</small></div>
+        </div>
+
+        <div class="jar" data-tone="violet" data-pct="100">
+          <div class="fill" style="height:100%"></div>
+          <div class="label"><span class="em">💡</span> Bills <span class="x">×</span></div>
+          <div class="pct">৳ 10,000 <small>of ৳ 10k · full</small></div>
+        </div>
+        <div class="jar" data-tone="danger" data-pct="67">
+          <div class="fill" style="height:67%"></div>
+          <div class="label"><span class="em">🎁</span> Gifts <span class="x">×</span></div>
+          <div class="pct">৳ 2,000 <small>of ৳ 3k</small></div>
+        </div>
+        <div class="jar" data-tone="success" data-pct="22">
+          <div class="fill" style="height:22%"></div>
+          <div class="label"><span class="em">🐷</span> Save <span class="x">×</span></div>
+          <div class="pct">৳ 18,000 <small>22% of income</small></div>
+        </div>
+        <div class="jar-empty">+ new jar</div>
+      </div>
+
+      <!-- EDITOR (visible because "Eating out" is selected) -->
+      <div class="editor show">
+        <div class="editor-head">
+          <button class="emoji-btn">🍱</button>
+          <input class="name-input" value="Eating out" />
+        </div>
+        <div class="grid-2">
+          <div class="field-cell budget">
+            <div class="lbl">Budget</div>
+            <input type="number" value="6000" />
+          </div>
+          <div class="field-cell planned">
+            <div class="lbl">Planned spend</div>
+            <input type="number" value="4800" />
+          </div>
+          <div class="field-cell">
+            <div class="lbl">Remaining</div>
+            <input type="text" value="৳ 1,200" disabled style="color:var(--success);opacity:1;" />
+          </div>
+        </div>
+        <div class="quick-rows">
+          <input placeholder="café × 4" />
+          <input placeholder="lunch" />
+          <input placeholder="dinner" />
+          <input placeholder="delivery" />
+          <button class="add-chip">+ chip</button>
+        </div>
+        <div class="editor-actions">
+          <button class="ghost">empty jar</button>
+          <button class="ghost">delete</button>
+          <button>save jar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIVER PANEL -->
+    <div class="panel">
+      <h2>The river · what your month looks like</h2>
+
+      <svg viewBox="0 0 500 240" class="river-svg" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="in-grad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#5C8C72" stop-opacity="0.0"/>
+            <stop offset="1" stop-color="#5C8C72" stop-opacity="0.85"/>
+          </linearGradient>
+          <linearGradient id="out-grad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#D4A574" stop-opacity="0.0"/>
+            <stop offset="1" stop-color="#D4A574" stop-opacity="0.85"/>
+          </linearGradient>
+          <linearGradient id="gap-grad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#6FB386" stop-opacity="0.18"/>
+            <stop offset="1" stop-color="#6FB386" stop-opacity="0.35"/>
+          </linearGradient>
+        </defs>
+
+        <!-- INCOME band (top) -->
+        <path d="M 0,30 L 60,28 L 120,30 L 180,32 L 240,30 L 300,30 L 360,28 L 420,30 L 480,30 L 500,30 L 500,0 L 0,0 Z" fill="url(#in-grad)" opacity="0.55"/>
+        <path d="M 0,80 L 60,82 L 120,90 L 180,92 L 240,95 L 300,100 L 360,105 L 420,98 L 480,95 L 500,94" stroke="#5C8C72" stroke-width="2.5" fill="none"/>
+
+        <!-- SAVINGS gap (the green channel between rivers) -->
+        <path d="M 0,120 L 500,120 L 500,150 L 0,150 Z" fill="url(#gap-grad)"/>
+        <path d="M 0,135 L 500,135" stroke="#6FB386" stroke-width="1.5" stroke-dasharray="4 4" fill="none" opacity="0.85"/>
+
+        <!-- EXPENSE band (bottom) -->
+        <path d="M 0,180 L 60,178 L 120,165 L 180,160 L 240,170 L 300,148 L 360,140 L 420,155 L 480,165 L 500,162 L 500,240 L 0,240 Z" fill="url(#out-grad)" opacity="0.5"/>
+        <path d="M 0,150 L 60,155 L 120,160 L 180,165 L 240,170 L 300,172 L 360,175 L 420,172 L 480,170 L 500,168" stroke="#D4A574" stroke-width="2.5" fill="none"/>
+
+        <!-- Marker lines for each jar's % of month (Eating out is selected) -->
+        <line x1="80" y1="0" x2="80" y2="240" stroke="#5C8C72" stroke-opacity="0.18" stroke-dasharray="2 4"/>
+        <line x1="160" y1="0" x2="160" y2="240" stroke="#D4A574" stroke-opacity="0.3" stroke-dasharray="3 3"/>
+        <line x1="240" y1="0" x2="240" y2="240" stroke="#6E94B5" stroke-opacity="0.22" stroke-dasharray="3 3"/>
+        <line x1="320" y1="0" x2="320" y2="240" stroke="#C7A85F" stroke-opacity="0.22" stroke-dasharray="3 3"/>
+
+        <!-- "today" marker -->
+        <line x1="200" y1="0" x2="200" y2="240" stroke="#ECE7DD" stroke-opacity="0.25" stroke-dasharray="4 4"/>
+        <text x="200" y="14" text-anchor="middle" fill="#ECE7DD" font-size="10" font-family="Inter" opacity="0.7">today</text>
+
+        <!-- Eating out selected: highlighted region -->
+        <rect x="150" y="0" width="80" height="240" fill="#D4A574" opacity="0.07"/>
+        <text x="190" y="232" text-anchor="middle" fill="#D4A574" font-size="10" font-weight="700" font-family="Inter">🍱 Eating out · 80%</text>
+
+        <!-- Labels -->
+        <text x="6"  y="14"  fill="#5C8C72" font-size="11" font-weight="700" font-family="Inter">▲ Income</text>
+        <text x="494" y="146" text-anchor="end" fill="#6FB386" font-size="11" font-weight="700" font-family="Inter">⌇ Savings gap</text>
+        <text x="6"  y="232" fill="#D4A574" font-size="11" font-weight="700" font-family="Inter">▼ Expense</text>
+      </svg>
+
+      <div class="river-info">
+        <div class="r-info">
+          <div class="lbl">Biggest expense</div>
+          <div class="val">💡 Bills · ৳ 10k</div>
+        </div>
+        <div class="r-info">
+          <div class="lbl">Most under budget</div>
+          <div class="val">🛍️ Shopping · 60% left</div>
+        </div>
+        <div class="r-info">
+          <div class="lbl">If you save this rate</div>
+          <div class="val">৳ 216,000 / year</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:#5C8C72"></i> Income (planned)</span>
+        <span><i style="background:#D4A574"></i> Expense (planned)</span>
+        <span><i style="background:#6FB386"></i> Gap = what you'd save</span>
+        <span><i style="background:#6E94B5"></i> Today marker</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom CTA -->
+  <div class="cta-row">
+    <div>
+      <b>Save this plan?</b> &nbsp; You'll see the same jars next month — copy it as a starting point.
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button style="background:transparent;color:var(--muted);border:1px solid var(--border);">copy to next month</button>
+      <button>save plan</button>
+    </div>
+  </div>
+
+  <div class="hint">
+    ⓘ Nothing here is written to your ledger. Click any jar to edit its budget, planned spend, and quick chips; the river reshapes as you type. Press <kbd>⌘</kbd>+<kbd>S</kbd> to save the plan. Click <kbd>+ new jar</kbd> to add another category.
+  </div>
+</div>
+</body>
+</html>

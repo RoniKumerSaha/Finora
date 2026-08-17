@@ -115,6 +115,11 @@ export const exportEnvelopeSchema = z.object({
     debts: z.array(z.any()),
     investments: z.array(z.any()),
     categories: z.array(z.any()),
+    // Plan scratchpads — added in 2026-08-17 (PRD §9.14 + §9.15).
+    // Optional in the schema for forward-compat with older backups;
+    // the persistence layer fills them with [] on load.
+    monthPlans: z.array(z.any()).optional(),
+    eventPlans: z.array(z.any()).optional(),
     settings: z.object({
       theme: z.enum(['dark', 'light', 'auto']),
       onboardingComplete: z.boolean(),

@@ -36,6 +36,8 @@
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-success: var(--success);
@@ -80,6 +82,17 @@
   --overlay: rgba(15, 20, 25, 0.6);
   /* Sidebar inner shadow — keeps nav feeling "cut from the wall". */
   --sidebar-inset: inset -1px 0 0 rgba(0, 0, 0, 0.16);
+  /* Frosted pill on planner cards (jar tiles, category cards). The pill
+     sits on top of a coloured liquid fill, so it needs contrast against
+     *every* band — light in light mode (cream-on-cream pops via blur+shadow),
+     dark in dark mode (charcoal-on-everything). */
+  --frost-pill-bg:     rgba(15, 20, 25, 0.78);
+  --frost-pill-border: rgba(15, 20, 25, 0.10);
+  --frost-pill-shadow: none;
+  /* Strength of the planner-card liquid fill behind the frosted pills.
+     0.55 in light mode so the cream card surface doesn't drown the colour;
+     0.32 in dark mode where the surface is already deep. */
+  --liquid-fill-opacity: 0.32;
 }
 
 [data-theme="dark"] {
@@ -93,23 +106,28 @@
   --ink:          #F1F3EF;
   --muted:        #94A59C;
   --muted-2:      #647068;
-  --primary:      #5DBFA0;
-  --primary-soft: rgba(93, 191, 160, 0.18);
-  --primary-hi:   rgba(93, 191, 160, 0.08);
+  /* 2026-08-17 lift: planner ramp colours brightened so jars and
+     category cards read against the deep surface. Soft variants lifted
+     in tandem so washes don't go muddy. */
+  --primary:      #7DD4B5;
+  --primary-soft: rgba(125, 212, 181, 0.22);
+  --primary-hi:   rgba(125, 212, 181, 0.10);
   --primary-on:   #0F1419;
   --accent:       #D9B26B;
   --accent-soft:  rgba(217, 178, 107, 0.18);
-  --danger:       #C76A5A;
-  --danger-soft:  rgba(199, 106, 90, 0.18);
-  --danger-title: #E08A7C;
+  --danger:       #DC8678;
+  --danger-soft:  rgba(220, 134, 120, 0.22);
+  --danger-title: #F0A093;
   --danger-callout-bg: #2A1A18;
-  --warn:         #F4B860;
-  --warn-soft:    rgba(244, 184, 96, 0.15);
-  --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
-  --info-soft:    rgba(111, 168, 220, 0.18);
-  --success:      #6BAA8A;
-  --success-soft: rgba(107, 170, 138, 0.18);
-  --success-title:#82BFA0;
+  --warn:         #F8CE82;
+  --warn-soft:    rgba(248, 206, 130, 0.38);
+  --orange:       #F0AC75;   /* jar-fill ramp step: 80%→100% */
+  --orange-soft:  rgba(240, 172, 117, 0.38);
+  --info:         #8FC0EC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
+  --info-soft:    rgba(143, 192, 236, 0.22);
+  --success:      #8DC4A6;
+  --success-soft: rgba(141, 196, 166, 0.38);
+  --success-title:#9CD6B5;
   --success-callout-bg: #1A2620;
   --border:       #324139;
   --border-2:     #28332D;
@@ -120,6 +138,17 @@
   --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35);
   /* Card shadow (light): warm brown ambient instead of pure black. */
   --shadow-card: 0 1px 2px rgba(42, 38, 32, 0.06), 0 8px 24px rgba(42, 38, 32, 0.08);
+  /* Frosted pill on planner cards — nearly opaque cream wash with a
+     deeper brown border and a subtle lift shadow so the pill text
+     stays readable on every band. Higher opacity than dark mode because
+     the cream surface beneath is already light, so the pill needs to
+     dominate the band instead of blending with it. */
+  --frost-pill-bg:     rgba(248, 242, 227, 0.97);  /* matches --surface cream */
+  --frost-pill-border: rgba(42, 38, 32, 0.20);
+  --frost-pill-shadow: 0 1px 2px rgba(42, 38, 32, 0.10);
+  /* Liquid fill needs enough colour to read but not so much that it
+     drowns the pill text. Tuned with the cream card surface in mind. */
+  --liquid-fill-opacity: 0.48;
   --bg:           #EFE5D0;   /* warm parchment cream (2026-08-14 light-parchment) */
   --surface:      #F8F2E3;   /* soft cream, lighter than bg (2026-08-14) */
   --surface-2:    #F0E5CC;   /* warm cream, lockstep with new bg (2026-08-14) */
@@ -127,23 +156,29 @@
   --ink:          #2A2620;
   --muted:        #7A6F5E;
   --muted-2:      #B5A992;
-  --primary:      #0D8275;
-  --primary-soft: rgba(13, 130, 117, 0.12);
-  --primary-hi:   rgba(13, 130, 117, 0.06);
+  /* 2026-08-17 darken: planner ramp colours deepened so jars and
+     category cards retain weight against the cream surface. Soft
+     variants lifted in opacity so the band still reads as coloured
+     rather than as a flatter wash. */
+  --primary:      #086157;
+  --primary-soft: rgba(8, 97, 87, 0.16);
+  --primary-hi:   rgba(8, 97, 87, 0.08);
   --primary-on:   #FFFFFF;
-  --accent:       #A47E2C;
-  --accent-soft:  rgba(164, 126, 44, 0.14);
-  --danger:       #B8473A;
-  --danger-soft:  rgba(184, 71, 58, 0.14);
-  --danger-title: #8B3A2E;
+  --accent:       #876620;
+  --accent-soft:  rgba(135, 102, 32, 0.18);
+  --danger:       #993328;
+  --danger-soft:  rgba(153, 51, 40, 0.18);
+  --danger-title: #762A21;
   --danger-callout-bg: #F5E6DD;   /* warm parchment-tinted (2026-08-14) */
-  --warn:         #B6842E;
-  --warn-soft:    rgba(182, 132, 46, 0.14);
-  --info:         #2E6BAA;   /* deep steel-blue, readable on cream (light) */
-  --info-soft:    rgba(46, 107, 170, 0.12);
-  --success:      #558C6C;
-  --success-soft: rgba(85, 140, 108, 0.16);
-  --success-title:#3F7A5C;
+  --warn:         #8E6520;
+  --warn-soft:    rgba(142, 101, 32, 0.36);
+  --orange:       #9E4A18;   /* jar-fill ramp step: 80%→100% (light) */
+  --orange-soft:  rgba(158, 74, 24, 0.36);
+  --info:         #1F4F84;   /* deep steel-blue, readable on cream (light) */
+  --info-soft:    rgba(31, 79, 132, 0.16);
+  --success:      #3F6E55;
+  --success-soft: rgba(63, 110, 85, 0.36);
+  --success-title:#2E5A44;
   --success-callout-bg: #E8EFE5;  /* warm parchment-tinted (2026-08-14) */
   --border:       #D8C9A6;   /* deeper for soft-cream cards (2026-08-14) */
   --border-2:     #C8B98F;   /* deeper (2026-08-14) */

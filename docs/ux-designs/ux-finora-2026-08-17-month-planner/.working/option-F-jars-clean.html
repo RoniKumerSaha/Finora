@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Month Planner — Option F: Jars, Clean</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1A211D;
+    --surface: #212B25;
+    --surface-2: #2A342E;
+    --ink: #EFE9DD;
+    --ink-2: #B5BDB6;
+    --muted: #8B948D;
+    --line: #303A34;
+
+    --primary: #7FA890;        /* calm sage */
+    --primary-soft: #2D3A33;
+    --accent:  #C9A47A;        /* warm muted clay */
+    --accent-soft: #3A322A;
+
+    --success: #8FB89A;
+    --warn:    #C9B26F;
+    --danger:  #C28679;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 24px 64px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 600; margin: 0; letter-spacing: -0.015em; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-bottom: 36px;
+  }
+  .head h1 {
+    font-size: 38px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .head .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 8px;
+    max-width: 380px;
+    line-height: 1.5;
+  }
+  .pager {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 6px;
+    color: var(--ink-2);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .pager button {
+    width: 28px; height: 28px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-2);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background .15s;
+  }
+  .pager button:hover { background: var(--surface-2); color: var(--ink); }
+  .pager .current { padding: 0 12px; color: var(--ink); }
+
+  /* ── SUMMARY (single line, no boxes shouting at you) ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sum-cell {
+    padding: 4px 22px;
+    border-left: 1px solid var(--line);
+  }
+  .sum-cell:first-child { border-left: 0; padding-left: 0; }
+  .sum-cell .lbl {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .sum-cell .val {
+    font-family: Fraunces, serif;
+    font-size: 26px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    margin-top: 6px;
+    color: var(--ink);
+  }
+  .sum-cell.in .val { color: var(--success); }
+  .sum-cell.save .val { color: var(--primary); }
+  .sum-cell .delta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── JARS GRID ── */
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .section-head h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-2);
+    letter-spacing: 0;
+  }
+  .section-head .meta {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .jars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+
+  /* ── THE JAR ── */
+  /* Outer card — just a hint of surface, border, no shadow */
+  .jar {
+    position: relative;
+    height: 220px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px 6px 16px 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s, transform .15s;
+  }
+  .jar:hover { border-color: var(--ink-2); }
+  .jar.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  .jar.overfill { border-color: var(--danger); }
+  .jar.full { border-color: var(--ink-2); }
+
+  /* The "fill" — bottom-up, single subtle hue */
+  .jar .fill {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--fill, color-mix(in srgb, var(--primary) 28%, transparent));
+    transition: height .4s cubic-bezier(.4, 0, .2, 1), background .25s;
+    border-radius: 0 0 15px 15px;
+  }
+  /* Faint surface line at the top edge of the fill */
+  .jar .fill::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: var(--fill-edge, color-mix(in srgb, var(--primary) 50%, transparent));
+  }
+
+  /* Header strip inside the jar */
+  .jar .head {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 12px 14px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface);
+    margin: 0;
+  }
+  .jar .name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .jar .grip {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity .12s;
+  }
+  .jar:hover .grip { opacity: 1; }
+
+  /* Footer inside the jar — sits above the fill */
+  .jar .foot {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 10px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface);
+    transition: opacity .2s;
+  }
+  .jar.has-fill .foot { background: transparent; padding-bottom: 14px; }
+  .jar .num {
+    font-family: Fraunces, serif;
+    font-size: 19px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    line-height: 1.05;
+  }
+  .jar.has-fill .num { color: var(--ink); }
+  .jar .cap {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .jar .pct {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .jar.overfill .num { color: var(--danger); }
+  .jar.overfill .pct { color: var(--danger); }
+
+  /* The "+ new" jar — distinctly quiet */
+  .jar-empty {
+    border: 1px dashed var(--line);
+    background: transparent;
+    border-radius: 6px 6px 16px 16px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .jar-empty:hover { border-color: var(--ink-2); color: var(--ink-2); }
+
+  /* ── EDITOR (slides under selected jar, the only place we add detail) ── */
+  .editor {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 28px;
+  }
+  .editor .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .editor .top h3 {
+    font-family: Inter, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .editor .top .name {
+    font-family: Fraunces, serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    padding: 2px 0;
+    outline: none;
+    transition: border-color .15s;
+    min-width: 200px;
+  }
+  .editor .top .name:focus { border-bottom-color: var(--primary); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .field {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: var(--surface-2);
+  }
+  .field .lbl {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .field input {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 4px 0 0;
+    font-family: Fraunces, serif;
+    font-size: 20px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  .field.budget input { color: var(--ink-2); }
+  .field.planned input { color: var(--accent); }
+
+  /* "What's in this jar" — the line items. Quiet, scannable. */
+  .items-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 8px;
+    margin-bottom: 8px;
+  }
+  .items-head h3 {
+    font-family: Inter, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .items-head .note { font-size: 11.5px; color: var(--muted); }
+
+  .items {
+    display: flex;
+    flex-direction: column;
+  }
+  .item {
+    display: grid;
+    grid-template-columns: 1fr 100px 28px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .item:last-child { border-bottom: 1px solid var(--line); }
+  .item input[type="text"] {
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 4px 0;
+    font-family: Inter, sans-serif;
+    font-size: 13px;
+    outline: none;
+  }
+  .item input[type="text"]:focus { color: var(--primary); }
+  .item .amt {
+    text-align: right;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    font-family: Fraunces, serif;
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    width: 100%;
+    padding: 4px 0;
+  }
+  .item .x {
+    color: var(--muted);
+    cursor: pointer;
+    text-align: right;
+    font-size: 14px;
+    user-select: none;
+    transition: color .12s;
+  }
+  .item .x:hover { color: var(--danger); }
+
+  .add-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 28px;
+    gap: 12px;
+    align-items: center;
+    padding-top: 8px;
+  }
+  .add-row input {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px dashed var(--line);
+    color: var(--muted);
+    padding: 6px 0;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s, color .15s;
+  }
+  .add-row input:focus { color: var(--ink); border-bottom-color: var(--primary); }
+  .add-row .add {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: right;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .add-row .add:hover { color: var(--primary); }
+
+  /* ── FOOTER ── */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .footer button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: Inter;
+    font-size: 12.5px;
+    letter-spacing: 0.01em;
+  }
+  .footer .link {
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    border: 0;
+    font-size: 12.5px;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
+  }
+
+  .hint {
+    margin-top: 24px;
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    text-align: center;
+    letter-spacing: 0.01em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>August plan</h1>
+      <div class="sub">A scratchpad of what you'll spend, by jar. Nothing here is your real ledger.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">August 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div class="sum-cell in">
+      <div class="lbl">Income planned</div>
+      <div class="val">৳ 80,000</div>
+      <div class="delta">salary + side gigs</div>
+    </div>
+    <div class="sum-cell">
+      <div class="lbl">Spent (planned)</div>
+      <div class="val">৳ 46,500</div>
+      <div class="delta">58% of income</div>
+    </div>
+    <div class="sum-cell save">
+      <div class="lbl">Saved (planned)</div>
+      <div class="val">৳ 18,000</div>
+      <div class="delta">22% of income</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Jars</h2>
+    <div class="meta">Tap one to edit</div>
+  </div>
+
+  <div class="jars">
+    <!-- Groceries: 72% -->
+    <div class="jar" style="--fill: color-mix(in srgb, var(--primary) 28%, transparent); --fill-edge: color-mix(in srgb, var(--primary) 50%, transparent);">
+      <div class="fill" style="height: 72%"></div>
+      <div class="head">
+        <div class="name">Groceries</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 14,500</div>
+        <div class="cap">of ৳ 20,000</div>
+        <div class="pct">72% filled</div>
+      </div>
+    </div>
+
+    <!-- Eating out: 80% (selected) -->
+    <div class="jar has-fill selected" style="--fill: color-mix(in srgb, var(--accent) 32%, transparent); --fill-edge: color-mix(in srgb, var(--accent) 60%, transparent);">
+      <div class="fill" style="height: 80%"></div>
+      <div class="head">
+        <div class="name">Eating out</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 4,800</div>
+        <div class="cap">of ৳ 6,000 · 80%</div>
+        <div class="pct">80% filled</div>
+      </div>
+    </div>
+
+    <!-- Transport: 108% (overfill) -->
+    <div class="jar has-fill overfill" style="--fill: color-mix(in srgb, var(--danger) 30%, transparent); --fill-edge: color-mix(in srgb, var(--danger) 60%, transparent);">
+      <div class="fill" style="height: 100%"></div>
+      <div class="head">
+        <div class="name">Transport</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 5,300</div>
+        <div class="cap">of ৳ 5,000</div>
+        <div class="pct">over by ৳ 300</div>
+      </div>
+    </div>
+
+    <!-- Shopping: 40% -->
+    <div class="jar has-fill" style="--fill: color-mix(in srgb, var(--warn) 26%, transparent); --fill-edge: color-mix(in srgb, var(--warn) 50%, transparent);">
+      <div class="fill" style="height: 40%"></div>
+      <div class="head">
+        <div class="name">Shopping</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 3,200</div>
+        <div class="cap">of ৳ 8,000</div>
+        <div class="pct">40% filled</div>
+      </div>
+    </div>
+
+    <!-- Bills: 100% (full) -->
+    <div class="jar has-fill full" style="--fill: color-mix(in srgb, var(--success) 26%, transparent); --fill-edge: color-mix(in srgb, var(--success) 55%, transparent);">
+      <div class="fill" style="height: 100%"></div>
+      <div class="head">
+        <div class="name">Bills</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 10,000</div>
+        <div class="cap">of ৳ 10,000</div>
+        <div class="pct">at budget</div>
+      </div>
+    </div>
+
+    <!-- Gifts: 67% -->
+    <div class="jar has-fill" style="--fill: color-mix(in srgb, var(--primary) 28%, transparent); --fill-edge: color-mix(in srgb, var(--primary) 50%, transparent);">
+      <div class="fill" style="height: 67%"></div>
+      <div class="head">
+        <div class="name">Gifts</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 2,000</div>
+        <div class="cap">of ৳ 3,000</div>
+        <div class="pct">67% filled</div>
+      </div>
+    </div>
+
+    <!-- Save: 22% (savings jar) -->
+    <div class="jar has-fill" style="--fill: color-mix(in srgb, var(--success) 30%, transparent); --fill-edge: color-mix(in srgb, var(--success) 55%, transparent);">
+      <div class="fill" style="height: 22%"></div>
+      <div class="head">
+        <div class="name">Save</div>
+        <div class="grip">✎</div>
+      </div>
+      <div class="foot">
+        <div class="num">৳ 18,000</div>
+        <div class="cap">22% of income</div>
+        <div class="pct">your runway</div>
+      </div>
+    </div>
+
+    <div class="jar-empty">+ new jar</div>
+  </div>
+
+  <!-- EDITOR (visible because "Eating out" is selected) -->
+  <div class="editor">
+    <div class="top">
+      <h3>Eating out</h3>
+      <input class="name" value="Eating out" />
+    </div>
+
+    <div class="row">
+      <div class="field budget">
+        <div class="lbl">Budget</div>
+        <input type="number" value="6000" />
+      </div>
+      <div class="field planned">
+        <div class="lbl">Planned spend</div>
+        <input type="number" value="4800" />
+      </div>
+      <div class="field" style="background: transparent; border-style: dashed;">
+        <div class="lbl">Remaining</div>
+        <input type="text" value="৳ 1,200" disabled style="color: var(--success);" />
+      </div>
+    </div>
+
+    <div class="items-head">
+      <h3>What's in this jar</h3>
+      <div class="note">line items (optional)</div>
+    </div>
+
+    <div class="items">
+      <div class="item">
+        <input type="text" value="Café × 4" />
+        <input class="amt" type="number" value="800" />
+        <div class="x">×</div>
+      </div>
+      <div class="item">
+        <input type="text" value="Lunches" />
+        <input class="amt" type="number" value="2200" />
+        <div class="x">×</div>
+      </div>
+      <div class="item">
+        <input type="text" value="Dinner with team" />
+        <input class="amt" type="number" value="1500" />
+        <div class="x">×</div>
+      </div>
+      <div class="item">
+        <input type="text" value="Delivery" />
+        <input class="amt" type="number" value="300" />
+        <div class="x">×</div>
+      </div>
+    </div>
+
+    <div class="add-row">
+      <input placeholder="Add a line — e.g. Friday dinner with Sam" />
+      <input class="amt" placeholder="৳ amount" />
+      <button class="add">+</button>
+    </div>
+
+    <div class="footer">
+      <button class="link">copy jar to next month</button>
+      <div style="display:flex; gap: 14px; align-items: center;">
+        <button class="link">delete jar</button>
+        <button>save jar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">
+    Everything on this page is a scratchpad — nothing here is recorded in your ledger.
+  </div>
+
+</div>
+</body>
+</html>

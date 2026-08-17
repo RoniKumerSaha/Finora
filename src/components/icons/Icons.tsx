@@ -134,6 +134,23 @@ export function NavDebts(props: IconProps) {
   );
 }
 
+/**
+ * Plan — a calendar with a small check inside the day, suggesting
+ * "planning what you'll do / spend". Reads as a planner without
+ * overlapping with the much finer-grain Goals icon.
+ */
+export function NavPlan(props: IconProps) {
+  return (
+    <svg {...COMMON} {...props}>
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3.5v3" />
+      <path d="M16 3.5v3" />
+      <path d="m8.5 14.5 2 2 4-4" />
+    </svg>
+  );
+}
+
 /** Settings — a gear with 8 teeth. Iconic, recognizable. */
 export function NavSettings(props: IconProps) {
   return (

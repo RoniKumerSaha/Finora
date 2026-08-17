@@ -60,3 +60,15 @@ export function fmtRelative(iso: string | Date, now: Date = new Date()): string 
   if (days > 1 && days < 7) return `${days}d ago`;
   return fmtDate(iso);
 }
+
+/**
+ * Reject negatives at the input boundary so users can't sneak one past
+ * the field. Empty string / lone minus normalises to 0 so the controlled
+ * value always parses as a finite non-negative number.
+ */
+export function clampNonNegative(raw: string): number {
+  if (raw === '' || raw === '-') return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n;
+}

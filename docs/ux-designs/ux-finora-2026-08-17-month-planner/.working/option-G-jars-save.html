@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Month Planner — Option G: Jars · Save &amp; Reset</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --primary-soft: #2D4135;
+    --accent: #D4A574;
+    --accent-soft: #3A2F22;
+    --danger: #C26B5C;
+    --danger-soft: #3A2A28;
+    --info: #6E94B5;
+    --warn:   #C7A85F;
+    --success: #6FB386;
+    --border: #3A463E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .pager button {
+    background: transparent; color: var(--ink); border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px;
+  }
+  .pager .current {
+    color: var(--ink); font-weight: 600; font-size: 14px; padding: 0 6px;
+  }
+
+  /* ── ACTION ROW (Save / Reset) ── */
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .actions .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .actions .status .dot {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: var(--warn); /* unsaved-changes state */
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent);
+  }
+  .actions .status.saved .dot {
+    background: var(--success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 25%, transparent);
+  }
+  .actions .status.saved { color: var(--ink); }
+  .actions .actions-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  .actions button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: Inter;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .actions button:hover { color: var(--ink); border-color: var(--ink-2); }
+  .actions button.save {
+    background: var(--primary);
+    color: #0D1612;
+    border-color: var(--primary);
+  }
+  .actions button.save:hover { opacity: 0.92; }
+  .actions button.reset:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* ── TOTAL BAR (kept from option C) ── */
+  .total-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .tb-cell {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 0 12px;
+    border-left: 1px solid var(--border);
+  }
+  .tb-cell:first-child { border-left: 0; padding-left: 0; }
+  .tb-cell b {
+    display: block;
+    font-family: Fraunces, serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 700;
+  }
+  .tb-cell.middle { text-align: center; }
+  .tb-cell.right { text-align: right; }
+  .tb-cell b.save { color: var(--success); }
+  .tb-cell b.spend { color: var(--accent); }
+
+  /* ── JARS (original piggy visuals) ── */
+  .jars {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .jar {
+    background: linear-gradient(180deg, transparent 0%, transparent 40%, var(--warn) 40%, var(--accent) 100%);
+    border-radius: 14px 14px 32px 32px;
+    border: 1px solid var(--border);
+    position: relative;
+    height: 220px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .15s;
+  }
+  .jar:hover { transform: translateY(-2px); }
+  .jar[data-tone="primary"] { background: linear-gradient(180deg, transparent 0%, transparent 30%, var(--primary-soft) 30%, var(--primary) 100%); }
+  .jar[data-tone="accent"]  { background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--warn) 50%, var(--accent) 100%); }
+  .jar[data-tone="info"]    { background: linear-gradient(180deg, transparent 0%, transparent 60%, #2D3A4D 60%, var(--info) 100%); }
+  .jar[data-tone="warn"]    { background: linear-gradient(180deg, transparent 0%, transparent 65%, #3A3325 65%, var(--warn) 100%); }
+  .jar[data-tone="violet"]  { background: linear-gradient(180deg, transparent 0%, transparent 55%, #3A2F4A 55%, #A78BFA 100%); }
+  .jar[data-tone="danger"]  { background: linear-gradient(180deg, transparent 0%, transparent 60%, var(--danger-soft) 60%, var(--danger) 100%); }
+  .jar[data-tone="success"] { background: linear-gradient(180deg, transparent 0%, transparent 70%, #2D4135 70%, var(--success) 100%); }
+
+  .jar.selected {
+    box-shadow: 0 0 0 2px var(--primary), 0 6px 14px rgba(0,0,0,0.35);
+  }
+
+  .jar .label {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .jar .label .em { font-size: 18px; }
+  .jar .label .edit {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity .15s;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .jar:hover .label .edit { opacity: 1; }
+
+  .jar .pct {
+    position: absolute;
+    bottom: 10px;
+    left: 14px;
+    right: 14px;
+    font-family: Fraunces, serif;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.25);
+  }
+  .jar .pct small {
+    display: block;
+    font-size: 11px;
+    font-family: Inter;
+    font-weight: 500;
+    color: rgba(0,0,0,0.55);
+    margin-top: 1px;
+    text-shadow: none;
+  }
+
+  .jar-empty {
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    border-radius: 14px 14px 32px 32px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .jar-empty:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ── EDITOR ── */
+  .editor {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+  .editor h2 { font-size: 16px; margin-bottom: 4px; }
+  .editor .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+
+  .picker {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .picker button {
+    width: 38px; height: 38px;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 22px;
+  }
+  .picker button.selected { background: var(--bg); box-shadow: inset 0 0 0 2px var(--primary); }
+  .picker button:hover { background: var(--bg); }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .fr {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .fr input {
+    margin-top: 6px;
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .fr input:focus { outline: none; border-color: var(--primary); }
+
+  .editor-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    justify-content: flex-end;
+  }
+  .editor-actions button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Inter;
+    font-size: 13px;
+  }
+  .editor-actions button.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .editor-actions button.danger-ghost:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* ── Bottom hint ── */
+  .hint {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div>
+      <h1>Plan my month</h1>
+      <div class="sub">Fill the jars. Tap <b>Save plan</b> when it looks right — or <b>Reset</b> to start over.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">August 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- SAVE / RESET ROW -->
+  <div class="actions">
+    <div class="status">
+      <span class="dot"></span>
+      <span><b style="color:var(--ink);">Unsaved changes</b> — you've tweaked 2 jars since the last save.</span>
+    </div>
+    <div class="actions-buttons">
+      <button class="reset">Reset</button>
+      <button class="save">Save plan</button>
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total-bar">
+    <div class="tb-cell">Income planned <b>৳ 80,000</b></div>
+    <div class="tb-cell middle">Spent / budgeted <b class="spend">৳ 46,500 / 60k</b></div>
+    <div class="tb-cell right">Saved (planned) <b class="save">৳ 18,000</b></div>
+  </div>
+
+  <!-- JARS -->
+  <div class="jars">
+    <div class="jar" data-tone="primary">
+      <div class="label"><span class="em">🛒</span> Groceries <span class="edit">✎</span></div>
+      <div class="pct">৳ 14,500 <small>72% filled</small></div>
+    </div>
+    <div class="jar selected" data-tone="accent">
+      <div class="label"><span class="em">🍱</span> Eating out <span class="edit">✎</span></div>
+      <div class="pct">৳ 4,800 <small>80% filled</small></div>
+    </div>
+    <div class="jar" data-tone="info">
+      <div class="label"><span class="em">🚗</span> Transport <span class="edit">✎</span></div>
+      <div class="pct">৳ 5,300 <small>108% overflowing</small></div>
+    </div>
+    <div class="jar" data-tone="warn">
+      <div class="label"><span class="em">🛍️</span> Shopping <span class="edit">✎</span></div>
+      <div class="pct">৳ 3,200 <small>40% filled</small></div>
+    </div>
+
+    <div class="jar" data-tone="violet">
+      <div class="label"><span class="em">💡</span> Bills <span class="edit">✎</span></div>
+      <div class="pct">৳ 10,000 <small>100% full</small></div>
+    </div>
+    <div class="jar" data-tone="danger">
+      <div class="label"><span class="em">🎁</span> Gifts <span class="edit">✎</span></div>
+      <div class="pct">৳ 2,000 <small>40% filled</small></div>
+    </div>
+    <div class="jar" data-tone="success">
+      <div class="label"><span class="em">🐷</span> Save <span class="edit">✎</span></div>
+      <div class="pct">৳ 18,000 <small>22% of income</small></div>
+    </div>
+    <div class="jar-empty">+ new jar</div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor">
+    <h2>🍱 Eating out</h2>
+    <div class="sub">Pick an emoji · set budget · fill from income</div>
+    <div class="picker">
+      <button>🛒</button><button>🥦</button><button>🍞</button><button>🥩</button>
+      <button>🍎</button><button>🥛</button><button>🍳</button><button>🌶️</button>
+      <button class="selected">🍱</button><button>🧀</button><button>🥗</button><button>🍕</button>
+    </div>
+    <div class="field-row">
+      <div class="fr">Budget<input type="number" value="6000" /></div>
+      <div class="fr">Planned (what you'll spend)<input type="number" value="4800" /></div>
+    </div>
+    <div class="editor-actions">
+      <button class="ghost">empty jar</button>
+      <button class="ghost danger-ghost">remove</button>
+      <button>save jar</button>
+    </div>
+  </div>
+
+  <div class="hint">
+    ⓘ The shelf shows this month only. Use the ‹ › pager to step to a different month — switching doesn't save anything; the current plan is only saved when you tap <b>Save plan</b>.
+  </div>
+
+</div>
+</body>
+</html>

@@ -56,6 +56,7 @@ export function SettingsScreen() {
     update(s => ({
       version: 1,
       accounts: [], transactions: [], goals: [], debts: [], investments: [], categories: [],
+      monthPlans: [], eventPlans: [],
       settings: { ...s.settings, onboardingComplete: true },
     }));
     showBanner({

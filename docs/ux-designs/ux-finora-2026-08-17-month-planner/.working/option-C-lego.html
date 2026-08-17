@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Month Planner — Option C: Piggy Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1E2A26;
+    --surface: #263029;
+    --surface-2: #2E3A33;
+    --ink: #ECE7DD;
+    --muted: #9AA39C;
+    --primary: #5C8C72;
+    --accent: #D4A574;
+    --danger: #C26B5C;
+    --info: #6E94B5;
+    --warn:   #C7A85F;
+    --success: #6FB386;
+    --border: #3A463E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    padding: 32px 20px;
+  }
+  h1, h2, h3 { font-family: Fraunces, serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  .head { display:flex; justify-content:space-between; align-items:end; margin-bottom: 20px; }
+  .head h1 { font-size: 32px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .pager { display:flex; align-items:center; gap:10px; color: var(--muted); font-size:13px; }
+  .pager button {
+    background: transparent; color: var(--ink); border: 1px solid var(--border);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px;
+  }
+  .pager .current { color: var(--ink); font-weight: 600; font-size: 14px; padding: 0 6px; }
+
+  /* JARS layout */
+  .jars {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .jar {
+    background: linear-gradient(180deg, transparent 0%, transparent 40%, var(--warn) 40%, var(--accent) 100%);
+    border-radius: 14px 14px 32px 32px;
+    border: 1px solid var(--border);
+    position: relative;
+    height: 220px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .15s;
+  }
+  .jar:hover { transform: translateY(-2px); }
+  .jar[data-tone="primary"] { background: linear-gradient(180deg, transparent 0%, transparent 30%, var(--primary-soft, #2D4135) 30%, var(--primary) 100%); }
+  .jar[data-tone="accent"]  { background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--warn) 50%, var(--accent) 100%); }
+  .jar[data-tone="info"]    { background: linear-gradient(180deg, transparent 0%, transparent 60%, #2D3A4D 60%, var(--info) 100%); }
+  .jar[data-tone="success"] { background: linear-gradient(180deg, transparent 0%, transparent 70%, #2D4135 70%, var(--success) 100%); }
+
+  .jar .label {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    display:flex;
+    align-items:center;
+    gap: 6px;
+  }
+  .jar .label .em { font-size: 18px; }
+  .jar .label .edit {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity .15s;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    width: 22px; height: 22px;
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .jar:hover .label .edit { opacity: 1; }
+
+  .jar .pct {
+    position: absolute;
+    bottom: 10px;
+    left: 14px;
+    right: 14px;
+    font-family: Fraunces, serif;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.25);
+  }
+  .jar .pct small { display:block; font-size: 11px; font-family: Inter; font-weight: 500; color: rgba(0,0,0,0.55); margin-top: 1px; text-shadow: none; }
+
+  .jar-empty {
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    border-radius: 14px 14px 32px 32px;
+    height: 220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .jar-empty:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Total panel */
+  .total-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items:center;
+    margin-bottom: 22px;
+  }
+  .tb-cell { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .tb-cell b { display:block; font-family: Fraunces, serif; font-size: 22px; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; text-transform:none; letter-spacing:0; font-weight: 700; }
+  .tb-cell.middle { text-align: center; }
+  .tb-cell.right { text-align: right; }
+  .tb-cell b.save { color: var(--success); }
+  .tb-cell b.spend { color: var(--accent); }
+  .tb-cell b.diffneg { color: var(--danger); }
+
+  /* Popover / detail editor */
+  .popover-host {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+  .popover-host h2 { font-size: 16px; margin-bottom: 4px; }
+  .popover-host .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+
+  .picker {
+    display:flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .picker button {
+    width: 38px; height: 38px;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 22px;
+  }
+  .picker button.selected { background: var(--bg); box-shadow: inset 0 0 0 2px var(--primary); }
+  .picker button:hover { background: var(--bg); }
+
+  .field-row {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .fr { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .fr input {
+    margin-top: 6px;
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .fr input:focus { outline: none; border-color: var(--primary); }
+
+  .actions {
+    display:flex;
+    gap: 10px;
+    margin-top: 18px;
+    justify-content: flex-end;
+  }
+  .actions button {
+    background: var(--primary);
+    color: #0D1612;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: Inter;
+    font-size: 13px;
+  }
+  .actions button.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Fill the jars</h1>
+      <div class="sub">Each jar is a category. The level = how much you'll spend. Empty jars go red.</div>
+    </div>
+    <div class="pager">
+      <button>‹</button><span class="current">August 2026</span><button>›</button>
+    </div>
+  </div>
+
+  <!-- JARS -->
+  <div class="jars">
+    <div class="jar" data-tone="primary">
+      <div class="label"><span class="em">🛒</span> Groceries <span class="edit">✎</span></div>
+      <div class="pct">৳ 14,500 <small>72% filled</small></div>
+    </div>
+    <div class="jar" data-tone="accent">
+      <div class="label"><span class="em">🍱</span> Eating out <span class="edit">✎</span></div>
+      <div class="pct">৳ 6,000 <small>50% filled</small></div>
+    </div>
+    <div class="jar" data-tone="info">
+      <div class="label"><span class="em">🚗</span> Transport <span class="edit">✎</span></div>
+      <div class="pct">৳ 6,500 <small>108% overflowing</small></div>
+    </div>
+    <div class="jar" data-tone="warn">
+      <div class="label"><span class="em">🛍️</span> Shopping <span class="edit">✎</span></div>
+      <div class="pct">৳ 4,000 <small>40% filled</small></div>
+    </div>
+
+    <div class="jar" data-tone="primary">
+      <div class="label"><span class="em">💡</span> Bills <span class="edit">✎</span></div>
+      <div class="pct">৳ 12,500 <small>100% full</small></div>
+    </div>
+    <div class="jar" data-tone="accent">
+      <div class="label"><span class="em">🎁</span> Gifts <span class="edit">✎</span></div>
+      <div class="pct">৳ 3,000 <small>40% filled</small></div>
+    </div>
+    <div class="jar" data-tone="success">
+      <div class="label"><span class="em">🐷</span> Save <span class="edit">✎</span></div>
+      <div class="pct">৳ 18,000 <small>22% of income</small></div>
+    </div>
+    <div class="jar-empty">+ new jar</div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total-bar">
+    <div class="tb-cell">Income planned <b>৳ 80,000</b></div>
+    <div class="tb-cell middle">Spent / budgeted <b class="spend">৳ 46,500 / 60k</b></div>
+    <div class="tb-cell right">Saved (planned) <b class="save">৳ 18,000</b></div>
+  </div>
+
+  <!-- POPOVER -->
+  <div class="popover-host">
+    <h2>🛒 Groceries</h2>
+    <div class="sub">Pick an emoji · set budget · fill from income</div>
+    <div class="picker">
+      <button>🛒</button><button>🥦</button><button>🍞</button><button>🥩</button>
+      <button>🍎</button><button>🥛</button><button>🍳</button><button>🌶️</button>
+      <button class="selected">🛍️</button><button>🧀</button><button>🥗</button><button>🍱</button>
+    </div>
+    <div class="field-row">
+      <div class="fr">Budget<label></label><input type="number" value="15000" /></div>
+      <div class="fr">Planned (what you'll spend)<input type="number" value="14500" /></div>
+    </div>
+    <div class="actions">
+      <button class="ghost">empty jar</button>
+      <button class="ghost">remove</button>
+      <button>save jar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -66,6 +66,8 @@ export const DEFAULT_STATE: State = {
   debts: [],
   investments: [],
   categories: buildDefaultCategories(),
+  monthPlans: [],
+  eventPlans: [],
   settings: { theme: 'dark', onboardingComplete: false },
 };
 
@@ -104,12 +106,17 @@ function validate(s: unknown): s is Partial<State> {
  * any *new* default categories the user is missing. Existing categories
  * (matched by `name`) are preserved (keeping their ids and any of the
  * user's edits); new defaults are appended.
+ *
+ * Plan arrays (monthPlans, eventPlans) are filled with [] when missing —
+ * a v1 install that pre-dates the planner feature won't have them.
  */
 function mergeDefaults(s: Partial<State>): State {
   const merged: State = {
     ...DEFAULT_STATE,
     ...s,
     settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
+    monthPlans: Array.isArray(s.monthPlans) ? s.monthPlans : [],
+    eventPlans: Array.isArray(s.eventPlans) ? s.eventPlans : [],
   };
   merged.categories = mergeCategories(merged.categories ?? []);
   return merged;
