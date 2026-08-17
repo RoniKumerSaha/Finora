@@ -163,6 +163,12 @@ export interface EventPlan {
   /** Optional last-saved ISO timestamp. */
   savedAt?: ISODate | null;
   dirty: boolean;
+  /** Frozen copy of the plan at the last successful save. Reset copies
+   *  this back into the live plan so users can revert their working
+   *  draft — including event-level fields like budget and date, which
+   *  the user can edit. Optional because `saveEventPlan` may run on a
+   *  plan that hasn't been saved before. */
+  savedSnapshot?: Omit<EventPlan, 'savedSnapshot'>;
 }
 
 export interface State {

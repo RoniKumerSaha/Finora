@@ -20,7 +20,7 @@ import type {
   State,
 } from './types';
 import { uid } from './ids';
-import { daysBetween } from './math';
+import { daysBetween, today } from './math';
 
 /** Day in milliseconds. Single source for the "days to go" arithmetic. */
 export const MS_PER_DAY = 86_400_000;
@@ -169,6 +169,12 @@ export function addEventPlan(
   input: { name: string; emoji?: string; eventDate: ISODate; budget?: number },
 ): { state: State; id: string } {
   const id = uid();
+  // No savedSnapshot at creation time — Reset shouldn't revert to the
+  // pre-creation shell, only to the user's last explicit Save. If the
+  // user never saves, the legacy fallback in resetEventPlan fires:
+  // clear the working draft (planned + categories) but keep the
+  // event shell (name/date/budget/emoji) so the user's typed values
+  // stay intact.
   const plan: EventPlan = {
     id,
     name: input.name.trim(),
@@ -196,8 +202,14 @@ export function updateEventPlan(state: State, id: string, patch: Partial<Omit<Ev
 export function saveEventPlan(state: State, id: string): State {
   const existing = getEventPlan(state, id);
   if (!existing) return state;
+  // Capture a deep snapshot of the live plan so a later Reset can
+  // restore it verbatim — including event-level fields like budget
+  // and date that the user can edit. The snapshot deliberately omits
+  // itself so we don't recurse forever.
+  const { savedSnapshot: _ignored, ...live } = existing;
   const next: EventPlan = {
     ...existing,
+    savedSnapshot: live,
     dirty: false,
     savedAt: new Date().toISOString().slice(0, 10),
   };
@@ -210,9 +222,24 @@ export function saveEventPlan(state: State, id: string): State {
 export function resetEventPlan(state: State, id: string): State {
   const existing = getEventPlan(state, id);
   if (!existing) return state;
-  // Reset keeps the event shell (name/date/budget) but clears planned work.
+  // Reset blanks all planning data on the event: budget → 0, date →
+  // today (so "days ago" / "days to go" both read 0), planned → 0,
+  // categories wiped. The event shell (id, name, emoji) is kept so
+  // the user doesn't lose the event itself. The savedSnapshot is
+  // also preserved so subsequent Saves still work and the user can
+  // hit Reset again later.
+  //
+  // Why blank today rather than restore the snapshot: the user
+  // expectation is "Reset = wipe the planning state." Restoring to a
+  // previously-saved snapshot would re-introduce the very budget and
+  // date the user is trying to clear. Today's date is used so the
+  // page no longer reads "5 days ago" — the user just reset, so the
+  // event is back to a clean slate.
+  const todayISO = today().toISOString().slice(0, 10);
   const next: EventPlan = {
     ...existing,
+    budget: 0,
+    eventDate: todayISO,
     planned: 0,
     categories: [],
     dirty: true,

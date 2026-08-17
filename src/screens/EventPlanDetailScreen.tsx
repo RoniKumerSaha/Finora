@@ -20,6 +20,7 @@ import { fmtBDT, fmtDate, fmtDateShort, clampNonNegative } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
+import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
 import { formatPct, pctOf, liquidTop, frostedPillStyle, liquidFillOpacity, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
@@ -59,6 +60,7 @@ export function EventPlanDetailScreen() {
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [newCatDraft, setNewCatDraft] = useState<{ emoji: string; name: string; dueDate: string } | null>(null);
   const [editingEvent, setEditingEvent] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const plan = id ? plans.getEventPlan(state, id) : undefined;
 
@@ -184,7 +186,7 @@ export function EventPlanDetailScreen() {
           <div className="text-muted text-[12.5px] mt-1">
             {fmtDate(plan.eventDate)} ·{' '}
             {plan.budget > 0
-              ? <><span className="text-ink font-semibold">৳ {fmtBDT(plan.budget)}</span> budget</>
+              ? <><span className="text-ink font-semibold">{fmtBDT(plan.budget)}</span> budget</>
               : <>No budget yet</>}
           </div>
         </div>
@@ -265,7 +267,22 @@ export function EventPlanDetailScreen() {
           })()}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="ghost" onClick={() => { resetEvent(plan.id); setSelectedCatId(null); setNewCatDraft(null); }}>Reset</Button>
+          <Button variant="ghost" onClick={async () => {
+            // Reset drops every working-draft edit on the event —
+            // confirm before discarding, since the user may have
+            // typed per-category amounts they don't want to lose.
+            const ok = await confirm({
+              title: `Reset ${plan.name}?`,
+              body: 'The event will be blanked back to a clean slate — budget set to 0, date moved to today, every category removed.',
+              dangerText: 'Everything you\u2019ve planned on this event is wiped — this can\u2019t be undone.',
+              confirmLabel: 'Reset',
+              danger: true,
+            });
+            if (!ok) return;
+            resetEvent(plan.id);
+            setSelectedCatId(null);
+            setNewCatDraft(null);
+          }}>Reset</Button>
           <Button variant="primary" onClick={() => saveEvent(plan.id)}>Save plan</Button>
         </div>
       </div>
@@ -385,6 +402,7 @@ export function EventPlanDetailScreen() {
           onCancel={() => setEditingEvent(false)}
         />
       )}
+      {confirmDialog}
     </div>
   );
 }
@@ -757,36 +775,53 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
             <h3 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Line items</h3>
             <div className="text-[11.5px] text-muted">{paid} of {cat.items.length} done</div>
           </div>
+          {cat.items.length === 1
+            && cat.items[0].label === 'Main cost'
+            && cat.items[0].amount === 0
+            && !cat.items[0].done && (
+            <div className="text-[12px] text-muted mb-2 flex items-center gap-2">
+              <span
+                aria-hidden
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: 'var(--primary)' }}
+              />
+              Tap the amount field to set the cost for this category.
+            </div>
+          )}
           <div className="flex flex-col">
-            {cat.items.map(it => (
-              <div key={it.id} className="grid grid-cols-[20px_1fr_100px_28px] gap-2 items-center py-2 border-t border-border">
-                <input
-                  type="checkbox"
-                  checked={it.done}
-                  onChange={e => onUpdateItem(it.id, { done: e.target.checked })}
-                  className="w-4 h-4 accent-primary cursor-pointer"
-                />
-                <input
-                  value={it.label}
-                  onChange={e => onUpdateItem(it.id, { label: e.target.value })}
-                  className={[
-                    'bg-transparent border-0 py-1 text-sm focus:outline-none focus:text-primary',
-                    it.done ? 'text-muted line-through' : 'text-ink',
-                  ].join(' ')}
-                  style={{ textDecorationColor: 'var(--border)' }}
-                />
-                <LineItemAmount
-                  value={it.amount}
-                  onChange={n => onUpdateItem(it.id, { amount: n })}
-                />
-                <button
-                  type="button"
-                  onClick={() => onRemoveItem(it.id)}
-                  className="text-muted hover:text-danger text-sm transition"
-                  aria-label="Remove line item"
-                >×</button>
-              </div>
-            ))}
+            {cat.items.map((it, idx) => {
+              // The auto-seeded "Main cost" line is the user's invitation
+              // to set the category's primary amount. Detect it by
+              // signature so we can flag it visually without storing an
+              // extra field on the data model.
+              const isSeeded = idx === 0 && it.label === 'Main cost' && it.amount === 0 && !it.done;
+              return (
+                <div key={it.id} className="grid grid-cols-[20px_1fr_100px_28px] gap-2 items-center py-2 border-t border-border">
+                  <input
+                    type="checkbox"
+                    checked={it.done}
+                    onChange={e => onUpdateItem(it.id, { done: e.target.checked })}
+                    className="w-4 h-4 accent-primary cursor-pointer"
+                  />
+                  <input
+                    value={it.label}
+                    onChange={e => onUpdateItem(it.id, { label: e.target.value })}
+                    className={[
+                      'bg-transparent border-0 py-1 text-sm focus:outline-none focus:text-primary',
+                      it.done ? 'text-muted line-through' : 'text-ink',
+                    ].join(' ')}
+                    style={{ textDecorationColor: 'var(--border)' }}
+                  />
+                  <LineItemAmount value={it.amount} onChange={n => onUpdateItem(it.id, { amount: n })} emptyHint={isSeeded} />
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem(it.id)}
+                    className="text-muted hover:text-danger text-sm transition"
+                    aria-label="Remove line item"
+                  >×</button>
+                </div>
+              );
+            })}
             <div className="grid grid-cols-[20px_1fr_100px_28px] gap-2 items-center py-2 border-t border-border">
               <div />
               <input
@@ -801,8 +836,8 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 min={0}
                 value={newAmount}
                 onChange={e => setNewAmount(e.target.value)}
-                placeholder="৳ Amount"
-                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary"
+                placeholder="Amount"
+                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary tabular"
               />
               <button
                 type="button"
@@ -840,10 +875,22 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
   );
 }
 
-function LineItemAmount({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+function LineItemAmount({
+  value,
+  onChange,
+  emptyHint,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  /** True for the auto-seeded "Main cost" line that hasn't been filled
+   *  in yet — switches the field to a placeholder-driven style so it
+   *  reads as "tap to set" instead of "this costs 0". */
+  emptyHint?: boolean;
+}) {
   // Local draft so the field can be cleared mid-edit. Without this,
   // backspace snaps back to "0" the moment the controlled value changes.
   const [draft, setDraft] = useState(String(value ?? ''));
+  const showPlaceholder = emptyHint && (value === 0 || value == null) && draft === '';
   return (
     <input
       type="number"
@@ -858,7 +905,11 @@ function LineItemAmount({ value, onChange }: { value: number; onChange: (n: numb
         else if (raw === '') onChange(0);
       }}
       onBlur={() => setDraft(String(value ?? ''))}
-      className="text-right bg-transparent border-0 py-1 text-sm font-semibold tabular focus:outline-none focus:text-primary"
+      placeholder={emptyHint ? 'Set cost' : undefined}
+      className={[
+        'text-right bg-transparent border-0 py-1 text-sm font-semibold tabular focus:outline-none focus:text-primary',
+        showPlaceholder ? 'text-muted placeholder:text-muted' : '',
+      ].join(' ')}
     />
   );
 }
