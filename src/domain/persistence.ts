@@ -4,7 +4,7 @@
  * Key: finora:v1. JSON.stringify with 2-space indent per AD-10.
  * Returns DEFAULT_STATE when missing or unparseable.
  */
-import type { Category, State } from './types';
+import type { Category, EventPlan, MonthPlan, State } from './types';
 
 const KEY = 'finora:v1';
 
@@ -58,6 +58,145 @@ function buildDefaultCategories(): Category[] {
   return [...inc, ...exp];
 }
 
+/**
+ * Seed plan data so a fresh install never sees an empty planner.
+ *
+ * Two months (current + previous) show the Month Planner in different
+ * states (in-progress vs. fully-paid). Two events (an upcoming trip
+ * and a past Eid) cover the Event Planner's timeline cascade plus
+ * the "Event completed" callout.
+ *
+ * Dates are derived from the current clock so the samples always look
+ * "recent" — "two months ago" stays "two months ago" even months later.
+ * All numeric values are picked so the summary strip and jars land in
+ * each palette band (blue / green / red) at least once, exercising the
+ * full 3-step colour ramp.
+ */
+function buildDefaultMonthPlans(): MonthPlan[] {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth(); // 0-based
+  const yyyymm = (year: number, month1: number) =>
+    `${year}-${String(month1).padStart(2, '0')}`;
+  // Anchor the seeded months to "now" and "last month" so the demo
+  // always looks fresh.
+  const current = yyyymm(y, m + 1);
+  const prev = m === 0 ? yyyymm(y - 1, 12) : yyyymm(y, m);
+  const currentISOSaved = new Date(Date.UTC(y, m, 8)).toISOString().slice(0, 10);
+  const prevISOSaved = new Date(Date.UTC(y, m - 1, 22)).toISOString().slice(0, 10);
+  return [
+    {
+      key: current,
+      plannedIncome: 50000,
+      savedAt: currentISOSaved,
+      dirty: false,
+      categories: [
+        { id: 'seed-mp-groc',  emoji: '🥦', name: 'Groceries',         budget: 12000, planned:  9500, tone: 'success' },
+        { id: 'seed-mp-rent',  emoji: '🏠', name: 'Rent',              budget: 18000, planned: 18000, tone: 'primary' },
+        { id: 'seed-mp-trans', emoji: '🚗', name: 'Transport',         budget:  6000, planned:  6800, tone: 'danger'  },
+        { id: 'seed-mp-bills', emoji: '💡', name: 'Bills',             budget:  4000, planned:  2200, tone: 'info'    },
+        { id: 'seed-mp-fun',   emoji: '🎮', name: 'Fun',               budget:  3000, planned:  1850, tone: 'accent'  },
+      ],
+    },
+    {
+      key: prev,
+      plannedIncome: 48000,
+      savedAt: prevISOSaved,
+      dirty: false,
+      categories: [
+        { id: 'seed-mp-p-groc',  emoji: '🥦', name: 'Groceries',     budget: 12000, planned: 11500, tone: 'success' },
+        { id: 'seed-mp-p-rent',  emoji: '🏠', name: 'Rent',          budget: 18000, planned: 18000, tone: 'primary' },
+        { id: 'seed-mp-p-trans', emoji: '🚗', name: 'Transport',     budget:  5000, planned:  4900, tone: 'info'    },
+      ],
+    },
+  ];
+}
+
+function buildDefaultEventPlans(): EventPlan[] {
+  const now = new Date();
+  // Upcoming trip: 65 days out from "today".
+  const trip = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 65));
+  const tripISOSaved = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 4)).toISOString().slice(0, 10);
+  // Past Eid: 5 days before today.
+  const eid = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 5));
+  const eidISOSaved = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 12)).toISOString().slice(0, 10);
+  return [
+    {
+      id: 'seed-e-coxbazar',
+      name: "Cox's Bazar Trip",
+      emoji: '🏖️',
+      eventDate: trip.toISOString().slice(0, 10),
+      budget: 60000,
+      planned: 0, // recomputed by categorySpent
+      savedAt: tripISOSaved,
+      dirty: false,
+      categories: [
+        {
+          id: 'seed-e-c-hotel', emoji: '🏨', name: 'Hotel', budget: 18000, planned: 0,
+          dueDate: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 14)).toISOString().slice(0, 10),
+          tone: 'primary',
+          items: [
+            { id: 'seed-e-c-hotel-i1', label: 'Seaside resort — 3 nights', amount: 18000, done: false },
+          ],
+        },
+        {
+          id: 'seed-e-c-food', emoji: '🍽️', name: 'Food', budget: 9000, planned: 0,
+          tone: 'accent',
+          items: [
+            { id: 'seed-e-c-food-i1', label: 'Friday dinner', amount: 2500, done: false },
+            { id: 'seed-e-c-food-i2', label: 'Saturday lunch', amount: 1800, done: false },
+          ],
+        },
+        {
+          id: 'seed-e-c-trans', emoji: '🚗', name: 'Transport', budget: 6000, planned: 0,
+          dueDate: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 28)).toISOString().slice(0, 10),
+          tone: 'info',
+          items: [
+            { id: 'seed-e-c-trans-i1', label: 'Bus tickets', amount: 3200, done: true },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'seed-e-eid',
+      name: 'Eid 2026',
+      emoji: '🕌',
+      eventDate: eid.toISOString().slice(0, 10),
+      budget: 25000,
+      planned: 0,
+      savedAt: eidISOSaved,
+      dirty: false,
+      // All categories paid — exercises the "Event completed" callout.
+      categories: [
+        {
+          id: 'seed-e-eid-clothes', emoji: '👔', name: 'New clothes', budget: 8000, planned: 0,
+          dueDate: eid.toISOString().slice(0, 10),
+          tone: 'primary',
+          items: [
+            { id: 'seed-e-eid-clothes-i1', label: 'Family outfits', amount: 8000, done: true },
+          ],
+        },
+        {
+          id: 'seed-e-eid-food', emoji: '🍱', name: 'Eid feast', budget: 9000, planned: 0,
+          tone: 'accent',
+          items: [
+            { id: 'seed-e-eid-food-i1', label: 'Groceries', amount: 4800, done: true },
+            { id: 'seed-e-eid-food-i2', label: 'Sweets', amount: 2200, done: true },
+          ],
+        },
+        {
+          id: 'seed-e-eid-gifts', emoji: '🎁', name: 'Gifts', budget: 5000, planned: 0,
+          tone: 'warn',
+          items: [
+            { id: 'seed-e-eid-gifts-i1', label: 'Parents', amount: 3000, done: true },
+            { id: 'seed-e-eid-gifts-i2', label: 'Siblings', amount: 2000, done: true },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
 export const DEFAULT_STATE: State = {
   version: 1,
   accounts: [],
@@ -66,8 +205,8 @@ export const DEFAULT_STATE: State = {
   debts: [],
   investments: [],
   categories: buildDefaultCategories(),
-  monthPlans: [],
-  eventPlans: [],
+  monthPlans: buildDefaultMonthPlans(),
+  eventPlans: buildDefaultEventPlans(),
   settings: { theme: 'dark', onboardingComplete: false },
 };
 
@@ -97,7 +236,8 @@ export function clear(): void {
 function validate(s: unknown): s is Partial<State> {
   if (!s || typeof s !== 'object') return false;
   const obj = s as Record<string, unknown>;
-  return ['accounts', 'transactions', 'goals', 'debts', 'investments', 'categories', 'settings']
+  return ['accounts', 'transactions', 'goals', 'debts', 'investments', 'categories',
+          'monthPlans', 'eventPlans', 'settings']
     .every(k => Array.isArray(obj[k]) || (k === 'settings' && typeof obj[k] === 'object'));
 }
 
@@ -107,19 +247,39 @@ function validate(s: unknown): s is Partial<State> {
  * (matched by `name`) are preserved (keeping their ids and any of the
  * user's edits); new defaults are appended.
  *
- * Plan arrays (monthPlans, eventPlans) are filled with [] when missing —
- * a v1 install that pre-dates the planner feature won't have them.
+ * Plan arrays (monthPlans, eventPlans) are seeded with the demo data
+ * when missing — a v1 install that pre-dates the planner feature won't
+ * have them, and seeding on upgrade means existing users get the
+ * planners populated too rather than opening them to an empty list.
+ * If the user already has saved plans in either array, we keep those
+ * (no clobber) and only seed the empty one.
  */
 function mergeDefaults(s: Partial<State>): State {
+  const seededPlans = buildDefaultPlans();
   const merged: State = {
     ...DEFAULT_STATE,
     ...s,
     settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
-    monthPlans: Array.isArray(s.monthPlans) ? s.monthPlans : [],
-    eventPlans: Array.isArray(s.eventPlans) ? s.eventPlans : [],
+    monthPlans: Array.isArray(s.monthPlans) && s.monthPlans.length > 0
+      ? s.monthPlans
+      : seededPlans.monthPlans,
+    eventPlans: Array.isArray(s.eventPlans) && s.eventPlans.length > 0
+      ? s.eventPlans
+      : seededPlans.eventPlans,
   };
   merged.categories = mergeCategories(merged.categories ?? []);
   return merged;
+}
+
+/**
+ * Snapshot of the seeded plan data. Built once per call so defaults
+ * can't accidentally be shared (mutated) across merges.
+ */
+function buildDefaultPlans(): { monthPlans: MonthPlan[]; eventPlans: EventPlan[] } {
+  return {
+    monthPlans: buildDefaultMonthPlans(),
+    eventPlans: buildDefaultEventPlans(),
+  };
 }
 
 function mergeCategories(existing: Category[]): Category[] {
