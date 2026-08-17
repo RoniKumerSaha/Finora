@@ -39,8 +39,11 @@ import {
   type DateRangeKey,
 } from '../domain/insights';
 import { fmtBDT, fmtDate } from '../lib/format';
-import { dpsContributedSoFar } from '../domain/math';
+import {
+  investmentValue,
+} from '../domain/math';
 import { ArrowUp, ArrowDown, ChevronRight } from '../components/icons/Icons';
+import { DualValueLine } from '../components/DualValueLine';
 import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -498,7 +501,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">Net worth</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Assets {'\u2212'} liabilities</div>
+          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Real money now</div>
         </div>
         <div className="text-[22px] font-bold tabular text-info">
           {lastPoint ? fmtBDT(lastPoint.value) : '—'}
@@ -771,31 +774,46 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
 
 function InvestmentsCard({ investments }: { investments: ReturnType<typeof investmentsForInsights> }) {
   const state = useStore(s => s.state);
-  const totalActive = investments.reduce((s, i) => {
-    if (i.type === 'dps') {
-      const inv = state.investments.find(x => x.id === i.id);
-      return s + (inv ? dpsContributedSoFar(inv, state.transactions) : 0);
-    }
-    return s + (Number(i.principal) || 0);
-  }, 0);
-  const totalMaturity = investments.reduce((s, i) => s + i.maturityValue, 0);
+  // Lookup table so each row's investment can be fetched in O(1)
+  // instead of an O(n) `Array.find`. `investmentValue` is computed
+  // once per item and shared with the row below.
+  const invById = new Map(state.investments.map(x => [x.id, x]));
+  let totalCurrent = 0;
+  let totalProjected = 0;
+  const rows = investments.map(inv => {
+    const full = invById.get(inv.id);
+    const current = full
+      ? investmentValue(full, state.transactions).currentValue
+      : Number(inv.principal) || 0;
+    const projected = inv.maturityValue;
+    totalCurrent += current;
+    totalProjected += projected;
+    return { inv, current, projected };
+  });
   const hasAny = investments.length > 0;
+  const showProjection = totalProjected - totalCurrent > 0;
   return (
     <div className="card">
       <div className="flex justify-between items-end mb-3 gap-6">
         <h2 className="heading h3-modal">Investments</h2>
         <div className="grid grid-cols-2 gap-x-6 text-right">
           <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Active</div>
+            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Current value</div>
             <div className="text-[20px] font-bold tabular text-accent mt-1 leading-none tracking-[-0.02em]">
-              {fmtBDT(totalActive)}
+              {fmtBDT(totalCurrent)}
             </div>
+            <div className="text-[10px] text-muted mt-0.5 tabular">Money tied up now</div>
           </div>
           <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">To mature</div>
+            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">At maturity</div>
             <div className="text-[20px] font-bold tabular text-primary mt-1 leading-none tracking-[-0.02em]">
-              {hasAny ? fmtBDT(totalMaturity) : '\u2014'}
+              {hasAny ? fmtBDT(totalProjected) : '\u2014'}
             </div>
+            {hasAny && (
+              <div className="text-[10px] text-muted mt-0.5 tabular">
+                {showProjection ? 'Projection' : '— No growth —'}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -807,11 +825,10 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
       ) : (
         <>
           <div className="flex flex-col gap-1">
-            {investments.slice(0, 5).map(inv => <InvestmentRow key={inv.id} inv={inv} />)}
+            {rows.slice(0, 5).map(({ inv, current, projected }) => (
+              <InvestmentRow key={inv.id} inv={inv} current={current} projected={projected} />
+            ))}
           </div>
-          {/* The Investments header is occupied by the totals cluster, so
-              the "See all" affordance lives at the bottom of the list.
-              Only renders when the widget is actually hiding rows. */}
           {investments.length > 5 && (
             <div className="flex justify-end pt-3">
               <Link to="/investments" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">
@@ -825,9 +842,17 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
   );
 }
 
-function InvestmentRow({ inv }: { inv: ReturnType<typeof investmentsForInsights>[number] }) {
+function InvestmentRow({
+  inv, current, projected,
+}: {
+  inv: ReturnType<typeof investmentsForInsights>[number];
+  current: number;
+  projected: number;
+}) {
   const days = inv.daysToMaturity;
   const daysLabel = days <= 0 ? 'Matured' : `${days} ${days === 1 ? 'day' : 'days'}`;
+  const isDps = inv.type === 'dps';
+  const showBoth = isDps && projected - current > 1;
   return (
     <Link
       to={`/investments/${inv.id}`}
@@ -844,9 +869,13 @@ function InvestmentRow({ inv }: { inv: ReturnType<typeof investmentsForInsights>
             <span aria-hidden className="mr-1">{investmentEmoji(inv.type as Investment['type'])}</span>
             {inv.name}
           </div>
-          <div className="text-[13px] font-bold tabular text-accent shrink-0">
-            {fmtBDT(inv.maturityValue)}
-          </div>
+          <DualValueLine
+            current={current}
+            projected={projected}
+            currentTone="accent"
+            headlinePrefix={showBoth ? 'Now' : undefined}
+            className="shrink-0"
+          />
         </div>
         <div className="text-[11px] text-muted mt-1 tabular truncate">
           {daysLabel}

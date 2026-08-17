@@ -30,10 +30,10 @@ import {
   isGoalExpired,
   investmentMaturityValueTyped,
   daysToMaturity,
-  dpsCurrentValue,
   dpsPaidOutSoFar,
   parseISODate,
   today,
+  computeNetWorth,
 } from './math';
 
 // ---------- Date-range model ----------
@@ -351,9 +351,9 @@ export interface NetWorthPoint {
 
 /**
  * Net worth at the end of each month in the range. For "all time",
- * capped at the last 12 months. Matches the Home tile's net-worth
- * formula at every month-end so the trajectory last point equals the
- * current Home tile.
+ * capped at the last 12 months. Delegates to `computeNetWorth` after
+ * filtering transactions to the month-end, so the trajectory's last
+ * point equals the Home tile's current net worth.
  */
 export function netWorthSeries(
   state: StateLike,
@@ -393,98 +393,17 @@ export function netWorthSeries(
 }
 
 /**
- * Net worth at the given date, point-in-time consistent with the Home
- * tile: cash on hand + active investments contributed as of `cutoff`
- * + receivables (debts owed to me still outstanding at `cutoff`)
- * − debts I still owe at `cutoff`.
- *
- * Investments:
- *   - DPS: sum of `expense` transactions where `linkedInvestmentId`
- *     matches AND `date <= cutoff` (real money paid in, not projected).
- *   - FDR / savings: included if `startDate <= cutoff` AND the
- *     compute-date is before or on the maturity date (so a future
- *     chart point doesn't count an investment that hasn't started yet,
- *     and stops counting once it has matured).
- *
- * Debts:
- *   - `paidSoFar` is recomputed as of `cutoff` and the debt is treated
- *     as closed when `paidSoFar >= total` at that date.
- *   - Receivables (owed_to_me) are added to net worth; `i_owe` is
- *     subtracted.
+ * Net worth at the given date. Filters state to only transactions on
+ * or before `asOf` and delegates to `computeNetWorth`, so the
+ * trajectory chart's last point is guaranteed to match the Home tile.
  */
 function netWorthAt(state: StateLike, asOf: Date): number {
   const cutoff = asOf.toISOString().slice(0, 10);
-
-  // Cash on hand across all accounts at `cutoff`.
-  let cash = 0;
-  for (const acc of state.accounts) {
-    let balance = Number(acc.openingBalance) || 0;
-    for (const tx of state.transactions) {
-      if (tx.date > cutoff) continue;
-      const amt = Number(tx.amount) || 0;
-      if (tx.type === 'income' && tx.accountId === acc.id) balance += amt;
-      else if (tx.type === 'expense' && tx.accountId === acc.id) balance -= amt;
-      else if (tx.type === 'transfer') {
-        if (tx.fromAccountId === acc.id) balance -= amt;
-        else if (tx.toAccountId === acc.id) balance += amt;
-      }
-    }
-    cash += balance;
-  }
-
-  // Active investments contributed as of cutoff.
-  let investments = 0;
-  for (const inv of state.investments) {
-    if (!inv.startDate || inv.startDate > cutoff) continue;
-    const termMonths = Number(inv.termMonths) || 0;
-    const start = inv.startDate;
-    const targetMonth = parseISODate(start).getUTCMonth() + termMonths;
-    const yearShift = Math.floor(targetMonth / 12);
-    const normalizedMonth = ((targetMonth % 12) + 12) % 12;
-    const year = parseISODate(start).getUTCFullYear() + yearShift;
-    const lastDay = new Date(Date.UTC(year, normalizedMonth + 1, 0)).getUTCDate();
-    const startDay = parseISODate(start).getUTCDate();
-    const day = Math.min(startDay, lastDay);
-    const maturity = new Date(Date.UTC(year, normalizedMonth, day));
-    const maturityIso = maturity.toISOString().slice(0, 10);
-    // Skip if the investment has already matured before the cutoff —
-    // its principal would have been paid out by then (or reinvested).
-    if (maturityIso < cutoff) continue;
-
-    if (inv.type === 'dps') {
-      // Sum of contributions as of cutoff.
-      let total = 0;
-      for (const tx of state.transactions) {
-        if (tx.linkedInvestmentId !== inv.id) continue;
-        if (tx.type !== 'expense') continue;
-        if (tx.date > cutoff) continue;
-        total += Number(tx.amount) || 0;
-      }
-      investments += total;
-    } else {
-      investments += Number(inv.principal) || 0;
-    }
-  }
-
-  // Receivables + outstanding debts I owe, as of cutoff.
-  let receivables = 0;
-  let oweRemaining = 0;
-  for (const d of state.debts) {
-    let paid = 0;
-    for (const tx of state.transactions) {
-      if (tx.linkedDebtId !== d.id) continue;
-      if (tx.date > cutoff) continue;
-      if (d.direction === 'i_owe' && tx.type === 'expense') paid += Number(tx.amount) || 0;
-      else if (d.direction === 'owed_to_me' && tx.type === 'income') paid += Number(tx.amount) || 0;
-    }
-    const total = Number(d.total) || 0;
-    if (paid >= total) continue; // closed at this date
-    const remaining = total - paid;
-    if (d.direction === 'i_owe') oweRemaining += remaining;
-    else receivables += remaining;
-  }
-
-  return cash + investments + receivables - oweRemaining;
+  const cutoffState = {
+    ...state,
+    transactions: state.transactions.filter(t => t.date <= cutoff),
+  };
+  return computeNetWorth(cutoffState, cutoff).currentNetWorth;
 }
 
 // ---------- Goals widget ----------
@@ -658,15 +577,16 @@ export function investmentsForInsights(state: StateLike, now: Date = new Date())
     const payoutAcc = inv.payoutAccountId
       ? state.accounts.find(a => a.id === inv.payoutAccountId)
       : undefined;
-    // DPS uses type-aware maturity (annuity-due); FDR/savings use simple interest.
-    const base = inv.type === 'dps'
-      ? dpsCurrentValue(inv, state.transactions, now) - dpsPaidOutSoFar(inv, state.transactions)
-      : investmentMaturityValueTyped(inv) - dpsPaidOutSoFar(inv, state.transactions);
+    // Net amount the user can expect: full mature value minus anything
+    // already paid out (DPS supports partial payouts). DPS routes through
+    // annuity-due; FDR/savings through simple interest.
+    const projected = investmentMaturityValueTyped(inv);
+    const paidOut = dpsPaidOutSoFar(inv, state.transactions);
     rows.push({
       id,
       name: inv.name,
       type: inv.type,
-      maturityValue: Math.max(0, base),
+      maturityValue: Math.max(0, projected - paidOut),
       daysToMaturity: days,
       payoutAccountName: payoutAcc?.name,
       principal: Number(inv.principal) || 0,

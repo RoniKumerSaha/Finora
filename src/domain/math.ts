@@ -26,7 +26,7 @@
  *   - All math uses UTC date components to avoid timezone drift.
  */
 
-import type { Account, Debt, Goal, Investment, Transaction, ISODate } from './types';
+import type { Account, Debt, Goal, Investment, State, Transaction, ISODate } from './types';
 
 // ---------- Date helpers ----------
 
@@ -408,4 +408,126 @@ export function investmentMaturityValueTyped(investment: Investment): number {
     return investmentMaturityValueFromDays(investment);
   }
   return investmentMaturityValue(investment);
+}
+
+// ---------- Investment dual-value (current vs projected) ----------
+
+/**
+ * Dual-value shape for any investment.
+ *
+ * 2026-08-17 net-worth clarity: a DPS with one paid installment used to
+ * show its full mature amount as the headline, which made the user's
+ * "net worth" look much bigger than what they actually have. This
+ * helper exposes BOTH values so screens can show "what you have now"
+ * (the truth) alongside "what it'll be at maturity" (the projection),
+ * each clearly labelled.
+ *
+ *  - `currentValue`: real money you have tied up right now.
+ *      - DPS    → compounded value of contributions made so far
+ *                 (dpsCurrentValue).
+ *      - FDR    → the lump-sum principal (already locked in at start).
+ *      - savings → same — principal is real money in the account.
+ *
+ *  - `projectedValue`: future projection assuming you complete the term
+ *    (DPS: every month contributed; FDR: simple interest to maturity).
+ *    For investments past their maturity date, this collapses to
+ *    `currentValue` because there's nothing left to project.
+ */
+export interface InvestmentValue {
+  currentValue: number;
+  projectedValue: number;
+}
+
+export function investmentValue(
+  investment: Investment,
+  transactions: Transaction[],
+  now: string | Date = new Date()
+): InvestmentValue {
+  if (!investment) return { currentValue: 0, projectedValue: 0 };
+  const projected = investmentMaturityValueTyped(investment);
+  if (investment.type === 'dps') {
+    const current = dpsCurrentValue(investment, transactions, now);
+    // Past maturity — bank would pay out the full mature value.
+    const days = daysToMaturity(investment, now);
+    return {
+      currentValue: days <= 0 ? Math.max(current, projected) : current,
+      projectedValue: projected,
+    };
+  }
+  // FDR / savings: the principal is the current value; projected is
+  // the maturity value. Past maturity, collapse to principal.
+  const days = daysToMaturity(investment, now);
+  const principal = Number(investment.principal) || 0;
+  return {
+    currentValue: days <= 0 ? Math.max(principal, projected) : principal,
+    projectedValue: projected,
+  };
+}
+
+// ---------- Net worth (dual value) ----------
+
+/**
+ * Net worth computed two ways so the UI can show both:
+ *
+ *  - `currentNetWorth` is the honest "what you actually have right now"
+ *    number: cash on hand + the *current* value of each active
+ *    investment + receivables − money I still owe. This is the number
+ *    that should be shown as the headline.
+ *
+ *  - `projectedNetWorth` swaps the *current* value for each investment
+ *    with its *projected* (mature) value, showing what your net worth
+ *    would be at the end of every term. Treat as a clearly-labelled
+ *    projection; it is not money in your hand today.
+ *
+ * Cash and debts are the same in both — they aren't projection. FDR
+ * lump-sum principal already counts as current, so projectedNetWorth
+ * differs from currentNetWorth only for investments that have future
+ * appreciation to come (DPS installments not yet paid, FDR interest
+ * not yet accrued).
+ */
+export interface NetWorth {
+  currentNetWorth: number;
+  projectedNetWorth: number;
+}
+
+export function computeNetWorth(
+  state: Pick<State, 'accounts' | 'transactions' | 'debts' | 'investments'>,
+  now: string | Date = new Date()
+): NetWorth {
+  // Cash across all accounts at "now" (same in both numbers).
+  let cash = 0;
+  for (const acc of state.accounts) {
+    cash += accountBalance(acc, state.transactions);
+  }
+
+  // Active investments: DPS-aware using dual value; FDR/savings
+  // count principal as current and maturity value as projected.
+  const todayISO = parseISODate(now).toISOString().slice(0, 10);
+  let invCurrent = 0;
+  let invProjected = 0;
+  for (const inv of state.investments) {
+    if (inv.status === 'closed' || inv.status === 'rolled_over') continue;
+    if (inv.startDate > todayISO) continue;
+    const v = investmentValue(inv, state.transactions, now);
+    invCurrent += v.currentValue;
+    invProjected += v.projectedValue;
+  }
+
+  // Receivables (owed_to_me) and outstanding i_owe, as of "now".
+  let receivables = 0;
+  let oweRemaining = 0;
+  for (const d of state.debts) {
+    if (d.status === 'completed' || d.status === 'archived') continue;
+    const paid = debtPaidSoFar(d, state.transactions);
+    const total = Number(d.total) || 0;
+    if (paid >= total) continue;
+    const remaining = total - paid;
+    if (d.direction === 'i_owe') oweRemaining += remaining;
+    else receivables += remaining;
+  }
+
+  return {
+    currentNetWorth: cash + invCurrent + receivables - oweRemaining,
+    projectedNetWorth: cash + invProjected + receivables - oweRemaining,
+  };
 }

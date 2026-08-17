@@ -309,8 +309,29 @@ export function InvestmentDetailScreen() {
           <Stat label="Expected interest" value={fmtBDT(expectedInterest)} />
           <Stat label="Rate" value={`${inv.rate}% / yr`} />
         </div>
+        {/* 2026-08-17 net-worth clarity: for DPS, surface both numbers
+            explicitly so the user is never confused about whether the
+            headline is real money or a projection. */}
         {isDps && (
-          <div className="mt-4 text-[12px] text-muted leading-relaxed">
+          <div
+            className="mt-4 rounded-btn px-3.5 py-3 text-[12.5px] leading-relaxed"
+            style={{
+              background: 'var(--accent-soft)',
+              border: '1px solid var(--accent)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent)',
+              color: 'var(--ink)',
+            }}
+          >
+            <strong style={{ color: 'var(--accent)' }}>What you have now:</strong>{' '}
+            <span className="tabular font-semibold">{fmtBDT(currentValue)}</span> (compounded to today).
+            {' '}
+            <strong className="ml-1" style={{ color: 'var(--accent)' }}>At maturity:</strong>{' '}
+            <span className="tabular font-semibold">{fmtBDT(projected)}</span>{' '}
+            <span className="opacity-70">(projection if every installment is paid).</span>
+          </div>
+        )}
+        {isDps && (
+          <div className="mt-3 text-[12px] text-muted leading-relaxed">
             Maturity uses annuity-due: <span className="tabular">{fmtBDT(inv.monthlyContribution || 0)} × ((1 + r)^T − 1) / r × (1 + r)</span>
             {' '}where r = {inv.rate}%/12 and T = {inv.termMonths} months.
           </div>

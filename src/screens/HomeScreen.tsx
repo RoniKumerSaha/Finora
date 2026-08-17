@@ -40,6 +40,7 @@ import {
   accountBalance,
   dpsContributedSoFar,
   debtPaidSoFar,
+  computeNetWorth,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
 import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
@@ -80,13 +81,18 @@ export function HomeScreen() {
   }, 0);
   const investmentCount = activeInvestments.length;
 
-  // Net worth = assets − liabilities, standard personal-finance convention.
-  //   Assets   = cash on hand + active investments + receivables
-  //              (money owed to me still outstanding)
-  //   Liabs    = money I still owe
-  // The "Total debt" tile separately surfaces the *net* of owe/owed-to-me.
-  const netWorth =
-    totalBalance + totalInvestment + debtOwedToMeRemaining - debtIOweRemaining;
+  // Net worth comes from the domain helper so the dual-value treatment
+  // (current vs projected) matches what /insights and the Investments
+  // screens show. "Net worth" here is the *current* number — money in
+  // your hand right now. The projected number is shown underneath as a
+  // clearly-labelled projection, so users who started a DPS yesterday
+  // don't see their full mature amount skew the headline.
+  const { currentNetWorth, projectedNetWorth } = computeNetWorth({
+    accounts: state.accounts,
+    transactions: state.transactions,
+    debts: state.debts,
+    investments: state.investments,
+  });
 
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
@@ -136,11 +142,9 @@ export function HomeScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat label="Income (this month)"   value={fmtBDT(income)}    trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
         <Stat label="Expenses (this month)" value={fmtBDT(expenses)} trend={`${expenseCount} entries`} tone="out" />
-        <Stat
-          label="Net worth"
-          value={fmtBDT(netWorth)}
-          trend={netWorth >= 0 ? 'assets \u2212 liabilities' : 'liabilities exceed assets'}
-          tone="info"
+        <NetWorthTile
+          current={currentNetWorth}
+          projected={projectedNetWorth}
         />
       </div>
 
@@ -175,6 +179,35 @@ export function HomeScreen() {
           See full Insights {'\u2192'}
         </Link>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Net worth tile — headline is the current value (money you have now);
+ * the projected value follows as a muted sub-line when active
+ * investments would grow it. The split keeps DPS users honest: a DPS
+ * with one paid installment shows ৳X for current and ৳Y for projected,
+ * so the headline can't pretend you already have the mature amount.
+ */
+function NetWorthTile({ current, projected }: { current: number; projected: number }) {
+  const diff = projected - current;
+  const valueColor = current >= 0 ? 'text-info' : 'text-danger';
+  const caption = current >= 0
+    ? 'assets \u2212 liabilities'
+    : 'liabilities exceed assets';
+  return (
+    <div className="card">
+      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Net worth</div>
+      <div className={`text-[24px] sm:text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${valueColor} break-words`}>
+        {fmtBDT(current)}
+      </div>
+      {diff > 0 && (
+        <div className="text-xs text-muted mt-2 tabular">
+          {fmtBDT(projected)} at maturity <span className="opacity-70">(projection)</span>
+        </div>
+      )}
+      <div className="text-xs text-muted mt-1.5">{caption}</div>
     </div>
   );
 }

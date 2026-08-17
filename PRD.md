@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-14 |
+| **Last Updated** | 2026-08-17 |
 
 ---
 
@@ -135,7 +135,7 @@ A user should be able to:
 | 4 | Categories | Pre-defined set; user can add/edit/disable |
 | 5 | Savings Goals | Target amount, target date, progress bar |
 | 6 | Debts | Record-only: total owed / owed to you, payments, auto-complete at 0. No interest math. |
-| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. |
+| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. **2026-08-17:** every investment card and the dashboard net-worth tile now surface two values — **current value** (money tied up right now) and **at maturity** (projection if every installment is paid). This stops a DPS with one paid installment from inflating the headline net worth. |
 | 8 | Settings | Currency (locked to BDT in V1), theme (Dark/Light/Auto), app PIN (optional), export, import, delete all data |
 
 **Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Monthly Planning, Financial Health, Net Worth history, Charts, Insights, stocks/mutual funds/crypto.
@@ -619,6 +619,31 @@ Maturity value = principal × (1 + rate/100 × term_months/12)
 - Tax (TDS) tracking on interest income.
 - Stocks, mutual funds, crypto, or any market-price instrument.
 - Linking an investment to a specific *category* (the link is at the transaction level, not the investment level).
+
+#### 9.8.1 Dual-value display (added 2026-08-17)
+
+User feedback flagged that **net worth looked much bigger than the cash on hand** for users with a DPS that had only one or two installments paid. Root cause: the DPS row was showing the full mature amount (annuity-due across 12–60 months) as if it were money in hand.
+
+**Resolution:** Every investment card and the dashboard net-worth tile surface **two numbers**, never one:
+
+| Number | Definition | Where it appears |
+|---|---|---|
+| **Current value** | Real money tied up *right now*. For DPS: contributions made so far, each compounded to today. For FDR/savings: the lump-sum principal. | Home tile headline, Investments list row headline, Insights widget headline |
+| **At maturity** | Projection if the user completes the term. For DPS: annuity-due across the full term. For FDR/savings: principal + simple interest to maturity. | Smaller, muted secondary line, always labelled "(projection)" or "If every installment is paid" |
+
+Rules:
+
+- **The headline number is always "current value".** Projected value never stands alone; it's always paired with a clearly-labelled current value next to or beneath it.
+- For investments past their maturity date, current collapses to projected (the bank would pay out in full).
+- For FDR/savings where principal = current + interest = projected (no installments pending), the dual line collapses to one number ("Maturity ৳X") to keep the row compact.
+- The net-worth tile on Home shows both: ৳X (current, headline) and "৳Y at maturity (projection)" beneath.
+
+**Acceptance criteria:**
+
+- A DPS with one installment of ৳5,000 paid today, term 12mo @ 8%, must show current ≈ ৳5,000 and projected ≈ ৳62,000 on the Investments list row and detail screen. The headline MUST be the current value.
+- The dashboard "Net worth" tile must show the same current-vs-projected split.
+- A pure-cash user (no investments) must see identical current and projected (both equal cash + receivables − debts owed).
+- A user with only FDR (no installments pending) must still see the maturity value as the row headline; the dual-value line is hidden.
 
 ### 9.9 Local Data Storage
 

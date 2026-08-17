@@ -23,11 +23,11 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
 import {
-  investmentMaturityValueTyped,
+  investmentValue,
   daysToMaturity,
-  dpsContributedSoFar,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
+import { DualValueLine } from '../components/DualValueLine';
 
 const MIDDOT = '\u00B7';
 
@@ -36,9 +36,18 @@ export function InvestmentsListScreen() {
   const invs = investments.list(state);
   const active = invs.filter(i => i.status === 'active');
   const closed = invs.filter(i => i.status !== 'active');
-  const totalInvested = active.reduce((s, i) =>
-    s + (i.type === 'dps' ? dpsContributedSoFar(i, state.transactions) : (Number(i.principal) || 0)), 0);
-  const totalMaturity = active.reduce((s, i) => s + investmentMaturityValueTyped(i), 0);
+  // Compute each row's value once and reuse for summary + the row
+  // itself (avoids recomputing dpsCurrentValue, which scans every
+  // transaction, twice per row).
+  let totalCurrent = 0;
+  let totalProjected = 0;
+  const rows = active.map(inv => {
+    const v = investmentValue(inv, state.transactions);
+    totalCurrent += v.currentValue;
+    totalProjected += v.projectedValue;
+    return { inv, current: v.currentValue, projected: v.projectedValue };
+  });
+  const showProjection = totalProjected - totalCurrent > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,7 +79,14 @@ export function InvestmentsListScreen() {
               <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">Active</h2>
             </div>
             <div>
-              {active.map(inv => <InvRow key={inv.id} inv={inv} contributed={dpsContributedSoFar(inv, state.transactions)} />)}
+              {rows.map(({ inv, current, projected }) => (
+                <InvRow
+                  key={inv.id}
+                  inv={inv}
+                  current={current}
+                  projected={projected}
+                />
+              ))}
               {closed.map(inv => (
                 <Link
                   key={inv.id}
@@ -102,20 +118,26 @@ export function InvestmentsListScreen() {
             <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">Summary</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Total invested</div>
+                <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Current value</div>
                 <div className="text-[24px] font-bold text-accent mt-2 tabular tracking-tight leading-none">
-                  {fmtBDT(totalInvested)}
+                  {fmtBDT(totalCurrent)}
                 </div>
+                <div className="text-[11px] text-muted mt-1 tabular">Money tied up right now</div>
               </div>
               <div>
-                <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">To mature</div>
+                <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">At maturity</div>
                 <div className="text-[24px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
-                  {fmtBDT(totalMaturity)}
+                  {fmtBDT(totalProjected)}
                 </div>
+                {showProjection ? (
+                  <div className="text-[11px] text-muted mt-1 tabular">If every term completes</div>
+                ) : (
+                  <div className="text-[11px] text-muted mt-1 tabular">— No future growth —</div>
+                )}
               </div>
             </div>
             <div className="text-xs text-muted mt-4 leading-relaxed">
-              <strong className="text-ink">How it works:</strong> For DPS, maturity is computed from monthly contributions at the stated rate. For FDR and savings, simple interest is used. When the bank pays out, record the payout as Income to bring the money back to your account.
+              <strong className="text-ink">How it works:</strong> <em>Current value</em> is what you'd get if the bank paid out today (DPS = contributions compounded to today; FDR/savings = principal). <em>At maturity</em> projects what you'd receive when every active term ends. When the bank pays out, record it as Income to bring the money back to your account.
             </div>
           </section>
         </div>
@@ -130,9 +152,8 @@ function invEmoji(type: string): string {
   return '\u{1F4DC}';                       // 📜
 }
 
-function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
+function InvRow({ inv, current, projected }: { inv: any; current: number; projected: number }) {
   const days = daysToMaturity(inv);
-  const mat = investmentMaturityValueTyped(inv);
   const isDps = inv.type === 'dps';
   // Long durations (≥ 1 year) read more naturally as years; short
   // durations stay in days. 1 decimal keeps the precision while
@@ -145,8 +166,9 @@ function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
       : days === 0
         ? 'Matures today'
         : `Matured ${-days}d ago`;
+  const showBoth = isDps && projected - current > 1;
   const amountLine = isDps
-    ? `${fmtBDT(contributed)} ${MIDDOT} ${inv.monthlyContribution ? `${fmtBDT(inv.monthlyContribution)}/mo` : ''}`
+    ? `${fmtBDT(current)} now ${inv.monthlyContribution ? ` ${MIDDOT} ${fmtBDT(inv.monthlyContribution)}/mo` : ''}`
     : fmtBDT(inv.principal);
   return (
     <Link
@@ -167,7 +189,12 @@ function InvRow({ inv, contributed }: { inv: any; contributed: number }) {
         </span>
       </div>
       <div className="flex justify-between items-baseline">
-        <div className="text-[13px] text-accent font-bold tabular">Maturity {fmtBDT(mat)}</div>
+        <DualValueLine
+          current={current}
+          projected={projected}
+          currentTone="accent"
+          headlinePrefix={showBoth ? 'Now' : 'Maturity'}
+        />
         <div className="text-[11.5px] text-muted">{label}</div>
       </div>
       <div className="text-[11.5px] text-muted mt-1 tabular">

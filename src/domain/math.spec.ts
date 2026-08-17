@@ -32,6 +32,8 @@ import {
   dpsPaidOutSoFar,
   dpsCurrentValue,
   investmentMaturityValueTyped,
+  investmentValue,
+  computeNetWorth,
 } from './math';
 import type { Account, Debt, Goal, Investment, Transaction } from './types';
 
@@ -460,5 +462,149 @@ describe('daysToMaturity — works for termDays investments', () => {
     };
     // NOW = 2026-08-13, so 30 - 12 = 18 days remaining.
     expect(daysToMaturity(fdr, NOW)).toBe(18);
+  });
+});
+
+// ---------- 2026-08-17: DPS dual-value (current vs projected) ----------
+// User-reported bug: a DPS with only one paid installment used to
+// show its full mature amount as the headline. The tests below pin
+// down the new behaviour: current value is what's compounded-to-today,
+// projected value is the full mature amount.
+
+describe('investmentValue — DPS returns current (compounded to today) + projected (full mature)', () => {
+  const dps: Investment = {
+    id: 'd1', name: 'DPS', type: 'dps', principal: 0,
+    monthlyContribution: 5000, rate: 8, startDate: '2026-01-01',
+    termMonths: 12, status: 'active', createdAt: '2026-01-01',
+  };
+
+  it('with NO contributions, currentValue is 0 but projected is the full mature amount', () => {
+    const txs: Transaction[] = [];
+    const v = investmentValue(dps, txs, NOW);
+    expect(v.currentValue).toBe(0);
+    expect(v.projectedValue).toBeGreaterThan(60000); // full annuity-due at 8%
+    expect(v.projectedValue).toBeLessThan(63200);
+  });
+
+  it('with ONE contribution, current tracks that contribution; projected stays full', () => {
+    // The user-paid-so-far complaint: "I only paid 1 installment,
+    // but net worth shows the mature amount." This is the regression
+    // guard — current MUST be much smaller than projected.
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-08-01' }),
+    ];
+    const v = investmentValue(dps, txs, NOW);
+    expect(v.currentValue).toBeGreaterThanOrEqual(5000);
+    expect(v.currentValue).toBeLessThan(7000); // tiny growth over 0 months
+    expect(v.projectedValue).toBeGreaterThan(60000);
+    expect(v.currentValue).toBeLessThan(v.projectedValue / 5); // sanity: 1/12 of mature
+  });
+
+  it('with all 12 contributions, currentValue is the compounded-to-today total', () => {
+    // Each contribution was paid in 2026, and NOW=2026-08-13, so the
+    // most-recent contribution (Aug 2026) has compounded ~0 months and
+    // the earliest (Jan 2026) has compounded ~7 months. Total compounded
+    // is materially less than the projected mature value.
+    const txs: Transaction[] = [];
+    const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+    for (const m of months) {
+      txs.push(tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: `2026-${m}-15` }));
+    }
+    const v = investmentValue(dps, txs, NOW);
+    // All 12 contributions compounded partially. Total > just the
+    // raw sum (60000) because some have been earning — but much less
+    // than the projected annuity-due value across the full term.
+    expect(v.currentValue).toBeGreaterThan(35000);
+    expect(v.currentValue).toBeLessThan(50000);
+    expect(v.projectedValue).toBeGreaterThan(60000); // full annuity-due
+    // Current must be smaller than projected (we haven't matured yet).
+    expect(v.currentValue).toBeLessThan(v.projectedValue);
+  });
+
+  it('past maturity: current is at least the projected (bank would pay out in full)', () => {
+    const maturedDps: Investment = {
+      ...dps,
+      startDate: '2025-01-01',
+      termMonths: 12, // matured 2026-01-01 — well in the past by NOW=2026-08-13
+    };
+    const txs: Transaction[] = [];
+    const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+    for (const m of months) {
+      txs.push(tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: `2025-${m}-15` }));
+    }
+    const v = investmentValue(maturedDps, txs, NOW);
+    expect(v.projectedValue).toBeGreaterThan(60000);
+    // Past maturity: contributions keep compounding, so current can
+    // exceed projected. Either way, current MUST be ≥ projected —
+    // the bank would pay out the full mature amount (and more).
+    expect(v.currentValue).toBeGreaterThanOrEqual(v.projectedValue);
+  });
+});
+
+describe('investmentValue — FDR returns principal as current, mature as projected', () => {
+  const fdr: Investment = {
+    id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+    rate: 8, startDate: '2026-01-01', termMonths: 12, status: 'active', createdAt: '2026-01-01',
+  };
+  it('current = principal, projected = maturity value', () => {
+    const v = investmentValue(fdr, [], NOW);
+    expect(v.currentValue).toBe(100000);
+    expect(v.projectedValue).toBe(108000);
+  });
+});
+
+// ---------- 2026-08-17: computeNetWorth dual-value ----------
+
+describe('computeNetWorth — dual value (current vs projected)', () => {
+  it('current uses DPS contributions, projected uses full mature amount', () => {
+    const dps: Investment = {
+      id: 'd1', name: 'DPS', type: 'dps', principal: 0,
+      monthlyContribution: 5000, rate: 8, startDate: '2026-01-01',
+      termMonths: 12, status: 'active', createdAt: '2026-01-01',
+    };
+    // One installment paid → current should be ~5000 (with tiny growth)
+    // and projected should be the full ~62000. Net-worth headline must
+    // not jump to 62000 just because the user created the DPS.
+    const state: any = {
+      accounts: [{ id: 'a1', name: 'Cash', type: 'cash', openingBalance: 50000, createdAt: '2026-01-01' }],
+      transactions: [
+        { id: 't1', type: 'expense', amount: 5000, date: '2026-08-01', accountId: 'a1', linkedInvestmentId: 'd1' } as any,
+      ],
+      debts: [],
+      investments: [dps],
+    };
+    const { currentNetWorth, projectedNetWorth } = computeNetWorth(state, NOW);
+    // Cash balance = opening 50000 − 5000 expense = 45000.
+    // Current investment = ~5000 (just paid, ~0 months compound).
+    // Current net worth = 50000.
+    expect(currentNetWorth).toBeGreaterThanOrEqual(49500);
+    expect(currentNetWorth).toBeLessThanOrEqual(50500);
+    // Projected net worth = 45000 cash + 62000 mature DPS = ~107000.
+    expect(projectedNetWorth).toBeGreaterThan(105000);
+    expect(projectedNetWorth).toBeLessThan(110000);
+    // Critical: projected MUST be larger than current by at least
+    // 50,000 — that's the bug we just fixed.
+    expect(projectedNetWorth - currentNetWorth).toBeGreaterThan(50000);
+  });
+
+  it('FDR principal counts as both current and adds interest to projected', () => {
+    const fdr: Investment = {
+      id: 'f1', name: 'FDR', type: 'fdr', principal: 100000,
+      rate: 8, startDate: '2026-01-01', termMonths: 12, status: 'active', createdAt: '2026-01-01',
+    };
+    const state: any = {
+      accounts: [{ id: 'a1', name: 'Cash', type: 'cash', openingBalance: 200000, createdAt: '2026-01-01' }],
+      transactions: [
+        { id: 't1', type: 'expense', amount: 100000, date: '2026-01-01', accountId: 'a1', linkedInvestmentId: 'f1' } as any,
+      ],
+      debts: [],
+      investments: [fdr],
+    };
+    const { currentNetWorth, projectedNetWorth } = computeNetWorth(state, NOW);
+    // Cash: 200000 - 100000 (expense) = 100000. Investments: 100000.
+    // Current NW = 200000.
+    expect(currentNetWorth).toBe(200000);
+    // Projected NW: cash 100000 + matured FDR 108000 = 208000.
+    expect(projectedNetWorth).toBe(208000);
   });
 });
