@@ -635,7 +635,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
   // surface uninterrupted.
   if (paid) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--success)', color: 'var(--success-title)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--success-title)' }} />
@@ -644,7 +644,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
   );
   else if (dueDays !== null && dueDays < 0) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--danger)', color: 'var(--danger-title)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--danger-title)' }} />
@@ -653,7 +653,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
   );
   else if (dueDays !== null && dueDays <= 7) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--warn)', color: 'var(--warn)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--warn)' }} />
@@ -661,7 +661,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
     </span>
   );
   else if (cat.dueDate) chip = (
-    <span className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border border-border text-muted">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border border-border text-muted">
       <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
       {fmtDateShort(cat.dueDate)}
     </span>
@@ -716,7 +716,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
             <span className="text-muted tabular">/ {fmtBDT(budget)}</span>
           </div>
           <span
-            className="px-2 py-[3px] rounded-pill inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] whitespace-nowrap text-ink border border-border"
+            className="px-2 py-[3px] rounded-pill inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] whitespace-nowrap text-ink border border-border"
           >
             <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
             <span>
