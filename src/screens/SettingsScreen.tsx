@@ -48,7 +48,7 @@ export function SettingsScreen() {
   async function onWipe() {
     const ok = await confirm({
       title: 'Wipe all data?',
-      body: 'Every account, transaction, goal, debt, and investment will be deleted. This cannot be undone.',
+      body: 'Every account, transaction, goal, debt, investment, and plan will be deleted. This cannot be undone.',
       confirmLabel: 'Wipe everything',
       danger: true,
     });
@@ -191,10 +191,18 @@ export function SettingsScreen() {
             }}
           >
             <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-            <p className="text-[13px] text-muted mb-4">
-              This permanently deletes every account, transaction, goal, debt, and investment on this device. Export first if unsure.
+            <p className="text-[13px] text-muted mb-5">
+              This permanently deletes all data on this device. Export first if unsure.
             </p>
-            <Button variant="danger" onClick={onWipe}>Wipe all data</Button>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 max-w-prose">
+                <div className="font-semibold text-[14px] text-ink">Wipe everything</div>
+                <div className="text-[12px] text-muted mt-1">
+                  Deletes every account, transaction, goal, debt, investment, and plan — leaves the app as a clean install.
+                </div>
+              </div>
+              <Button variant="danger" onClick={onWipe} className="shrink-0">Wipe all data</Button>
+            </div>
           </section>
         </div>
 
