@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isPositiveMoney,
   isNonNegativeMoney,
+  isOptionalNonNegativeMoney,
   POSITIVE_MONEY_ERROR,
   NON_NEGATIVE_MONEY_ERROR,
 } from './validation';
@@ -89,5 +90,27 @@ describe('error copy', () => {
   it('exposes the two error strings', () => {
     expect(POSITIVE_MONEY_ERROR).toBe('Amount must be greater than zero.');
     expect(NON_NEGATIVE_MONEY_ERROR).toBe('Amount must be zero or greater.');
+  });
+});
+
+describe('isOptionalNonNegativeMoney (>= 0 OR empty)', () => {
+  // Used by fields that show no pre-placed 0 by default — empty means
+  // "leave it at zero" rather than "invalid". Locks the behavior so
+  // AccountAddScreen.openingBalance and GoalAddScreen.saved don't
+  // flash an error the moment the modal opens.
+  it('accepts empty / whitespace as "leave it at zero"', () => {
+    expect(isOptionalNonNegativeMoney('')).toBe(true);
+    expect(isOptionalNonNegativeMoney('   ')).toBe(true);
+  });
+
+  it('accepts zero and positive numbers', () => {
+    expect(isOptionalNonNegativeMoney('0')).toBe(true);
+    expect(isOptionalNonNegativeMoney('250')).toBe(true);
+    expect(isOptionalNonNegativeMoney('0.01')).toBe(true);
+  });
+
+  it('still rejects negatives and non-numerics', () => {
+    expect(isOptionalNonNegativeMoney('-1')).toBe(false);
+    expect(isOptionalNonNegativeMoney('abc')).toBe(false);
   });
 });

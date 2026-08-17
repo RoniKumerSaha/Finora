@@ -22,7 +22,7 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
-import { formatPct, pctOf, liquidTop, frostedPillStyle, liquidFillOpacity, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
+import { formatPct, pctOf, frostedPillStyle, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
 import { uid } from '../domain/ids';
 import type { PlanCategory, PlanItem } from '../domain/types';
@@ -382,7 +382,24 @@ export function EventPlanDetailScreen() {
         <CategoryEditorModal
           cat={selectedCat}
           onUpdate={patch => updateCategory(plan.id, selectedCat.id, patch)}
-          onRemove={() => { removeCategory(plan.id, selectedCat.id); setSelectedCatId(null); }}
+          onRemove={async () => {
+            // Single delete entry point from inside the modal — the
+            // "Delete category" button at the bottom of the modal
+            // triggers this. Confirm before nuking — it's the only
+            // way to lose the category + every line item it owns, so
+            // one extra click is worth the safety. Stay on the event
+            // page after delete (no navigation away).
+            const ok = await confirm({
+              title: `Delete ${selectedCat.name}?`,
+              body: 'The category and every line item inside it will be removed from this event.',
+              dangerText: 'This can\u2019t be undone — any amounts you typed are lost.',
+              confirmLabel: 'Delete category',
+              danger: true,
+            });
+            if (!ok) return;
+            removeCategory(plan.id, selectedCat.id);
+            setSelectedCatId(null);
+          }}
           onAddItem={item => addItem(plan.id, selectedCat.id, item)}
           onUpdateItem={(itemId, patch) => updateItem(plan.id, selectedCat.id, itemId, patch)}
           onRemoveItem={itemId => removeItem(plan.id, selectedCat.id, itemId)}
@@ -512,50 +529,79 @@ function CategoryCard({ cat, todayISO, onSelect }: {
   todayISO: string;
   onSelect: () => void;
 }) {
-  // Spent = sum of line items. The 3-step category palette (blue / green
-  // / red) is independent of the Month Planner jars (4-step green/
-  // yellow/orange/red); both are exposed from jarVisuals.
+  // Spent = sum of line items. The 4-step category palette
+  // (blue / cyan / green / deep-orange) matches the Month Planner jars;
+  // both are exposed from jarVisuals.
+  //
+  // Layout: title row (emoji + name + due/overdue chip), thin horizontal
+  // bar carrying fill ratio, footer with amounts + payment chip.
+  // The bar is the primary fill signal — its right edge telegraphs how
+  // much budget is left, which the previous liquid-fill design hid.
   const spent = categorySpent(cat);
   const budget = Number(cat.budget) || 0;
   const pct = pctOf(spent, budget);
   const overflow = budget > 0 && spent > budget;
   const cStatus = categoryFillStatus(pct, overflow, budget);
   const cFill = CATEGORY_FILL[cStatus];
-  const fillTop = liquidTop(spent, budget);
   const paid = cat.items.length > 0 && cat.items.every(i => i.done);
   const dueDays = cat.dueDate ? daysBetween(todayISO, cat.dueDate) : null;
+  const barWidth = budget > 0 ? Math.min(100, overflow ? 100 : pct) : 0;
 
   let chip: React.ReactNode = null;
-  if (paid) chip = <span className="text-[11px] font-semibold px-2.5 py-1 rounded-pill bg-success-soft text-success border border-success">Paid in full</span>;
-  else if (dueDays !== null && dueDays < 0) chip = <span className="text-[11px] font-semibold px-2.5 py-1 rounded-pill bg-danger-soft text-danger border border-danger">{Math.abs(dueDays)} days overdue</span>;
-  else if (dueDays !== null && dueDays <= 7) chip = <span className="text-[11px] font-semibold px-2.5 py-1 rounded-pill bg-warn-soft text-warn border border-warn">Due in {dueDays}d</span>;
-  else if (cat.dueDate) chip = <span className="text-[11px] font-semibold px-2.5 py-1 rounded-pill bg-surface-2 text-muted border border-border">{fmtDateShort(cat.dueDate)}</span>;
+  // Status chips use a leading coloured dot so the category state
+  // (paid / overdue / due / future) reads at a glance — the text on
+  // muted soft-tinted backgrounds was too quiet on cream + dark,
+  // especially at 11px. The dot is the high-contrast focal point;
+  // the text rides along with it. Outlined-only (no fill) so the
+  // colour carries through border + dot + ink, leaving the card
+  // surface uninterrupted.
+  if (paid) chip = (
+    <span
+      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      style={{ borderColor: 'var(--success)', color: 'var(--success-title)' }}
+    >
+      <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--success-title)' }} />
+      Paid in full
+    </span>
+  );
+  else if (dueDays !== null && dueDays < 0) chip = (
+    <span
+      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      style={{ borderColor: 'var(--danger)', color: 'var(--danger-title)' }}
+    >
+      <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--danger-title)' }} />
+      {Math.abs(dueDays)} days overdue
+    </span>
+  );
+  else if (dueDays !== null && dueDays <= 7) chip = (
+    <span
+      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      style={{ borderColor: 'var(--warn)', color: 'var(--warn)' }}
+    >
+      <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--warn)' }} />
+      Due in {dueDays} {dueDays === 1 ? 'day' : 'days'}
+    </span>
+  );
+  else if (cat.dueDate) chip = (
+    <span className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border border-border text-muted">
+      <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
+      {fmtDateShort(cat.dueDate)}
+    </span>
+  );
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={[
-        'card-flat border border-border rounded-card text-left transition relative overflow-hidden',
+        'card-flat border border-border rounded-card text-left transition relative',
         'hover:-translate-y-px hover:border-ink-2',
       ].join(' ')}
       style={{ background: 'var(--surface)' }}
     >
-      {/* Liquid layer — 3-step palette (blue/green/red). The gradient
-          lifts from the soft tint at the top of the fill to the solid
-          colour at the bottom so the fill reads even when shallow. */}
-      <span
-        aria-hidden
-        className="absolute left-0 right-0 bottom-0 pointer-events-none transition-[top]"
-        style={{
-          top: `${fillTop}%`,
-          background: `linear-gradient(180deg, ${cFill.soft} 0%, ${cFill.color} 50%, ${cFill.color} 100%)`,
-          opacity: cStatus === 'empty' ? 0 : liquidFillOpacity(),
-        }}
-      />
-      <div className="relative p-4 flex flex-col gap-2.5">
-        {/* Title row */}
-        <div className="flex justify-between items-start gap-3">
+      <div className="relative p-4 flex flex-col gap-3">
+        {/* Title row — emoji + name left, status chip right */}
+        <div className="flex justify-between items-center gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-[22px] shrink-0">{cat.emoji}</span>
             <span className="font-semibold text-[18px] tracking-tight text-ink truncate">{cat.name}</span>
@@ -563,43 +609,45 @@ function CategoryCard({ cat, todayISO, onSelect }: {
           <div className="flex items-center gap-2 shrink-0">{chip}</div>
         </div>
 
-        {/* Amount row — spent left, / budget right. Big numerals for
-            the dominant number, lighter for the denominator. */}
-        <div className="flex items-baseline gap-1.5 mt-1">
-          <span className="font-bold text-[20px] tabular text-ink leading-none">{fmtBDT(spent)}</span>
-          <span className="text-muted text-[13px] tabular">/ {fmtBDT(budget)}</span>
+        {/* Horizontal bar — primary fill signal. Track uses a muted
+            border-on-surface mix so it reads on either cream or deep
+            surface; fill takes the colour ramp's solid colour. */}
+        <div
+          aria-hidden
+          className="h-1.5 rounded-pill overflow-hidden"
+          style={{ background: 'color-mix(in srgb, var(--border) 60%, var(--surface-2))' }}
+          title={budget > 0 ? cFill.label : 'No budget set'}
+        >
+          <span
+            className="block h-full rounded-pill transition-[width]"
+            style={{
+              width: `${barWidth}%`,
+              background: cFill.color,
+              opacity: cStatus === 'empty' ? 0 : 1,
+            }}
+          />
         </div>
 
-        {/* Status pill + progress meta. Both wrapped in frosted pills so
-            the text stays readable on every band — the cream pill bg
-            dominates the colour band beneath. */}
-        <div className="flex justify-between items-center text-[11.5px] tabular gap-2 flex-wrap">
-          <div
-            className="px-2.5 py-1 rounded-pill inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.04em] whitespace-nowrap"
-            style={frostedPillStyle()}
-            title={cFill.label}
-          >
-            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: cFill.color }} />
-            <span className="text-ink">
-              {budget > 0
-                ? (() => {
-                    const f = formatPct(pct, overflow);
-                    return `${f.number} ${f.verb}`;
-                  })()
-                : 'No budget'}
-            </span>
+        {/* Footer — amounts left, payment + date chip right. The
+            amounts use the same primary/secondary split as before, so
+            big number reads at a glance and the /budget is a quieter
+            neighbour. */}
+        <div className="flex justify-between items-baseline text-[12.5px] gap-3 flex-wrap">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-bold text-[16px] tabular text-ink leading-none">{fmtBDT(spent)}</span>
+            <span className="text-muted tabular">/ {fmtBDT(budget)}</span>
           </div>
           <span
-            className="px-2.5 py-1 rounded-pill inline-flex items-center gap-1 text-[10.5px] font-semibold whitespace-nowrap"
-            style={frostedPillStyle()}
+            className="px-2 py-[3px] rounded-pill inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.04em] whitespace-nowrap text-ink border border-border"
           >
-            <span className="text-ink">
+            <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
+            <span>
               {cat.items.filter(i => i.done).length} of {cat.items.length} paid
             </span>
             {cat.dueDate && (
               <>
                 <span className="text-muted">·</span>
-                <span className="text-ink font-bold">{fmtDateShort(cat.dueDate)}</span>
+                <span>{fmtDateShort(cat.dueDate)}</span>
               </>
             )}
           </span>
@@ -651,12 +699,17 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
   // Local string drafts so the field can be empty mid-edit; we only
   // commit a non-negative number to the store. Without this, every
   // backspace re-renders the input with "0" stuck in it.
+  //
+  // A zero value is rendered as an empty draft (placeholder takes
+  // over) — pre-placing "0" makes the field look like it has a value
+  // when the user actually intends "no budget set". Empty still
+  // commits as 0 via the onChange handler below.
   const [newLabel, setNewLabel] = useState('');
   const [newAmount, setNewAmount] = useState('');
-  const [budgetText, setBudgetText] = useState(String(cat.budget ?? ''));
+  const [budgetText, setBudgetText] = useState(cat.budget > 0 ? String(cat.budget) : '');
   // Re-seed drafts when the modal opens for a different category.
   useEffect(() => {
-    setBudgetText(String(cat.budget ?? ''));
+    setBudgetText(cat.budget > 0 ? String(cat.budget) : '');
     setNewLabel('');
     setNewAmount('');
   }, [cat.id]);
@@ -669,6 +722,29 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
   const overflow = budget > 0 && spent > budget;
   const status = categoryFillStatus(pct, overflow, budget);
   const paid = cat.items.filter(i => i.done).length;
+
+  // Commit whatever's in the new-line composer row. Used by the `+`
+  // button, Enter on either composer input, AND the modal's "Done"
+  // button (so a typed-but-not-clicked line item is flushed before
+  // the modal closes — losing typed text on Done was the bug).
+  // Returns true if a row was actually committed (so callers can
+  // decide whether to swallow the next action).
+  function commitNewItem(): boolean {
+    const label = newLabel.trim();
+    if (!label) return false;
+    onAddItem({ label, amount: clampNonNegative(newAmount), done: false });
+    setNewLabel('');
+    setNewAmount('');
+    return true;
+  }
+
+  // Done flushes any pending composer text first, then closes. This
+  // means the user can type a label + amount and click Done without
+  // having to find the tiny `+` button — the row saves itself.
+  function handleDone() {
+    commitNewItem();
+    onClose();
+  }
 
   return createPortal(
     <div
@@ -720,11 +796,14 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
             </div>
           </div>
           <span
-            className="text-[11px] font-bold uppercase tracking-[0.04em] px-2.5 py-1 rounded-pill whitespace-nowrap flex items-center gap-1.5"
-            style={frostedPillStyle()}
+            className="text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill whitespace-nowrap inline-flex items-center gap-1 border"
+            style={{
+              borderColor: CATEGORY_FILL[status].color,
+              color: CATEGORY_FILL[status].color,
+            }}
           >
-            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: CATEGORY_FILL[status].color }} />
-            <span className="text-ink">
+            <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: CATEGORY_FILL[status].color }} />
+            <span>
               {budget > 0 ? (() => {
                 const f = formatPct(pct, overflow);
                 return `${f.number} ${f.verb}`;
@@ -740,6 +819,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
               inputMode="decimal"
               min={0}
               value={budgetText}
+              placeholder="0"
               onChange={e => {
                 const raw = e.target.value;
                 setBudgetText(raw);
@@ -822,11 +902,12 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 </div>
               );
             })}
-            <div className="grid grid-cols-[20px_1fr_100px_28px] gap-2 items-center py-2 border-t border-border">
+            <div className="grid grid-cols-[20px_1fr_100px_auto] gap-2 items-center py-2 border-t border-border">
               <div />
               <input
                 value={newLabel}
                 onChange={e => setNewLabel(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
                 placeholder="Add a line — e.g. Friday dinner"
                 className="bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary"
               />
@@ -836,27 +917,34 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 min={0}
                 value={newAmount}
                 onChange={e => setNewAmount(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
                 placeholder="Amount"
                 className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary tabular"
               />
               <button
                 type="button"
-                onClick={() => {
-                  if (!newLabel.trim()) return;
-                  onAddItem({ label: newLabel.trim(), amount: clampNonNegative(newAmount), done: false });
-                  setNewLabel('');
-                  setNewAmount('');
-                }}
-                className="text-muted hover:text-primary text-lg transition"
+                onClick={commitNewItem}
+                disabled={!newLabel.trim()}
+                // Solid success-green fill so the white tick always
+                // reads on light cream. Disabled state keeps the fill
+                // visible at lower opacity rather than fading the whole
+                // button into the background (which was the bug —
+                // disabled:opacity-30 made the white-on-cream invisible).
+                className="w-8 h-8 rounded-full inline-flex items-center justify-center bg-success text-white shadow-sm hover:opacity-90 transition disabled:bg-success/40 disabled:cursor-not-allowed disabled:hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/30"
                 aria-label="Add line item"
-              >+</button>
+                title="Add line item (Enter)"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M3.5 8.5 L6.5 11.5 L12.5 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Primary action row — only the safe actions. */}
         <div className="flex justify-end gap-2 mt-5">
-          <Button variant="primary" onClick={onClose}>Done</Button>
+          <Button variant="primary" onClick={handleDone}>Done</Button>
         </div>
 
         {/* Danger zone — visually separated so users don't hit Remove by accident. */}
@@ -867,7 +955,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
           }}
         >
           <span className="text-muted">Done with this category?</span>
-          <Button variant="ghost" className="text-danger hover:text-danger" onClick={onRemove}>Remove category</Button>
+          <Button variant="ghost" className="text-danger hover:text-danger" onClick={onRemove}>Delete category</Button>
         </div>
       </div>
     </div>,
@@ -887,10 +975,40 @@ function LineItemAmount({
    *  reads as "tap to set" instead of "this costs 0". */
   emptyHint?: boolean;
 }) {
-  // Local draft so the field can be cleared mid-edit. Without this,
-  // backspace snaps back to "0" the moment the controlled value changes.
-  const [draft, setDraft] = useState(String(value ?? ''));
+  // The field has two responsibilities: stay editable (so the user can
+  // backspace without the value snapping back) and stay committed
+  // (every keystroke lands in the store). Two state pieces:
+  //
+  //   `draft`   — what's in the input right now (string, can be empty)
+  //   `lastCommitted` — the value that was last pushed to the store;
+  //                   used to detect when the parent has new data for us
+  //                   (e.g. an external mutation) so we can resync.
+  //
+  // The seed case (emptyHint + value 0) renders as empty so the
+  // placeholder shows. Clearing the field commits 0.
+  const [draft, setDraft] = useState(() => {
+    if (emptyHint && (value === 0 || value == null)) return '';
+    return value > 0 ? String(value) : '';
+  });
+  const [lastCommitted, setLastCommitted] = useState(() => clampNonNegative(draft));
+  // If the parent's `value` changes for any reason (another store
+  // mutation, opening the modal for a different category) and our local
+  // draft isn't mid-edit, resync the draft so we display the truth.
+  useEffect(() => {
+    if (value !== lastCommitted && document.activeElement?.tagName !== 'INPUT') {
+      setDraft(emptyHint && value === 0 ? '' : value > 0 ? String(value) : '');
+      setLastCommitted(value);
+    }
+  }, [value, lastCommitted, emptyHint]);
+
   const showPlaceholder = emptyHint && (value === 0 || value == null) && draft === '';
+
+  function commit(raw: string) {
+    const n = clampNonNegative(raw);
+    setLastCommitted(n);
+    onChange(n);
+  }
+
   return (
     <input
       type="number"
@@ -900,11 +1018,17 @@ function LineItemAmount({
       onChange={e => {
         const raw = e.target.value;
         setDraft(raw);
-        const n = clampNonNegative(raw);
-        if (raw !== '' && raw !== '-') onChange(n);
-        else if (raw === '') onChange(0);
+        if (raw !== '' && raw !== '-') commit(raw);
+        else if (raw === '') commit('');
       }}
-      onBlur={() => setDraft(String(value ?? ''))}
+      onBlur={() => {
+        // Final flush: if the user typed digits but never moved focus
+        // before clicking the modal's Done button, the input's last
+        // onChange already pushed the value. This is a no-op safety
+        // net that ensures the store reflects the field's text even
+        // if a keystroke raced the blur.
+        if (clampNonNegative(draft) !== lastCommitted) commit(draft);
+      }}
       placeholder={emptyHint ? 'Set cost' : undefined}
       className={[
         'text-right bg-transparent border-0 py-1 text-sm font-semibold tabular focus:outline-none focus:text-primary',
@@ -932,7 +1056,11 @@ function EditEventModal({
   onCommit: (next: { budget: number; eventDate: string }) => void;
   onCancel: () => void;
 }) {
-  const [budgetDraft, setBudgetDraft] = useState(String(initialBudget ?? ''));
+  // A zero initial budget renders as an empty draft (placeholder takes
+  // over) — pre-placing "0" makes the field look filled when the user
+  // actually means "no budget set". Empty still commits as 0 via
+  // clampNonNegative below.
+  const [budgetDraft, setBudgetDraft] = useState(initialBudget > 0 ? String(initialBudget) : '');
   const [dateDraft, setDateDraft] = useState(initialDate);
 
   const parsedBudget = clampNonNegative(budgetDraft);

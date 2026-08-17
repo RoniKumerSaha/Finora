@@ -46,6 +46,18 @@ export function isNonNegativeMoney(s: string): boolean {
 }
 
 /**
+ * Optional zero-or-positive money amount — empty string is valid
+ * (treated as "leave it at zero"). Used for fields that show no
+ * pre-placed 0 by default but should accept 0 or any positive number
+ * when the user types one in (account opening balance, goal "already
+ * saved"). The commit layer must coerce `''` → 0 explicitly.
+ */
+export function isOptionalNonNegativeMoney(s: string): boolean {
+  if (typeof s !== 'string' || s.trim() === '') return true;
+  return isNonNegativeMoney(s);
+}
+
+/**
  * Convenience: the error message to show inline when the rule fails.
  * Drops the trailing period for consistent typography — the inline
  * error slot renders the message verbatim below the field. The period

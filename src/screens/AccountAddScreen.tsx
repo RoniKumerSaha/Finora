@@ -5,7 +5,7 @@ import * as accounts from '../domain/accounts';
 import type { AccountType } from '../domain/types';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
-import { isNonNegativeMoney, NON_NEGATIVE_MONEY_ERROR } from '../lib/validation';
+import { isOptionalNonNegativeMoney, NON_NEGATIVE_MONEY_ERROR } from '../lib/validation';
 
 export function AccountAddScreen() {
   const navigate = useNavigate();
@@ -13,12 +13,13 @@ export function AccountAddScreen() {
   const showBanner = useStore(s => s.showBanner);
   const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('cash');
-  const [openingBalance, setOpeningBalance] = useState('0');
+  const [openingBalance, setOpeningBalance] = useState('');
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
-  // Opening balance uses the >= 0 rule; a fresh account can legitimately
-  // start at zero.
-  const openingInvalid = !isNonNegativeMoney(openingBalance);
+  // Opening balance is optional — empty means "starts at zero". We
+  // use the optional non-negative rule so the field doesn't show an
+  // error the moment the user opens the modal with no value typed.
+  const openingInvalid = !isOptionalNonNegativeMoney(openingBalance);
   const openingErrorClass = openingInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';

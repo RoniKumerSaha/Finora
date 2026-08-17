@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Event Planner — 10 Category Card Variants</title>
+<meta name="viewport" content="width=1200, initial-scale=1" />
+<style>
+  /* ── Theme tokens (mirror src/styles/theme.css) ────────────────── */
+  :root {
+    /* Light (parchment cream, 2026-08-14 + 2026-08-17 card lift) */
+    --bg:           #EFE5D0;
+    --surface:      #F5ECD9;
+    --surface-2:    #FAF4E6;
+    --surface-3:    #E0D4B6;
+    --ink:          #2A2620;
+    --muted:        #7A6F5E;
+    --muted-2:      #B5A992;
+    --primary:      #086157;
+    --primary-soft: rgba(8, 97, 87, 0.16);
+    --primary-on:   #FFFFFF;
+    --accent:       #876620;
+    --accent-soft:  rgba(135, 102, 32, 0.18);
+    --danger:       #993328;
+    --danger-soft:  rgba(153, 51, 40, 0.18);
+    --warn:         #8E6520;
+    --warn-soft:    rgba(142, 101, 32, 0.36);
+    --orange:       #9E4A18;
+    --orange-soft:  rgba(158, 74, 24, 0.36);
+    --info:         #1F4F84;
+    --info-soft:    rgba(31, 79, 132, 0.16);
+    --cyan:         #0E7A6E;
+    --cyan-soft:    rgba(14, 122, 110, 0.20);
+    --success:      #3F6E55;
+    --success-soft: rgba(63, 110, 85, 0.36);
+    --success-title:#2E5A44;
+    --success-callout-bg: #E8EFE5;
+    --danger-title: #762A21;
+    --danger-callout-bg: #F5E6DD;
+    --border:       #D8C9A6;
+    --border-2:     #C8B98F;
+    --overlay:      rgba(15, 20, 25, 0.6);
+    --shadow-card:  0 1px 2px rgba(42, 38, 32, 0.06), 0 8px 24px rgba(42, 38, 32, 0.08);
+    --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.32), 0 24px 60px rgba(0, 0, 0, 0.55);
+    --card-inset:   inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    --frost-pill-bg:     rgba(250, 244, 230, 0.97);
+    --frost-pill-border: rgba(42, 38, 32, 0.20);
+    --frost-pill-shadow: 0 1px 2px rgba(42, 38, 32, 0.10);
+    --liquid-fill-opacity: 0.48;
+    --radius-card: 12px;
+    --radius-btn: 10px;
+    --radius-pill: 999px;
+  }
+  [data-theme="dark"] {
+    --bg:           #1E2A26;
+    --surface:      #253229;
+    --surface-2:    #2E3C34;
+    --surface-3:    #3A4A42;
+    --ink:          #F1F3EF;
+    --muted:        #94A59C;
+    --muted-2:      #647068;
+    --primary:      #7DD4B5;
+    --primary-soft: rgba(125, 212, 181, 0.22);
+    --primary-on:   #0F1419;
+    --accent:       #D9B26B;
+    --accent-soft:  rgba(217, 178, 107, 0.18);
+    --danger:       #DC8678;
+    --danger-soft:  rgba(220, 134, 120, 0.22);
+    --danger-title: #F0A093;
+    --danger-callout-bg: #2A1A18;
+    --warn:         #F8CE82;
+    --warn-soft:    rgba(248, 206, 130, 0.38);
+    --orange:       #F0AC75;
+    --orange-soft:  rgba(240, 172, 117, 0.38);
+    --info:         #6FA8DC;
+    --info-soft:    rgba(111, 168, 220, 0.22);
+    --cyan:         #4FC6B8;
+    --cyan-soft:    rgba(79, 198, 184, 0.24);
+    --success:      #8DC4A6;
+    --success-soft: rgba(141, 196, 166, 0.38);
+    --success-title:#9CD6B5;
+    --success-callout-bg: #1A2620;
+    --border:       #324139;
+    --border-2:     #28332D;
+    --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.32);
+    --card-inset:   inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --frost-pill-bg:     rgba(15, 20, 25, 0.78);
+    --frost-pill-border: rgba(15, 20, 25, 0.10);
+    --frost-pill-shadow: none;
+    --liquid-fill-opacity: 0.32;
+  }
+
+  /* ── Base ─────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    padding: 32px 28px 80px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; margin: 0 0 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  h3 { font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lead { color: var(--muted); max-width: 720px; margin: 0 0 28px; font-size: 13px; line-height: 1.6; }
+  .lead b { color: var(--ink); }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    margin-bottom: 16px;
+  }
+  .theme-toggle {
+    display: inline-flex; gap: 4px; padding: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  }
+  .theme-toggle button {
+    border: 0; background: transparent; color: var(--muted);
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 12px; font-weight: 600;
+  }
+  .theme-toggle button[data-active="1"] {
+    background: var(--surface-2); color: var(--ink);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ── Grid layout: one tile per variant, dark + light side-by-side */
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .meta {
+    position: sticky; top: 24px;
+    padding-top: 6px;
+  }
+  .meta h3 { margin-bottom: 6px; }
+  .meta .desc {
+    font-size: 12px; color: var(--muted); line-height: 1.55;
+  }
+  .meta .desc b { color: var(--ink); font-weight: 600; }
+  .stage-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--bg);
+    padding: 20px;
+    min-height: 220px;
+  }
+  .stage-card.light { background: #EFE5D0; }
+  .stage-card.dark { background: #1E2A26; }
+
+  /* ── Reusable bits ────────────────────────────────────────────── */
+  .frost-pill {
+    background: var(--frost-pill-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--frost-pill-border);
+    box-shadow: var(--frost-pill-shadow);
+  }
+  .tab { font-variant-numeric: tabular-nums; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 1 — Liquid fill (current baseline)
+     Same gradient-liquid-from-bottom shape that's in production
+     today, kept here so the other 9 can be read against it.
+     ──────────────────────────────────────────────────────────── */
+  .v1-card {
+    position: relative; overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    cursor: pointer; text-align: left;
+  }
+  .v1-card .fill {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .v1-card .body { position: relative; display: flex; flex-direction: column; gap: 10px; }
+  .v1-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .v1-card .title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .v1-card .emoji { font-size: 22px; }
+  .v1-card .name { font-weight: 600; font-size: 18px; letter-spacing: -0.01em; color: var(--ink); }
+  .v1-card .amounts { display: flex; align-items: baseline; gap: 6px; }
+  .v1-card .amounts .big { font-weight: 700; font-size: 20px; color: var(--ink); }
+  .v1-card .amounts .small { color: var(--muted); font-size: 13px; }
+  .v1-card .footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .v1-card .pill {
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .v1-card .pill .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 2 — Progress ring (lifted from month planner)
+     Conic-gradient ring wraps the emoji; the right side carries
+     name + amounts. Payment is a small dot row beneath.
+     ──────────────────────────────────────────────────────────── */
+  .v2-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; gap: 16px; align-items: center;
+    cursor: pointer; text-align: left;
+  }
+  .v2-ring {
+    width: 72px; height: 72px; flex: none; position: relative;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .v2-ring .inner {
+    width: 56px; height: 56px; border-radius: 999px;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  .v2-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .v2-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .v2-name { font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -0.01em; }
+  .v2-amounts { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+  .v2-amounts .big { font-weight: 700; font-size: 16px; color: var(--ink); }
+  .v2-amounts .small { color: var(--muted); font-size: 12.5px; }
+  .v2-dots { display: flex; gap: 5px; align-items: center; }
+  .v2-dots .d {
+    width: 8px; height: 8px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .v2-dots .d.on { background: currentColor; border-color: currentColor; }
+  .v2-meta { font-size: 11.5px; color: var(--muted); }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 3 — Horizontal bar
+     Single thin track beneath the title fills to fill%, payment
+     is a small chip on the right.
+     ──────────────────────────────────────────────────────────── */
+  .v3-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; flex-direction: column; gap: 10px;
+    cursor: pointer; text-align: left;
+  }
+  .v3-card .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .v3-card .title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .v3-card .emoji { font-size: 20px; }
+  .v3-card .name { font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -0.01em; }
+  .v3-card .bar {
+    height: 6px; border-radius: 999px;
+    background: color-mix(in srgb, var(--border) 60%, var(--surface-2));
+    overflow: hidden; position: relative;
+  }
+  .v3-card .bar > span {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    border-radius: 999px;
+  }
+  .v3-card .footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
+  .v3-card .footer .pct { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .v3-card .pill {
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 4 — Stacked meter
+     Compact stat tile — emoji + name left, ring (top right) + dot
+     row (bottom right) stacked.
+     ──────────────────────────────────────────────────────────── */
+  .v4-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 12px; row-gap: 8px;
+    cursor: pointer; text-align: left;
+    align-items: center;
+  }
+  .v4-card .tl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .v4-card .emoji { font-size: 20px; }
+  .v4-card .name { font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v4-card .tr { display: flex; align-items: center; gap: 8px; }
+  .v4-card .pct { font-weight: 700; font-size: 12px; color: var(--ink); }
+  .v4-card .ring {
+    width: 28px; height: 28px; border-radius: 999px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--ink);
+  }
+  .v4-card .bl { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .v4-card .br { display: flex; align-items: center; gap: 5px; }
+  .v4-card .br .d {
+    width: 7px; height: 7px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .v4-card .br .d.on { background: currentColor; border-color: currentColor; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 5 — Liquid + payment dots
+     Keeps the liquid fill of v1 but replaces the payment chip
+     with a row of ●●●○○ dots. Payment becomes scannable.
+     ──────────────────────────────────────────────────────────── */
+  .v5-card {
+    position: relative; overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    cursor: pointer; text-align: left;
+  }
+  .v5-card .fill {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .v5-card .body { position: relative; display: flex; flex-direction: column; gap: 10px; }
+  .v5-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .v5-card .title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .v5-card .emoji { font-size: 22px; }
+  .v5-card .name { font-weight: 600; font-size: 18px; letter-spacing: -0.01em; color: var(--ink); }
+  .v5-card .footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .v5-card .dots { display: flex; gap: 5px; align-items: center; }
+  .v5-card .dots .d {
+    width: 8px; height: 8px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .v5-card .dots .d.on { background: currentColor; border-color: currentColor; }
+  .v5-card .meta { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 6 — Two-bar stack
+     Two stacked horizontal bars: top = fill, bottom = payment.
+     Same width, different colours, different label rows.
+     ──────────────────────────────────────────────────────────── */
+  .v6-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; flex-direction: column; gap: 10px;
+    cursor: pointer; text-align: left;
+  }
+  .v6-card .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .v6-card .title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .v6-card .emoji { font-size: 20px; }
+  .v6-card .name { font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -0.01em; }
+  .v6-card .row { display: flex; align-items: center; gap: 10px; }
+  .v6-card .lbl { width: 56px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .v6-card .bar { flex: 1; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--border) 60%, var(--surface-2)); overflow: hidden; position: relative; }
+  .v6-card .bar > span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
+  .v6-card .pct { font-size: 11.5px; font-weight: 700; color: var(--ink); width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 7 — Compact stat tile
+     Narrower, taller — closer to a dashboard KPI. Emoji + ring in
+     a stacked header, name, then amounts at the bottom.
+     ──────────────────────────────────────────────────────────── */
+  .v7-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; flex-direction: column; gap: 10px;
+    cursor: pointer; text-align: left;
+    min-height: 180px;
+  }
+  .v7-card .head { display: flex; align-items: center; gap: 10px; }
+  .v7-card .emoji { font-size: 26px; }
+  .v7-card .name { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; color: var(--ink); }
+  .v7-card .ring {
+    width: 56px; height: 56px; border-radius: 999px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    margin: 4px auto 0;
+  }
+  .v7-card .ring .inner {
+    width: 42px; height: 42px; border-radius: 999px;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--ink);
+  }
+  .v7-card .amounts { text-align: center; margin-top: 4px; }
+  .v7-card .amounts .big { display: block; font-weight: 700; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .v7-card .amounts .small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 8 — Outlined ring
+     Large hollow ring around the emoji, fill arc is the ring
+     itself. Name and amounts sit beneath.
+     ──────────────────────────────────────────────────────────── */
+  .v8-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; flex-direction: column; gap: 8px;
+    cursor: pointer; text-align: left;
+    align-items: center; text-align: center;
+  }
+  .v8-card .ring {
+    width: 92px; height: 92px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+    position: relative;
+  }
+  .v8-card .name { font-weight: 600; font-size: 15px; color: var(--ink); letter-spacing: -0.01em; }
+  .v8-card .amounts { font-variant-numeric: tabular-nums; }
+  .v8-card .amounts .big { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .v8-card .amounts .small { color: var(--muted); font-size: 11.5px; }
+  .v8-card .meta { display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--muted); }
+  .v8-card .meta .d {
+    width: 6px; height: 6px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .v8-card .meta .d.on { background: currentColor; border-color: currentColor; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 9 — Calendar cell
+     Date-dominant card. Big day number top-right, soft tint
+     background shows fill ratio. Dense, schedule-flavoured.
+     ──────────────────────────────────────────────────────────── */
+  .v9-card {
+    position: relative; overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex; flex-direction: column; gap: 6px;
+    cursor: pointer; text-align: left;
+    min-height: 140px;
+  }
+  .v9-card .tint {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .v9-card .body { position: relative; display: flex; flex-direction: column; gap: 4px; }
+  .v9-card .day {
+    font-weight: 700; font-size: 28px; color: var(--ink);
+    line-height: 1; letter-spacing: -0.02em;
+    align-self: flex-end;
+  }
+  .v9-card .mo { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); align-self: flex-end; }
+  .v9-card .title { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .v9-card .emoji { font-size: 18px; }
+  .v9-card .name { font-weight: 600; font-size: 14px; color: var(--ink); letter-spacing: -0.01em; }
+  .v9-card .amounts { font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; }
+  .v9-card .amounts .big { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .v9-card .amounts .small { color: var(--muted); font-size: 11px; }
+
+  /* ──────────────────────────────────────────────────────────────
+     VARIANT 10 — Inline strip
+     Single-row, no card chrome — name + ring on left, amounts
+     right, payment dots between. Optimised for many categories.
+     ──────────────────────────────────────────────────────────── */
+  .v10-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    cursor: pointer; text-align: left;
+  }
+  .v10-row .mini-ring {
+    width: 30px; height: 30px; border-radius: 999px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex: none;
+  }
+  .v10-row .name { font-weight: 600; font-size: 14px; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }
+  .v10-row .dots { display: flex; gap: 4px; align-items: center; }
+  .v10-row .dots .d {
+    width: 7px; height: 7px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .v10-row .dots .d.on { background: currentColor; border-color: currentColor; }
+  .v10-row .amounts { font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; }
+  .v10-row .amounts .big { font-weight: 700; font-size: 14px; color: var(--ink); }
+  .v10-row .amounts .small { color: var(--muted); font-size: 11.5px; }
+
+  /* ── Responsive — stack the dark/light cards on small screens ─ */
+  @media (max-width: 880px) {
+    .row { grid-template-columns: 1fr; }
+    .meta { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Event Planner — 10 category card variants</h1>
+    <p class="lead">
+      Each row shows one variant against the same data: <b>New clothes · 8,000 / 8,000 · 1 of 1 paid · Aug 12</b>.
+      Fill ratio is the primary story; payment progress is the secondary. Two
+      light cards + two dark cards per variant so the token stack is exercised
+      end to end.
+    </p>
+  </div>
+  <div class="theme-toggle">
+    <button data-mode="both" data-active="1">Light + Dark</button>
+    <button data-mode="light">Light only</button>
+    <button data-mode="dark">Dark only</button>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- ───────────────────────────── VARIANT 1 ─────────────────────── -->
+  <section class="row" id="v1">
+    <div class="meta">
+      <h3>#1 — Liquid fill (baseline)</h3>
+      <p class="desc">
+        What's shipping today. Gradient liquid rising from the bottom; status pill on
+        the left, payment chip on the right. Reads well as a single hero card but
+        heavy when stacked — every category is loud at the same volume.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v1-card" style="position: relative;">
+        <span class="fill" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.55;
+        "></span>
+        <div class="body">
+          <div class="top">
+            <div class="title">
+              <span class="emoji">👖</span>
+              <span class="name">New clothes</span>
+            </div>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="footer">
+            <span class="pill frost-pill">
+              <span class="dot" style="background: var(--success); color: var(--success);"></span>
+              <span style="color: var(--ink);">100% filled</span>
+            </span>
+            <span class="pill frost-pill">
+              <span style="color: var(--ink);">1 of 1 paid</span>
+              <span style="color: var(--muted);">·</span>
+              <span style="color: var(--ink); font-weight: 700;">Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v1-card" style="position: relative;">
+        <span class="fill" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.32;
+        "></span>
+        <div class="body">
+          <div class="top">
+            <div class="title">
+              <span class="emoji">👖</span>
+              <span class="name">New clothes</span>
+            </div>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="footer">
+            <span class="pill frost-pill">
+              <span class="dot" style="background: var(--success); color: var(--success);"></span>
+              <span style="color: var(--ink);">100% filled</span>
+            </span>
+            <span class="pill frost-pill">
+              <span style="color: var(--ink);">1 of 1 paid</span>
+              <span style="color: var(--muted);">·</span>
+              <span style="color: var(--ink); font-weight: 700;">Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 2 ─────────────────────── -->
+  <section class="row" id="v2">
+    <div class="meta">
+      <h3>#2 — Progress ring (right of emoji)</h3>
+      <p class="desc">
+        Borrowed from the Month Planner. Ring around the emoji carries fill;
+        payment is a dot row beneath. Quietly transfers the visual language
+        the user already knows from the month view.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v2-card">
+        <span class="v2-ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface)) 100% 100%);
+        ">
+          <span class="inner">👖</span>
+        </span>
+        <div class="v2-body">
+          <div class="v2-title">
+            <span class="v2-name">New clothes</span>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="v2-amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="v2-meta">
+            <span class="v2-dots" style="color: var(--success);">
+              <span class="d on"></span><span class="d" style="opacity:.5"></span>
+              <span style="margin-left: 6px;">1 of 1 paid · Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v2-card">
+        <span class="v2-ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface-2)) 100% 100%);
+        ">
+          <span class="inner">👖</span>
+        </span>
+        <div class="v2-body">
+          <div class="v2-title">
+            <span class="v2-name">New clothes</span>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="v2-amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="v2-meta">
+            <span class="v2-dots" style="color: var(--success);">
+              <span class="d on"></span><span class="d" style="opacity:.5"></span>
+              <span style="margin-left: 6px;">1 of 1 paid · Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 3 ─────────────────────── -->
+  <section class="row" id="v3">
+    <div class="meta">
+      <h3>#3 — Horizontal bar</h3>
+      <p class="desc">
+        A single thin track beneath the title fills to the ratio. Removes the
+        "always at 100% green" feel of the liquid because the bar's right
+        edge telegraphs how much budget is left.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v3-card">
+        <div class="top">
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <span class="pill frost-pill" style="color: var(--success);">
+            <span class="dot"></span> Paid in full
+          </span>
+        </div>
+        <div class="bar">
+          <span style="width: 100%; background: var(--success);"></span>
+        </div>
+        <div class="footer">
+          <span><span class="pct">৳ 8,000</span> <span style="color: var(--muted);">/ ৳ 8,000</span></span>
+          <span>1 of 1 paid · <b style="color: var(--ink);">Aug 12</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v3-card">
+        <div class="top">
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <span class="pill frost-pill" style="color: var(--success);">
+            <span class="dot"></span> Paid in full
+          </span>
+        </div>
+        <div class="bar">
+          <span style="width: 100%; background: var(--success);"></span>
+        </div>
+        <div class="footer">
+          <span><span class="pct">৳ 8,000</span> <span style="color: var(--muted);">/ ৳ 8,000</span></span>
+          <span>1 of 1 paid · <b style="color: var(--ink);">Aug 12</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 4 ─────────────────────── -->
+  <section class="row" id="v4">
+    <div class="meta">
+      <h3>#4 — Stacked meter</h3>
+      <p class="desc">
+        Two-column compact tile: name + emoji on the left, mini ring on the
+        right with the % inside it; payment dots on the second row. Highest
+        density — fits more categories per screen.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v4-card">
+        <div class="tl">
+          <span class="emoji">👖</span>
+          <span class="name">New clothes</span>
+        </div>
+        <div class="tr">
+          <span class="pct">100%</span>
+          <span class="ring" style="
+            background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface)) 100% 100%);
+          "></span>
+        </div>
+        <div class="bl tab">৳ 8,000 / ৳ 8,000</div>
+        <div class="br" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v4-card">
+        <div class="tl">
+          <span class="emoji">👖</span>
+          <span class="name">New clothes</span>
+        </div>
+        <div class="tr">
+          <span class="pct">100%</span>
+          <span class="ring" style="
+            background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface-2)) 100% 100%);
+          "></span>
+        </div>
+        <div class="bl tab">৳ 8,000 / ৳ 8,000</div>
+        <div class="br" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 5 ─────────────────────── -->
+  <section class="row" id="v5">
+    <div class="meta">
+      <h3>#5 — Liquid + payment dots</h3>
+      <p class="desc">
+        Keeps the warmth of the liquid fill but replaces the "1 of 1 paid"
+        chip with a row of ●●●○○ dots so payment becomes scannable at a glance
+        across the list. Best when there are many categories with several
+        line items each.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v5-card">
+        <span class="fill" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.55;
+        "></span>
+        <div class="body">
+          <div class="top">
+            <div class="title">
+              <span class="emoji">👖</span>
+              <span class="name">New clothes</span>
+            </div>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="footer">
+            <span class="pill frost-pill">
+              <span class="dot" style="background: var(--success); color: var(--success);"></span>
+              <span style="color: var(--ink);">100% filled</span>
+            </span>
+            <span class="dots" style="color: var(--success);">
+              <span class="d on"></span><span class="d" style="opacity:.5"></span>
+              <span class="meta" style="margin-left: 8px;">1 of 1 · Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v5-card">
+        <span class="fill" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.32;
+        "></span>
+        <div class="body">
+          <div class="top">
+            <div class="title">
+              <span class="emoji">👖</span>
+              <span class="name">New clothes</span>
+            </div>
+            <span class="pill frost-pill" style="color: var(--success);">
+              <span class="dot"></span> Paid in full
+            </span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div class="footer">
+            <span class="pill frost-pill">
+              <span class="dot" style="background: var(--success); color: var(--success);"></span>
+              <span style="color: var(--ink);">100% filled</span>
+            </span>
+            <span class="dots" style="color: var(--success);">
+              <span class="d on"></span><span class="d" style="opacity:.5"></span>
+              <span class="meta" style="margin-left: 8px;">1 of 1 · Aug 12</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 6 ─────────────────────── -->
+  <section class="row" id="v6">
+    <div class="meta">
+      <h3>#6 — Two-bar stack</h3>
+      <p class="desc">
+        Top bar = fill ratio, bottom bar = payment ratio. Same width, different
+        hue, each with its own label. Tells both stories with the same
+        primitive; reads as a small dashboard.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v6-card">
+        <div class="top">
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <span class="pill frost-pill" style="color: var(--success);">
+            <span class="dot"></span> Paid in full
+          </span>
+        </div>
+        <div class="row">
+          <span class="lbl">Fill</span>
+          <span class="bar"><span style="width: 100%; background: var(--success);"></span></span>
+          <span class="pct">100%</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Paid</span>
+          <span class="bar"><span style="width: 100%; background: var(--success);"></span></span>
+          <span class="pct">1/1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v6-card">
+        <div class="top">
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <span class="pill frost-pill" style="color: var(--success);">
+            <span class="dot"></span> Paid in full
+          </span>
+        </div>
+        <div class="row">
+          <span class="lbl">Fill</span>
+          <span class="bar"><span style="width: 100%; background: var(--success);"></span></span>
+          <span class="pct">100%</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Paid</span>
+          <span class="bar"><span style="width: 100%; background: var(--success);"></span></span>
+          <span class="pct">1/1</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 7 ─────────────────────── -->
+  <section class="row" id="v7">
+    <div class="meta">
+      <h3>#7 — Compact stat tile (KPI feel)</h3>
+      <p class="desc">
+        Card-shaped, but centred and tighter — like a dashboard tile. Best when
+        the user wants to scan the *numbers* above the names; trade-off is
+        that names are smaller so longer category names will need truncation.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v7-card" style="text-align: center;">
+        <div class="head" style="justify-content: center;">
+          <span class="emoji">👖</span>
+        </div>
+        <span class="ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface)) 100% 100%);
+        ">
+          <span class="inner">100%</span>
+        </span>
+        <div class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">of ৳ 8,000</span>
+        </div>
+        <div style="font-weight: 600; font-size: 13px; color: var(--ink); text-align: center;">New clothes</div>
+        <div style="font-size: 11px; color: var(--muted); text-align: center;">1 of 1 paid · Aug 12</div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v7-card" style="text-align: center;">
+        <div class="head" style="justify-content: center;">
+          <span class="emoji">👖</span>
+        </div>
+        <span class="ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface-2)) 100% 100%);
+        ">
+          <span class="inner">100%</span>
+        </span>
+        <div class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">of ৳ 8,000</span>
+        </div>
+        <div style="font-weight: 600; font-size: 13px; color: var(--ink); text-align: center;">New clothes</div>
+        <div style="font-size: 11px; color: var(--muted); text-align: center;">1 of 1 paid · Aug 12</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 8 ─────────────────────── -->
+  <section class="row" id="v8">
+    <div class="meta">
+      <h3>#8 — Outlined ring (centre)</h3>
+      <p class="desc">
+        Largest visual weight given to the ring — fill is the primary
+        storytelling element. Compact dot row + date beneath. Best when
+        categories have one dominant story (close to or over budget).
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v8-card">
+        <span class="ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface)) 100% 100%);
+        ">👖</span>
+        <div class="name">New clothes</div>
+        <div class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">/ ৳ 8,000</span>
+        </div>
+        <div class="meta" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+          <span style="margin-left: 4px;">1 of 1 paid · Aug 12</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v8-card">
+        <span class="ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface-2)) 100% 100%);
+        ">👖</span>
+        <div class="name">New clothes</div>
+        <div class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">/ ৳ 8,000</span>
+        </div>
+        <div class="meta" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+          <span style="margin-left: 4px;">1 of 1 paid · Aug 12</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 9 ─────────────────────── -->
+  <section class="row" id="v9">
+    <div class="meta">
+      <h3>#9 — Calendar cell (date-dominant)</h3>
+      <p class="desc">
+        Date is the hero — big day number top-right. Tint behind everything
+        shows fill. Schedule-flavoured, leans on the timeline column to its
+        left for shared meaning.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v9-card">
+        <span class="tint" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.55;
+        "></span>
+        <div class="body">
+          <div class="mo">Aug</div>
+          <div class="day tab">12</div>
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">
+            <span style="color: var(--success); font-weight: 700;">●</span>&nbsp; 100% filled · 1 of 1 paid
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v9-card">
+        <span class="tint" style="
+          top: 0%;
+          background: linear-gradient(180deg, var(--success-soft) 0%, var(--success) 50%, var(--success) 100%);
+          opacity: 0.32;
+        "></span>
+        <div class="body">
+          <div class="mo">Aug</div>
+          <div class="day tab">12</div>
+          <div class="title">
+            <span class="emoji">👖</span>
+            <span class="name">New clothes</span>
+          </div>
+          <div class="amounts">
+            <span class="big tab">৳ 8,000</span>
+            <span class="small tab">/ ৳ 8,000</span>
+          </div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">
+            <span style="color: var(--success); font-weight: 700;">●</span>&nbsp; 100% filled · 1 of 1 paid
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── VARIANT 10 ────────────────────── -->
+  <section class="row" id="v10">
+    <div class="meta">
+      <h3>#10 — Inline strip (no chrome)</h3>
+      <p class="desc">
+        Densest option — single horizontal row, ring on the left, name, dot
+        row, then amounts on the right. Optimised for users with many
+        categories; names truncate on the left.
+      </p>
+    </div>
+
+    <div class="stage-card light">
+      <div class="v10-row">
+        <span class="mini-ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface)) 100% 100%);
+        ">👖</span>
+        <span class="name">New clothes</span>
+        <span class="dots" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+        </span>
+        <span class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">/ ৳ 8,000</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="stage-card dark">
+      <div class="v10-row">
+        <span class="mini-ring" style="
+          background: conic-gradient(var(--success) 0% 100%, color-mix(in srgb, var(--border) 60%, var(--surface-2)) 100% 100%);
+        ">👖</span>
+        <span class="name">New clothes</span>
+        <span class="dots" style="color: var(--success);">
+          <span class="d on"></span><span class="d" style="opacity:.5"></span>
+        </span>
+        <span class="amounts">
+          <span class="big tab">৳ 8,000</span>
+          <span class="small tab">/ ৳ 8,000</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Theme toggle: defaults to light+dark side-by-side, can isolate one.
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll('.theme-toggle button');
+  function apply(mode) {
+    if (mode === 'both') {
+      root.removeAttribute('data-theme'); // light default
+      document.querySelectorAll('.stage-card.dark').forEach(el => el.style.display = '');
+      document.querySelectorAll('.stage-card.light').forEach(el => el.style.display = '');
+    } else if (mode === 'light') {
+      root.removeAttribute('data-theme');
+      document.querySelectorAll('.stage-card.dark').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.stage-card.light').forEach(el => el.style.display = '');
+    } else if (mode === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+      document.querySelectorAll('.stage-card.light').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.stage-card.dark').forEach(el => el.style.display = '');
+    }
+  }
+  buttons.forEach(b => b.addEventListener('click', () => {
+    buttons.forEach(x => x.removeAttribute('data-active'));
+    b.setAttribute('data-active', '1');
+    apply(b.dataset.mode);
+  }));
+</script>
+
+</body>
+</html>

@@ -14,7 +14,6 @@
  * the metaphors are still code-named `Jar*` internally.
  */
 import { useState, useEffect, useRef } from 'react';
-import type { FocusEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '../domain/store';
 import * as plans from '../domain/plans';
@@ -253,7 +252,7 @@ export function MonthPlanScreen() {
       )}
 
       <div className="text-xs text-muted text-center">
-        ⓘ Tap an item to edit it in a pop-up. Switch months with ‹ › — the plan is only saved when you tap <b className="text-ink">Save plan</b>.
+        ⓘ Tap an item to edit it in a pop-up. Switch months with ‹ › — changes are only saved when you tap <b className="text-ink">Save plan</b>.
       </div>
       {confirmDialog}
     </div>
@@ -264,46 +263,22 @@ export function MonthPlanScreen() {
 
 function IncomePill({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
   // Frosted pill that doubles as the income editor. Click the number
-  // to type, Enter commits, Escape reverts. Same draft pattern as the
-  // Event Planner's EventBudgetField, but rendered as a pill so the
-  // strip stays in lockstep with the Spent / Saving pills beside it.
-  //
-  // The blur-vs-click race: when the user clicks the ✓ or × buttons,
-  // the input loses focus first (onBlur fires) *before* the button's
-  // click handler. If onBlur discards unconditionally, the click then
-  // commits a draft that's already been reset. We solve this by:
-  //   1) wrapping the pill in a ref-checked container
-  //   2) on blur, only discard when focus moved *outside* the pill —
-  //      otherwise the click handler will own the lifecycle.
+  // to type, Enter commits, blur commits — no per-pill save button,
+  // because the parent Save plan button is the single save surface
+  // for the whole screen. Editing the input mutates the plan via
+  // `patchPlan({ plannedIncome })`, which marks the plan dirty; the
+  // page-level Save plan button is the only thing that clears dirty.
   const [draft, setDraft] = useState(String(value ?? ''));
-  const [editing, setEditing] = useState(false);
-  const pillRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => { if (!editing) setDraft(String(value ?? '')); }, [value, editing]);
-
-  const dirty = editing && (Number(draft) || 0) !== value;
+  useEffect(() => { setDraft(String(value ?? '')); }, [value]);
 
   function commit() {
     const n = clampNonNegative(draft);
-    if (n !== value) onCommit(n);
     setDraft(String(n));
-    setEditing(false);
-  }
-
-  function discard() {
-    setDraft(String(value ?? ''));
-    setEditing(false);
-  }
-
-  function handleBlur(e: FocusEvent<HTMLInputElement>) {
-    // If focus moved into one of our own buttons, let the click own it.
-    const next = e.relatedTarget as Node | null;
-    if (next && pillRef.current?.contains(next)) return;
-    if (dirty) discard();
+    if (n !== value) onCommit(n);
   }
 
   return (
     <span
-      ref={pillRef}
       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
       style={{
         background: 'color-mix(in srgb, var(--info) 18%, transparent)',
@@ -318,13 +293,11 @@ function IncomePill({ value, onCommit }: { value: number; onCommit: (n: number) 
           inputMode="decimal"
           min={0}
           value={draft}
-          onChange={e => { setEditing(true); setDraft(e.target.value); }}
+          onChange={e => setDraft(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') { e.preventDefault(); commit(); }
-            else if (e.key === 'Escape') { e.preventDefault(); discard(); }
+            if (e.key === 'Enter') { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); }
           }}
-          onFocus={() => setEditing(true)}
-          onBlur={handleBlur}
+          onBlur={commit}
           placeholder="0"
           aria-label="Income"
           className="bg-transparent border-0 border-b border-dashed focus:outline-none tabular w-[80px] text-right"
@@ -334,32 +307,6 @@ function IncomePill({ value, onCommit }: { value: number; onCommit: (n: number) 
           }}
         />
       </span>
-      {dirty && (
-        <span className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={discard}
-            aria-label="Discard income change"
-            title="Discard"
-            className="w-5 h-5 rounded-full inline-flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2 transition"
-          >
-            <svg width="10" height="10" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={commit}
-            aria-label="Save income"
-            title="Save"
-            className="w-5 h-5 rounded-full inline-flex items-center justify-center text-success hover:bg-success-soft transition"
-          >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M2 7 L6 11 L12 3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </span>
-      )}
     </span>
   );
 }
@@ -643,12 +590,15 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
   onEmpty: () => void;
   onClose: () => void;
 }) {
-  const [budgetText, setBudgetText] = useState(String(cat.budget ?? ''));
-  const [plannedText, setPlannedText] = useState(String(cat.planned ?? ''));
+  // Zero values render as empty drafts (placeholder takes over) so
+  // the field doesn't pre-place "0" when the user means "not set".
+  // Empty still commits as 0 via clampNonNegative in the change path.
+  const [budgetText, setBudgetText] = useState(cat.budget > 0 ? String(cat.budget) : '');
+  const [plannedText, setPlannedText] = useState(cat.planned > 0 ? String(cat.planned) : '');
   // Re-seed drafts when the modal opens for a different item.
   useEffect(() => {
-    setBudgetText(String(cat.budget ?? ''));
-    setPlannedText(String(cat.planned ?? ''));
+    setBudgetText(cat.budget > 0 ? String(cat.budget) : '');
+    setPlannedText(cat.planned > 0 ? String(cat.planned) : '');
   }, [cat.id]);
 
   const planned = Number(cat.planned) || 0;
@@ -792,6 +742,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               inputMode="decimal"
               min={0}
               value={budgetText}
+              placeholder="0"
               onChange={e => {
                 const raw = e.target.value;
                 setBudgetText(raw);
@@ -807,6 +758,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               inputMode="decimal"
               min={0}
               value={plannedText}
+              placeholder="0"
               onChange={e => {
                 const raw = e.target.value;
                 setPlannedText(raw);
