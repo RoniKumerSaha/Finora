@@ -34,18 +34,14 @@ export function MonthPlanScreen() {
   const removeCategory = useStore(s => s.removeMonthCategory);
   const showBanner = useStore(s => s.showBanner);
 
-  const [activeKey, setActiveKey] = useState(plans.monthKey());
+  // Always edits the current calendar month — the screen no longer
+  // surfaces a month selector, so there is only ever one active plan.
+  const activeKey = plans.monthKey();
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [newItemOpen, setNewItemOpen] = useState(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const plan = plans.ensureMonthPlan(state, activeKey);
-
-  function shiftMonth(delta: number) {
-    setActiveKey(plans.shiftMonthKey(activeKey, delta));
-    setSelectedCatId(null);
-    setNewItemOpen(false);
-  }
 
   function startNewCategory() {
     setNewItemOpen(true);
@@ -73,17 +69,11 @@ export function MonthPlanScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl w-full">
-      <div className="flex flex-wrap justify-between items-end gap-3">
-        <div>
-          <h1 className="heading h1-screen">Plan my month</h1>
-          <div className="text-muted text-[13px] mt-1.5">
-            Fill the items. Tap <b className="text-ink">Save plan</b> when it looks right — or <b className="text-ink">Reset</b> to start over.
-          </div>
-        </div>
-        <MonthPager activeKey={activeKey} onShift={shiftMonth} />
-      </div>
-
-      <div className="card flex flex-wrap items-center gap-3 sm:gap-5 px-4 py-3">
+      {/* Toolbar row — saved status + Reset + Save plan, all on a
+          single row above the heading so the save/reset affordances
+          are the first thing the user sees no matter how far they
+          scroll. */}
+      <div className="flex flex-wrap items-center gap-3 sm:gap-5">
         <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
           <span
             aria-hidden
@@ -118,6 +108,13 @@ export function MonthPlanScreen() {
         </div>
       </div>
 
+      <div>
+        <h1 className="heading h1-screen">Plan my month</h1>
+        <div className="text-muted text-[13px] mt-1.5">
+          Fill the items. Tap <b className="text-ink">Save plan</b> when it looks right — or <b className="text-ink">Reset</b> to start over.
+        </div>
+      </div>
+
       {/* Deficit warning removed: income is no longer a per-plan surface,
           so the "planning to spend more than income" comparison no
           longer applies. */}
@@ -127,7 +124,7 @@ export function MonthPlanScreen() {
           strip and the items grid so it's the first thing the user
           sees when they want to know "if I pay these today, how
           much?". */}
-      <CardTotalChecker activeKey={activeKey} />
+      <CardTotalChecker />
 
       {/* Grid panel: sits on --bg (page). Items use --surface-2 so each
           card visually lifts off the panel — the previous version
@@ -190,7 +187,7 @@ export function MonthPlanScreen() {
       )}
 
       <div className="text-xs text-muted text-center">
-        ⓘ Tap an item to edit it in a pop-up. Switch months with ‹ › — changes are only saved when you tap <b className="text-ink">Save plan</b>.
+        ⓘ Tap an item to edit it in a pop-up. Changes are only saved when you tap <b className="text-ink">Save plan</b>.
       </div>
       {confirmDialog}
     </div>
@@ -230,26 +227,6 @@ function randomToneColor(id: string): string {
   return TONE_COLOR_VARS[idx];
 }
 
-
-function MonthPager({ activeKey, onShift }: { activeKey: string; onShift: (d: number) => void }) {
-  return (
-    <div className="inline-flex items-center gap-1 bg-surface border border-border rounded-pill px-2 py-1 text-[13px] text-muted">
-      <button
-        type="button"
-        onClick={() => onShift(-1)}
-        aria-label="Previous month"
-        className="w-7 h-7 rounded-full inline-flex items-center justify-center hover:bg-surface-2 hover:text-ink transition"
-      >‹</button>
-      <span className="text-ink font-semibold px-2">{plans.monthLabel(activeKey)}</span>
-      <button
-        type="button"
-        onClick={() => onShift(1)}
-        aria-label="Next month"
-        className="w-7 h-7 rounded-full inline-flex items-center justify-center hover:bg-surface-2 hover:text-ink transition"
-      >›</button>
-    </div>
-  );
-}
 
 function JarTile({ cat, selected, onSelect, onRemove }: {
   cat: PlanCategory;

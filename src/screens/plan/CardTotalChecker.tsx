@@ -1,36 +1,33 @@
 /**
  * CardTotalChecker — multi-select checklist on the Month Planner page.
  *
- * Lets the user tick off items from the currently-viewed Month Plan
- * (the active month, not necessarily "today's") and see a running
- * total of the selected item budgets. Ephemeral: nothing is
- * persisted, so a page refresh resets the selection. The point is a
- * quick "if I pay for these, how much is that?" scratchpad, not a
- * long-lived ledger edit.
+ * Lets the user tick off items from the currently-viewed Month Plan,
+ * type an income, and instantly see:
+ *   - the running total of selected item budgets,
+ *   - the saving = income − selected total (positive = green,
+ *     negative = red "over by ৳X").
  *
- * Visual: a panel that sits below the summary strip on /plan/month.
- * Each item is a chip with emoji + name + budget amount; clicking
- * toggles a "selected" state with a coloured border + filled bg.
- * Footer shows the running total plus a Clear button when N > 0.
+ * Ephemeral: nothing is persisted, so a page refresh resets the
+ * selection and the income. The point is a quick "if I pay for
+ * these, how much is left?" scratchpad, not a long-lived ledger edit.
+ *
+ * Visual: a panel that sits at the top of /plan/month. Each item is
+ * a chip with emoji + name + budget amount; clicking toggles a
+ * "selected" state with a coloured border + filled bg. Footer shows
+ * selected count, total, and saving.
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '../../domain/store';
 import * as plans from '../../domain/plans';
-import { fmtBDT } from '../../lib/format';
+import { fmtBDT, clampNonNegative } from '../../lib/format';
 
-export function CardTotalChecker({ activeKey }: { activeKey: string }) {
+export function CardTotalChecker() {
   const state = useStore(s => s.state);
-  const plan = plans.getMonthPlan(state, activeKey);
+  const plan = plans.getMonthPlan(state, plans.monthKey());
   const items = plan?.categories ?? [];
 
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-
-  // Reset selection when the user switches months — keeping stale ids
-  // for a different month's items would be confusing and produce
-  // totals of 0 silently.
-  useEffect(() => {
-    setSelected(new Set());
-  }, [activeKey]);
+  const [income, setIncome] = useState<number>(0);
 
   const total = useMemo(() => {
     let sum = 0;
@@ -39,6 +36,8 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
     }
     return sum;
   }, [items, selected]);
+
+  const saving = income - total;
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -57,7 +56,7 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
       className="card flex flex-col gap-4"
       aria-labelledby="card-checker-title"
     >
-      {/* Header row — section label + count summary */}
+      {/* Header row — section label + clear button */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
@@ -66,8 +65,8 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
           <h2 id="card-checker-title" className="font-semibold text-[18px] tracking-tight mt-1.5">
             Check the cards you'll pay
           </h2>
-          <div className="text-sm text-muted mt-1.5 max-w-prose">
-            Tick the items from this month's plan to see how much they'd add up to. Nothing is saved — just a quick sum.
+          <div className="text-sm text-muted mt-1.5 whitespace-nowrap">
+            Tick items, set your income, see how much you'd save (or overspend). Nothing is saved.
           </div>
         </div>
         {selected.size > 0 && (
@@ -76,10 +75,18 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
             onClick={clear}
             className="text-[12.5px] text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
           >
-            Clear
+            Clear selection
           </button>
         )}
       </div>
+
+      {/* Income row — local draft so users can type freely, commit on
+          Enter or blur. Same pattern as the Month Planner's old income
+          pill. Empty income → no Saving line in the footer. */}
+      <IncomeInput
+        value={income}
+        onCommit={setIncome}
+      />
 
       {/* Body: chips grid or empty state */}
       {items.length === 0 ? (
@@ -107,7 +114,6 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
                       : 'bg-surface-2 border-border text-ink hover:border-ink-2',
                   ].join(' ')}
                 >
-                  {/* Checkmark / dot indicator */}
                   <span
                     aria-hidden
                     className={[
@@ -131,19 +137,91 @@ export function CardTotalChecker({ activeKey }: { activeKey: string }) {
             })}
           </div>
 
-          {/* Footer — selected count + running total. */}
+          {/* Footer — selected count, total, saving. The saving cell
+              colour-swaps to red when selected > income and shows
+              "Over by ৳X" so the user sees the deficit at a glance. */}
           <div
-            className="pt-3 border-t border-border flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1"
+            className="pt-3 border-t border-border flex flex-wrap items-baseline gap-x-5 gap-y-1"
           >
             <span className="text-[12.5px] text-muted tabular">
-              <b className="text-ink">{selected.size}</b> of {items.length} {items.length === 1 ? 'item' : 'items'} selected
+              <b className="text-ink">{selected.size}</b> of {items.length} selected
             </span>
             <span className="text-[12.5px] text-muted tabular">
               Total <b className="text-ink text-[16px] font-bold tabular ml-1">{fmtBDT(total)}</b>
             </span>
+            {income > 0 && (
+              saving >= 0 ? (
+                <span className="text-[12.5px] text-muted tabular">
+                  Saved <b
+                    className="font-bold tabular ml-1"
+                    style={{ color: 'var(--success-title)', fontSize: '16px' }}
+                  >
+                    {fmtBDT(saving)}
+                  </b>
+                </span>
+              ) : (
+                <span className="text-[12.5px] text-muted tabular">
+                  Over by <b
+                    className="font-bold tabular ml-1"
+                    style={{ color: 'var(--danger-title)', fontSize: '16px' }}
+                  >
+                    {fmtBDT(Math.abs(saving))}
+                  </b>
+                </span>
+              )
+            )}
           </div>
         </>
       )}
     </section>
+  );
+}
+
+/** Income input row. Pure local state — no store writes. Kept inline
+ *  here because it's the only place the checker has typed numeric
+ *  input, no need to over-componentise. */
+function IncomeInput({ value, onCommit }: { value: number; onCommit: (n: number) => void }) {
+  // Draft pattern: mirror the committed `value` into a string draft so
+  // the user can erase + retype without the input snapping back.
+  const [draft, setDraft] = useState(value > 0 ? String(value) : '');
+  useEffect(() => { setDraft(value > 0 ? String(value) : ''); }, [value]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function commit() {
+    const n = clampNonNegative(draft);
+    setDraft(n > 0 ? String(n) : '');
+    if (n !== value) onCommit(n);
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted">
+        Income
+      </span>
+      <span className="inline-flex items-center gap-0.5 px-3 py-2 rounded-input border border-border bg-surface-2">
+        <span className="text-[13px] text-muted">৳</span>
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="decimal"
+          min={0}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          onBlur={commit}
+          placeholder="0"
+          aria-label="Income"
+          className="bg-transparent border-0 border-b border-dashed focus:outline-none tabular w-[100px] text-right font-semibold text-ink"
+          style={{ borderColor: 'color-mix(in srgb, var(--ink) 25%, transparent)' }}
+        />
+      </span>
+      <span className="text-[11px] text-muted">Type your expected income for the month</span>
+    </div>
   );
 }

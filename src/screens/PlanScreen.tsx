@@ -5,9 +5,10 @@
  * feature screen. Nothing here writes to the ledger — plans are
  * separate from `state.transactions`.
  *
- * 2026-08-17 polish: each card carries a hero summary block —
- * Income / Saved stat tiles for the month, and per-event rows with
- * days-to-go for the events list.
+ * The Month card stays lean: just a count + an empty-state nudge. The
+ * detailed totals live on the Card-total checker mounted above and on
+ * the Month Planner page itself. The Event card shows the next few
+ * events with days-to-go.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -20,9 +21,7 @@ export function PlanScreen() {
 
   const thisMonth = plans.monthKey();
   const thisMonthPlan = plans.getMonthPlan(state, thisMonth);
-  const monthSummary = thisMonthPlan
-    ? plans.summariseMonthPlan(thisMonthPlan)
-    : null;
+  const monthItems = thisMonthPlan?.categories ?? [];
   const events = plans.listEventPlans(state);
   const todayISO = today().toISOString().slice(0, 10);
 
@@ -58,51 +57,42 @@ export function PlanScreen() {
             Fill items by category. Save the plan, reset when you want a fresh start — no history kept.
           </p>
 
-          {/* Stat tiles — Income / Saved. Two tiles so the user can
-              see at a glance what's coming in vs what's left over.
-              When there's no plan yet the tiles render em-dashes so
-              the layout doesn't shift. */}
-          {monthSummary ? (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <StatTile
-                  label="Income"
-                  value={fmtBDT(monthSummary.plannedIncome)}
-                  tone="info"
-                  empty={monthSummary.plannedIncome === 0}
-                />
-                <StatTile
-                  label="Saved"
-                  value={fmtBDT(monthSummary.saved)}
-                  tone={monthSummary.deficit ? 'danger' : 'success'}
-                  empty={monthSummary.plannedIncome === 0 && monthSummary.saved === 0}
-                />
-              </div>
-
-              {/* Status footer — short, single-line. Carries the
-                  "all on track" / "N over" / deficit variants. */}
-              <div className="pt-3 border-t border-border flex flex-wrap gap-x-5 gap-y-1 text-[11.5px] text-muted tabular">
-                <span>
-                  <b className="text-ink">{monthSummary.count}</b> {monthSummary.count === 1 ? 'item' : 'items'}
-                </span>
-                {monthSummary.deficit ? (
-                  <span className="text-danger font-semibold">
-                    over income by {fmtBDT(monthSummary.shortfall)}
+          {/* Items list — up to 5 mini-rows showing emoji + name +
+              budget. Lets the user see what's in this month's plan
+              without opening the planner. Mirrors the event-list
+              pattern on the right card so the two cards feel of a
+              piece. */}
+          {monthItems.length > 0 ? (
+            <div className="flex flex-col gap-1.5 -mx-1">
+              {monthItems.slice(0, 5).map(cat => (
+                <div
+                  key={cat.id}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-input bg-surface-2 border border-border"
+                >
+                  <span className="text-[16px] shrink-0">{cat.emoji ?? '•'}</span>
+                  <span className="text-[13px] font-semibold text-ink truncate flex-1 min-w-0">{cat.name}</span>
+                  <span className="shrink-0 text-[12px] font-bold tabular text-ink">
+                    {fmtBDT(Number(cat.budget) || 0)}
                   </span>
-                ) : monthSummary.overCount > 0 ? (
-                  <span className="text-warn font-semibold">
-                    {monthSummary.overCount} over budget
-                  </span>
-                ) : monthSummary.count > 0 ? (
-                  <span className="text-success font-semibold">all on track</span>
-                ) : (
-                  <span>nothing planned yet</span>
-                )}
-              </div>
-            </>
+                </div>
+              ))}
+              {monthItems.length > 5 && (
+                <div className="text-[11px] text-muted text-center pt-1">
+                  +{monthItems.length - 5} more
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="pt-3 border-t border-border text-[11.5px] text-muted">
-              Nothing planned yet — open the planner to start.
+            <div className="text-[11.5px] text-muted">Nothing planned yet — open the planner to start.</div>
+          )}
+
+          {/* Footer — item count, so even when the list is collapsed
+              the user knows how big the plan is. */}
+          {monthItems.length > 0 && (
+            <div className="pt-3 border-t border-border text-[11.5px] text-muted tabular">
+              <span>
+                <b className="text-ink">{monthItems.length}</b> {monthItems.length === 1 ? 'item' : 'items'}
+              </span>
             </div>
           )}
         </Link>
@@ -196,39 +186,6 @@ export function PlanScreen() {
 }
 
 /* ── Sub-components ──────────────────────────────────────────────── */
-
-/** Small stat tile used in the Month Planner card hero. Carries a
- *  label + bold figure, with the figure colour driven by `tone`:
- *  - info    → primary/info blue
- *  - success → green (saved / on track)
- *  - warn    → yellow (some items over budget)
- *  - danger  → red (deficit, spending more than income) */
-function StatTile({ label, value, tone, empty }: {
-  label: string;
-  value: string;
-  tone: 'info' | 'success' | 'warn' | 'danger';
-  empty?: boolean;
-}) {
-  const toneColor = empty
-    ? 'var(--muted)'
-    : tone === 'info' ? 'var(--info)'
-      : tone === 'success' ? 'var(--success-title)'
-        : tone === 'warn' ? 'var(--warn)'
-          : 'var(--danger-title)';
-  return (
-    <div
-      className="flex flex-col gap-1 px-3 py-2.5 rounded-input border border-border"
-      style={{ background: 'var(--surface-2)' }}
-    >
-      <span className="text-[9.5px] text-muted uppercase tracking-[0.06em] font-bold">
-        {label}
-      </span>
-      <span className="text-[14px] font-bold tabular leading-none" style={{ color: toneColor }}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 /** Sort events by eventDate ascending — earliest first — so the
  *  "next" anchor and the mini-list both show the soonest event. */
