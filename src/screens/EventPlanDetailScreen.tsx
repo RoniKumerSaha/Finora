@@ -22,7 +22,7 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
-import { formatPct, pctOf, frostedPillStyle, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
+import { formatPct, pctOf, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
 import { uid } from '../domain/ids';
 import type { PlanCategory, PlanItem } from '../domain/types';
@@ -247,16 +247,25 @@ export function EventPlanDetailScreen() {
                   : 'var(--warn)';
             return (
               <>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={frostedPillStyle()}>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Spent</span>
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
+                  background: 'var(--summary-pill-bg)',
+                  border: '1px solid var(--summary-pill-border)',
+                }}>
+                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Allocated</span>
                   <span className="font-bold text-[15px] tabular" style={{ color: spentColor }}>{fmtBDT(summary.planned)}</span>
                   <span className="text-[12px] text-muted">/ {fmtBDT(plan.budget)}</span>
                 </span>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={frostedPillStyle()}>
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
+                  background: 'var(--summary-pill-bg)',
+                  border: '1px solid var(--summary-pill-border)',
+                }}>
                   <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Paid</span>
                   <span className="font-bold text-[15px] tabular" style={{ color: paidColor }}>{fmtBDT(paid)}</span>
                 </span>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={frostedPillStyle()}>
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
+                  background: 'var(--summary-pill-bg)',
+                  border: '1px solid var(--summary-pill-border)',
+                }}>
                   <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">
                     {daysToGo >= 0 ? 'Days to go' : 'Days ago'}
                   </span>
@@ -331,6 +340,75 @@ export function EventPlanDetailScreen() {
                 <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Paid</div>
                 <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--success-title)' }}>
                   {fmtBDT(summary.paidSoFar)}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {(() => {
+        // Over-budget banner — fires when the total across all
+        // categories either exceeds the event budget (allocated) or
+        // already exceeds it via paid amounts (spent). We split the
+        // two because they suggest different user actions:
+        //   - allocated > budget: trim estimates, lower an amount,
+        //                          or raise the budget.
+        //   - paid    > budget: this has already left the wallet;
+        //                          the budget was simply too low —
+        //                          acknowledge, don't panic.
+        // Skipped when the budget is 0 (no budget set, so nothing to
+        // overflow against) and when everything is paid cleanly.
+        const allocatedOver = summary.budget > 0 && summary.planned > summary.budget;
+        const paidOver = summary.budget > 0 && summary.paidSoFar > summary.budget;
+        if (!allocatedOver && !paidOver) return null;
+        const headline = paidOver
+          ? 'Paid past the budget'
+          : 'Allocated past the budget';
+        const message = paidOver
+          ? `You've already paid ${fmtBDT(summary.paidSoFar)} — ${fmtBDT(summary.paidSoFar - summary.budget)} over the ${fmtBDT(summary.budget)} budget. Either raise the budget or accept the overrun.`
+          : `Your categories add up to ${fmtBDT(summary.planned)} — ${fmtBDT(summary.planned - summary.budget)} over the ${fmtBDT(summary.budget)} budget. Trim an amount, drop a line item, or raise the budget.`;
+        const overflow = summary.budget > 0 && summary.planned > summary.budget ? summary.planned - summary.budget : summary.paidSoFar - summary.budget;
+        return (
+          <div
+            className="card flex flex-wrap items-center gap-4 px-5 py-4"
+            style={{
+              background: 'var(--danger-callout-bg)',
+              border: '1px solid var(--danger)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden
+                className="w-9 h-9 rounded-full inline-flex items-center justify-center text-lg shrink-0"
+                style={{
+                  background: 'color-mix(in srgb, var(--danger) 18%, transparent)',
+                  color: 'var(--danger-title)',
+                }}
+              >⚠</span>
+              <div>
+                <div className="font-bold text-[15px] text-ink leading-tight">{headline}</div>
+                <div className="text-[12.5px] text-muted mt-0.5 max-w-[60ch]">
+                  {message}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-5 ml-auto">
+              <div className="flex flex-col items-end">
+                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Budget</div>
+                <div className="font-bold text-[18px] tabular text-ink leading-tight">{fmtBDT(summary.budget)}</div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Allocated</div>
+                <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
+                  {fmtBDT(summary.planned)}
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Over by</div>
+                <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
+                  {fmtBDT(overflow)}
                 </div>
               </div>
             </div>

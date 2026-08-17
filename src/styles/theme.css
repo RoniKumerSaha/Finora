@@ -91,6 +91,13 @@
   --frost-pill-bg:     rgba(15, 20, 25, 0.78);
   --frost-pill-border: rgba(15, 20, 25, 0.10);
   --frost-pill-shadow: none;
+  /* Summary-strip pill (Income / Saved / Spent) — solid black in dark
+     mode so the pills pop against the deep page background; pure white
+     in light mode so they pop against the cream card surface. The
+     rest of the app's chips/buttons inherit their own backgrounds
+     (frost, soft, etc.); this token is just for these four pills. */
+  --summary-pill-bg:     #0F1419;
+  --summary-pill-border: rgba(255, 255, 255, 0.08);
   /* Strength of the planner-card liquid fill behind the frosted pills.
      0.55 in light mode so the cream card surface doesn't drown the colour;
      0.32 in dark mode where the surface is already deep. */
@@ -150,6 +157,12 @@
   --frost-pill-bg:     rgba(250, 244, 230, 0.97);  /* matches --surface-2 card cream */
   --frost-pill-border: rgba(42, 38, 32, 0.20);
   --frost-pill-shadow: 0 1px 2px rgba(42, 38, 32, 0.10);
+  /* Light-mode summary pill uses the same warm cream as the card
+     surface so it sits inside the card like a chip, not on top of
+     it like a button. The slightly darker border (--surface-3) keeps
+     the pill shape readable against the card background. */
+  --summary-pill-bg:     #FAF4E6;
+  --summary-pill-border: rgba(42, 38, 32, 0.18);
   /* Liquid fill needs enough colour to read but not so much that it
      drowns the pill text. Tuned with the cream card surface in mind. */
   --liquid-fill-opacity: 0.48;

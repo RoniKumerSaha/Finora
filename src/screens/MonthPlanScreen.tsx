@@ -22,7 +22,7 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
-import { categoryFillStatus, CATEGORY_FILL, formatPct, pctOf, frostedPillStyle } from '../components/planner/jarVisuals';
+import { categoryFillStatus, CATEGORY_FILL, formatPct, pctOf } from '../components/planner/jarVisuals';
 import type { PlanCategory } from '../domain/types';
 
 export function MonthPlanScreen() {
@@ -112,7 +112,13 @@ export function MonthPlanScreen() {
             const tight = summary.totalBudget > 0 && !over && summary.plannedSpend >= summary.totalBudget * 0.8;
             const spentColor = over ? 'var(--danger)' : tight ? 'var(--success)' : 'var(--info)';
             return (
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={frostedPillStyle()}>
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
+                style={{
+                  background: 'var(--summary-pill-bg)',
+                  border: '1px solid var(--summary-pill-border)',
+                }}
+              >
                 <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Spent</span>
                 <span className="font-bold text-[15px] tabular" style={{ color: spentColor }}>{fmtBDT(summary.plannedSpend)}</span>
                 <span className="text-[12px] text-muted">/ {fmtBDT(summary.totalBudget)}</span>
@@ -125,10 +131,13 @@ export function MonthPlanScreen() {
             // zero → muted. Mirrors the Event Planner strip exactly.
             if (summary.saved > 0) {
               return (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
-                  background: 'color-mix(in srgb, var(--success) 18%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--success) 35%, transparent)',
-                }}>
+                <span
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
+                  style={{
+                    background: 'var(--summary-pill-bg)',
+                    border: '1px solid var(--summary-pill-border)',
+                  }}
+                >
                   <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Saved</span>
                   <span className="font-bold text-[15px] tabular" style={{ color: 'var(--success-title)' }}>{fmtBDT(summary.saved)}</span>
                 </span>
@@ -147,7 +156,13 @@ export function MonthPlanScreen() {
               );
             }
             return (
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={frostedPillStyle()}>
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
+                style={{
+                  background: 'var(--summary-pill-bg)',
+                  border: '1px solid var(--summary-pill-border)',
+                }}
+              >
                 <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Saved</span>
                 <span className="font-bold text-[15px] tabular text-muted">৳ 0</span>
               </span>
@@ -281,13 +296,13 @@ function IncomePill({ value, onCommit }: { value: number; onCommit: (n: number) 
     <span
       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill"
       style={{
-        background: 'color-mix(in srgb, var(--info) 18%, transparent)',
-        border: '1px solid color-mix(in srgb, var(--info) 35%, transparent)',
+        background: 'var(--summary-pill-bg)',
+        border: '1px solid var(--summary-pill-border)',
       }}
     >
       <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold" style={{ color: 'var(--info)' }}>Income</span>
       <span className="font-bold text-[15px] tabular flex items-center gap-0.5" style={{ color: 'var(--info)' }}>
-        <span className="text-[12px] opacity-70">৳</span>
+        <span>৳</span>
         <input
           type="number"
           inputMode="decimal"
