@@ -42,16 +42,16 @@ export function PlanScreen() {
               <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Month Planner</div>
               <div className="font-semibold text-[18px] tracking-tight mt-1.5">Plan my month</div>
             </div>
-            <div className="text-2xl">🏺</div>
+            <div className="text-2xl">🧾</div>
           </div>
           <p className="text-sm text-muted leading-relaxed">
-            Fill jars by category. Save the plan, reset when you want a fresh start — no history kept.
+            Fill items by category. Save the plan, reset when you want a fresh start — no history kept.
           </p>
           <div className="mt-2 pt-3 border-t border-border flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted tabular">
             <span>This month: <b className="text-ink">{plans.monthLabel(thisMonth)}</b></span>
             {monthSummary && (
               <>
-                <span>{monthSummary.count} jars</span>
+                <span>{monthSummary.count} {monthSummary.count === 1 ? 'item' : 'items'}</span>
                 <span>{monthSummary.overCount > 0
                   ? <span className="text-danger">{monthSummary.overCount} over</span>
                   : 'all on track'}</span>

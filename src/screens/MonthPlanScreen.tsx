@@ -2,13 +2,16 @@
  * MonthPlanScreen — Month Planner.
  *
  * Visual target: docs/ux-designs/ux-finora-2026-08-17-month-planner/
- * .working/option-G-jars-save.html — piggy jar visuals with a
- * Save plan / Reset row, pager steps months in-memory, no history.
+ * .working-jars-redesign/index.html — variant #5 (progress ring).
+ * Each item is a card with a conic-gradient ring around the emoji
+ * and a compact body on the right showing the planned amount, the
+ * budget, and a coloured percent label. The 3-step palette (blue /
+ * green / red) matches the Event Planner category cards.
  *
- * 2026-08-17 polish: jar editor moved into a modal pop-up so the tile
- * grid stays put while editing; jar fill colour follows a 4-step ramp
- * (green / yellow / orange / red) keyed off planned ÷ budget; income
- * is editable inline above the summary strip.
+ * 2026-08-17 polish: editor moved into a modal pop-up so the tile
+ * grid stays put while editing; income is editable inline above the
+ * summary strip. Plan items are user-visible as "items" (not "jars") —
+ * the metaphors are still code-named `Jar*` internally.
  */
 import { useState, useEffect, useRef } from 'react';
 import type { FocusEvent } from 'react';
@@ -20,7 +23,7 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
-import { categoryFillStatus, CATEGORY_FILL, formatPct, pctOf, liquidTop, frostedPillStyle } from '../components/planner/jarVisuals';
+import { categoryFillStatus, CATEGORY_FILL, formatPct, pctOf, frostedPillStyle } from '../components/planner/jarVisuals';
 import type { PlanCategory } from '../domain/types';
 
 export function MonthPlanScreen() {
@@ -35,7 +38,7 @@ export function MonthPlanScreen() {
 
   const [activeKey, setActiveKey] = useState(plans.monthKey());
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
-  const [newCatDraft, setNewCatDraft] = useState<{ emoji: string; name: string } | null>(null);
+  const [newItemOpen, setNewItemOpen] = useState(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const plan = plans.ensureMonthPlan(state, activeKey);
@@ -44,27 +47,27 @@ export function MonthPlanScreen() {
   function shiftMonth(delta: number) {
     setActiveKey(plans.shiftMonthKey(activeKey, delta));
     setSelectedCatId(null);
-    setNewCatDraft(null);
+    setNewItemOpen(false);
   }
 
   function startNewCategory() {
-    setNewCatDraft({ emoji: '🛒', name: '' });
+    setNewItemOpen(true);
     setSelectedCatId(null);
   }
 
-  function commitNewCategory() {
-    if (!newCatDraft || !newCatDraft.name.trim()) {
-      showBanner({ what: 'Name the jar', why: 'A jar without a name has no plan.', fix: 'Type a name (e.g. "Groceries") then save.' });
+  function commitNewCategory(input: { emoji: string; name: string; budget: number; planned: number }) {
+    if (!input.name.trim()) {
+      showBanner({ what: 'Name the item', why: 'An item without a name has no plan.', fix: 'Type a name (e.g. "Groceries") then save.' });
       return;
     }
     addCategory(activeKey, {
-      emoji: newCatDraft.emoji,
-      name: newCatDraft.name.trim(),
-      budget: 0,
-      planned: 0,
+      emoji: input.emoji,
+      name: input.name.trim(),
+      budget: input.budget,
+      planned: input.planned,
       tone: plans.PLAN_TONES[plan.categories.length % plans.PLAN_TONES.length],
     });
-    setNewCatDraft(null);
+    setNewItemOpen(false);
   }
 
   const selectedCat = selectedCatId
@@ -77,7 +80,7 @@ export function MonthPlanScreen() {
         <div>
           <h1 className="heading h1-screen">Plan my month</h1>
           <div className="text-muted text-[13px] mt-1.5">
-            Fill the jars. Tap <b className="text-ink">Save plan</b> when it looks right — or <b className="text-ink">Reset</b> to start over.
+            Fill the items. Tap <b className="text-ink">Save plan</b> when it looks right — or <b className="text-ink">Reset</b> to start over.
           </div>
         </div>
         <MonthPager activeKey={activeKey} onShift={shiftMonth} />
@@ -104,8 +107,8 @@ export function MonthPlanScreen() {
             onCommit={n => patchPlan(activeKey, { plannedIncome: n })}
           />
           {(() => {
-            // Mirror the jars: 3-step palette (blue / green / red) so
-            // the strip stays in lockstep with the Month Planner jars.
+            // Mirror the cards: 3-step palette (blue / green / red) so
+            // the strip stays in lockstep with the ring colours.
             const over = summary.totalBudget > 0 && summary.plannedSpend > summary.totalBudget;
             const tight = summary.totalBudget > 0 && !over && summary.plannedSpend >= summary.totalBudget * 0.8;
             const spentColor = over ? 'var(--danger)' : tight ? 'var(--success)' : 'var(--info)';
@@ -154,19 +157,19 @@ export function MonthPlanScreen() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="ghost" onClick={async () => {
-            // Reset wipes income + every jar back to the plan's saved
+            // Reset wipes income + every item back to the plan's saved
             // state — confirm before discarding the working draft.
             const ok = await confirm({
               title: 'Reset month plan?',
               body: 'Your working draft will be discarded and the plan will snap back to the last saved state.',
-              dangerText: 'Income and every jar value are reverted — this can\u2019t be undone.',
+              dangerText: 'Income and every item value are reverted — this can\u2019t be undone.',
               confirmLabel: 'Reset',
               danger: true,
             });
             if (!ok) return;
             resetPlan(activeKey);
             setSelectedCatId(null);
-            setNewCatDraft(null);
+            setNewItemOpen(false);
           }}>Reset</Button>
           <Button variant="primary" onClick={() => savePlan(activeKey)}>Save plan</Button>
         </div>
@@ -189,32 +192,46 @@ export function MonthPlanScreen() {
         </div>
       )}
 
-      <div className="card-flat border border-border rounded-card bg-surface p-6">
+      {/* Grid panel: sits on --bg (page). Items use --surface-2 so each
+          card visually lifts off the panel — the previous version
+          had cards matching the panel exactly and only borders
+          separated them. */}
+      <div className="rounded-card border border-border p-6" style={{ background: 'var(--bg)' }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {plan.categories.map(c => (
             <JarTile
               key={c.id}
               cat={c}
               selected={c.id === selectedCatId}
-              onSelect={() => { setSelectedCatId(c.id); setNewCatDraft(null); }}
+              onSelect={() => { setSelectedCatId(c.id); setNewItemOpen(false); }}
+              onRemove={async () => {
+                // Confirm before discarding the item — pure scratch,
+                // but a tap in the wrong place shouldn't lose work.
+                const ok = await confirm({
+                  title: `Delete “${c.name}”?`,
+                  body: 'This item will be removed from this month\u2019s plan.',
+                  dangerText: 'Planned and budget values for this item are removed.',
+                  confirmLabel: 'Delete',
+                  danger: true,
+                });
+                if (!ok) return;
+                removeCategory(activeKey, c.id);
+                if (selectedCatId === c.id) setSelectedCatId(null);
+              }}
             />
           ))}
-          {newCatDraft ? (
-            <NewJarTile
-              draft={newCatDraft}
-              onChange={setNewCatDraft}
-              onSave={commitNewCategory}
-              onCancel={() => setNewCatDraft(null)}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={startNewCategory}
-              className="rounded-[14px_14px_32px_32px] border border-dashed border-border bg-transparent text-muted text-[13px] font-semibold h-[220px] flex items-center justify-center hover:border-primary hover:text-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              + New jar
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={startNewCategory}
+            aria-label="Add new item"
+            className="min-h-[110px] rounded-card border border-dashed border-border text-muted text-[13px] font-semibold px-4 py-3 flex items-center justify-center gap-2 hover:border-primary hover:text-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            style={{ background: 'color-mix(in srgb, var(--surface-2) 60%, transparent)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden>
+              <path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span>+ New item</span>
+          </button>
         </div>
       </div>
 
@@ -228,8 +245,15 @@ export function MonthPlanScreen() {
         />
       )}
 
+      {newItemOpen && (
+        <NewItemModal
+          onSave={commitNewCategory}
+          onClose={() => setNewItemOpen(false)}
+        />
+      )}
+
       <div className="text-xs text-muted text-center">
-        ⓘ Tap a jar to edit it in a pop-up. Switch months with ‹ › — the plan is only saved when you tap <b className="text-ink">Save plan</b>.
+        ⓘ Tap an item to edit it in a pop-up. Switch months with ‹ › — the plan is only saved when you tap <b className="text-ink">Save plan</b>.
       </div>
       {confirmDialog}
     </div>
@@ -362,119 +386,255 @@ function MonthPager({ activeKey, onShift }: { activeKey: string; onShift: (d: nu
   );
 }
 
-function JarTile({ cat, selected, onSelect }: { cat: PlanCategory; selected: boolean; onSelect: () => void }) {
+function JarTile({ cat, selected, onSelect, onRemove }: {
+  cat: PlanCategory;
+  selected: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
   const planned = Number(cat.planned) || 0;
   const budget = Number(cat.budget) || 0;
   const pct = pctOf(planned, budget);
   const overflow = budget > 0 && planned > budget;
-  // 3-step category palette (blue / green / red) — keeps the jar band
-  // in lockstep with the Event Planner category cards, so a half-filled
-  // jar reads as "still room" and a 90% jar reads as "at budget".
+  // 3-step category palette (blue / green / red) — keeps the ring in
+  // lockstep with the Event Planner category cards.
   const status = categoryFillStatus(pct, overflow, budget);
-  const fillTop = liquidTop(planned, budget); // percent from top of jar
+  // Conic-gradient rings don't accept fill > 100% cleanly, so cap
+  // visually at full and let the colour swap to red for overflow.
+  const ringPct = Math.min(100, pct);
+  const fillColor = CATEGORY_FILL[status].color;
+  const hasBudget = budget > 0;
+  // Inner disc is slightly smaller than the outer ring so the donut
+  // has a clear, readable band. When there's no budget we keep the
+  // disc opaque but make the surrounding track nearly transparent so
+  // the card reads as "no budget yet" rather than "0% filled".
+  const ringOuter = 'w-[68px] h-[68px]';
+  const ringInner = 'w-[56px] h-[56px]';
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={[
-        'h-[220px] rounded-[14px_14px_32px_32px] border text-left relative overflow-hidden transition',
-        'hover:-translate-y-0.5',
-        selected ? 'ring-2 ring-primary shadow-[0_6px_14px_rgba(0,0,0,0.35)] border-primary' : 'border-border',
-      ].join(' ')}
-      style={{ background: 'var(--surface)' }}
-    >
-      {/* Liquid layer — fills from the bottom up. Stronger gradient so
-          the colour is unmistakable even when the fill is small. */}
-      <span
-        aria-hidden
-        className="absolute left-0 right-0 bottom-0 transition-[top]"
+    <div className="relative group">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={[
+          'w-full min-h-[110px] rounded-card border text-left pl-4 pr-9 py-3 flex items-center gap-3 transition',
+          'hover:-translate-y-0.5',
+          selected ? 'ring-2 ring-primary border-primary' : 'border-border',
+        ].join(' ')}
         style={{
-          top: `${fillTop}%`,
-          background: `linear-gradient(180deg, ${CATEGORY_FILL[status].soft} 0%, ${CATEGORY_FILL[status].color} 30%, ${CATEGORY_FILL[status].color} 100%)`,
-          opacity: status === 'empty' ? 0 : 1,
+          background: 'var(--surface-2)',
+          boxShadow: selected ? '0 6px 14px rgba(0,0,0,0.25)' : '0 2px 6px rgba(0,0,0,0.18)',
         }}
-      />
-      {/* Tiny status dot */}
-      <span
-        aria-hidden
-        className="absolute right-3 top-3 w-2 h-2 rounded-full z-[3]"
-        style={{
-          background: CATEGORY_FILL[status].color,
-          boxShadow: status === 'empty' ? 'none' : `0 0 0 3px color-mix(in srgb, ${CATEGORY_FILL[status].color} 25%, transparent)`,
-        }}
-      />
-      {/* Title — wrapped in a frosted pill so the text is readable no
-          matter what colour band sits underneath. Without this the
-          title disappears into the soft tints of yellow/orange. */}
-      <div className="absolute top-3 left-3 right-9 z-[2]">
-        <div
-          className="inline-flex items-center gap-1.5 text-[13px] font-bold max-w-full px-2.5 py-1 rounded-pill"
-          style={{ ...frostedPillStyle(), color: 'var(--ink)' }}
+      >
+        {/* Progress ring. Two layered circles: an outer conic-gradient
+            ring (the track + sweep) and an inner solid disc with the
+            emoji. A solid track on top is the only reliable way to
+            avoid the conic-gradient's transparency showing through and
+            making the unfilled portion look like a "cut". When there's
+            no budget the entire ring stays muted so the card reads as
+            "unset", not as "0% of an empty jar". */}
+        <span
+          aria-hidden
+          className={`${ringOuter} rounded-full shrink-0 relative`}
+          style={{
+            background: hasBudget
+              ? `conic-gradient(${fillColor} 0% ${ringPct}%, color-mix(in srgb, var(--border) 35%, var(--surface)) ${ringPct}% 100%)`
+              : `conic-gradient(color-mix(in srgb, var(--border) 35%, var(--surface)) 0% 100%)`,
+          }}
         >
-          <span className="text-[16px]">{cat.emoji}</span>
-          <span className="truncate">{cat.name}</span>
-        </div>
-      </div>
-      {/* Footer amounts — same frosted-pill treatment so the percent
-          label is always visible, including on the red overflow jar.
-          Percent text is neutral so it stays readable on every band;
-          the band colour is conveyed by a small leading dot. */}
-      <div className="absolute bottom-2.5 left-2.5 right-2.5 z-[2]">
-        <div
-          className="px-2.5 py-1.5 rounded-pill flex flex-col gap-0.5"
-          style={frostedPillStyle()}
-        >
-          <div className="font-bold text-[15px] tabular text-ink leading-none">
+          <span
+            className={`${ringInner} rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-[24px] leading-none`}
+            style={{ background: 'var(--surface-2)' }}
+          >
+            {cat.emoji}
+          </span>
+        </span>
+
+        {/* Body — name (2-line clamp), planned amount, status row.
+            The budget number is hidden on the card because the ring
+            already conveys budget vs planned visually; showing it twice
+            adds noise. The budget value is set / edited inside the
+            modal only. */}
+        <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+          <div
+            className="text-[14px] font-semibold text-ink leading-snug"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word',
+            }}
+          >
+            {cat.name}
+          </div>
+          <div className="font-bold text-[15px] text-ink tabular leading-none">
             {fmtBDT(planned)}
           </div>
-          <div className="flex items-center gap-1.5 text-[10.5px] font-bold leading-none text-ink whitespace-nowrap">
-            <span
-              aria-hidden
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: CATEGORY_FILL[status].color }}
-            />
-            <span className="uppercase tracking-[0.04em]">
-              {budget > 0
-                ? (() => {
-                    const f = formatPct(pct, overflow);
-                    return `${f.number} ${f.verb}`;
-                  })()
-                : 'No budget set'}
-            </span>
-          </div>
+          {hasBudget ? (() => {
+            const f = formatPct(pct, overflow);
+            return (
+              <div
+                className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none tabular"
+                style={{ color: fillColor }}
+              >
+                {f.number} {f.verb}
+              </div>
+            );
+          })() : (
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none text-muted">
+              Tap to set a budget
+            </div>
+          )}
         </div>
-      </div>
-    </button>
-  );
-}
+      </button>
 
-function NewJarTile({ draft, onChange, onSave, onCancel }: {
-  draft: { emoji: string; name: string };
-  onChange: (next: { emoji: string; name: string }) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="h-[220px] rounded-[14px_14px_32px_32px] border-2 border-dashed border-border bg-surface-2/40 p-3 flex flex-col gap-2 text-ink">
-      <div className="flex items-center gap-2">
-        <EmojiPicker value={draft.emoji} onChange={emoji => onChange({ ...draft, emoji })} compact />
-        <Input
-          value={draft.name}
-          onChange={e => onChange({ ...draft, name: e.target.value })}
-          placeholder="Jar name"
-          autoFocus
-        />
-      </div>
-      <div className="mt-auto flex gap-2">
-        <Button variant="primary" onClick={onSave} className="flex-1">Save jar</Button>
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-      </div>
+      {/* Delete button — sits in the top-right corner of the card.
+          Shown on hover/focus only so it doesn't clutter the resting
+          state but is still keyboard-discoverable. stopPropagation
+          keeps the click from also opening the editor. */}
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); onRemove(); }}
+        aria-label={`Delete ${cat.name}`}
+        title="Delete item"
+        className="absolute top-2 right-2 w-7 h-7 rounded-full inline-flex items-center justify-center text-muted hover:text-danger hover:bg-surface transition opacity-0 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/40 [.group:hover>&]:opacity-100"
+        style={{ background: 'color-mix(in srgb, var(--surface) 60%, transparent)' }}
+      >
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+          <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
     </div>
   );
 }
 
-/* ── Modal jar editor ────────────────────────────────────────────── */
+function NewItemModal({ onSave, onClose }: {
+  onSave: (input: { emoji: string; name: string; budget: number; planned: number }) => void;
+  onClose: () => void;
+}) {
+  // Local drafts so the user can type freely without committing half-
+  // typed values to the store (the existing JarEditorModal uses the
+  // same pattern). Escape closes; Enter submits the form.
+  const [emoji, setEmoji] = useState('🛒');
+  const [name, setName] = useState('');
+  const [budgetText, setBudgetText] = useState('');
+  const [plannedText, setPlannedText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  function submit(e?: React.FormEvent) {
+    e?.preventDefault();
+    onSave({
+      emoji,
+      name: name.trim(),
+      budget: clampNonNegative(budgetText),
+      planned: clampNonNegative(plannedText),
+    });
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-item-title"
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+        style={{
+          background: 'var(--overlay)',
+          backdropFilter: 'blur(8px)',
+          animation: 'backdrop-fade-in 180ms ease-out both',
+        }}
+      />
+      <div
+        className="relative rounded-card w-[480px] max-w-full shadow-modal"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-modal), var(--card-inset)',
+          padding: '28px',
+          animation: 'modal-pop-in 180ms ease-out both',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full inline-flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </button>
+
+        <div className="mb-4 pr-8">
+          <h3 id="new-item-title" className="heading h3-modal m-0">Add new item</h3>
+          <div className="text-muted text-[12.5px] mt-1">
+            Pick an icon, name the item, set the budget. You can edit any of these later.
+          </div>
+        </div>
+
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.08em] text-muted font-semibold mb-1.5">Icon</div>
+            <EmojiPicker value={emoji} onChange={setEmoji} />
+          </div>
+          <Field label="Name">
+            <Input
+              ref={inputRef}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Groceries, Rent, Transport…"
+              autoFocus
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Budget (optional)">
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                value={budgetText}
+                onChange={e => setBudgetText(e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Already spent (optional)">
+              <Input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                value={plannedText}
+                onChange={e => setPlannedText(e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" type="submit">Save item</Button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ── Modal item editor ────────────────────────────────────────────── */
 
 function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
   cat: PlanCategory;
@@ -485,7 +645,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 }) {
   const [budgetText, setBudgetText] = useState(String(cat.budget ?? ''));
   const [plannedText, setPlannedText] = useState(String(cat.planned ?? ''));
-  // Re-seed drafts when the modal opens for a different jar.
+  // Re-seed drafts when the modal opens for a different item.
   useEffect(() => {
     setBudgetText(String(cat.budget ?? ''));
     setPlannedText(String(cat.planned ?? ''));
@@ -495,7 +655,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
   const budget = Number(cat.budget) || 0;
   const pct = budget > 0 ? Math.round((planned / budget) * 100) : 0;
   const overflow = budget > 0 && planned > budget;
-  // 3-step category palette (blue / green / red) — same as the jar tile
+  // 3-step category palette (blue / green / red) — same as the card
   // so the mini-preview in the editor matches what the user sees in the
   // grid. Mirrors the Event Planner category cards.
   const status = categoryFillStatus(pct, overflow, budget);
@@ -505,7 +665,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="jar-editor-title"
+      aria-labelledby="item-editor-title"
     >
       <button
         type="button"
@@ -542,7 +702,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 
         <div className="flex items-start justify-between gap-3 mb-2 pr-8">
           <div>
-            <h3 id="jar-editor-title" className="heading h3-modal m-0">
+            <h3 id="item-editor-title" className="heading h3-modal m-0">
               {cat.emoji} {cat.name}
             </h3>
             <div className="text-muted text-[12.5px] mt-1">Set the budget, plan the spend.</div>
@@ -560,37 +720,67 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
           </span>
         </div>
 
-        {/* Mini jar preview — mirrors the tile so the user can confirm
-            the colour ramp matches what they'll see in the grid. */}
+        {/* Mini-preview — mirrors the ring-based card in the grid so
+            the user can confirm the colour ramp matches. Same 68px
+            ring + body layout. The track colour resolves against the
+            card surface so the unfilled portion always reads as a
+            clean ring rather than a "cut" through the gradient. */}
         <div className="my-3 flex justify-center">
           <div
-            className="w-[120px] h-[140px] rounded-[10px_10px_22px_22px] border border-border relative overflow-hidden"
-            style={{ background: 'var(--surface-2)' }}
+            className="w-full max-w-[300px] min-h-[110px] rounded-card border px-4 py-3 flex items-center gap-3"
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
+            }}
           >
             <span
               aria-hidden
-              className="absolute left-0 right-0 bottom-0"
+              className="w-[68px] h-[68px] rounded-full shrink-0 relative"
               style={{
-                top: `${overflow ? 0 : Math.max(0, 100 - pct)}%`,
-                background: `linear-gradient(180deg, ${CATEGORY_FILL[status].soft} 0%, ${CATEGORY_FILL[status].color} 100%)`,
-                opacity: status === 'empty' ? 0 : 1,
+                background: budget > 0
+                  ? `conic-gradient(${CATEGORY_FILL[status].color} 0% ${Math.min(100, pct)}%, color-mix(in srgb, var(--border) 35%, var(--surface-2)) ${Math.min(100, pct)}% 100%)`
+                  : `conic-gradient(color-mix(in srgb, var(--border) 35%, var(--surface-2)) 0% 100%)`,
               }}
-            />
-            <div className="absolute bottom-2 left-2 right-2 flex justify-center">
+            >
+              <span
+                className="w-[56px] h-[56px] rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-[24px] leading-none"
+                style={{ background: 'var(--surface-2)' }}
+              >
+                {cat.emoji}
+              </span>
+            </span>
+            <div className="flex flex-col gap-1.5 min-w-0 flex-1">
               <div
-                className="inline-flex flex-col gap-0.5 px-2 py-1 rounded-pill"
+                className="text-[14px] font-semibold text-ink leading-snug"
                 style={{
-                  background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid color-mix(in srgb, var(--border) 40%, transparent)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word',
                 }}
               >
-                <div className="font-bold text-[13px] tabular text-ink leading-none">{fmtBDT(planned)}</div>
-                <div className="flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-[0.04em] leading-none text-ink">
-                  <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: CATEGORY_FILL[status].color }} />
-                  <span>{overflow ? `${pct}% overflowing` : `${pct}% filled`}</span>
-                </div>
+                {cat.name}
               </div>
+              <div className="font-bold text-[15px] text-ink tabular leading-none">
+                {fmtBDT(planned)}
+              </div>
+              {budget > 0 ? (() => {
+                const f = formatPct(pct, overflow);
+                return (
+                  <div
+                    className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none tabular"
+                    style={{ color: CATEGORY_FILL[status].color }}
+                  >
+                    {f.number} {f.verb}
+                  </div>
+                );
+              })() : (
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] leading-none text-muted">
+                  Tap to set a budget
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -630,7 +820,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 
         {/* Primary action row — only the safe actions. */}
         <div className="flex justify-end gap-2 mt-5">
-          <Button variant="ghost" onClick={onEmpty}>Empty jar</Button>
+          <Button variant="ghost" onClick={onEmpty}>Empty item</Button>
           <Button variant="primary" onClick={onClose}>Save</Button>
         </div>
 
@@ -641,8 +831,8 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
             borderTop: '1px dashed var(--border)',
           }}
         >
-          <span className="text-muted">Done with this jar?</span>
-          <Button variant="ghost" className="text-danger hover:text-danger" onClick={onRemove}>Remove jar</Button>
+          <span className="text-muted">Done with this item?</span>
+          <Button variant="ghost" className="text-danger hover:text-danger" onClick={onRemove}>Remove item</Button>
         </div>
       </div>
     </div>,

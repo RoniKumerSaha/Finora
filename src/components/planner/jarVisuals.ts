@@ -3,6 +3,18 @@
  * the Event Planner categories. Single source for the colour ramp,
  * the percent formatter, and the status pill style so the two
  * planners stay visually consistent.
+ *
+ * Progression ramp (4 stops):
+ *     0–29%  green   — on track, lots of headroom
+ *    30–59%  yellow  — moving along
+ *    60–99%  orange  — nearly full, watch the spend
+ *   ≥100%    red     — overflowing
+ *
+ * This 4-stop fillStatus is what the summary strip / timeline uses.
+ * The category-card palette below has the same thresholds but maps
+ * to the user-visible blue → cyan → green → deep-orange band so the
+ * planner ring reads as a clear progression rather than traffic-light
+ * health.
  */
 import type { CSSProperties } from 'react';
 
@@ -12,8 +24,8 @@ export type FillStatus = 'empty' | 'green' | 'yellow' | 'orange' | 'red';
 export function fillStatus(pct: number, overflow: boolean, budget: number): FillStatus {
   if (budget <= 0) return 'empty';
   if (overflow) return 'red';
-  if (pct >= 80) return 'orange';
-  if (pct >= 50) return 'yellow';
+  if (pct >= 60) return 'orange';
+  if (pct >= 30) return 'yellow';
   return 'green';
 }
 
@@ -28,43 +40,56 @@ export const FILL: Record<FillStatus, { color: string; soft: string; label: stri
 };
 
 /* ─────────────────────────────────────────────────────────────────────
-   Category-card specific palette (Event Planner only)
+   Category-card progression palette (shared by Month Planner jars
+   and Event Planner category cards)
 
-   3-step scheme chosen for the category cards:
-     <80%    → blue  (info)     — still room
-     80–100% → green (success)  — at budget, all good
-     >100%   → red   (danger)   — overflowing
+   4-step scheme drives the ring / fill colour against how full the
+   jar is vs its budget:
+     0–30%    → blue   (info)     — just starting
+     30–60%   → cyan   (cyan)     — making progress
+     60–100%  → green  (success)  — at or near budget, looking good
+     >100%    → deep orange (orange) — overflowing into red zone
 
-   The 4-step jar ramp above (green/yellow/orange/red) is preserved
-   for the Month Planner jars, where a finer gradient helps the user
-   pace themselves across the whole month.
+   The thresholds match user intent at each phase: low-usage items
+   are quiet (blue), mid-range has its own identifiable colour (cyan)
+   so the user can see they're somewhere between "starting" and
+   "almost done", and overflowing swaps to a noticeably warmer hue
+   (deep orange) rather than red so it still reads as "warning" but
+   not as "danger".
+
+   The original 5-step fill ramp (green/yellow/orange/red) below is
+   kept for the summary strip and any caller that wants the broader
+   health gradient — same breakpoints, just more granularity for
+   power data.
    ────────────────────────────────────────────────────────────────────*/
 
-export type CategoryFillStatus = 'empty' | 'blue' | 'green' | 'red';
+export type CategoryFillStatus = 'empty' | 'blue' | 'cyan' | 'green' | 'orange';
 
-/** Category-card palette: 3 steps (blue / green / red). */
+/** Category-card palette: 4 steps (blue / cyan / green / deep-orange). */
 export function categoryFillStatus(pct: number, overflow: boolean, budget: number): CategoryFillStatus {
   if (budget <= 0) return 'empty';
-  if (overflow) return 'red';
-  if (pct >= 80) return 'green';
+  if (overflow) return 'orange';
+  if (pct >= 60) return 'green';
+  if (pct >= 30) return 'cyan';
   return 'blue';
 }
 
 export const CATEGORY_FILL: Record<CategoryFillStatus, { color: string; soft: string; label: string }> = {
-  empty: { color: 'var(--border)',  soft: 'var(--surface-2)',  label: 'No budget set' },
-  blue:  { color: 'var(--info)',    soft: 'var(--info-soft)',  label: 'Under budget' },
-  green: { color: 'var(--success)', soft: 'var(--success-soft)', label: 'At budget' },
-  red:   { color: 'var(--danger)',  soft: 'var(--danger-soft)',  label: 'Overflowing' },
+  empty:  { color: 'var(--border)',  soft: 'var(--surface-2)',   label: 'No budget set' },
+  blue:   { color: 'var(--info)',    soft: 'var(--info-soft)',   label: 'Just starting' },
+  cyan:   { color: 'var(--cyan)',    soft: 'var(--cyan-soft)',   label: 'Making progress' },
+  green:  { color: 'var(--success)', soft: 'var(--success-soft)', label: 'At budget' },
+  orange: { color: 'var(--orange)',  soft: 'var(--orange-soft)', label: 'Overflowing' },
 };
 
-/** Map the existing 4-step FillStatus to the 3-step category scheme.
+/** Map the existing 5-step FillStatus to the 4-step category scheme.
  *  Used by callers that already computed `fillStatus` (e.g. the
  *  timeline, summary strip) and just want a colour. */
 export function categoryFillFromStatus(status: FillStatus): CategoryFillStatus {
   switch (status) {
-    case 'red':    return 'red';
-    case 'orange': return 'green';  // 80–100% maps to green
-    case 'yellow': return 'blue';
+    case 'red':    return 'orange';
+    case 'orange': return 'orange';
+    case 'yellow': return 'cyan';
     case 'green':  return 'blue';
     case 'empty':  return 'empty';
   }

@@ -30,7 +30,7 @@ import type { PlanCategory, PlanItem } from '../domain/types';
 type EventCategory = PlanCategory & { items: PlanItem[]; dueDate?: string };
 
 type MarkKind = 'overdue' | 'due' | 'paid' | 'future' | 'undated' | 'event';
-type CategoryFill = 'empty' | 'blue' | 'green' | 'red';
+type CategoryFill = 'empty' | 'blue' | 'cyan' | 'green' | 'orange';
 interface Mark {
   id: string;
   date: string;          // ISO; '' for undated marks

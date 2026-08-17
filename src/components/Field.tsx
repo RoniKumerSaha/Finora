@@ -19,6 +19,7 @@
  * incrementing. Wheel-over-number-input is a footgun users hit when
  * they scroll past the field without clicking out first.
  */
+import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 const INPUT_BASE =
@@ -51,19 +52,23 @@ export function Field({
   );
 }
 
-/** Text input — refined .modal input shape. */
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  const { className, onWheel, type, ...rest } = props;
-  const blurOnWheel = type === 'number' && !props.disabled;
-  return (
-    <input
-      {...rest}
-      type={type}
-      onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
-      className={[INPUT_BASE, className || ''].join(' ')}
-    />
-  );
-}
+/** Text input — refined .modal input shape. Forwarded ref so callers
+ *  can focus / blur the underlying <input> from outside the component. */
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function Input(props, ref) {
+    const { className, onWheel, type, ...rest } = props;
+    const blurOnWheel = type === 'number' && !props.disabled;
+    return (
+      <input
+        {...rest}
+        ref={ref}
+        type={type}
+        onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
+        className={[INPUT_BASE, className || ''].join(' ')}
+      />
+    );
+  },
+);
 
 /** Large "amount" input — used in add screens (32px font, primary color). */
 export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {

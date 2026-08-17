@@ -40,6 +40,8 @@
   --color-orange-soft: var(--orange-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
+  --color-cyan: var(--cyan);
+  --color-cyan-soft: var(--cyan-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-success-title: var(--success-title);
@@ -123,8 +125,10 @@
   --warn-soft:    rgba(248, 206, 130, 0.38);
   --orange:       #F0AC75;   /* jar-fill ramp step: 80%→100% */
   --orange-soft:  rgba(240, 172, 117, 0.38);
-  --info:         #8FC0EC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
-  --info-soft:    rgba(143, 192, 236, 0.22);
+  --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
+  --info-soft:    rgba(111, 168, 220, 0.22);
+  --cyan:         #4FC6B8;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
+  --cyan-soft:    rgba(79, 198, 184, 0.24);
   --success:      #8DC4A6;
   --success-soft: rgba(141, 196, 166, 0.38);
   --success-title:#9CD6B5;
@@ -143,15 +147,15 @@
      stays readable on every band. Higher opacity than dark mode because
      the cream surface beneath is already light, so the pill needs to
      dominate the band instead of blending with it. */
-  --frost-pill-bg:     rgba(248, 242, 227, 0.97);  /* matches --surface cream */
+  --frost-pill-bg:     rgba(250, 244, 230, 0.97);  /* matches --surface-2 card cream */
   --frost-pill-border: rgba(42, 38, 32, 0.20);
   --frost-pill-shadow: 0 1px 2px rgba(42, 38, 32, 0.10);
   /* Liquid fill needs enough colour to read but not so much that it
      drowns the pill text. Tuned with the cream card surface in mind. */
   --liquid-fill-opacity: 0.48;
   --bg:           #EFE5D0;   /* warm parchment cream (2026-08-14 light-parchment) */
-  --surface:      #F8F2E3;   /* soft cream, lighter than bg (2026-08-14) */
-  --surface-2:    #F0E5CC;   /* warm cream, lockstep with new bg (2026-08-14) */
+  --surface:      #F5ECD9;   /* soft cream — sits between bg and the card surface (2026-08-17) */
+  --surface-2:    #FAF4E6;   /* card surface — lighter than surface, still warm cream, NOT pure white (2026-08-17) */
   --surface-3:    #E0D4B6;   /* deepest cream (2026-08-14) */
   --ink:          #2A2620;
   --muted:        #7A6F5E;
@@ -176,6 +180,8 @@
   --orange-soft:  rgba(158, 74, 24, 0.36);
   --info:         #1F4F84;   /* deep steel-blue, readable on cream (light) */
   --info-soft:    rgba(31, 79, 132, 0.16);
+  --cyan:         #0E7A6E;   /* planner ramp step: 30-60% (light) — deep teal, leans toward green */
+  --cyan-soft:    rgba(14, 122, 110, 0.20);
   --success:      #3F6E55;
   --success-soft: rgba(63, 110, 85, 0.36);
   --success-title:#2E5A44;
