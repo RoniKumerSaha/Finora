@@ -146,6 +146,100 @@ export const PRESET_BUDGET_CARDS: ReadonlyArray<PresetBudgetCard> = [
   { emoji: '🎯', name: 'Goals',       hint: 'Sinking funds & targets' },
 ];
 
+/**
+ * Pre-defined categories for the Event Planner. Unlike the Month
+ * Planner (recurring essentials), events are *occasions* with one-off
+ * line items — weddings, trips, Eid, parties. To stay useful across
+ * all of them we group by *kit* (the user's event archetype) and ship
+ * two extra signals on each card:
+ *
+ *   - `suggestedOffsetDays`: when this typically falls relative to
+ *     the event date (negative = before). The UI seeds `dueDate` =
+ *     `eventDate + suggestedOffsetDays` so the timeline populates
+ *     immediately. The user can override on each card.
+ *
+ *   - `defaultItemLabel`: a one-line seed for the category's first
+ *     line item (e.g. "Deposit", "Tickets"). Amount 0 — the user fills
+ *     it in. Mirrors the 'Main cost' seed that custom categories get.
+ *
+ * The `kit` field is the tab/section key the picker groups by.
+ * 'generic' is always available and acts as a fallback for events
+ * that don't match any of the named kits (project launches, business
+ * trips, etc.). The picker renders a kit selector when more than one
+ * kit applies.
+ */
+export type EventKit = 'wedding' | 'trip' | 'eid' | 'party' | 'generic';
+
+export interface PresetEventCategory {
+  emoji: string;
+  name: string;
+  hint: string;
+  kit: EventKit;
+  /** Days relative to the event date. Negative = before, positive = after. 0 = on the day. */
+  suggestedOffsetDays: number;
+  /** First-line-item label seeded for the category. Empty = no seed (user adds their own). */
+  defaultItemLabel: string;
+}
+
+export const PRESET_EVENT_CATEGORIES: ReadonlyArray<PresetEventCategory> = [
+  // ── Wedding (বিয়ে) ─────────────────────────────────────────────────
+  { emoji: '🏛️', name: 'Venue',          hint: 'Hall / community centre / farm', kit: 'wedding', suggestedOffsetDays: 0,   defaultItemLabel: 'Hall booking' },
+  { emoji: '🍛', name: 'Catering',       hint: 'Per-plate menu + service',     kit: 'wedding', suggestedOffsetDays: -3,  defaultItemLabel: 'Per-plate cost' },
+  { emoji: '📸', name: 'Photography',    hint: 'Photographer + album',         kit: 'wedding', suggestedOffsetDays: -7,  defaultItemLabel: 'Photographer fee' },
+  { emoji: '💐', name: 'Decor',          hint: 'Stage + table decor',          kit: 'wedding', suggestedOffsetDays: -2,  defaultItemLabel: 'Stage decor' },
+  { emoji: '💌', name: 'Invitations',    hint: 'Print + cards + delivery',     kit: 'wedding', suggestedOffsetDays: -14, defaultItemLabel: 'Print cards' },
+  { emoji: '👗', name: 'Outfit',         hint: 'Bride / groom attire',         kit: 'wedding', suggestedOffsetDays: -7,  defaultItemLabel: 'Outfit cost' },
+  { emoji: '💍', name: 'Rings',          hint: 'Engagement + wedding rings',   kit: 'wedding', suggestedOffsetDays: -3,  defaultItemLabel: 'Rings' },
+  { emoji: '🚗', name: 'Transport',      hint: 'Guest cars / microbus',        kit: 'wedding', suggestedOffsetDays: -1,  defaultItemLabel: 'Guest transport' },
+  { emoji: '🎵', name: 'Music & DJ',     hint: 'Sound system + DJ',            kit: 'wedding', suggestedOffsetDays: -2,  defaultItemLabel: 'DJ fee' },
+  { emoji: '🏝️', name: 'Honeymoon',     hint: 'Trip + stay + food',           kit: 'wedding', suggestedOffsetDays: 7,   defaultItemLabel: 'Tickets' },
+
+  // ── Trip ────────────────────────────────────────────────────────────
+  { emoji: '✈️', name: 'Transport',      hint: 'Flights / bus / train',        kit: 'trip', suggestedOffsetDays: -7,  defaultItemLabel: 'Tickets' },
+  { emoji: '🏨', name: 'Stay',           hint: 'Hotel / homestay',             kit: 'trip', suggestedOffsetDays: -3,  defaultItemLabel: 'Hotel / night' },
+  { emoji: '🍔', name: 'Food',           hint: 'Meals + snacks',               kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Daily food' },
+  { emoji: '🎢', name: 'Activities',     hint: 'Tours + entry fees',           kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Entry tickets' },
+  { emoji: '🛍️', name: 'Shopping',      hint: 'Souvenirs + gifts',            kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Souvenirs' },
+  { emoji: '📱', name: 'SIM / Data',     hint: 'Local SIM + roaming',          kit: 'trip', suggestedOffsetDays: -2,  defaultItemLabel: 'SIM card' },
+  { emoji: '🛡️', name: 'Insurance',     hint: 'Travel insurance',             kit: 'trip', suggestedOffsetDays: -3,  defaultItemLabel: 'Premium' },
+  { emoji: '🎒', name: 'Gear',           hint: 'Backpack / clothes',           kit: 'trip', suggestedOffsetDays: -7,  defaultItemLabel: 'Backpack' },
+
+  // ── Eid ─────────────────────────────────────────────────────────────
+  { emoji: '👕', name: 'Outfit',         hint: 'New clothes for Eid',          kit: 'eid', suggestedOffsetDays: -3,  defaultItemLabel: 'Outfit' },
+  { emoji: '💵', name: 'Eidi',           hint: 'Cash gifts for kids / family', kit: 'eid', suggestedOffsetDays: 0,   defaultItemLabel: 'Eidi budget' },
+  { emoji: '🍛', name: 'Food',           hint: 'Special Eid dishes',           kit: 'eid', suggestedOffsetDays: 0,   defaultItemLabel: 'Ingredients' },
+  { emoji: '🕌', name: 'Charity',        hint: 'Zakat + sadaqah',              kit: 'eid', suggestedOffsetDays: -2,  defaultItemLabel: 'Zakat' },
+  { emoji: '🎀', name: 'Décor',          hint: 'Home decor + lights',          kit: 'eid', suggestedOffsetDays: -1,  defaultItemLabel: 'Decor' },
+  { emoji: '🚗', name: 'Travel Home',    hint: 'Bus / train / plane home',     kit: 'eid', suggestedOffsetDays: -2,  defaultItemLabel: 'Tickets' },
+
+  // ── Party / Birthday ────────────────────────────────────────────────
+  { emoji: '🏛️', name: 'Venue',          hint: 'Hall / rooftop / home',        kit: 'party', suggestedOffsetDays: -3,  defaultItemLabel: 'Booking' },
+  { emoji: '🎂', name: 'Cake',           hint: 'Cake + sweets',                kit: 'party', suggestedOffsetDays: -2,  defaultItemLabel: 'Cake' },
+  { emoji: '🎀', name: 'Decor',          hint: 'Balloons + banners',           kit: 'party', suggestedOffsetDays: -1,  defaultItemLabel: 'Decor kit' },
+  { emoji: '🍕', name: 'Food',           hint: 'Catering / snacks',            kit: 'party', suggestedOffsetDays: -1,  defaultItemLabel: 'Per-plate' },
+  { emoji: '🎵', name: 'Music',          hint: 'Speaker + playlist',           kit: 'party', suggestedOffsetDays: -1,  defaultItemLabel: 'Speaker rental' },
+  { emoji: '💌', name: 'Invitations',    hint: 'WhatsApp / cards',             kit: 'party', suggestedOffsetDays: -7,  defaultItemLabel: 'Cards' },
+  { emoji: '🎁', name: 'Gifts',          hint: 'For the host / guests',        kit: 'party', suggestedOffsetDays: 0,   defaultItemLabel: 'Gifts' },
+
+  // ── Generic (always available, no archetype required) ───────────────
+  { emoji: '🏛️', name: 'Venue',          hint: 'Place + booking',              kit: 'generic', suggestedOffsetDays: -3,  defaultItemLabel: 'Booking' },
+  { emoji: '🍔', name: 'Food',           hint: 'Meals + catering',             kit: 'generic', suggestedOffsetDays: 0,   defaultItemLabel: 'Per-plate' },
+  { emoji: '🚗', name: 'Transport',      hint: 'Tickets + rides',              kit: 'generic', suggestedOffsetDays: -1,  defaultItemLabel: 'Tickets' },
+  { emoji: '🏨', name: 'Stay',           hint: 'Hotel / lodging',              kit: 'generic', suggestedOffsetDays: -1,  defaultItemLabel: 'Hotel' },
+  { emoji: '🎀', name: 'Decor',          hint: 'Decor + setup',                kit: 'generic', suggestedOffsetDays: -1,  defaultItemLabel: 'Decor' },
+  { emoji: '🎁', name: 'Gifts',          hint: 'Gifts + souvenirs',            kit: 'generic', suggestedOffsetDays: 0,   defaultItemLabel: 'Gifts' },
+  { emoji: '➕', name: 'Other',          hint: 'Anything else',                kit: 'generic', suggestedOffsetDays: 0,   defaultItemLabel: 'Main cost' },
+];
+
+/** Friendly kit labels for the picker UI. */
+export const EVENT_KIT_LABELS: Record<EventKit, string> = {
+  wedding: 'Wedding',
+  trip: 'Trip',
+  eid: 'Eid',
+  party: 'Party',
+  generic: 'Generic',
+};
+
 /** Returns an emoji for a category name. Falls back to �. */
 export function emojiForCategory(name: string): string {
   const key = name.trim().toLowerCase();

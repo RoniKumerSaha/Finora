@@ -22,6 +22,7 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
+import { PresetEventCategories } from '../components/planner/PresetEventCategories';
 import { formatPct, pctOf, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
 import { uid } from '../domain/ids';
@@ -424,6 +425,14 @@ export function EventPlanDetailScreen() {
         />
 
         <div className="flex flex-col gap-3">
+          {/* Preset categories panel — kit-aware starter library. Sits
+              at the top of the column so it's the first affordance the
+              user sees for "what should I add to this event?". Auto-
+              collapses once categories exist; user re-opens with
+              "Browse presets". Dates are seeded relative to the event
+              date so the timeline populates immediately. */}
+          <PresetEventCategories plan={plan} />
+
           {plan.categories.map(c => (
             <CategoryCard
               key={c.id}
@@ -453,7 +462,7 @@ export function EventPlanDetailScreen() {
       </div>
 
       <div className="text-xs text-muted text-center">
-        ⓘ Tap a category card to edit it in a pop-up. Save the whole event plan from <b className="text-ink">Save plan</b>.
+        ⓘ Tap a category card to edit it in a pop-up. Use <b className="text-ink">Browse presets</b> above to drop in starter categories. Save the whole event plan from <b className="text-ink">Save plan</b>.
       </div>
 
       {selectedCat && (
@@ -873,21 +882,40 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
               Budget · spent (sum of line items) · due date.
             </div>
           </div>
-          <span
-            className="text-[8px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill whitespace-nowrap inline-flex items-center gap-1 border"
-            style={{
-              borderColor: CATEGORY_FILL[status].color,
-              color: CATEGORY_FILL[status].color,
-            }}
-          >
-            <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: CATEGORY_FILL[status].color }} />
-            <span>
-              {budget > 0 ? (() => {
-                const f = formatPct(pct, overflow);
-                return `${f.number} ${f.verb}`;
-              })() : 'No budget'}
-            </span>
-          </span>
+          {(() => {
+            // The header status pill has TWO modes — percentage states
+            // (blue/cyan/green/orange) and the explicit "No budget"
+            // state. Originally both used CATEGORY_FILL[status].color
+            // for border + text + dot, but the no-budget case collapsed
+            // everything to `var(--border)` which is so quiet in dark
+            // mode that the pill read as blank space. Give "No budget"
+            // its own treatment: muted ink on a translucent surface with
+            // a neutral dot, so it reads as "missing data, not at zero".
+            const isBudgetZero = budget <= 0;
+            const pillColor = isBudgetZero ? 'var(--muted)' : CATEGORY_FILL[status].color;
+            const pillText = isBudgetZero
+              ? 'No budget'
+              : (() => {
+                  const f = formatPct(pct, overflow);
+                  return `${f.number} ${f.verb}`;
+                })();
+            return (
+              <span
+                className={[
+                  'text-[10px] font-bold uppercase tracking-[0.06em] px-2 py-[3px] rounded-pill whitespace-nowrap inline-flex items-center gap-1.5 border',
+                  isBudgetZero ? 'bg-surface-2/60' : '',
+                ].join(' ')}
+                style={{
+                  borderColor: pillColor,
+                  color: pillColor,
+                }}
+                title={isBudgetZero ? 'Set a category budget to track spending %' : CATEGORY_FILL[status].label}
+              >
+                <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: pillColor }} />
+                <span>{pillText}</span>
+              </span>
+            );
+          })()}
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -897,7 +925,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
               inputMode="decimal"
               min={0}
               value={budgetText}
-              placeholder="0"
+              placeholder="Enter budget"
               onChange={e => {
                 const raw = e.target.value;
                 setBudgetText(raw);
@@ -933,8 +961,14 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
             <h3 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Line items</h3>
             <div className="text-[11.5px] text-muted">{paid} of {cat.items.length} done</div>
           </div>
+          {/* Empty-amount hint banner. Originally fired only for the
+              "Main cost" seed from custom-category creation, but the
+              Event Planner now seeds preset categories with their own
+              defaultItemLabel too ("Entry tickets", "Per-plate cost", …
+              all start at amount 0). Widen the trigger so any single
+              untouched line item gets the prompt — the user has no
+              other way to discover that the amount field is editable. */}
           {cat.items.length === 1
-            && cat.items[0].label === 'Main cost'
             && cat.items[0].amount === 0
             && !cat.items[0].done && (
             <div className="text-[12px] text-muted mb-2 flex items-center gap-2">
@@ -947,14 +981,18 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
             </div>
           )}
           <div className="flex flex-col">
-            {cat.items.map((it, idx) => {
-              // The auto-seeded "Main cost" line is the user's invitation
-              // to set the category's primary amount. Detect it by
-              // signature so we can flag it visually without storing an
-              // extra field on the data model.
-              const isSeeded = idx === 0 && it.label === 'Main cost' && it.amount === 0 && !it.done;
+            {cat.items.map((it) => {
+              // An amount of 0 with !done marks a row the user hasn't
+              // filled in yet — show the "Set cost" placeholder so they
+              // know the field is editable. Originally this fired only
+              // for the literal "Main cost" label, but the Event
+              // Planner now seeds categories with preset-specific labels
+              // ("Entry tickets", "Per-plate cost", …) that are also
+              // untouched. Use amount/done as the signal so it works for
+              // every empty row, not just the first one.
+              const isSeeded = it.amount === 0 && !it.done;
               return (
-                <div key={it.id} className="grid grid-cols-[20px_1fr_100px_28px] gap-2 items-center py-2 border-t border-border">
+                <div key={it.id} className="grid grid-cols-[20px_1fr_100px_36px] gap-2 items-center py-2 border-t border-border">
                   <input
                     type="checkbox"
                     checked={it.done}
@@ -964,6 +1002,10 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                   <input
                     value={it.label}
                     onChange={e => onUpdateItem(it.id, { label: e.target.value })}
+                    // text-sm matches the composer's label input so
+                    // both rows read at the same size — without it,
+                    // the row label inherits the Field default and
+                    // reads visually bigger than "Add a line —" below.
                     className={[
                       'bg-transparent border-0 py-1 text-sm focus:outline-none focus:text-primary',
                       it.done ? 'text-muted line-through' : 'text-ink',
@@ -971,22 +1013,33 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                     style={{ textDecorationColor: 'var(--border)' }}
                   />
                   <LineItemAmount value={it.amount} onChange={n => onUpdateItem(it.id, { amount: n })} emptyHint={isSeeded} />
+                  {/* Remove row — proper icon button (not a bare × glyph)
+                      so the affordance reads as actionable, with a soft
+                      danger hover bg instead of just a colour swap.
+                      Track widened from 28px to 36px to fit the surface
+                      and visually match the + button on the composer
+                      row below. */}
                   <button
                     type="button"
                     onClick={() => onRemoveItem(it.id)}
-                    className="text-muted hover:text-danger text-sm transition"
-                    aria-label="Remove line item"
-                  >×</button>
+                    title={`Remove “${it.label || 'this line'}”`}
+                    aria-label={`Remove line item ${it.label || ''}`}
+                    className="w-9 h-9 rounded-full inline-flex items-center justify-center text-muted hover:text-danger hover:bg-danger/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/30"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+                      <path d="M4 4 L12 12 M12 4 L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
                 </div>
               );
             })}
-            <div className="grid grid-cols-[20px_1fr_100px_auto] gap-2 items-center py-2 border-t border-border">
+            <div className="grid grid-cols-[20px_1fr_100px_36px] gap-2 items-center py-2 border-t border-border">
               <div />
               <input
                 value={newLabel}
                 onChange={e => setNewLabel(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
-                placeholder="Add a line — e.g. Friday dinner"
+                placeholder="Add a line — e.g. Deposit, Tickets"
                 className="bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary"
               />
               <input
@@ -997,23 +1050,39 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 onChange={e => setNewAmount(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
                 placeholder="Amount"
-                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary tabular"
+                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:italic placeholder:opacity-70 focus:outline-none focus:text-ink focus:border-primary tabular"
               />
               <button
                 type="button"
                 onClick={commitNewItem}
                 disabled={!newLabel.trim()}
-                // Solid success-green fill so the white tick always
-                // reads on light cream. Disabled state keeps the fill
-                // visible at lower opacity rather than fading the whole
-                // button into the background (which was the bug —
-                // disabled:opacity-30 made the white-on-cream invisible).
-                className="w-8 h-8 rounded-full inline-flex items-center justify-center bg-success text-white shadow-sm hover:opacity-90 transition disabled:bg-success/40 disabled:cursor-not-allowed disabled:hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/30"
+                // Minimalist commit control — a hairline tick icon that
+                // sits in line with the row. Same 36×36 footprint as
+                // the per-row remove (×) button so the two controls
+                // read as a matched pair. At rest it's a muted
+                // outline (no fill, no border, no shadow); on hover
+                // /focus the colour steps to primary so the affordance
+                // becomes findable, but it never grows or fills.
+                // Disabled keeps the muted tone — the icon stays
+                // visible, just clearly inactive.
+                className="w-9 h-9 inline-flex items-center justify-center rounded-sm text-muted hover:text-primary active:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted focus-visible:outline-none focus-visible:text-primary"
                 aria-label="Add line item"
                 title="Add line item (Enter)"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M3.5 8.5 L6.5 11.5 L12.5 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M4 8.5 L7 11.5 L13 5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -1045,13 +1114,19 @@ function LineItemAmount({
   value,
   onChange,
   emptyHint,
+  placeholderText = 'Enter cost',
 }: {
   value: number;
   onChange: (n: number) => void;
-  /** True for the auto-seeded "Main cost" line that hasn't been filled
-   *  in yet — switches the field to a placeholder-driven style so it
-   *  reads as "tap to set" instead of "this costs 0". */
+  /** True for the auto-seeded line that hasn't been filled in yet —
+   *  switches the field to a placeholder-driven style so it reads as
+   *  "tap to set" instead of "this costs 0". */
   emptyHint?: boolean;
+  /** Custom placeholder for the empty-state. Default "Enter cost".
+   *  Italicised + weight-reduced via the `placeholder:italic
+   *  placeholder:font-normal` classes below so it can never be read
+   *  as a static row label. */
+  placeholderText?: string;
 }) {
   // The field has two responsibilities: stay editable (so the user can
   // backspace without the value snapping back) and stay committed
@@ -1107,11 +1182,22 @@ function LineItemAmount({
         // if a keystroke raced the blur.
         if (clampNonNegative(draft) !== lastCommitted) commit(draft);
       }}
-      placeholder={emptyHint ? 'Set cost' : undefined}
+      placeholder={emptyHint ? placeholderText : undefined}
+      // Placeholder styling MUST be visibly different from a real
+      // value or users will read it as static row content. Italic +
+      // reduced font-weight + lower opacity is enough to break the
+      // visual equivalence and read as "instruction" not "data".
+      // `text-sm` (14px) matches the new-line composer's amount input
+      // exactly — without it, the LineItemAmount inherits the Field's
+      // default 16px and the seeded "Enter cost" placeholder reads
+      // visually larger than the composer row's "Amount" beside it,
+      // making the column feel uneven.
       className={[
         'text-right bg-transparent border-0 py-1 text-sm font-semibold tabular focus:outline-none focus:text-primary',
+        'placeholder:italic placeholder:font-normal placeholder:opacity-70',
         showPlaceholder ? 'text-muted placeholder:text-muted' : '',
       ].join(' ')}
+      title={emptyHint ? 'Tap to enter the cost' : undefined}
     />
   );
 }

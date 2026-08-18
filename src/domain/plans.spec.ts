@@ -11,6 +11,7 @@ import {
   batchUpdateMonthCategoryBudget,
   batchUpdateMonthCategoryBudgetMap,
   ensureMonthPlan,
+  addEventCategories,
 } from './plans';
 import { DEFAULT_STATE } from './persistence';
 import type { State } from './types';
@@ -231,5 +232,138 @@ describe('batchUpdateMonthCategoryBudgetMap', () => {
       b: 5000,  // already 5000 — no change
     });
     expect(next).toBe(state);
+  });
+});
+
+/* ── Event planner batch helper (predefined kits) ───────────────── */
+
+function makeEventStateWithCats(): State {
+  // Single existing category ("Venue") so we can assert append-not-
+  // replace and duplicate-name suffixing without rebuilding the world.
+  return {
+    ...DEFAULT_STATE,
+    eventPlans: [
+      {
+        id: 'evt-1',
+        name: 'Test event',
+        emoji: '🎉',
+        eventDate: '2026-08-20',
+        budget: 100000,
+        planned: 0,
+        categories: [
+          {
+            id: 'venue-1',
+            name: 'Venue',
+            emoji: '🏛️',
+            dueDate: '2026-08-20',
+            budget: 30000,
+            planned: 0,
+            tone: 'primary',
+            items: [],
+          },
+        ],
+        dirty: false,
+        savedAt: '2026-08-17',
+      },
+    ],
+  };
+}
+
+describe('addEventCategories', () => {
+  // Bare event used by the "fresh plan" tests — no categories, no
+  // helper-only assumptions. addEventCategories doesn't auto-create
+  // the event; the caller does.
+  const bareEvent: State = {
+    ...DEFAULT_STATE,
+    eventPlans: [{
+      id: 'evt-fresh',
+      name: 'Fresh event',
+      emoji: '🎉',
+      eventDate: '2026-08-20',
+      budget: 0,
+      planned: 0,
+      categories: [],
+      dirty: false,
+      savedAt: null,
+    }],
+  };
+
+  it('adds multiple categories in a single write with budget 0', () => {
+    const next = addEventCategories(bareEvent, 'evt-fresh', [
+      { emoji: '🍛', name: 'Catering',   dueDate: '2026-08-17' },
+      { emoji: '📸', name: 'Photography',dueDate: '2026-08-13' },
+      { emoji: '💐', name: 'Decor',      dueDate: '2026-08-18' },
+    ]);
+    const plan = next.eventPlans.find(p => p.id === 'evt-fresh')!;
+    expect(plan).toBeDefined();
+    expect(plan.categories).toHaveLength(3);
+    expect(plan.categories.map(c => c.name)).toEqual(['Catering', 'Photography', 'Decor']);
+    expect(plan.categories.every(c => c.budget === 0)).toBe(true);
+    // dueDate is preserved verbatim on every added category.
+    expect(plan.categories[0].dueDate).toBe('2026-08-17');
+  });
+
+  it('seeds one default line item when defaultItemLabel is provided', () => {
+    const next = addEventCategories(bareEvent, 'evt-fresh', [
+      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17', defaultItemLabel: 'Per-plate cost' },
+    ]);
+    const cat = next.eventPlans[0].categories[0];
+    expect(cat.items).toHaveLength(1);
+    expect(cat.items[0].label).toBe('Per-plate cost');
+    expect(cat.items[0].amount).toBe(0);
+    expect(cat.items[0].done).toBe(false);
+    // Each line item has a generated id so the UI can edit/remove it.
+    expect(cat.items[0].id).toBeTruthy();
+  });
+
+  it('leaves items empty when no defaultItemLabel is provided', () => {
+    const next = addEventCategories(bareEvent, 'evt-fresh', [
+      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
+    ]);
+    expect(next.eventPlans[0].categories[0].items).toEqual([]);
+  });
+
+  it('appends rather than replaces existing categories', () => {
+    const state = makeEventStateWithCats();
+    const next = addEventCategories(state, 'evt-1', [
+      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
+    ]);
+    expect(next.eventPlans[0].categories).toHaveLength(2);
+    expect(next.eventPlans[0].categories[0].id).toBe('venue-1'); // original survives
+    expect(next.eventPlans[0].categories[1].name).toBe('Catering');
+  });
+
+  it('renames duplicate names with a numeric suffix', () => {
+    const state = makeEventStateWithCats();
+    const next = addEventCategories(state, 'evt-1', [
+      { emoji: '🏛️', name: 'Venue', dueDate: '2026-08-15' },
+      { emoji: '🏛️', name: 'Venue', dueDate: '2026-08-16' },
+    ]);
+    expect(next.eventPlans[0].categories.map(c => c.name)).toEqual(['Venue', 'Venue (2)', 'Venue (3)']);
+  });
+
+  it('is a no-op when the input list is empty', () => {
+    const state = makeEventStateWithCats();
+    const next = addEventCategories(state, 'evt-1', []);
+    expect(next).toBe(state);
+  });
+
+  it('is a no-op when the event id does not exist', () => {
+    const state = makeEventStateWithCats();
+    const next = addEventCategories(state, 'evt-nope', [
+      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
+    ]);
+    expect(next).toBe(state);
+  });
+
+  it('marks the plan dirty after a successful add', () => {
+    const state = { ...DEFAULT_STATE, eventPlans: [{
+      ...makeEventStateWithCats().eventPlans[0],
+      dirty: false,
+    }] };
+    const next = addEventCategories(state, 'evt-1', [
+      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
+    ]);
+    expect(next.eventPlans[0].dirty).toBe(true);
   });
 });

@@ -370,6 +370,61 @@ export function addEventCategory(
   });
 }
 
+/**
+ * Add multiple event categories in a single store write. Mirrors
+ * `addMonthCategories` — used by the Event Planner's "add all
+ * preset cards" affordance so a tap on Add all is one write, not N.
+ *
+ * Each input carries an optional `dueDate` (already computed by the
+ * caller from `eventDate + suggestedOffsetDays`) and an optional
+ * `defaultItemLabel` (the preset's first-line-item seed). Duplicate
+ * names are suffixed with " (n)" so the user's prior data is never
+ * overwritten.
+ */
+export function addEventCategories(
+  state: State,
+  id: string,
+  cats: ReadonlyArray<{
+    emoji: string;
+    name: string;
+    budget?: number;
+    planned?: number;
+    dueDate?: ISODate;
+    defaultItemLabel?: string;
+  }>,
+): State {
+  if (cats.length === 0) return state;
+  const plan = getEventPlan(state, id);
+  if (!plan) return state;
+  const existingNames = new Set(plan.categories.map(c => c.name.toLowerCase()));
+  const additions: EventPlan['categories'] = [];
+  for (const base of cats) {
+    let name = base.name;
+    let suffix = 2;
+    while (existingNames.has(name.toLowerCase())) {
+      name = `${base.name} (${suffix++})`;
+    }
+    existingNames.add(name.toLowerCase());
+    const tone = plans_TONE_AT(plan.categories.length + additions.length);
+    const items: PlanItem[] = base.defaultItemLabel && base.defaultItemLabel.trim()
+      ? [{ id: uid(), label: base.defaultItemLabel.trim(), amount: 0, done: false }]
+      : [];
+    additions.push({
+      id: uid(),
+      emoji: base.emoji,
+      name,
+      budget: base.budget ?? 0,
+      planned: base.planned ?? 0,
+      dueDate: base.dueDate,
+      tone,
+      items,
+    });
+  }
+  return updateEventPlan(state, id, {
+    categories: [...plan.categories, ...additions],
+  });
+}
+
 export function updateEventCategory(
   state: State,
   id: string,

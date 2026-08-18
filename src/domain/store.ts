@@ -59,6 +59,7 @@ interface Store {
   resetEventPlan: (id: string) => void;
   removeEventPlan: (id: string) => void;
   addEventCategory: (id: string, cat: Parameters<typeof plans.addEventCategory>[2], initialItems?: Parameters<typeof plans.addEventCategory>[3]) => void;
+  addEventCategories: (id: string, cats: Parameters<typeof plans.addEventCategories>[2]) => void;
   updateEventCategory: (id: string, catId: string, patch: Parameters<typeof plans.updateEventCategory>[3]) => void;
   removeEventCategory: (id: string, catId: string) => void;
   addEventItem: (id: string, catId: string, item: Parameters<typeof plans.addEventItem>[3]) => void;
@@ -152,6 +153,7 @@ export const useStore = create<Store>((set, get) => ({
   resetEventPlan: (id) => runPlan(get, s => plans.resetEventPlan(s, id)),
   removeEventPlan: (id) => runPlan(get, s => plans.removeEventPlan(s, id)),
   addEventCategory: (id, cat, initialItems) => runPlan(get, s => plans.addEventCategory(s, id, cat, initialItems)),
+  addEventCategories: (id, cats) => runPlan(get, s => plans.addEventCategories(s, id, cats)),
   updateEventCategory: (id, catId, patch) => runPlan(get, s => plans.updateEventCategory(s, id, catId, patch)),
   removeEventCategory: (id, catId) => runPlan(get, s => plans.removeEventCategory(s, id, catId)),
   addEventItem: (id, catId, item) => runPlan(get, s => plans.addEventItem(s, id, catId, item)),
