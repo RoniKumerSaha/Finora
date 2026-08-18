@@ -62,6 +62,7 @@ export const CATEGORY_EMOJI_LIBRARY: ReadonlyArray<{ emoji: string; label: strin
   // ── Family & health ────────────────────────────────────────────────
   { emoji: '💊', label: 'Health',      aliases: ['health', 'healthcare', 'medical', 'medicine', 'pharmacy'] },
   { emoji: '🏥', label: 'Hospital',    aliases: ['hospital', 'doctor', 'clinic'] },
+  { emoji: '💳', label: 'EMI',         aliases: ['emi', 'loan', 'installment', 'installments', 'monthly installment'] },
   { emoji: '🎓', label: 'Education',   aliases: ['education', 'school', 'tuition', 'college', 'university', 'books'] },
   { emoji: '📚', label: 'Books',       aliases: ['books', 'supplies', 'stationery'] },
   { emoji: '👶', label: 'Kids',        aliases: ['kids', 'children', 'baby', 'daycare'] },
@@ -128,7 +129,7 @@ export const PRESET_BUDGET_CARDS: ReadonlyArray<PresetBudgetCard> = [
   { emoji: '💡', name: 'Utilities',   hint: 'Electricity, gas, water, internet' },
   { emoji: '🚗', name: 'Transport',   hint: 'Bus, CNG, fuel, ride share' },
   { emoji: '🍔', name: 'Food',        hint: 'Meals, tiffin, snacks' },
-  { emoji: '☕', name: 'Café',        hint: 'Coffee, tea, eating out' },
+  { emoji: '💳', name: 'EMI',         hint: 'Loan installments (car, appliance, personal)' },
   { emoji: '📱', name: 'Phone',       hint: 'Recharge, mobile data' },
   { emoji: '💊', name: 'Health',      hint: 'Medicine, doctor visits' },
   { emoji: '🎓', name: 'Education',   hint: 'Tuition, books, supplies' },
