@@ -46,8 +46,11 @@ interface Store {
   saveMonthPlan: (key: string) => void;
   resetMonthPlan: (key: string) => void;
   addMonthCategory: (key: string, cat: Parameters<typeof plans.addMonthCategory>[2]) => void;
+  addMonthCategories: (key: string, cats: Parameters<typeof plans.addMonthCategories>[2]) => void;
   updateMonthCategory: (key: string, id: string, patch: Parameters<typeof plans.updateMonthCategory>[3]) => void;
   removeMonthCategory: (key: string, id: string) => void;
+  batchUpdateMonthCategoryBudget: (key: string, ids: string[], budget: number) => void;
+  batchUpdateMonthCategoryBudgetMap: (key: string, budgetMap: Record<string, number>) => void;
 
   // ── Plan: Event Planner (PRD §9.15) ──────────────────────────────
   addEventPlan: (input: Parameters<typeof plans.addEventPlan>[1]) => string;
@@ -131,8 +134,11 @@ export const useStore = create<Store>((set, get) => ({
   saveMonthPlan: (key) => runPlan(get, s => plans.saveMonthPlan(s, key)),
   resetMonthPlan: (key) => runPlan(get, s => plans.resetMonthPlan(s, key)),
   addMonthCategory: (key, cat) => runPlan(get, s => plans.addMonthCategory(s, key, cat)),
+  addMonthCategories: (key, cats) => runPlan(get, s => plans.addMonthCategories(s, key, cats)),
   updateMonthCategory: (key, id, patch) => runPlan(get, s => plans.updateMonthCategory(s, key, id, patch)),
   removeMonthCategory: (key, id) => runPlan(get, s => plans.removeMonthCategory(s, key, id)),
+  batchUpdateMonthCategoryBudget: (key, ids, budget) => runPlan(get, s => plans.batchUpdateMonthCategoryBudget(s, key, ids, budget)),
+  batchUpdateMonthCategoryBudgetMap: (key, budgetMap) => runPlan(get, s => plans.batchUpdateMonthCategoryBudgetMap(s, key, budgetMap)),
 
   // ── Event Planner ────────────────────────────────────────────────
   addEventPlan: (input) => {

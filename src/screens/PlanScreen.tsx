@@ -54,7 +54,7 @@ export function PlanScreen() {
 
           {/* Description */}
           <p className="text-sm text-muted leading-relaxed">
-            Fill items by category. Save the plan, reset when you want a fresh start — no history kept.
+            Fill items by category — or start from a typical set (rent, groceries, utilities, …) and edit the budgets. Save the plan, reset when you want a fresh start — no history kept.
           </p>
 
           {/* Items list — up to 5 mini-rows showing emoji + name +

@@ -152,6 +152,106 @@ export function removeMonthCategory(state: State, key: string, id: string): Stat
   });
 }
 
+/**
+ * Batch-set the budget on every PlanCategory whose id appears in `ids`.
+ * Categories not in the list are left untouched. Used by the
+ * "batch update budget" affordance on /plan/month — a single store
+ * write replaces N per-card edits so the dirty flag only flips once
+ * and the user can save / undo in one step.
+ *
+ * Silently no-ops on unknown ids so a stale selection (e.g. a card
+ * removed while the picker was open) doesn't throw.
+ */
+export function batchUpdateMonthCategoryBudget(
+  state: State,
+  key: string,
+  ids: string[],
+  budget: number,
+): State {
+  if (ids.length === 0) return state;
+  const plan = ensureMonthPlan(state, key);
+  const idSet = new Set(ids);
+  let touched = false;
+  const nextCats = plan.categories.map(c => {
+    if (!idSet.has(c.id)) return c;
+    if (Number(c.budget) === budget) return c;
+    touched = true;
+    return { ...c, budget };
+  });
+  if (!touched) return state;
+  return patchMonthPlan(state, key, { categories: nextCats });
+}
+
+/**
+ * Batch-set the budget on every PlanCategory using a per-id map.
+ * Used by the percent-mode batch editor where each card's bump is
+ * based on its own current value. Single store write — dirty flag
+ * flips once. Unknown ids are silently skipped.
+ */
+export function batchUpdateMonthCategoryBudgetMap(
+  state: State,
+  key: string,
+  budgetMap: Record<string, number>,
+): State {
+  const ids = Object.keys(budgetMap);
+  if (ids.length === 0) return state;
+  const plan = ensureMonthPlan(state, key);
+  let touched = false;
+  const nextCats = plan.categories.map(c => {
+    const next = budgetMap[c.id];
+    if (next === undefined) return c;
+    if (Number(c.budget) === next) return c;
+    touched = true;
+    return { ...c, budget: next };
+  });
+  if (!touched) return state;
+  return patchMonthPlan(state, key, { categories: nextCats });
+}
+
+/**
+ * Add multiple categories in a single store write. Used by the
+ * "add all preset cards" affordance on /plan/month. Each preset card
+ * starts with budget 0 so the user can quickly edit and use for
+ * planning. Idempotent on name collisions — duplicate names are
+ * appended with " (n)" so the user doesn't lose any prior data.
+ */
+export function addMonthCategories(
+  state: State,
+  key: string,
+  cats: ReadonlyArray<Omit<PlanCategory, 'id'>>,
+): State {
+  if (cats.length === 0) return state;
+  const plan = ensureMonthPlan(state, key);
+  const existingNames = new Set(plan.categories.map(c => c.name.toLowerCase()));
+  const additions: PlanCategory[] = [];
+  for (let i = 0; i < cats.length; i++) {
+    const base = cats[i];
+    let name = base.name;
+    let suffix = 2;
+    while (existingNames.has(name.toLowerCase())) {
+      name = `${base.name} (${suffix++})`;
+    }
+    existingNames.add(name.toLowerCase());
+    const tone = plans_TONE_AT(plan.categories.length + additions.length);
+    additions.push({
+      id: uid(),
+      emoji: base.emoji,
+      name,
+      budget: base.budget,
+      planned: base.planned,
+      tone,
+    });
+  }
+  return patchMonthPlan(state, key, {
+    categories: [...plan.categories, ...additions],
+  });
+}
+
+/** Tone picker that wraps when we run out of palette slots. */
+function plans_TONE_AT(idx: number): NonNullable<PlanCategory['tone']> {
+  return PLAN_TONES[idx % PLAN_TONES.length];
+}
+
 /* ─────────────────────────────────────────────────────────────────────
    Event Planner
    ──────────────────────────────────────────────────────────────────────*/

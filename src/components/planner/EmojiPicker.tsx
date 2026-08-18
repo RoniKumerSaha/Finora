@@ -2,15 +2,12 @@
  * EmojiPicker — small grid picker shared by the Month Planner jars and
  * the Event Planner categories. Click the icon button to toggle; click
  * an emoji to commit and close.
+ *
+ * Backed by `CATEGORY_EMOJI_LIBRARY` so the picker stays in sync with
+ * the pre-defined budget cards on the Month Planner.
  */
 import { useState } from 'react';
-
-const PICKER = [
-  '🛒','🥦','🍞','🥩','🍎','🥛','🍳','🌶️','🍱','🧀','🥗','🍕',
-  '🚗','🚌','⛽','🚕','🛵','✈️','🏨','🛍️','🎁','💡','📱','🎮',
-  '🐷','💰','🎯','💊','📚','🎵','🏋️','🐾','☕',
-  '💍','🕌','🎓','🏠','🎉','🎂','🏖️','🌴','🍽️','📸','🪑','💄',
-];
+import { CATEGORY_EMOJI_LIBRARY } from '../../lib/categoryEmoji';
 
 export function EmojiPicker({
   value,
@@ -23,7 +20,7 @@ export function EmojiPicker({
 }) {
   const [open, setOpen] = useState(false);
   const trigger = compact ? 'w-9 h-9 text-xl' : 'w-12 h-12 text-2xl';
-  const panel = compact ? 'w-[224px] grid-cols-7' : 'w-[256px] grid-cols-8';
+  const panel = compact ? 'w-[224px] grid-cols-7' : 'w-[320px] grid-cols-8';
   const tile = compact ? 'w-7 h-7 text-base' : 'w-8 h-8 text-lg';
   return (
     <div className="relative inline-block">
@@ -35,17 +32,19 @@ export function EmojiPicker({
       >{value}</button>
       {open && (
         <div className={`absolute left-0 top-full mt-1.5 z-10 bg-surface border border-border rounded-btn p-1.5 grid gap-1 shadow-lg ${panel}`}>
-          {PICKER.map(em => (
+          {CATEGORY_EMOJI_LIBRARY.map(({ emoji, label }) => (
             <button
-              key={em}
+              key={emoji}
               type="button"
-              onClick={() => { onChange(em); setOpen(false); }}
+              title={label}
+              aria-label={label}
+              onClick={() => { onChange(emoji); setOpen(false); }}
               className={[
                 'rounded-md',
                 tile,
-                em === value ? 'bg-bg ring-1 ring-primary' : 'hover:bg-surface-2',
+                emoji === value ? 'bg-bg ring-1 ring-primary' : 'hover:bg-surface-2',
               ].join(' ')}
-            >{em}</button>
+            >{emoji}</button>
           ))}
         </div>
       )}

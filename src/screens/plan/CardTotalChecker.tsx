@@ -83,10 +83,12 @@ export function CardTotalChecker() {
       {/* Income row — local draft so users can type freely, commit on
           Enter or blur. Same pattern as the Month Planner's old income
           pill. Empty income → no Saving line in the footer. */}
-      <IncomeInput
-        value={income}
-        onCommit={setIncome}
-      />
+      <div className="flex items-center gap-3 flex-wrap">
+        <IncomeInput value={income} onCommit={setIncome} />
+        <span className="text-[11.5px] text-muted">
+          Type your expected income for the month
+        </span>
+      </div>
 
       {/* Body: chips grid or empty state */}
       {items.length === 0 ? (
@@ -141,20 +143,21 @@ export function CardTotalChecker() {
               colour-swaps to red when selected > income and shows
               "Over by ৳X" so the user sees the deficit at a glance. */}
           <div
-            className="pt-3 border-t border-border flex flex-wrap items-baseline gap-x-5 gap-y-1"
+            className="pt-3 border-t border-border flex flex-wrap items-baseline gap-x-6 gap-y-2"
           >
             <span className="text-[12.5px] text-muted tabular">
-              <b className="text-ink">{selected.size}</b> of {items.length} selected
+              <b className="text-ink text-[15px]">{selected.size}</b>
+              <span className="ml-1">of {items.length} selected</span>
             </span>
             <span className="text-[12.5px] text-muted tabular">
-              Total <b className="text-ink text-[16px] font-bold tabular ml-1">{fmtBDT(total)}</b>
+              Total <b className="text-ink text-[18px] font-bold tabular ml-1">{fmtBDT(total)}</b>
             </span>
             {income > 0 && (
               saving >= 0 ? (
                 <span className="text-[12.5px] text-muted tabular">
                   Saved <b
-                    className="font-bold tabular ml-1"
-                    style={{ color: 'var(--success-title)', fontSize: '16px' }}
+                    className="font-bold tabular ml-1 text-[18px]"
+                    style={{ color: 'var(--success-title)' }}
                   >
                     {fmtBDT(saving)}
                   </b>
@@ -162,8 +165,8 @@ export function CardTotalChecker() {
               ) : (
                 <span className="text-[12.5px] text-muted tabular">
                   Over by <b
-                    className="font-bold tabular ml-1"
-                    style={{ color: 'var(--danger-title)', fontSize: '16px' }}
+                    className="font-bold tabular ml-1 text-[18px]"
+                    style={{ color: 'var(--danger-title)' }}
                   >
                     {fmtBDT(Math.abs(saving))}
                   </b>
@@ -198,7 +201,7 @@ function IncomeInput({ value, onCommit }: { value: number; onCommit: (n: number)
       <span className="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted">
         Income
       </span>
-      <span className="inline-flex items-center gap-0.5 px-3 py-2 rounded-input border border-border bg-surface-2">
+      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-input border border-border bg-surface-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 transition">
         <span className="text-[13px] text-muted">৳</span>
         <input
           ref={inputRef}
@@ -217,11 +220,9 @@ function IncomeInput({ value, onCommit }: { value: number; onCommit: (n: number)
           onBlur={commit}
           placeholder="0"
           aria-label="Income"
-          className="bg-transparent border-0 border-b border-dashed focus:outline-none tabular w-[100px] text-right font-semibold text-ink"
-          style={{ borderColor: 'color-mix(in srgb, var(--ink) 25%, transparent)' }}
+          className="bg-transparent border-0 outline-none tabular w-[110px] text-right font-semibold text-ink text-[14px]"
         />
       </span>
-      <span className="text-[11px] text-muted">Type your expected income for the month</span>
     </div>
   );
 }

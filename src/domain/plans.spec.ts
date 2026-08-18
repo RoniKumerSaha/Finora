@@ -1,9 +1,17 @@
 /**
  * plans.spec.ts — covers event plan mutations end-to-end so we can
- * catch regressions where line items don't persist after editing.
+ * catch regressions where line items don't persist after editing,
+ * plus the new batch / preset helpers on the Month Planner.
  */
 import { describe, expect, it } from 'vitest';
-import { addEventItem, updateEventItem } from './plans';
+import {
+  addEventItem,
+  updateEventItem,
+  addMonthCategories,
+  batchUpdateMonthCategoryBudget,
+  batchUpdateMonthCategoryBudgetMap,
+  ensureMonthPlan,
+} from './plans';
 import { DEFAULT_STATE } from './persistence';
 import type { State } from './types';
 
@@ -102,5 +110,126 @@ describe('addEventItem', () => {
     const dinnerId = s.eventPlans[0].categories[0].items[1].id;
     s = updateEventItem(s, 'evt-1', 'cat-1', dinnerId, { amount: 2200 });
     expect(s.eventPlans[0].categories[0].items[1].amount).toBe(2200);
+  });
+});
+
+/* ── Month planner batch + preset helpers ─────────────────────────── */
+
+function makeMonthStateWithCats(): State {
+  // Three existing categories, with predictable budgets so we can
+  // assert the batch helpers leave non-selected rows alone.
+  return {
+    ...DEFAULT_STATE,
+    monthPlans: [
+      {
+        key: '2026-08',
+        plannedIncome: 0,
+        categories: [
+          { id: 'a', emoji: '🏠', name: 'Rent', budget: 10000, planned: 0 },
+          { id: 'b', emoji: '🛒', name: 'Groceries', budget: 5000, planned: 0 },
+          { id: 'c', emoji: '🚗', name: 'Transport', budget: 2000, planned: 0 },
+        ],
+        savedAt: '2026-08-17',
+        dirty: false,
+      },
+    ],
+  };
+}
+
+describe('addMonthCategories', () => {
+  it('adds multiple categories in a single write with budget 0', () => {
+    const state = { ...DEFAULT_STATE, monthPlans: [] };
+    const next = addMonthCategories(state, '2026-08', [
+      { emoji: '🏠', name: 'Rent', budget: 0, planned: 0 },
+      { emoji: '🛒', name: 'Groceries', budget: 0, planned: 0 },
+      { emoji: '�', name: 'Education', budget: 0, planned: 0 },
+    ]);
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats).toHaveLength(3);
+    expect(cats.map(c => c.name)).toEqual(['Rent', 'Groceries', 'Education']);
+    expect(cats.every(c => c.budget === 0)).toBe(true);
+  });
+
+  it('appends rather than replaces existing categories', () => {
+    const state = makeMonthStateWithCats();
+    const next = addMonthCategories(state, '2026-08', [
+      { emoji: '🎓', name: 'Education', budget: 0, planned: 0 },
+    ]);
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats).toHaveLength(4);
+    expect(cats[3].name).toBe('Education');
+    // Original three categories survive untouched.
+    expect(cats[0].budget).toBe(10000);
+    expect(cats[1].budget).toBe(5000);
+  });
+
+  it('renames duplicate names with a numeric suffix', () => {
+    const state = makeMonthStateWithCats();
+    const next = addMonthCategories(state, '2026-08', [
+      { emoji: '🏠', name: 'Rent', budget: 0, planned: 0 },
+      { emoji: '🏠', name: 'Rent', budget: 0, planned: 0 },
+    ]);
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats.map(c => c.name)).toEqual(['Rent', 'Groceries', 'Transport', 'Rent (2)', 'Rent (3)']);
+    // The original "Rent" must remain the first — only the new ones are suffixed.
+    expect(cats[0].id).toBe('a');
+  });
+
+  it('is a no-op when the input list is empty', () => {
+    const state = makeMonthStateWithCats();
+    const next = addMonthCategories(state, '2026-08', []);
+    expect(next).toBe(state);
+  });
+});
+
+describe('batchUpdateMonthCategoryBudget', () => {
+  it('writes the same budget to every selected category in a single store write', () => {
+    const state = makeMonthStateWithCats();
+    const next = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'b'], 7000);
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats[0].budget).toBe(7000);
+    expect(cats[1].budget).toBe(7000);
+    // The unselected row is untouched.
+    expect(cats[2].budget).toBe(2000);
+    // The dirty flag flips once — caller can save / reset in one step.
+    expect(ensureMonthPlan(next, '2026-08').dirty).toBe(true);
+  });
+
+  it('ignores unknown ids without throwing', () => {
+    const state = makeMonthStateWithCats();
+    const next = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'nope'], 100);
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats[0].budget).toBe(100);
+    expect(cats[1].budget).toBe(5000); // unchanged
+    expect(cats[2].budget).toBe(2000); // unchanged
+  });
+
+  it('no-ops when the selection is empty', () => {
+    const state = makeMonthStateWithCats();
+    const next = batchUpdateMonthCategoryBudget(state, '2026-08', [], 100);
+    expect(next).toBe(state);
+  });
+});
+
+describe('batchUpdateMonthCategoryBudgetMap', () => {
+  it('writes per-id budgets in a single store write', () => {
+    const state = makeMonthStateWithCats();
+    const next = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
+      a: 12000,
+      c: 3000,
+    });
+    const cats = ensureMonthPlan(next, '2026-08').categories;
+    expect(cats[0].budget).toBe(12000);
+    expect(cats[1].budget).toBe(5000); // unchanged
+    expect(cats[2].budget).toBe(3000);
+  });
+
+  it('no-ops when every per-id value equals the current value', () => {
+    const state = makeMonthStateWithCats();
+    const next = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
+      a: 10000, // already 10000 — no change
+      b: 5000,  // already 5000 — no change
+    });
+    expect(next).toBe(state);
   });
 });
