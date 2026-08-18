@@ -47,6 +47,10 @@ interface Store {
   setTheme: (t: Theme) => void;
   completeOnboarding: () => void;
 
+  // Cloud backup (GD-2.2)
+  setCloudBackupLastSavedAt: (iso: string) => void;
+  hasCloudBackupSaved: () => boolean;
+
   // ── Plan: Month Planner (PRD §9.14) ──────────────────────────────
   patchMonthPlan: (key: string, patch: Parameters<typeof plans.patchMonthPlan>[2]) => void;
   saveMonthPlan: (key: string) => void;
@@ -141,6 +145,23 @@ export const useStore = create<Store>((set, get) => ({
     };
     set({ state: next });
     save(next);
+  },
+
+  setCloudBackupLastSavedAt: (iso) => {
+    const next: State = {
+      ...get().state,
+      settings: {
+        ...get().state.settings,
+        cloudBackup: { ...(get().state.settings.cloudBackup ?? {}), lastSavedAt: iso },
+      },
+    };
+    set({ state: next });
+    save(next);
+  },
+
+  hasCloudBackupSaved: () => {
+    const v = get().state.settings.cloudBackup?.lastSavedAt;
+    return typeof v === 'string' && v.length > 0;
   },
 
   // ── Month Planner ───────────────────────────────────────────────

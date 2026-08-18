@@ -113,9 +113,20 @@ export interface Category {
   name: string;
 }
 
+export interface CloudBackupSettings {
+  /** ISO datetime of the most recent successful Drive save. Absent if never saved. */
+  lastSavedAt?: string;
+}
+
 export interface Settings {
   theme: Theme;
   onboardingComplete: boolean;
+  /**
+   * Cloud-backup metadata. Optional for back-compat with V1 backups that
+   * pre-date this field. `persistence.ts` fills it with `{}` on load so
+   * callers can rely on it being defined.
+   */
+  cloudBackup?: CloudBackupSettings;
 }
 
 /* ─────────────────────────────────────────────────────────────────────

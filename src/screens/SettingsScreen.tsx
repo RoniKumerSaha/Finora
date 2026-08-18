@@ -1,28 +1,51 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useStore } from '../domain/store';
 import type { Theme } from '../domain/store';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
+import { isFeatureEnabled } from '../lib/googleDrive';
+import { isFileProtocol } from '../lib/envCheck';
 
-/**
- * SettingsScreen — local-only app preferences.
- *
- * Spine: docs/ux-designs/ux-finora-2026-08-14-about-section/EXPERIENCE.md
- *
- * Two-column layout on desktop (>=768px): existing controls on the
- * left, an About panel on the right. On narrow viewports the layout
- * collapses to a single column with About rendered after the Danger
- * zone.
- */
+// GD-4.5 — lazy-load the entire Cloud backup subsystem so the V1.0
+// initial bundle stays under the 5 KB-gzip growth budget when the
+// feature flag is off. The section lives in its own chunk that's only
+// fetched on demand.
+const CloudBackupSection = lazy(() =>
+  import('../components/CloudBackupSection').then((m) => ({ default: m.CloudBackupSection })),
+);
+
 export function SettingsScreen() {
-  const theme = useStore(s => s.state.settings.theme);
-  const setTheme = useStore(s => s.setTheme);
-  const update = useStore(s => s.update);
-  const importAndReplace = useStore(s => s.importAndReplace);
-  const showBanner = useStore(s => s.showBanner);
   const { confirm, dialog } = useConfirm();
+  const theme = useStore((s) => s.state.settings.theme);
+  const setTheme = useStore((s) => s.setTheme);
+  const update = useStore((s) => s.update);
+  const importAndReplace = useStore((s) => s.importAndReplace);
+  const showBanner = useStore((s) => s.showBanner);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // GD-4.2 — when the flag is on AND the app is on file://, surface the
+  // graceful-degradation notice so users know why Cloud isn't here.
+  const fileProtocol = isFileProtocol();
+  const flagOn = isFeatureEnabled();
+
+  // GD-4.1 — console.warn when Cloud is unavailable because of file://.
+  // Lives at screen-level so it fires regardless of whether the Cloud
+  // chunk has been lazy-loaded yet (the section is gated by `flagOn`
+  // above, which is the same condition the warn is for).
+  //
+  // The DEV gate is intentional but Vite snapshots `import.meta.env`
+  // at module-eval, so we cannot flip it from a test setup file. We
+  // skip the gate in production too — the cost is one console line on
+  // file:// origins, which is exactly when we want to surface the why.
+  useEffect(() => {
+    if (!flagOn) return;
+    if (!fileProtocol) return;
+    console.warn(
+      '[Finora] Cloud backup is unavailable on file:// origins. ' +
+      'Host this build on the web (Netlify, Vercel, GitHub Pages) to enable Google Drive sync.',
+    );
+  }, [flagOn, fileProtocol]);
 
   async function onWipe() {
     const ok = await confirm({
@@ -32,7 +55,7 @@ export function SettingsScreen() {
       danger: true,
     });
     if (!ok) return;
-    update(s => ({
+    update((s) => ({
       version: 1,
       accounts: [], transactions: [], goals: [], debts: [], investments: [], categories: [],
       monthPlans: [], eventPlans: [],
@@ -113,7 +136,7 @@ export function SettingsScreen() {
           <section className="card">
             <h2 className="heading h3-modal mb-4">Theme</h2>
             <div className="flex gap-2 flex-wrap">
-              {(['dark', 'light', 'auto'] as Theme[]).map(t => {
+              {(['dark', 'light', 'auto'] as Theme[]).map((t) => {
                 const active = theme === t;
                 return (
                   <button
@@ -151,6 +174,21 @@ export function SettingsScreen() {
             <p className="text-xs text-muted mt-4">
               Save a JSON file to your device. Use Import to restore from a backup later (replaces all data after confirmation).
             </p>
+            {flagOn && (
+              <div className="mt-5 pt-5 border-t border-border">
+                <Suspense fallback={null}>
+                  <CloudBackupSection showBanner={showBanner} />
+                </Suspense>
+              </div>
+            )}
+            {fileProtocol && flagOn && (
+              <p
+                className="text-[12.5px] text-muted mt-4"
+                data-testid="file-protocol-notice"
+              >
+                Cloud backup requires hosting this app on the web. Use Export/Import or host the build on Netlify/Vercel/GitHub Pages to enable it.
+              </p>
+            )}
           </section>
 
           <section
@@ -189,12 +227,12 @@ export function SettingsScreen() {
 /* ---------- About panel ---------- */
 
 function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
-  const entryCount = useStore(s =>
+  const entryCount = useStore((s) =>
     s.state.accounts.length +
     s.state.transactions.length +
     s.state.goals.length +
     s.state.debts.length +
-    s.state.investments.length
+    s.state.investments.length,
   );
 
   // VITE_APP_VERSION is set at build time when a release is cut.

@@ -62,6 +62,31 @@ export function fmtRelative(iso: string | Date, now: Date = new Date()): string 
 }
 
 /**
+ * "Just now" / "5 minutes ago" / "2 hours ago" / "3 days ago" — for the
+ * Cloud backup "Last saved" line. Accepts ISO timestamps with time
+ * (modifiedTime from Drive). Returns short, human-friendly text.
+ *
+ * Empty / undefined input falls back to "Never" so the UI can short-circuit
+ * without a separate branch.
+ */
+export function fmtRelativeShort(iso: string | undefined | null, now: Date = new Date()): string {
+  if (!iso) return 'Never';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Never';
+  const diffMs = now.getTime() - d.getTime();
+  if (diffMs < 0) return 'Just now';
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return 'Just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day} day${day === 1 ? '' : 's'} ago`;
+  return fmtDate(iso);
+}
+
+/**
  * Reject negatives at the input boundary so users can't sneak one past
  * the field. Empty string / lone minus normalises to 0 so the controlled
  * value always parses as a finite non-negative number.
