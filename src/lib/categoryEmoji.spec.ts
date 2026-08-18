@@ -100,10 +100,17 @@ describe('PRESET_EVENT_CATEGORIES — kit coverage', () => {
     // wedding/party/generic — they never appear together).
     const byKit = new Map<string, Map<string, string[]>>();
     for (const p of PRESET_EVENT_CATEGORIES) {
-      if (!byKit.has(p.kit)) byKit.set(p.kit, new Map());
-      const m = byKit.get(p.kit)!;
-      if (!m.has(p.emoji)) m.set(p.emoji, []);
-      m.get(p.emoji).push(p.name);
+      let m = byKit.get(p.kit);
+      if (!m) {
+        m = new Map();
+        byKit.set(p.kit, m);
+      }
+      let names = m.get(p.emoji);
+      if (!names) {
+        names = [];
+        m.set(p.emoji, names);
+      }
+      names.push(p.name);
     }
     for (const [kit, emap] of byKit.entries()) {
       for (const [emoji, names] of emap.entries()) {
