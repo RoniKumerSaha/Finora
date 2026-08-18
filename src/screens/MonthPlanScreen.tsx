@@ -247,14 +247,47 @@ export function MonthPlanScreen() {
             type="button"
             onClick={startNewCategory}
             aria-label="Add new item"
-            className="min-h-[110px] rounded-card border border-dashed border-border text-muted text-[13px] font-semibold px-4 py-3 flex items-center justify-center gap-2 hover:border-primary hover:text-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="min-h-[110px] rounded-card border border-dashed border-border text-muted hover:text-primary hover:border-primary text-[13px] font-semibold px-4 py-3 flex flex-col items-center justify-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             style={{ background: 'color-mix(in srgb, var(--surface-2) 60%, transparent)' }}
           >
-            <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <span>+ New item</span>
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-dashed border-current" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span>New item</span>
+            <span className="text-[10.5px] font-normal text-muted/80 text-center leading-tight px-1">
+              Custom card not in the picker
+            </span>
           </button>
+        </div>
+        {/* Legend / help text — explains what each affordance on
+            the items grid does so users don't have to guess. The
+            "tap to edit" hint is universal, but selection mode,
+            delete-X, and the new-item button are easy to miss. */}
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[11.5px] text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-on" aria-hidden>
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5 L4.2 7.2 L8 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            Selected — tap to open the budget editor
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden>
+              <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            Hover a card to delete it
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded border border-current" aria-hidden>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5 L4.2 7.2 L8 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            Tap “Select multiple” to bulk-edit budgets
+          </span>
         </div>
       </div>
 
