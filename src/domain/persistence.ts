@@ -121,7 +121,7 @@ export const DEFAULT_STATE: State = {
   // have plans yet" state, not a missing one.
   monthPlans: [],
   eventPlans: [],
-  settings: { theme: 'dark', onboardingComplete: false, cloudBackup: {} },
+  settings: { theme: 'dark', onboardingComplete: false },
 };
 
 export function load(): State {
@@ -169,12 +169,7 @@ function mergeDefaults(s: Partial<State>): State {
   const merged: State = {
     ...DEFAULT_STATE,
     ...s,
-    settings: {
-      ...DEFAULT_STATE.settings,
-      ...(s.settings || {}),
-      // Always ensure cloudBackup is at least {} so callers can rely on it.
-      cloudBackup: { ...(s.settings?.cloudBackup ?? {}) },
-    },
+    settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
   };
   merged.categories = mergeCategories(merged.categories ?? []);
   return merged;

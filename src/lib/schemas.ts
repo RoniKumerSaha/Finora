@@ -124,13 +124,6 @@ export const exportEnvelopeSchema = z.object({
     settings: z.object({
       theme: z.enum(['dark', 'light', 'auto']),
       onboardingComplete: z.boolean(),
-      // Cloud-backup metadata — optional so V1 backups (pre-this field)
-      // still pass. The persistence layer fills it with {} on load.
-      cloudBackup: z
-        .object({
-          lastSavedAt: z.string().optional(),
-        })
-        .optional(),
     }),
   }),
 });

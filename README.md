@@ -65,28 +65,6 @@ publishes `dist/` to GitHub Pages. To enable: **Settings → Pages → Source: G
 Since the router is hash-mode, no SPA fallback rewrite is required, but the
 included rewrite doesn't hurt.
 
-### Environment variables
-
-Configure before building. See `.env.example` for the full template.
-
-| Variable                   | Default   | Description                                                                                                              |
-|----------------------------|-----------|--------------------------------------------------------------------------------------------------------------------------|
-| `VITE_FEATURE_GDRIVE_SYNC` | `false`   | Feature flag. Set to `true` to render the Cloud backup card inside Settings → Backup.                                    |
-| `VITE_GOOGLE_CLIENT_ID`    | *(empty)* | OAuth 2.0 client id from Google Cloud Console. Required when the flag is on. Uses the GIS Token Model with `drive.file` scope. |
-| `VITE_APP_VERSION`         | `1.0.0`   | Release version echoed in Settings → About. CI replaces this at build time.                                              |
-
-### Setting up Google Drive sync
-
-1. In Google Cloud Console, create an OAuth 2.0 **Web application** client.
-2. Add your deploy origin (e.g. `https://finora.example.com`) to **Authorized JavaScript origins**.
-3. Enable the **Google Drive API** for the project.
-4. Copy the client id into `VITE_GOOGLE_CLIENT_ID`.
-5. Build & deploy: `VITE_FEATURE_GDRIVE_SYNC=true VITE_GOOGLE_CLIENT_ID=... npm run build`.
-
-> **Cloud backup requires an http(s) origin.** Opening `dist/index.html`
-> from a `file://` URL hides the Cloud section because the GIS OAuth
-> popup cannot complete. Host the build on the web to enable it.
-
 ## Data ownership
 
 All data lives in your browser's `localStorage` under the key `finora:v1`. To
