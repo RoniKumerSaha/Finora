@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-17 (help text sweep) |
+| **Last Updated** | 2026-08-18 (list-card polish + UX ship) |
 
 ---
 
@@ -129,16 +129,16 @@ A user should be able to:
 
 | # | Module | V1 Scope |
 |---|---|---|
-| 1 | Dashboard | This month's totals + recent activity + debts summary + investments summary |
+| 1 | Dashboard | This month's totals + accounts preview + recent activity + a 3-up net-worth row (Total debt, Total investments, Net worth). Period-bounded analytics live on **Insights**. **2026-08-18:** restructured to a 6-section point-in-time snapshot; removed the Goals / Debts / Investments preview cards that previously lived on Home (they now live exclusively on Insights). |
 | 2 | Transactions | Income, Expense, Transfer (with optional debt-link or investment-link tag) |
-| 3 | Accounts | Add, edit, list, see balance |
-| 4 | Categories | Pre-defined set; user can add/edit/disable |
+| 3 | Accounts | Add, edit, list, see balance. **2026-08-18:** each account is rendered as its own full-width card in a 1/2/3 responsive grid (matching the goals / investments / debts pattern), with hover lift. |
+| 4 | Categories | Pre-defined set; user can add/edit/disable. **2026-08-18:** 31+ expense categories shipped by default, grouped for the picker (Housing · Utilities & bills · Daily life · Family & health · Giving & saving · Fun & occasions). Bangladesh-first prioritization. |
 | 5 | Savings Goals | Target amount, target date, progress bar |
-| 6 | Debts | Record-only: total owed / owed to you, payments, auto-complete at 0. No interest math. |
-| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. **2026-08-17:** every investment card and the dashboard net-worth tile now surface two values — **current value** (money tied up right now) and **at maturity** (projection if every installment is paid). This stops a DPS with one paid installment from inflating the headline net worth. |
+| 6 | Debts | Record-only: total owed / owed to you, payments, auto-complete at 0. No interest math. **2026-08-18:** each active debt is its own full-width card with a direction tag (I OWE / OWED TO ME) in the top-left, a hover lift, and a progress bar + "X% paid" caption. No section grouping — direction reads at a glance from the tag. |
+| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. **2026-08-17:** every investment card and the dashboard net-worth tile now surface two values — **current value** (money tied up right now) and **at maturity** (projection if every installment is paid). This stops a DPS with one paid installment from inflating the headline net worth. **2026-08-18:** list redesigned — one full-width card per investment (identity + terms + amounts in a horizontal split), Summary card pinned to the right at lg+ and stacking below at smaller breakpoints. |
 | 8 | Settings | Currency (locked to BDT in V1), theme (Dark/Light/Auto), app PIN (optional), export, import, delete all data |
 
-**Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Monthly Planning, Financial Health, Net Worth history, Charts, Insights, stocks/mutual funds/crypto.
+**Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Financial Health, Net Worth history, stocks/mutual funds/crypto. **Insights** shipped on 2026-08-14 as a period-bounded analytics companion to Home; Home now exposes only the point-in-time snapshot. **Plan** (Month + Event Planner scratchpads) shipped on 2026-08-17 — see §9.16.
 
 ---
 
@@ -147,12 +147,16 @@ A user should be able to:
 ### Primary Navigation (Bottom Bar / Sidebar)
 
 - **Home** (Dashboard)
+- **Plan** (Month Planner + Event Planner scratchpads — 2026-08-17 ship)
+- **Insights** (period-bounded analytics — 2026-08-14 ship)
 - **Transactions** (list of all entries)
-- **Add Transaction** (big button, center) — quick add Income or Expense
+- **Accounts**
 - **Goals**
 - **Investments**
 - **Debts**
 - **Settings**
+
+**Add Transaction** is a primary CTA pinned to the bottom of the sidebar, not a nav item — visible on every screen except form/edit screens where it would duplicate the screen's own submit button.
 
 ### Screens
 
@@ -163,12 +167,12 @@ A user should be able to:
 - **Account detail:** Balance + transaction history for that account.
 - **Goals list:** All goals with progress.
 - **Goal detail / create:** Name, target, deadline, current saved.
-- **Investments list:** Each active investment with name, calculated maturity value, and "matures in X days / matured N days ago". Sorted by soonest-to-mature first.
+- **Investments list:** Each active investment rendered as its own full-width card (one row per investment, no internal grid). Each card shows emoji + name + type pill (DPS / FDR / Savings) + terms (rate, term, institution) on the left, and the headline amount (Now for DPS / Value for FDR-savings) with an optional "At maturity" line below it on the right, separated by a 1px divider. The card footer carries the maturity countdown + monthly contribution / principal. The **Summary** card sits on the right at lg+ (`lg:sticky lg:top-4`) showing **Current value** and **At maturity** totals + a "How it works" explainer; below lg it stacks under the active list. Closed investments render as a quieter flat list under the active list. Sorted by soonest-to-mature first.
 - **Investment detail:** Full breakdown — name, institution, status badge, big maturity value, start/maturity dates, principal, rate, term, payout account, linked transactions. Actions: Edit, Roll over, Close.
 - **Add investment (3-step wizard):** Step 1 — Pick type (DPS / FDR / Other). Step 2 — Fill the fields (name, principal, rate, start date, term, payout account). Step 3 — Review calculated maturity value + Save.
 - **Maturity prompt:** Banner on an investment's detail screen when its maturity date is reached. Pre-fills an Income transaction on the linked account for the full payout amount.
 - **Roll-over:** Creates a new investment with same terms + 1 day after maturity date; old investment status becomes "rolled into X".
-- **Debts list:** Two sections — *I owe* (active) and *Owed to me* (active). Each entry shows total, paid so far, progress bar. A separate **Completed (N)** section appears below the active lists once any debt is fully paid; rows show a green check, the total paid off, the person, and the name of the most-recently-used account. The header count shows "N active · M completed". Completely paid debts are hidden from the active lists so the active list stays focused on what's still owed.
+- **Debts list (2026-08-18):** Each active debt is its own full-width card in a responsive grid (1 / 2 / 3 columns on mobile / sm / lg). No section grouping — every card carries the direction label (**I OWE** / **OWED TO ME**) as a small uppercase tag in its top-left so the polarity is readable at a glance without a section header. Each card shows: direction tag → icon tile + name + "Paid ৳X of ৳Y total" meta + remaining amount on the right → progress bar → "X% paid" caption. A separate **Completed (N)** section appears below the active grid once any debt is fully paid; rows in that section show a green check, the total paid off, the person, and the name of the most-recently-used account. The header count shows "N active · M completed". Completely paid debts are hidden from the active grid so the list stays focused on what's still owed.
 - **Debt detail / create:** Name, direction (I owe / Owed to me), total, paid so far (defaults to 0), optional due date, optional person/entity. Shows linked transactions. When the debt is fully paid, a green callout appears under the heading: *"Fully paid. Last transaction used {AccountName} — current balance: ৳X."* (the account is the most-recently-used account from the linked transactions; the balance is its live balance).
 - **Settings:** Theme (Dark / Light / Auto), App PIN, Export data, Import data, Delete all data, About.
 
@@ -358,12 +362,18 @@ When the maturity date arrives (or passes):
 
 ### 9.1 Dashboard
 
-**Shown on Home:**
+**Home is a point-in-time snapshot.** It shows what the user has *right now* — total balance, this month's income, this month's expense, total debt, total investments, net worth, accounts preview, and recent activity. Period-bounded analytics (cash-flow chart, spending breakdown, net worth trajectory, and the full goals / debts / investments lists) live on **Insights**, reachable via the nav or the "See full Insights →" link at the bottom of Home.
 
-- **This month:** Income ৳X · Expenses ৳Y · Balance (Income − Expenses) ৳Z.
-- **Accounts:** Each account with its current balance. Total balance at the top.
-- **Active goals:** Up to 3 goals with progress bars. Tap to see all.
-- **Recent activity:** Last 5 transactions (date, description, amount).
+**Layout (top to bottom):**
+
+1. Onboarding callout (conditional — only when `settings.onboardingComplete === false`).
+2. Header + meta line ("N accounts" / "N transactions").
+3. **3-up stat row #1:** Total balance · Income (this month) · Expense (this month).
+4. **3-up stat row #2:** Total debt · Total investments · Net worth.
+5. **2-up cards:** Accounts preview (top 4) · Recent activity (top 5).
+6. **"See full Insights →" affordance.**
+
+**Net worth row (2026-08-18):** Total debt is **NET** (I owe − Owed to me, signed). Total investments is the active-principal sum (DPS-aware via `dpsContributedSoFar`, simple `principal` for FDR/savings). Net worth = total balance + active investments + receivables (money owed to me still outstanding) − money I still owe.
 
 **Hidden from dashboard (deferred to V2):** Charts, financial health, spending breakdowns.
 
@@ -433,7 +443,9 @@ These colors automatically adapt to the chosen theme (dark or light) since they 
 **Two category sets:**
 
 - **Income categories:** Salary, Freelance, Business, Gift, Other.
-- **Expense categories:** Food, Transport, Housing, Bills, Shopping, Health, Education, Family, Entertainment, Other.
+- **Expense categories (2026-08-18):** 31 + categories shipped by default, grouped for the picker (no folder structure — flat list with grouping only in the picker UI). The expanded set is Bangladesh-first (rent, service charge, groceries, LPG, bKash-style utilities, EMI, coaching, puja, etc.). Groups: **Housing** (rent, service charge, groceries) · **Utilities & bills** (utilities, LPG, WiFi, phone, subscriptions, insurance) · **Daily life** (food, café, transport, fuel, shopping, personal, maid) · **Family & health** (health, hospital, EMI, education, coaching, books, kids, pets) · **Giving & saving** (gifts, charity, puja) · **Fun & occasions** (entertainment, travel, stay, party, birthday, hobbies).
+
+**Picker UI (2026-08-18):** When adding or editing an expense with 31+ categories, the grid uses a **grouped** variant — section labels with item counts, a search box (filter by name), the currently-selected category shown as a pill at the top, and an "X of N selected" counter. Income uses the flat 5-tile grid (no grouping needed).
 
 **User can:**
 
@@ -767,6 +779,29 @@ A first-time user should not need external documentation to understand the form 
 - All existing 113 tests pass; no test that asserts DOM text is updated unless the change is acknowledged in the test.
 - Quick visual sweep (manual or automated) confirms every form screen still fits its default mobile width (≤ 360 CSS px) with the new copy — i.e. no hint wraps to more than 2 lines.
 
+### 9.14 UX Polish Pass (added 2026-08-18)
+
+Five polish ideas were shipped in one pass, all reusing existing design-system tokens (no new colors, shadows, or radii):
+
+| # | Idea | Implementation |
+|---|---|---|
+| 1 | **Toast system** | New transient feedback channel. Save-flow successes (the ones that `navigate(...)` immediately after a successful save) show a 2.4s toast in the top-right corner — sage green for success, danger red for error, neutral for info. The existing sticky banner at the top-center is preserved for delete actions, batch edits, multi-step feedback, and settings actions. Both can co-exist briefly during the navigate-after-save window. |
+| 2 | **Dark/Light theme toggle in sidebar** | A segmented `🌙 Dark / ☀ Light` control sits in the sidebar above the "Add transaction" CTA. Auto mode still lives in Settings; the sidebar toggle is a fast path between the two explicit values. `prefers-color-scheme` drives the Auto value. |
+| 3 | **Card hover lift (`.card-link`)** | A 1px upward translate + shadow tightens from `shadow-card` to `shadow-modal` + a 35% primary border tint on hover. Applied at the goals tile, the account cards, the investment cards, the debt cards, the event-plan cards, and the Plan hub cards. Reduced-motion users get a flat color transition only. |
+| 4 | **Primary CTA confirm pulse + ✓** | On successful save, the primary button pulses with a sage ring (`cta-pulse` keyframe, 1.5s ease-out, opacity 0.7→0 + scale 1→1.08) and swaps the label to `✓ <label>` for the 600ms dwell before navigation fires. The 600ms pre-navigate delay is a deliberate trade-off — buys tactile feedback at the cost of latency. Reduced-motion users see the ✓ glyph for the same window but no pulse animation. |
+| 5 | **Empty-state illustrations + learn-more overlay** | First-run empty states (Accounts, Transactions, Goals) now show a 96×96 muted SVG illustration + title + description + primary CTA + "How X work →" link. Tapping the link opens a `HelpOverlay` modal (480px, Escape-dismissible, standard modal shell) with a one-paragraph explainer per topic. The three help pages are: **How accounts work**, **How transactions work**, **How goals work**. |
+
+**Acceptance criteria:**
+
+- Saving a transaction shows a green toast in the top-right that disappears after ~2.4s, with the top-center banner slot empty.
+- Theme toggle click cross-fades the app to dark/light over ~250ms; the setting persists across reloads.
+- Hovering an account / goal / investment / debt / event-plan card lifts it 1px and tightens the shadow.
+- Saving a transaction pulses the sage ring + shows ✓ for 600ms before navigating away.
+- A fresh app with no data shows the new illustration + learn-more overlay for Accounts, Transactions, and Goals.
+- All `prefers-reduced-motion` cases strip animations while preserving functionality.
+- The contribution modal closes immediately after a successful save (the modal did not close in v1; this regression was fixed).
+- 165/165 unit tests pass throughout.
+
 ---
 
 ## 10. Core Financial Rules (Authoritative)
@@ -1025,13 +1060,14 @@ The MVP is complete when **all** of the following are true:
 - [ ] User can add income, expense, and transfer in ≤ 3 taps.
 - [ ] Account balances update correctly and stay correct after edit and delete.
 - [ ] Monthly income and expense totals appear on the dashboard.
-- [ ] Categories are predefined and editable.
+- [ ] Categories are predefined (31+ expense categories, Bangladesh-first groupings) and editable.
 - [ ] User can create a savings goal and see required monthly amount.
-- [ ] User can mark a goal contribution and see progress update.
+- [ ] User can mark a goal contribution and see progress update; the contribution modal closes immediately after save.
 - [ ] User can create a debt (I owe or Owed to me) with name, total, and optional due date.
 - [ ] User can record a payment toward a debt, and the debt's `paid_so_far` updates.
 - [ ] Debt auto-completes when `paid_so_far >= total`.
-- [ ] Dashboard shows Total I owe and Owed to Me, plus a strip of active debts.
+- [ ] Dashboard shows Total debt (NET: I owe − Owed to me) and Total investments in the second 3-up stat row.
+- [ ] Insights page hosts the full Goals / Debts / Investments lists (Home shows the point-in-time snapshot only).
 - [ ] User can create an investment (DPS / FDR / Other) with name, principal, rate, start date, term, and payout account.
 - [ ] App shows the calculated maturity value on the Investments list and detail screen.
 - [ ] Account balance drops by the principal when an investment is created (linked Expense).
@@ -1039,14 +1075,19 @@ The MVP is complete when **all** of the following are true:
 - [ ] User can record the payout as an Income on the payout account; investment status flips to "closed".
 - [ ] User can roll over a matured investment, creating a new active investment with same terms + 1 day.
 - [ ] User can close an investment without recording payout (with confirmation).
-- [ ] Dashboard shows Total invested, plus a strip of upcoming maturities.
+- [ ] Dashboard surfaces dual values (Current value + At maturity projection) on the net-worth tile.
 - [ ] User can export data to a `.json` file.
 - [ ] User can import data from a previously exported file.
 - [ ] User can delete all data with confirmation.
 - [ ] All data is local; no backend or account is required.
 - [ ] All V1 features work fully offline.
-- [ ] Unit tests for all financial rules pass.
+- [ ] Unit tests for all financial rules pass (165/165).
 - [ ] End-to-end tests for the four core journeys pass.
+- [ ] Save-flow successes show a transient toast (2.4s, top-right) instead of a sticky banner; deletes / batch edits / settings actions still use the banner.
+- [ ] Dark / Light segmented toggle in the sidebar cross-fades the theme and persists across reloads.
+- [ ] Clickable cards (accounts, goals, investments, debts, event plans) lift 1px + shadow tightens on hover.
+- [ ] Primary CTA pulses sage + shows ✓ for 600ms on successful save.
+- [ ] First-run empty states (Accounts, Transactions, Goals) show illustration + learn-more overlay.
 - [ ] No feature from the "Non-Goals" list is implemented.
 
 ---
