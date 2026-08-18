@@ -8,6 +8,11 @@
  * translate for tactile feel, and a focus ring that matches the global
  * focus contract.
  *
+ * 2026-08-18 polish: a `success` prop fires a one-shot CTA confirm
+ * — sage ring pulse + ✓ glyph — for the moment right after a form
+ * save. Pair with a 600ms delay before navigation so the pulse lands
+ * before the screen unmounts.
+ *
  * Variants:
  *   - primary:   filled bg-primary, ink-on color
  *   - secondary: surface bg, surface-2 hover, border
@@ -20,6 +25,18 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md';
+  /**
+   * Fires the one-shot sage pulse + ✓ glyph. Used for the moment
+   * right after a form save. Pulses for 1.5s; the caller should pair
+   * with a brief navigate-delay so users see it.
+   */
+  success?: boolean;
+  /**
+   * When `success` is true, the label to swap in (defaults to keeping
+   * the original label + prefixing ✓). Override when the action doesn't
+   * read naturally with a prefix glyph.
+   */
+  successLabel?: string;
   children: ReactNode;
 }
 
@@ -28,10 +45,12 @@ export function Button({
   size = 'md',
   children,
   className,
+  success,
+  successLabel,
   ...rest
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-btn font-bold tracking-tight ' +
+    'relative overflow-visible inline-flex items-center justify-center gap-2 rounded-btn font-bold tracking-tight ' +
     'transition disabled:opacity-50 disabled:cursor-not-allowed ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0 ' +
     'active:translate-y-px';
@@ -48,7 +67,24 @@ export function Button({
       {...rest}
       className={[base, sizeCls, variantClass, className || ''].join(' ')}
     >
-      {children}
+      {success && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-btn"
+          style={{
+            animation: 'cta-pulse 1.5s ease-out forwards',
+            boxShadow: '0 0 0 2px color-mix(in srgb, var(--success) 60%, transparent)',
+          }}
+        />
+      )}
+      {success ? (
+        <>
+          <span aria-hidden className="text-success">{'✓'}</span>
+          <span>{successLabel ?? children}</span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }

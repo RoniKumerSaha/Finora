@@ -17,16 +17,18 @@
  * so re-renders stay predictable.
  */
 import { create } from 'zustand';
-import type { State, Banner, Theme } from './types';
+import type { State, Banner, Theme, Toast } from './types';
 import { load, save, clear, DEFAULT_STATE } from './persistence';
 import { recomputeDerived } from './recompute';
 import * as plans from './plans';
+import { uid } from './ids';
 
 export type { Theme } from './types';
 
 interface Store {
   state: State;
   banner: Banner | null;
+  toast: Toast | null;
 
   // Init
   recompute: () => void;
@@ -36,6 +38,10 @@ interface Store {
   // Banner
   showBanner: (b: Banner) => void;
   clearBanner: () => void;
+
+  // Toast (moment-of-success feedback)
+  showToast: (t: Omit<Toast, 'id'>) => void;
+  clearToast: () => void;
 
   // Settings
   setTheme: (t: Theme) => void;
@@ -93,6 +99,7 @@ function runPlan(get: () => Store, mutator: (s: State) => State): void {
 export const useStore = create<Store>((set, get) => ({
   state: loadInitial(),
   banner: null,
+  toast: null,
 
   recompute: () => set(s => ({ state: recomputeDerived(s.state) })),
 
@@ -114,6 +121,12 @@ export const useStore = create<Store>((set, get) => ({
 
   showBanner: (b) => set({ banner: b }),
   clearBanner: () => set({ banner: null }),
+
+  // Toast: single-slot like banner. `showToast` overwrites any toast
+  // currently showing — the user gets one moment, not a stack. The
+  // toast component owns the dwell timer so the store stays simple.
+  showToast: (t) => set({ toast: { ...t, id: uid() } }),
+  clearToast: () => set({ toast: null }),
 
   setTheme: (t) => {
     const next: State = { ...get().state, settings: { ...get().state.settings, theme: t } };

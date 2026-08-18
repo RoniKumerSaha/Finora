@@ -1,22 +1,17 @@
 /**
- * AccountsListScreen — single-row account rows in a card.
+ * AccountsListScreen — one card per account, matching the Goals grid.
  *
  * Visual target: docs/ux-designs/.../mockups/v2/dark.html#accounts
- * Each row is a single flex row: icon + name/type on the left,
- * balance + overflow menu on the right.
  *
- * 2026-08-14 polish: subtler row hover (using .row-hover), refined
- * tile corners, and a tighter page header.
+ * 2026-08-18 polish: each account is now its own .card surface instead
+ * of a row inside a shared .card. The lift on hover (via .card-link)
+ * makes the click target obvious — important now that destructive
+ * actions live behind the `⋯` overflow menu instead of an inline link.
+ * Cards arrange responsively: 1 column on mobile, 2 on sm, 3 on lg.
  *
- * 2026-08-14 polish (row hover accent): each row carries a left-edge
- * accent dot that fades in on hover (matches TransactionsListScreen),
- * and destructive actions live behind a `⋯` overflow menu instead of
- * being permanently visible red links.
- *
- * 2026-08-14 polish: the header carries an "Add" CTA — accounts are a
- * separate entity from transactions, so the global "Add transaction"
- * sidebar CTA doesn't help here. The empty-state still gets its own
- * contextual button so first-run users aren't stranded.
+ * Edit/Delete live in the card's overflow menu (top-right). The
+ * RowMenu's trigger sits above the card's hover lift via z-index, so
+ * clicking it doesn't trigger the link navigation.
  */
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -25,6 +20,7 @@ import { accountBalance } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import { RowMenu } from '../components/RowMenu';
 import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
+import { EmptyState, AccountsIllustration } from '../components/EmptyState';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT } from '../lib/format';
@@ -77,45 +73,42 @@ export function AccountsListScreen() {
         </Link>
       </div>
 
-      <section className="card">
-        {accs.length === 0 ? (
-          <div className="py-10 text-center text-muted">
-            <div className="text-[14px] font-semibold text-ink">No accounts yet.</div>
-            <Link
-              to="/accounts/add"
-              className="inline-block mt-3.5 px-4 py-2.5 rounded-btn text-[13px] font-bold text-primary-on hover:opacity-95 transition"
-              style={{ background: 'var(--primary)' }}
-            >
-              Add your first account
-            </Link>
-          </div>
-        ) : (
-          <div>
-            {accs.map(a => {
-              const bal = accountBalance(a, state.transactions);
-              return (
-                <div
-                  key={a.id}
-                  className="group relative flex justify-between items-center py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition"
-                >
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
-                    style={{ background: 'var(--primary)' }}
-                  />
+      {accs.length === 0 ? (
+        <section className="card">
+          <EmptyState
+            illustration={<AccountsIllustration />}
+            title="No accounts yet"
+            description="Open an account for cash, a bank, a wallet, or a card. Each account tracks what's there now."
+            cta={{ to: '/accounts/add', label: '+ Add your first account' }}
+            learnMoreTopic="accounts"
+          />
+        </section>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {accs.map(a => {
+            const bal = accountBalance(a, state.transactions);
+            const tone = accountTone(a.type);
+            return (
+              <Link
+                key={a.id}
+                to={`/accounts/${a.id}/edit`}
+                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              >
+                <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accountTileClass(accountTone(a.type))}`}>
+                    <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${accountTileClass(tone)}`}>
                       <AccountTypeIcon type={a.type} />
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-[14px] leading-tight tracking-tight">{a.name}</div>
-                      <div className="text-xs text-muted leading-tight mt-1 tabular">
-                        {accountTypeLabel(a.type)}{a.openingBalance > 0 ? ` · starting balance ${fmtBDT(a.openingBalance)}` : ''}
+                      <div className="font-semibold text-[15px] tracking-tight truncate">{a.name}</div>
+                      <div className="text-xs text-muted tabular mt-1">
+                        {accountTypeLabel(a.type)}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className={`font-bold tabular text-[14px] ${accountBalanceColor(accountTone(a.type))}`}>{fmtBDT(bal)}</span>
+                  {/* z-10 puts the menu above the lift, so clicking it
+                      doesn't trigger navigation. */}
+                  <div className="relative z-10">
                     <RowMenu
                       ariaLabel={`Actions for ${a.name}`}
                       items={[
@@ -125,11 +118,20 @@ export function AccountsListScreen() {
                     />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                <div className="flex items-baseline justify-between gap-2 mt-1">
+                  <span className="text-[11px] text-muted uppercase tracking-wider font-semibold">Balance</span>
+                  <span className={`font-bold tabular text-[20px] tracking-tight ${accountBalanceColor(tone)}`}>{fmtBDT(bal)}</span>
+                </div>
+                {a.openingBalance > 0 && (
+                  <div className="text-[11.5px] text-muted tabular">
+                    Opening: {fmtBDT(a.openingBalance)}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      )}
       {dialog}
     </div>
   );

@@ -51,6 +51,8 @@ import {
   NavGoals, NavInvestments, NavDebts, NavPlan, NavSettings,
   Menu, Close,
 } from './icons/Icons';
+import { useStore } from '../domain/store';
+import { Toast } from './Toast';
 
 interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element }
 
@@ -68,6 +70,8 @@ const NAV: NavDef[] = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const theme = useStore(s => s.state.settings.theme);
+  const setTheme = useStore(s => s.setTheme);
   // Hide the "Add Transaction" shortcut on add/edit/form screens where
   // it'd duplicate a screen's own submit button.
   const onForm =
@@ -196,10 +200,36 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="flex-1" />
 
+          {/* Theme toggle — Dark / Light segmented control. Fast path
+             between the two most-used values; "Auto" lives in Settings.
+             Hides on form/edit screens because the primary CTA is the
+             only primary action visible there, and the toggle would
+             dilute that. */}
+          {!onForm && (
+            <div
+              role="radiogroup"
+              aria-label="Theme"
+              className="flex items-center gap-1 p-1 rounded-pill bg-surface-2 border border-border mb-3"
+            >
+              <ThemePill
+                glyph={<span aria-hidden>{'\u263D'}</span>}
+                label="Dark"
+                isOn={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+              />
+              <ThemePill
+                glyph={<span aria-hidden>{'\u2600'}</span>}
+                label="Light"
+                isOn={theme === 'light'}
+                onClick={() => setTheme('light')}
+              />
+            </div>
+          )}
+
           {!onForm && (
             <NavLink
               to="/transactions/new"
-              className="mt-3 inline-flex items-center justify-center gap-2 text-primary-on px-4 py-2.5 rounded-btn font-bold text-[13px] hover:opacity-95 active:translate-y-px transition"
+              className="inline-flex items-center justify-center gap-2 text-primary-on px-4 py-2.5 rounded-btn font-bold text-[13px] hover:opacity-95 active:translate-y-px transition"
               style={{ background: 'var(--primary)' }}
             >
               <span className="text-base leading-none">+</span>
@@ -212,7 +242,47 @@ export function Shell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      {/* Toast mounts at the root of the Shell so it sits above route
+         transitions, the drawer backdrop, and the banner — the z-50
+         stack is one continuous layer in the layout. */}
+      <Toast />
     </div>
+  );
+}
+
+/**
+ * ThemePill — one segment of the Dark/Light toggle. Inherits the chip
+ * selected treatment (primary-soft bg + primary text + transparent
+ * border + inset ring) for parity with the rest of the system.
+ */
+function ThemePill({
+  glyph, label, isOn, onClick,
+}: {
+  glyph: React.ReactNode;
+  label: string;
+  isOn: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isOn}
+      onClick={onClick}
+      className={[
+        'grow inline-flex items-center justify-center gap-1.5 rounded-pill text-[12px] font-semibold leading-none py-2 px-2 transition',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        isOn
+          ? 'bg-primary-soft text-primary border border-transparent'
+          : 'text-muted hover:text-ink border border-transparent',
+      ].join(' ')}
+      style={isOn
+        ? { boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent)' }
+        : undefined}
+    >
+      <span className="text-[13px] leading-none" aria-hidden>{glyph}</span>
+      <span>{label}</span>
+    </button>
   );
 }
 

@@ -208,3 +208,24 @@ export interface Banner {
   why: string;
   fix: string;
 }
+
+/**
+ * A moment-of-success feedback channel. Used for save flows where the
+ * user has already moved on by the time the message would land —
+ * toasts appear top-right, dwell ~2.4s, and fade. Errors stay on the
+ * sticky banner (use `Banner`).
+ *
+ * Differences from `Banner`:
+ *   - No `fix` line (save flows rarely need a fix prompt).
+ *   - Optional `action` for "View" / "Undo" affordances.
+ *   - Auto-clears on a timer; no X-button dismissal needed.
+ */
+export interface Toast {
+  id: string;
+  kind: 'success' | 'info' | 'error';
+  what: string;
+  /** Optional one-line detail beneath the headline. */
+  why?: string;
+  /** Optional action affordance — renders as a primary text-link. */
+  action?: { label: string; onClick: () => void };
+}

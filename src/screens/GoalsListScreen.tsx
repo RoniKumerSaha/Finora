@@ -21,6 +21,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
 import { goalSaved } from '../domain/math';
+import { EmptyState, GoalsIllustration } from '../components/EmptyState';
 import { fmtBDT, fmtDate } from '../lib/format';
 
 export function GoalsListScreen() {
@@ -46,18 +47,13 @@ export function GoalsListScreen() {
 
       {gs.length === 0 ? (
         <section className="card">
-          <div className="py-10 text-center text-muted">
-            <div className="text-3xl opacity-60 mb-2.5">{'\u2605'}</div>
-            <div className="text-[15px] font-semibold text-ink">Save toward something</div>
-            <p className="mt-2 text-sm">Set a target amount and a date. We'll tell you how much to save each month.</p>
-            <Link
-              to="/goals/add"
-              className="inline-block mt-4 px-4 py-2.5 rounded-btn text-[13px] font-bold text-primary-on hover:opacity-95 transition"
-              style={{ background: 'var(--primary)' }}
-            >
-              + New goal
-            </Link>
-          </div>
+          <EmptyState
+            illustration={<GoalsIllustration />}
+            title="Save toward something"
+            description="Set a target amount and a date. We'll tell you how much to save each month."
+            cta={{ to: '/goals/add', label: '+ New goal' }}
+            learnMoreTopic="goals"
+          />
         </section>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -68,7 +64,7 @@ export function GoalsListScreen() {
               <Link
                 key={g.id}
                 to={`/goals/${g.id}`}
-                className="card flex flex-col gap-3 hover:border-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 <div className="flex justify-between items-center">
                   <div className="font-semibold text-[15px] tracking-tight">{g.name}</div>

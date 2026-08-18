@@ -46,6 +46,7 @@ import * as accounts from '../domain/accounts';
 import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
 import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
+import { EmptyState, AccountsIllustration, TransactionsIllustration } from '../components/EmptyState';
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
@@ -152,7 +153,13 @@ export function HomeScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
-            ? <Empty msg="Add an account to track balances, transactions, and net worth." cta="Add an account" to="/accounts/add" />
+            ? <div className="p-4"><EmptyState
+                illustration={<AccountsIllustration />}
+                title="No accounts yet"
+                description="Add an account to track balances, transactions, and net worth."
+                cta={{ to: '/accounts/add', label: '+ Add an account' }}
+                learnMoreTopic="accounts"
+              /></div>
             : accList.slice(0, 4).map(a => {
                 const bal = accountBalance(a, txs);
                 return (
@@ -164,7 +171,13 @@ export function HomeScreen() {
 
         <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
           {recentTx.length === 0
-            ? <Empty msg="No transactions yet." cta="Add a transaction" to="/transactions/new" />
+            ? <div className="p-4"><EmptyState
+                illustration={<TransactionsIllustration />}
+                title="No transactions yet"
+                description="Record income, expenses, or transfers to see them here."
+                cta={{ to: '/transactions/new', label: '+ Add a transaction' }}
+                learnMoreTopic="transactions"
+              /></div>
             : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
           }
         </Card>
@@ -339,21 +352,6 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   );
 }
 
-function Empty({ msg, cta, to }: { msg: string; cta?: string; to?: string }) {
-  return (
-    <div className="py-9 text-center text-muted">
-      <div className="text-[14px] font-semibold text-ink">{msg}</div>
-      {cta && to && (
-        <Link
-          to={to}
-          className="inline-block mt-3.5 bg-primary text-primary-on px-5 py-2.5 rounded-btn text-[13px] font-bold hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          {cta}
-        </Link>
-      )}
-    </div>
-  );
-}
 
 function DemoBanner() {
   const [show, setShow] = useState(true);

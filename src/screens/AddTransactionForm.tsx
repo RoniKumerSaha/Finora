@@ -46,6 +46,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   const [searchParams] = useSearchParams();
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
+  const showToast = useStore(s => s.showToast);
   const state = useStore(s => s.state);
   const accs = accounts.list(state);
   const cats = state.categories.filter(c => c.type === type);
@@ -70,6 +71,14 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   const [linkedDebtId, setLinkedDebtId] = useState('');
   const [linkedInvestmentId, setLinkedInvestmentId] = useState(prefillLinkedInvestmentId);
   const [note, setNote] = useState(prefillNote);
+  // One-shot confirm-state for the Save button. Flips true after a
+  // successful save; the 600ms delay before navigate (below) is the
+  // window in which the sage pulse + ✓ glyph renders. Reset on any
+  // form change so a back-then-resubmit re-triggers the pulse.
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (saved) setSaved(false);
+  }, [amount, accountId, fromAccountId, toAccountId, categoryId, date, note, linkedDebtId, linkedInvestmentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When the user picks a From account that matches the current To
   // account, the To dropdown would be left holding an id that's no
@@ -157,13 +166,15 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         linkedInvestmentId: linkedInvestmentId || undefined,
         note,
       }));
-      showBanner({
+      showToast({
         kind: 'success',
         what: 'Transaction added',
         why: 'Your record is now in the transactions list.',
-        fix: 'Open Transactions to see it, or Home to see the totals.',
       });
-      navigate('/transactions');
+      setSaved(true);
+      // 600ms lets the sage pulse + ✓ glyph register before the form
+      // unmounts. Reverts to "instant" feel after v1 ships CTA pulse.
+      window.setTimeout(() => navigate('/transactions'), 600);
     } catch (err) {
       showBanner({
         kind: 'error',
@@ -379,7 +390,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 
         <div className="flex justify-end gap-2.5 mt-6">
           <Button variant="secondary" type="button" onClick={() => navigate('/transactions/new')}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={amountInvalid}>Save</Button>
+          <Button variant="primary" type="submit" disabled={amountInvalid} success={saved}>Save</Button>
         </div>
       </section>
     </form>

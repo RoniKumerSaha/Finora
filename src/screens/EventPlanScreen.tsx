@@ -7,6 +7,12 @@
  *
  * Visual target: docs/ux-designs/ux-finora-2026-08-17-month-planner/
  * .working-events/option-C-timeline.html (timeline cascade).
+ *
+ * 2026-08-18 polish: each card is now a whole-card link via
+ * `.card-link`, matching the Accounts / Investments grids. The
+ * hover lift + shadow tightening makes the click target obvious. The
+ * Delete action stays a sibling button with `relative z-10` + click
+ * stopPropagation so it doesn't trigger navigation.
  */
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -143,12 +149,13 @@ export function EventPlanScreen() {
             const fill = FILL[status];
             const { verb, number } = formatPct(pct, overflow);
             return (
-              <div
+              <Link
                 key={ev.id}
-                className="card flex flex-col gap-3 hover:border-primary transition"
+                to={`/plan/event/${ev.id}`}
+                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group"
               >
                 <div className="flex justify-between items-start gap-3">
-                  <Link to={`/plan/event/${ev.id}`} className="flex-1 group">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5">
                       <span
                         aria-hidden
@@ -156,16 +163,18 @@ export function EventPlanScreen() {
                         style={{ background: fill.color }}
                       />
                       <span className="text-2xl">{ev.emoji ?? '📅'}</span>
-                      <div className="font-semibold text-[15px] tracking-tight group-hover:text-primary transition">{ev.name}</div>
+                      <div className="font-semibold text-[15px] tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
                     </div>
                     <div className="text-xs text-muted mt-1.5 tabular ml-[26px]">
                       {fmtDate(ev.eventDate)} · {days >= 0 ? `${days} days to go` : `${Math.abs(days)} days ago`}
                     </div>
-                  </Link>
+                  </div>
+                  {/* z-10 keeps the click above the link so it doesn't
+                      trigger navigation. */}
                   <button
                     type="button"
-                    onClick={() => onDelete(ev.id)}
-                    className="text-xs text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(ev.id); }}
+                    className="relative z-10 text-xs text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
                     aria-label={`Delete ${ev.name}`}
                   >
                     Delete
@@ -212,7 +221,7 @@ export function EventPlanScreen() {
                         : `${summary.count} ${summary.count === 1 ? 'category' : 'categories'}`}
                   </span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

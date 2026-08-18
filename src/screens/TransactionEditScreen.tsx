@@ -33,6 +33,7 @@ export function TransactionEditScreen() {
   const state = useStore(s => s.state);
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
+  const showToast = useStore(s => s.showToast);
   const { confirm, dialog } = useConfirm();
 
   const tx = id ? transactions.get(state, id) : undefined;
@@ -58,6 +59,12 @@ export function TransactionEditScreen() {
   const [linkedDebtId, setLinkedDebtId] = useState(tx.linkedDebtId ?? '');
   const [linkedInvestmentId, setLinkedInvestmentId] = useState(tx.linkedInvestmentId ?? '');
   const [note, setNote] = useState(tx.note ?? '');
+  // One-shot confirm-state for the Save button. Pulse + ✓ glyph render
+  // for the 600ms window before navigate.
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (saved) setSaved(false);
+  }, [amount, accountId, fromAccountId, toAccountId, categoryId, date, note, linkedDebtId, linkedInvestmentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const type: TxType = tx.type;
 
@@ -111,13 +118,13 @@ export function TransactionEditScreen() {
         linkedInvestmentId: linkedInvestmentId || undefined,
         note,
       }));
-      showBanner({
+      showToast({
         kind: 'success',
         what: 'Transaction saved',
         why: 'Your changes are now in your records.',
-        fix: 'Open Transactions to see the updated entry.',
       });
-      navigate('/transactions');
+      setSaved(true);
+      window.setTimeout(() => navigate('/transactions'), 600);
     } catch (err) {
       showBanner({
         kind: 'error',
@@ -275,7 +282,7 @@ export function TransactionEditScreen() {
           </Button>
           <div className="flex gap-2.5">
             <Button variant="secondary" type="button" onClick={() => navigate('/transactions')} className="flex-1 sm:flex-none">Cancel</Button>
-            <Button variant="primary" type="submit" disabled={amountInvalid} className="flex-1 sm:flex-none">Save</Button>
+            <Button variant="primary" type="submit" disabled={amountInvalid} className="flex-1 sm:flex-none" success={saved}>Save</Button>
           </div>
         </div>
       </section>

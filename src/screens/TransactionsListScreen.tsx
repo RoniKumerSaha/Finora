@@ -33,6 +33,7 @@ import { useStore } from '../domain/store';
 import * as transactions from '../domain/transactions';
 import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
+import { EmptyState, TransactionsIllustration } from '../components/EmptyState';
 import { fmtBDTSigned, fmtDate } from '../lib/format';
 
 type FilterKey = 'all' | 'income' | 'expense' | 'transfer' | 'payouts' | 'debtPayments' | 'thisMonth' | 'cash';
@@ -146,11 +147,19 @@ export function TransactionsListScreen() {
 
       <section className="card">
         {filtered.length === 0 ? (
-          <div className="py-10 text-center text-muted text-sm">
-            {filter === 'all'
-              ? 'No transactions yet.'
-              : 'No transactions match this filter. Try a different filter, or add a new transaction.'}
-          </div>
+          filter === 'all' ? (
+            <EmptyState
+              illustration={<TransactionsIllustration />}
+              title="No transactions yet"
+              description="Record income, expenses, or transfers. Each one updates the account it touches."
+              cta={{ to: '/transactions/new', label: '+ Add transaction' }}
+              learnMoreTopic="transactions"
+            />
+          ) : (
+            <div className="py-10 text-center text-muted text-sm">
+              No transactions match this filter. Try a different filter, or add a new transaction.
+            </div>
+          )
         ) : grouped ? (
           // Day-grouped unfiltered view. Subheaders are also sticky so
           // the user always knows what day they're scanning through.

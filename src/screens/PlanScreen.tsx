@@ -38,7 +38,7 @@ export function PlanScreen() {
         {/* Month Planner card */}
         <Link
           to="/plan/month"
-          className="card flex flex-col gap-4 hover:border-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           {/* Header row — title left, month chip right */}
           <div className="flex justify-between items-start gap-3">
@@ -100,7 +100,7 @@ export function PlanScreen() {
         {/* Event Planner card */}
         <Link
           to="/plan/event"
-          className="card flex flex-col gap-4 hover:border-primary transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <div className="flex justify-between items-start gap-3">
             <div className="min-w-0">

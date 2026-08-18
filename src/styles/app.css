@@ -95,6 +95,19 @@ input[type="number"]::-webkit-inner-spin-button {
 .row-hover { transition: background-color 120ms ease; }
 .row-hover:hover { background: var(--surface-2); }
 
+/* Card link — applied to .card surfaces that are clickable. Subtle
+   1px upward translate + shadow tightens from card → modal on hover.
+   Decorative only; keyboard focus is already covered by .focus-ring. */
+.card-link {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+.card-link:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-modal), var(--card-inset);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
 /* Focus ring contract: every interactive element uses the same primary
    ring at 40% opacity. Avoids the "everything has a slightly different
    focus style" problem. */
@@ -124,6 +137,10 @@ main > * {
 }
 @media (prefers-reduced-motion: reduce) {
   main > * { animation: none; }
+  /* Strip animations we ship on toast / modal / banner. Functional
+     behavior unchanged; only the visual easing is removed. */
+  .toast-pop-in { animation: none; }
+  .card-link, .card-link:hover { transition: background-color 120ms ease; transform: none; }
 }
 
 /* Banner slide-in keyframe — paired with RoleAlertBanner's transition.
@@ -149,6 +166,20 @@ main > * {
 @keyframes backdrop-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Toast pop-in — slides 8px from the right + opacity 0→1.
+   Used by the Toast component. Lands in 180ms. */
+@keyframes toast-pop-in {
+  from { opacity: 0; translate: 8px 0; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+/* CTA confirm pulse — sage ring that grows slightly and fades out
+   over 1.5s. Used by Button when `success` prop is set. */
+@keyframes cta-pulse {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0;   transform: scale(1.08); }
 }
 
 /* Theme cross-fade — when [data-theme] flips on <html>, App.tsx adds

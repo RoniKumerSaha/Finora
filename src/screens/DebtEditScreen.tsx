@@ -13,7 +13,7 @@
  * account's balance so the user can see what their accounts look like
  * after the debt was settled.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
@@ -31,6 +31,7 @@ export function DebtEditScreen() {
   const state = useStore(s => s.state);
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
+  const showToast = useStore(s => s.showToast);
   const { confirm, dialog } = useConfirm();
   const debt = debts.get(state, id!);
 
@@ -39,6 +40,12 @@ export function DebtEditScreen() {
   const [total, setTotal] = useState(String(debt?.total ?? ''));
   const [person, setPerson] = useState(debt?.person ?? '');
   const [dueDate, setDueDate] = useState(debt?.dueDate ?? '');
+  // One-shot confirm-state for the Save button. Pulse + ✓ glyph render
+  // for the 600ms window before navigate.
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (saved) setSaved(false);
+  }, [name, direction, total, person, dueDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
   // value is always valid; user can break it by typing a negative.
@@ -106,13 +113,13 @@ export function DebtEditScreen() {
         person: person.trim() || undefined,
         dueDate: dueDate || undefined,
       }));
-      showBanner({
+      showToast({
         kind: 'success',
         what: 'Debt updated',
         why: 'Changes are saved.',
-        fix: 'Open Debts to see the updated row.',
       });
-      navigate('/debts');
+      setSaved(true);
+      window.setTimeout(() => navigate('/debts'), 600);
     } catch (err) {
       showBanner({
         kind: 'error',
@@ -227,7 +234,7 @@ export function DebtEditScreen() {
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()}>Save changes</Button>
+          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()} success={saved}>Save changes</Button>
           <Button variant="ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>
