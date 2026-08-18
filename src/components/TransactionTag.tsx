@@ -13,7 +13,6 @@
  *   2. linkedDebtId        → direction-aware:
  *      - expense (i_owe, paying down)         → "Debt payment" (primary)
  *      - income  (owed_to_me, being paid)     → "Debt received" (info)
- *   3. linkedGoalId        → "Goal"          (success)
  *
  * Tone palette mirrors the app's existing token system. No new
  * tokens are introduced — every color used here is already defined
@@ -22,13 +21,16 @@
  * Returns `null` when there's nothing to tag (plain income, expense,
  * or transfer without a linked entity). The caller doesn't need to
  * check — `<TransactionTag tx={tx} />` is safe to always render.
+ *
+ * Goals no longer produce transaction tags — contributions are a
+ * plan-only scratchpad and don't touch the ledger.
  */
 import type { Transaction } from '../domain/types';
 
-export type TagKind = 'payout' | 'debt-out' | 'debt' | 'goal';
+export type TagKind = 'payout' | 'debt-out' | 'debt';
 
 interface Props {
-  tx: Pick<Transaction, 'linkedInvestmentId' | 'linkedDebtId' | 'linkedGoalId' | 'type'>;
+  tx: Pick<Transaction, 'linkedInvestmentId' | 'linkedDebtId' | 'type'>;
 }
 
 /**
@@ -45,7 +47,6 @@ export function deriveTag(tx: Props['tx']): TagKind | null {
     // "debt" tag (info tone) — still useful, just less specific.
     return 'debt';
   }
-  if (tx.linkedGoalId) return 'goal';
   return null;
 }
 
@@ -53,7 +54,6 @@ const TAG_STYLES: Record<TagKind, { label: string; className: string }> = {
   'payout':   { label: 'Payout',         className: 'bg-accent-soft text-accent' },
   'debt-out': { label: 'Debt payment',   className: 'bg-primary-soft text-primary' },
   'debt':     { label: 'Debt received',  className: 'bg-info-soft text-info' },
-  'goal':     { label: 'Goal',           className: 'bg-success-soft text-success' },
 };
 
 interface FullProps extends Props {

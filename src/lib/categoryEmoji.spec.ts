@@ -10,10 +10,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   CATEGORY_EMOJI_LIBRARY,
+  CATEGORY_GROUPS,
   EVENT_KIT_LABELS,
   PRESET_BUDGET_CARDS,
   PRESET_EVENT_CATEGORIES,
   emojiForCategory,
+  groupExpenseCategories,
+  groupKeyForCategory,
   suggestEmojiForName,
   type EventKit,
 } from './categoryEmoji';
@@ -173,3 +176,58 @@ describe('PRESET_BUDGET_CARDS', () => {
     }
   });
 });
+
+describe('CATEGORY_GROUPS — picker bucketing', () => {
+  it('every default expense category lands in exactly one group', () => {
+    // The set of names we ship in DEFAULT_EXPENSE_CATEGORIES must each
+    // group somewhere. If someone adds a new default that doesn't match
+    // any CATEGORY_GROUPS name, it disappears from the picker (silently
+    // falls into 'fun' which is fine, but we want explicit grouping).
+    const defaultNames = [
+      'Rent', 'Service Charge', 'Groceries',
+      'Utilities', 'LPG', 'WiFi', 'Phone & Internet', 'Subscriptions', 'Insurance',
+      'Food & Dining', 'Café', 'Transport', 'Fuel', 'Shopping', 'Personal Care', 'Maid',
+      'Health', 'Hospital', 'EMI', 'Education', 'Coaching', 'Books', 'Kids', 'Pets',
+      'Gifts & Family', 'Charity', 'Puja',
+      'Entertainment', 'Travel', 'Stay', 'Party', 'Birthday', 'Hobbies',
+    ];
+    for (const name of defaultNames) {
+      const key = groupKeyForCategory(name);
+      const group = CATEGORY_GROUPS.find(g => g.key === key);
+      expect(group, `${name} did not match any group`).toBeDefined();
+    }
+  });
+
+  it('groupExpenseCategories returns groups in CATEGORY_GROUPS order', () => {
+    // The picker renders top-to-bottom so order matters. The function
+    // must follow CATEGORY_GROUPS exactly — empty groups are dropped.
+    const cats = [
+      { id: '1', name: 'Rent' },
+      { id: '2', name: 'Health' },
+      { id: '3', name: 'Travel' },
+    ];
+    const groups = groupExpenseCategories(cats);
+    const keys = groups.map(g => g.key);
+    expect(keys).toEqual(['housing', 'family', 'fun']);
+  });
+
+  it('groupExpenseCategories drops empty groups', () => {
+    // Categories spanning only two groups should not show the other four.
+    const cats = [
+      { id: '1', name: 'Rent' },
+      { id: '2', name: 'Service Charge' },
+    ];
+    const groups = groupExpenseCategories(cats);
+    expect(groups.map(g => g.key)).toEqual(['housing']);
+  });
+
+  it('substring matching lands multi-token names in the right group', () => {
+    // 'Phone & Internet' should land in 'bills' (phone), not 'family'
+    // (internet) — substring matching is order-sensitive, so this
+    // tests the actual ordering of CATEGORY_GROUPS.
+    expect(groupKeyForCategory('Phone & Internet')).toBe('bills');
+    expect(groupKeyForCategory('Personal Care')).toBe('daily');
+    expect(groupKeyForCategory('Gifts & Family')).toBe('giving');
+  });
+});
+

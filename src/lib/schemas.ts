@@ -52,7 +52,6 @@ export const incomeExpenseTxSchema = z.object({
   note: z.string().optional(),
   linkedDebtId: z.string().optional(),
   linkedInvestmentId: z.string().optional(),
-  linkedGoalId: z.string().optional(),
 });
 
 export const transactionSchema = z.union([transferTxSchema, incomeExpenseTxSchema]);
@@ -63,7 +62,9 @@ export type TransactionInput = z.infer<typeof transactionSchema>;
 export const goalSchema = z.object({
   name: requiredString('Goal name').max(80),
   target: z.coerce.number().refine(positive, { message: 'Target must be greater than zero.' }),
-  saved: z.coerce.number().refine(nonNegative, { message: 'Saved cannot be negative.' }).default(0),
+  // `saved` is required on the form — the user must consciously type
+  // 0 or a positive number for how much they've already set aside.
+  saved: z.coerce.number().refine(nonNegative, { message: 'Saved cannot be negative.' }),
   targetDate: isoDate.refine(d => d >= new Date().toISOString().slice(0, 10), {
     message: 'Target date must be in the future.',
   }),

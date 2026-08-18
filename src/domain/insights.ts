@@ -23,8 +23,8 @@ import {
   daysBetween,
   debtPaidSoFar,
   goalProgress,
-  goalSavedFromTxns,
-  goalRequiredPerMonthDerived,
+  goalSaved,
+  goalRequiredPerMonth,
   isDebtCompleted,
   isGoalCompleted,
   isGoalExpired,
@@ -138,8 +138,9 @@ export interface StatRow {
  * Compute the three KPI tiles.
  * - Net flow = sum(income) - sum(expense) in the range.
  * - Avg monthly expense = sum(expense) / months in range.
- * - Saved toward goals = sum of expense transactions with a linkedGoalId
- *   in the range (contributions to goals).
+ * - Saved toward goals = sum of goal contributions in the range.
+ *   Contributions are plan-only entries on each goal — they do not
+ *   touch transactions or account balances.
  *
  * Each metric also has a "previous period of equal length" comparison:
  * the window of the same length immediately preceding the current one.
@@ -167,17 +168,23 @@ export function computeStats(
     if (inRange(tx)) {
       if (tx.type === 'income') netFlow += amt;
       else if (tx.type === 'expense') netFlow -= amt;
-      if (tx.type === 'expense') {
-        expenseSum += amt;
-        if (tx.linkedGoalId) savedSum += amt;
-      }
+      if (tx.type === 'expense') expenseSum += amt;
     } else if (previousRange && txInRange(tx, previousRange)) {
       if (tx.type === 'income') netFlowPrev += amt;
       else if (tx.type === 'expense') netFlowPrev -= amt;
-      if (tx.type === 'expense') {
-        expenseSumPrev += amt;
-        if (tx.linkedGoalId) savedSumPrev += amt;
-      }
+      if (tx.type === 'expense') expenseSumPrev += amt;
+    }
+  }
+
+  // Goal contributions — sum by date, not by transaction type. We
+  // build a tiny per-contribution object so we can reuse the same
+  // `txInRange` predicate (it only reads `.date`).
+  for (const goal of state.goals) {
+    for (const c of goal.contributions) {
+      const amt = Number(c.amount) || 0;
+      const pseudo = { date: c.date } as Transaction;
+      if (inRange(pseudo)) savedSum += amt;
+      else if (previousRange && txInRange(pseudo, previousRange)) savedSumPrev += amt;
     }
   }
 
@@ -427,12 +434,12 @@ export interface GoalRow {
 export function goalsForInsights(state: StateLike, now: Date = new Date()): GoalRow[] {
   const rows: GoalRow[] = [];
   for (const g of state.goals) {
-    const saved = goalSavedFromTxns(g, state.transactions);
+    const saved = goalSaved(g);
     if (isGoalCompleted(g, saved)) continue;
     const target = Number(g.target) || 0;
     const remaining = Math.max(0, target - saved);
-    const required = goalRequiredPerMonthDerived(g, state.transactions, now);
-    const pct = Math.round(goalProgress(g, state.transactions) * 100);
+    const required = goalRequiredPerMonth(g, saved, now);
+    const pct = Math.round(goalProgress(g) * 100);
     const expired = isGoalExpired(g, now);
     const status: GoalRow['status'] = expired ? 'expired' : 'on-track';
     const perMonthLabel = required === Infinity

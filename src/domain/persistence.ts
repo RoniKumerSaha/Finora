@@ -25,17 +25,67 @@ const DEFAULT_INCOME_CATEGORIES: ReadonlyArray<{ name: string }> = [
   { name: 'Other Income' },
 ];
 
+/**
+ * Expense categories shipped with the app. Order matters — used in
+ * pickers, charts, and as the canonical default for new users.
+ *
+ * Design notes:
+ *   - Grouped by intent (housing → daily life → family → giving →
+ *     tech → fun), with the most-frequent categories first so the
+ *     top of every picker is the thing users actually spend on.
+ *   - Names mirror what's already aliased in categoryEmoji.ts so the
+ *     emoji lookup keeps working. Keep new entries in sync with
+ *     CATEGORY_EMOJI_LIBRARY (or extend both together).
+ *   - South-Asia / Bangladesh-first: gas cylinder, WiFi, maid, EMI,
+ *     coaching, etc. show up because they're routine line items,
+ *     not edge cases.
+ */
 const DEFAULT_EXPENSE_CATEGORIES: ReadonlyArray<{ name: string }> = [
+  // ── Housing ────────────────────────────────────────────────────────
   { name: 'Rent' },
-  { name: 'Food & Dining' },
-  { name: 'Transport' },
+  { name: 'Service Charge' },
+  { name: 'Groceries' },
+
+  // ── Utilities & bills ──────────────────────────────────────────────
   { name: 'Utilities' },
-  { name: 'Shopping' },
-  { name: 'Gifts & Family' },
+  { name: 'LPG' },
+  { name: 'WiFi' },
   { name: 'Phone & Internet' },
+  { name: 'Subscriptions' },
+  { name: 'Insurance' },
+
+  // ── Daily life ─────────────────────────────────────────────────────
+  { name: 'Food & Dining' },
+  { name: 'Café' },
+  { name: 'Transport' },
+  { name: 'Fuel' },
+  { name: 'Shopping' },
+  { name: 'Personal Care' },
+  { name: 'Maid' },
+
+  // ── Family & health ────────────────────────────────────────────────
   { name: 'Health' },
+  { name: 'Hospital' },
+  { name: 'EMI' },
   { name: 'Education' },
+  { name: 'Coaching' },
+  { name: 'Books' },
+  { name: 'Kids' },
+  { name: 'Pets' },
+
+  // ── Giving & saving (cash-out buckets, even if money stays on hand) ─
+  { name: 'Gifts & Family' },
+  { name: 'Charity' },
+  { name: 'Puja' },
+
+  // ── Fun & occasions ────────────────────────────────────────────────
+  { name: 'Entertainment' },
   { name: 'Travel' },
+  { name: 'Stay' },
+  { name: 'Party' },
+  { name: 'Birthday' },
+  { name: 'Hobbies' },
+  { name: 'Home' },
 ];
 
 /**

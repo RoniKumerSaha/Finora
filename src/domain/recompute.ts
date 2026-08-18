@@ -2,6 +2,10 @@
  * recompute.ts — fills derived fields on every load.
  *
  * Recomputes paidSoFar on every debt and re-derives investment.status.
+ * Also migrates goals that pre-date the contributions array (seeding
+ * it from the legacy `saved` field) and recomputes `goal.saved` from
+ * the contributions array so the two never drift.
+ *
  * Used by the store init path so the store never holds stale data,
  * even if localStorage was hand-edited or held a previous shape.
  *
@@ -20,6 +24,7 @@ import {
   dpsContributedSoFar,
   dpsPaidOutSoFar,
 } from './math';
+import { migrateGoalsAddContributions, recomputeGoalSaved } from './goals';
 
 export function recomputeDerived(state: State): State {
   const debts = state.debts.map(d => {
@@ -48,5 +53,8 @@ export function recomputeDerived(state: State): State {
 
     return nextStatus === inv.status ? inv : { ...inv, status: nextStatus };
   });
-  return { ...state, debts, investments };
+  // Goals: migrate any legacy entries (pre-contributions-array) and
+  // reconcile the stored `saved` total with the contributions array.
+  const goals = recomputeGoalSaved(migrateGoalsAddContributions({ ...state, debts, investments })).goals;
+  return { ...state, debts, investments, goals };
 }

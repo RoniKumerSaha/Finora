@@ -304,3 +304,71 @@ export function suggestEmojiForName(name: string): string {
   }
   return CATEGORY_EMOJI_LIBRARY[0].emoji;
 }
+
+/**
+ * Grouping for the expense category picker. Order of the array is the
+ * display order; categories not in any group fall into a trailing
+ * 'Other' bucket so user-created categories that don't match a known
+ * group still render.
+ *
+ * The names use lower-case substring matching, so e.g. 'Phone & Internet'
+ * matches 'phone'. Keep these in sync with DEFAULT_EXPENSE_CATEGORIES
+ * in persistence.ts — names removed there should also drop here.
+ */
+export type CategoryGroupKey =
+  | 'housing'
+  | 'bills'
+  | 'daily'
+  | 'family'
+  | 'giving'
+  | 'fun';
+
+export const CATEGORY_GROUPS: ReadonlyArray<{
+  key: CategoryGroupKey;
+  label: string;
+  /** Lower-case substrings matched against category name. */
+  names: string[];
+}> = [
+  { key: 'housing', label: 'Housing',           names: ['rent', 'service charge', 'groceries'] },
+  { key: 'bills',   label: 'Utilities & bills', names: ['utilities', 'lpg', 'wifi', 'phone', 'subscriptions', 'insurance'] },
+  { key: 'daily',   label: 'Daily life',        names: ['food', 'café', 'cafe', 'transport', 'fuel', 'shopping', 'personal', 'maid'] },
+  { key: 'family',  label: 'Family & health',   names: ['health', 'hospital', 'emi', 'education', 'coaching', 'books', 'kids', 'pets'] },
+  { key: 'giving',  label: 'Giving & saving',   names: ['gifts', 'charity', 'puja'] },
+  { key: 'fun',     label: 'Fun & occasions',   names: ['entertainment', 'travel', 'stay', 'party', 'birthday', 'hobbies'] },
+];
+
+/**
+ * Pick the group key for a category name. Falls through to 'fun' if
+ * nothing matches — but 'fun' here is just the bucket for "uncategorised"
+ * expense rows in the picker; the explicit 'fun' bucket content above
+ * still sorts first because CATEGORY_GROUPS is iterated in order.
+ */
+export function groupKeyForCategory(name: string): CategoryGroupKey {
+  const lower = name.toLowerCase();
+  for (const g of CATEGORY_GROUPS) {
+    if (g.names.some(n => lower.includes(n))) return g.key;
+  }
+  return 'fun';
+}
+
+/**
+ * Group a list of expense categories into the picker buckets. Returns
+ * the groups in the same order as CATEGORY_GROUPS, with an 'Other'
+ * bucket appended last for any names that didn't match any group.
+ *
+ * Categories are partitioned by groupKeyForCategory(name). Substring
+ * matching is intentional: 'Phone & Internet' picks up the 'phone'
+ * token and lands in 'bills'. User-created categories that don't match
+ * any group land in 'Other'.
+ */
+export function groupExpenseCategories<T extends { name: string }>(
+  cats: T[],
+): Array<{ key: CategoryGroupKey; label: string; items: T[] }> {
+  const byKey: Record<CategoryGroupKey, T[]> = {
+    housing: [], bills: [], daily: [], family: [], giving: [], fun: [],
+  };
+  for (const c of cats) byKey[groupKeyForCategory(c.name)].push(c);
+  return CATEGORY_GROUPS
+    .map(g => ({ key: g.key, label: g.label, items: byKey[g.key] }))
+    .filter(g => g.items.length > 0);
+}

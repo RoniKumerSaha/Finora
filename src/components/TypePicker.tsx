@@ -11,10 +11,19 @@
  * for consistency, the category tiles get a subtle inset on select, and
  * the filter pills get a slight transition.
  *
+ * 2026-08-18 polish: CategoryGrid gained a `variant` prop:
+ *   - 'flat' (default): every category in one grid (income + transfer;
+ *     anything < 12 categories). Original v1 behaviour.
+ *   - 'grouped': splits expense categories into labelled sections
+ *     (Housing / Utilities & bills / Daily life / Family & health /
+ *     Giving / Fun) and adds a search input to filter the visible
+ *     sections. Used on the Add Expense screen because it now ships
+ *     31+ categories and a flat grid becomes a wall of tiles.
  * Pure presentational — parent owns selected-id state.
  */
+import { useMemo, useState } from 'react';
 import type { Category } from '../domain/types';
-import { emojiForCategory } from '../lib/categoryEmoji';
+import { emojiForCategory, groupExpenseCategories } from '../lib/categoryEmoji';
 import { ArrowUp, ArrowDown, ArrowLeftRight } from './icons/Icons';
 
 /* ---------- Type picker (Income / Expense / Transfer cards) ---------- */
@@ -64,35 +73,154 @@ export function TypePicker({
 
 /* ---------- Category tile grid (5 cols, emoji + label) ---------- */
 
+type CategoryGridProps = {
+  categories: Category[];
+  selectedId?: string;
+  onPick: (id: string) => void;
+  /**
+   * 'flat' (default) renders every category in one grid. 'grouped'
+   * splits expense categories into labelled sections and adds a
+   * search input. 'grouped' is intended for the expense picker — the
+   * defaults ship 31 categories and a flat grid becomes a wall.
+   */
+  variant?: 'flat' | 'grouped';
+};
+
+/**
+ * Single category tile — shared by both modes so the visual treatment
+ * is identical regardless of which grid wrapper renders it.
+ */
+function CategoryTile({ category, selected, onPick }: {
+  category: Category;
+  selected: boolean;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(category.id)}
+      className={[
+        'aspect-square rounded-btn flex flex-col items-center justify-center gap-1.5',
+        'text-xs font-medium transition border',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        selected
+          ? 'border-primary bg-primary-hi text-primary'
+          : 'bg-surface-2 border-border text-muted hover:bg-surface-3 hover:text-ink',
+      ].join(' ')}
+    >
+      <span className="text-[22px] leading-none">{emojiForCategory(category.name)}</span>
+      <span className="truncate w-full px-1 text-center">{category.name}</span>
+    </button>
+  );
+}
+
 export function CategoryGrid({
-  categories, selectedId, onPick,
-}: { categories: Category[]; selectedId?: string; onPick: (id: string) => void }) {
+  categories,
+  selectedId,
+  onPick,
+  variant = 'flat',
+}: CategoryGridProps) {
   if (categories.length === 0) {
     return <div className="text-muted text-sm">No categories yet.</div>;
   }
+  if (variant === 'flat') {
+    return (
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        {categories.map(c => (
+          <CategoryTile key={c.id} category={c} selected={selectedId === c.id} onPick={onPick} />
+        ))}
+      </div>
+    );
+  }
+  return <GroupedCategoryGrid categories={categories} selectedId={selectedId} onPick={onPick} />;
+}
+
+/**
+ * Grouped picker (used for expenses) — labels each section, exposes a
+ * search field that filters sections in place, and pins the selected
+ * tile as a "Selected" row above the search so the user can confirm
+ * what they picked before scrolling back up.
+ */
+function GroupedCategoryGrid({
+  categories,
+  selectedId,
+  onPick,
+}: { categories: Category[]; selectedId?: string; onPick: (id: string) => void }) {
+  const [query, setQuery] = useState('');
+  const groups = useMemo(() => groupExpenseCategories(categories), [categories]);
+  const q = query.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    if (!q) return groups;
+    return groups
+      .map(g => ({
+        ...g,
+        items: g.items.filter(c => c.name.toLowerCase().includes(q)),
+      }))
+      .filter(g => g.items.length > 0);
+  }, [groups, q]);
+  const selected = categories.find(c => c.id === selectedId);
+  const totalShown = filtered.reduce((n, g) => n + g.items.length, 0);
+
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-      {categories.map(c => {
-        const sel = selectedId === c.id;
-        return (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onPick(c.id)}
-            className={[
-              'aspect-square rounded-btn flex flex-col items-center justify-center gap-1.5',
-              'text-xs font-medium transition border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-              sel
-                ? 'border-primary bg-primary-hi text-primary'
-                : 'bg-surface-2 border-border text-muted hover:bg-surface-3 hover:text-ink',
-            ].join(' ')}
-          >
-            <span className="text-[22px] leading-none">{emojiForCategory(c.name)}</span>
-            <span className="truncate w-full px-1 text-center">{c.name}</span>
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-3">
+      {/* Selected row — always visible so the user can confirm their pick
+          without scrolling back up. Empty state is a soft hint instead of
+          a forever-empty space. */}
+      <div className="flex items-center gap-2 min-h-[28px]">
+        <span className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+          Selected
+        </span>
+        {selected ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-primary-hi text-primary text-[13px] font-semibold">
+            <span aria-hidden>{emojiForCategory(selected.name)}</span>
+            {selected.name}
+          </span>
+        ) : (
+          <span className="text-xs text-muted">No category picked yet.</span>
+        )}
+      </div>
+
+      {/* Search input — clears to default state when emptied. */}
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search categories…"
+          aria-label="Search categories"
+          className="w-full bg-surface-2 text-ink rounded-input border border-border px-[14px] py-2.5 pl-9 text-sm leading-tight transition shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+        />
+        <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[15px]">
+          {'\u{1F50D}'}
+        </span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-sm text-muted py-6 text-center">
+          No categories match “{query}”.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {filtered.map(g => (
+            <div key={g.key}>
+              <div className="flex items-baseline justify-between mb-2">
+                <h4 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
+                  {g.label}
+                </h4>
+                <span className="text-[11px] text-muted">{g.items.length}</span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {g.items.map(c => (
+                  <CategoryTile key={c.id} category={c} selected={selectedId === c.id} onPick={onPick} />
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="text-[11px] text-muted text-right">
+            {totalShown} of {categories.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

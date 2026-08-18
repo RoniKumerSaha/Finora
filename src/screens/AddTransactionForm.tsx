@@ -211,6 +211,10 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                 categories={cats}
                 selectedId={categoryId}
                 onPick={setCategoryId}
+                // Expenses ship 31+ categories — grouped + search lets
+                // the user find one without a wall of tiles. Income has
+                // 5 categories and stays flat.
+                variant={type === 'expense' ? 'grouped' : 'flat'}
               />
             </Field>
           </div>

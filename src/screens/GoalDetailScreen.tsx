@@ -1,20 +1,21 @@
 /**
  * GoalDetailScreen — single detail + edit screen for a savings goal.
  *
- * Visual target: v1 design system (Fraunces headings, surface cards,
- * tabular numerals). Goals use R6 discipline — `saved` is derived from
- * expense txns with `linkedGoalId === goal.id`; this screen renders the
- * derived value and never asks the user to enter it.
+ * Goals are a *plan-only* scratchpad. Contributions here do NOT create
+ * transactions and do NOT touch account balances. The user is just
+ * recording "how much of the target have I set aside so far?" — the
+ * real money lives in their accounts, tracked separately.
  *
  * Two modes:
  *   - View (default): read-only progress, required-per-month, full
  *     contribution history, edit + delete affordances.
- *   - Edit (toggled inline): name, target, targetDate; banner explains
- *     that the "saved" amount is derived and won't be edited.
+ *   - Edit (toggled inline): name, target, targetDate. The "saved"
+ *     amount is recomputed from `goal.contributions` and is not
+ *     edited directly here — add or remove a contribution instead.
  *
- * Contribute via modal: opens from the header button before Edit.
- * Hidden once the goal is completed. Submits through
- * `goals.addContribution()` which creates a linked expense transaction.
+ * Contribute via modal: opens from the header button. Hidden once the
+ * goal is completed. Submits through `goals.addContribution()` which
+ * appends to the goal's contributions array and bumps `saved`.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -22,11 +23,10 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
-import * as accounts from '../domain/accounts';
 import {
-  goalSavedFromTxns,
+  goalSaved,
   goalProgress,
-  goalRequiredPerMonthDerived,
+  goalRequiredPerMonth,
   isGoalCompleted,
   isGoalExpired,
 } from '../domain/math';
@@ -35,7 +35,6 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
-import type { Account } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -46,7 +45,6 @@ export function GoalDetailScreen() {
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
   const { confirm, dialog } = useConfirm();
-  const accs = accounts.list(state);
   const goal = goals.get(state, id!);
 
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -57,7 +55,6 @@ export function GoalDetailScreen() {
   // Contribution form state (rendered inside ContributeModal).
   const [contribAmount, setContribAmount] = useState('');
   const [contribDate, setContribDate] = useState(new Date().toISOString().slice(0, 10));
-  const [contribAccount, setContribAccount] = useState(accs[0]?.id ?? '');
   const [contribNote, setContribNote] = useState('');
   const [showContributeForm, setShowContributeForm] = useState(false);
 
@@ -70,13 +67,13 @@ export function GoalDetailScreen() {
     );
   }
 
-  const txs = state.transactions.filter(t => t.linkedGoalId === goal.id && t.type === 'expense');
-  const saved = goalSavedFromTxns(goal, state.transactions);
-  const progress = goalProgress(goal, state.transactions);
+  const saved = goalSaved(goal);
+  const progress = goalProgress(goal);
   const pct = Math.round(progress * 100);
   const completed = isGoalCompleted(goal, saved);
   const expired = isGoalExpired(goal);
-  const requiredPerMonth = completed ? 0 : goalRequiredPerMonthDerived(goal, state.transactions);
+  const requiredPerMonth = completed ? 0 : goalRequiredPerMonth(goal, saved);
+  const contributions = goal.contributions;
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
   // value is valid; user can break it by typing a negative target.
@@ -106,7 +103,7 @@ export function GoalDetailScreen() {
         targetDate,
       }));
       setMode('view');
-      showBanner({ kind: 'success', what: 'Goal updated', why: 'Name, target, and date are now in effect.', fix: 'The saved amount is unchanged — it\'s derived from your transactions.' });
+      showBanner({ kind: 'success', what: 'Goal updated', why: 'Name, target, and date are now in effect.', fix: 'Your contribution history is unchanged — add or remove a contribution to adjust the saved amount.' });
     } catch (err) {
       showBanner({ what: 'Could not update goal', why: (err as Error).message, fix: 'Try again.' });
     }
@@ -115,7 +112,7 @@ export function GoalDetailScreen() {
   async function onDelete() {
     const ok = await confirm({
       title: 'Delete this goal?',
-      body: `${fmtBDT(saved)} of contributed transactions stay in your records. Only the goal itself will be removed.`,
+      body: `${contributions.length} contribution ${contributions.length === 1 ? 'entry' : 'entries'} will be removed. This cannot be undone.`,
       confirmLabel: 'Delete goal',
       danger: true,
     });
@@ -124,8 +121,8 @@ export function GoalDetailScreen() {
     showBanner({
       kind: 'success',
       what: 'Goal deleted',
-      why: `${fmtBDT(saved)} of contributions remain in your transactions.`,
-      fix: 'Open Home or Transactions to see them.',
+      why: 'The goal and its contribution history are gone.',
+      fix: 'Your accounts and transactions were not touched.',
     });
     navigate('/goals');
   }
@@ -136,28 +133,47 @@ export function GoalDetailScreen() {
       showBanner({ what: 'Amount must be greater than zero', why: 'You can\'t contribute nothing.', fix: 'Enter a positive amount.' });
       return;
     }
-    if (!contribAccount) {
-      showBanner({ what: 'Pick an account', why: 'Contributions need an account to come from.', fix: 'Select the source account.' });
-      return;
-    }
     try {
+      const amount = Number(contribAmount);
       update(s => goals.addContribution(s, goal!.id, {
-        amount: Number(contribAmount),
+        amount,
         date: contribDate,
-        accountId: contribAccount,
         note: contribNote.trim() || undefined,
       }));
-      setContribAmount('');
-      setContribNote('');
+      const newSaved = saved + amount;
       showBanner({
         kind: 'success',
         what: `+ ${fmtBDT(contribAmount)} toward ${goal!.name}`,
-        why: 'Recorded as an expense transaction linked to this goal.',
-        fix: `Saved is now ${fmtBDT(saved + Number(contribAmount))} of ${fmtBDT(goal!.target)}.`,
+        why: 'Saved as a plan entry — your account balance is unchanged.',
+        fix: `Saved is now ${fmtBDT(newSaved)} of ${fmtBDT(goal!.target)}.`,
       });
+      // Close the modal and clear the form so a second contribution
+      // starts from scratch. State is reset AFTER the success banner so
+      // the values aren't briefly visible inside the closing modal.
+      setShowContributeForm(false);
+      setContribAmount('');
+      setContribDate(new Date().toISOString().slice(0, 10));
+      setContribNote('');
     } catch (err) {
       showBanner({ what: 'Could not record contribution', why: (err as Error).message, fix: 'Try again.' });
     }
+  }
+
+  async function onRemoveContribution(contributionId: string) {
+    const ok = await confirm({
+      title: 'Remove this contribution?',
+      body: 'The saved amount goes down by this entry. Your accounts are not affected.',
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
+    update(s => goals.removeContribution(s, goal!.id, contributionId));
+    showBanner({
+      kind: 'success',
+      what: 'Contribution removed',
+      why: 'The saved amount has been adjusted.',
+      fix: 'Add a new contribution if you made a mistake.',
+    });
   }
 
   return (
@@ -174,7 +190,7 @@ export function GoalDetailScreen() {
         </div>
         {mode === 'view' && (
           <div className="flex flex-wrap gap-2">
-            {!completed && accs.length > 0 && (
+            {!completed && (
               <button
                 type="button"
                 onClick={() => setShowContributeForm(true)}
@@ -206,7 +222,7 @@ export function GoalDetailScreen() {
         </div>
         <div className="flex justify-between text-xs text-muted mt-2">
           <span>{pct}% complete</span>
-          <span>{fmtBDT(goal.target - saved)} remaining</span>
+          <span>{fmtBDT(Math.max(0, goal.target - saved))} remaining</span>
         </div>
         {completed && (
           <div className="mt-4 text-[13px] text-success bg-success-callout-bg border border-success rounded-lg px-3 py-2">
@@ -239,7 +255,7 @@ export function GoalDetailScreen() {
           </div>
           <div>
             <div className="text-[11px] text-muted uppercase tracking-wider">Contributions</div>
-            <div className="text-xl font-bold text-ink tabular mt-1">{txs.length}</div>
+            <div className="text-xl font-bold text-ink tabular mt-1">{contributions.length}</div>
           </div>
           <div>
             <div className="text-[11px] text-muted uppercase tracking-wider">Created</div>
@@ -253,8 +269,8 @@ export function GoalDetailScreen() {
         <form onSubmit={onSaveEdit} className="card flex flex-col gap-5">
           <h2 className="heading h3-modal">Edit goal</h2>
           <div className="text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-            <strong>Heads up:</strong> the "saved so far" figure above comes from your linked transactions.
-            Editing this goal doesn't change that — add a contribution or correct a transaction instead.
+            <strong>Heads up:</strong> the "saved so far" figure above is the sum of your contributions.
+            Editing this goal doesn't change that — add or remove a contribution instead.
           </div>
           <Field label="Name">
             <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
@@ -288,24 +304,31 @@ export function GoalDetailScreen() {
       {/* Add contribution is rendered as a modal (see ContributeModal at end of file). */}
 
       {/* Contribution history */}
-      {txs.length > 0 && (
+      {contributions.length > 0 && (
         <section className="card">
           <h2 className="heading h3-modal mb-4">Contribution history</h2>
           <div className="divide-y divide-border">
-            {txs
+            {contributions
               .slice()
               .sort((a, b) => b.date.localeCompare(a.date))
-              .map(t => {
-                const acc = accs.find(a => a.id === t.accountId);
-                return (
-                  <div key={t.id} className="py-2.5 flex justify-between items-center">
-                    <div>
-                      <div className="text-[13px] font-semibold tabular">{fmtBDT(t.amount)}</div>
-                      <div className="text-[11px] text-muted">{fmtDate(t.date)} {acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}</div>
+              .map(c => (
+                <div key={c.id} className="py-2.5 flex justify-between items-center gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold tabular">{fmtBDT(c.amount)}</div>
+                    <div className="text-[11px] text-muted">
+                      {fmtDate(c.date)}{c.note ? ` ${MIDDOT} ${c.note}` : ''}
                     </div>
                   </div>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveContribution(c.id)}
+                    aria-label="Remove contribution"
+                    className="shrink-0 text-[11px] text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
           </div>
         </section>
       )}
@@ -321,21 +344,18 @@ export function GoalDetailScreen() {
       >
         <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
         <p className="text-[13px] text-muted mb-4">
-          Removes the goal only. The {txs.length} linked transactions stay in your records as ordinary expenses.
+          Removes the goal and its {contributions.length} contribution {contributions.length === 1 ? 'entry' : 'entries'}. Your accounts and transactions are not touched.
         </p>
         <Button variant="danger" onClick={onDelete}>Delete goal</Button>
       </section>
 
       {dialog}
-      {!completed && mode === 'view' && accs.length > 0 && showContributeForm && (
+      {!completed && mode === 'view' && showContributeForm && (
         <ContributeModal
-          accountOptions={accs}
           contribAmount={contribAmount}
           setContribAmount={setContribAmount}
           contribDate={contribDate}
           setContribDate={setContribDate}
-          contribAccount={contribAccount}
-          setContribAccount={setContribAccount}
           contribNote={contribNote}
           setContribNote={setContribNote}
           onClose={() => { setShowContributeForm(false); setContribAmount(''); setContribNote(''); }}
@@ -349,18 +369,19 @@ export function GoalDetailScreen() {
 /**
  * ContributeModal — modal for recording a goal contribution.
  *
+ * Plan-only — no account picker, no transaction linkage. The user just
+ * types an amount, picks a date, optionally adds a note. The
+ * contribution is appended to the goal's contributions array.
+ *
  * Rendered via portal into document.body. Escape and backdrop click
  * close without recording. Submit is handled by the parent, which
  * also closes the modal on success.
  */
 interface ContributeModalProps {
-  accountOptions: Account[];
   contribAmount: string;
   setContribAmount: (v: string) => void;
   contribDate: string;
   setContribDate: (v: string) => void;
-  contribAccount: string;
-  setContribAccount: (v: string) => void;
   contribNote: string;
   setContribNote: (v: string) => void;
   onClose: () => void;
@@ -368,13 +389,10 @@ interface ContributeModalProps {
 }
 
 function ContributeModal({
-  accountOptions,
   contribAmount,
   setContribAmount,
   contribDate,
   setContribDate,
-  contribAccount,
-  setContribAccount,
   contribNote,
   setContribNote,
   onClose,
@@ -423,7 +441,7 @@ function ContributeModal({
       >
         <h3 id="goal-contribute-title" className="heading h3-modal m-0">Add a contribution</h3>
         <p className="text-[13px] text-muted m-0 -mt-3">
-          Records an expense from the chosen account and links it to this goal.
+          Records the amount you've set aside toward this goal. Your account balance is not changed.
         </p>
         <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
@@ -440,17 +458,6 @@ function ContributeModal({
         <Field label="Date">
           <Input type="date" value={contribDate} onChange={e => setContribDate(e.target.value)} />
         </Field>
-        <Field label="From account">
-          <select
-            value={contribAccount}
-            onChange={e => setContribAccount(e.target.value)}
-            className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
-          >
-            {accountOptions.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
-        </Field>
         <Field label="Note (optional)">
           <Input
             value={contribNote}
@@ -466,7 +473,7 @@ function ContributeModal({
           >
             Cancel
           </button>
-          <Button variant="primary" type="submit" disabled={amountInvalid}>Record contribution</Button>
+          <Button variant="primary" type="submit" disabled={amountInvalid}>Add contribution</Button>
         </div>
       </form>
     </div>,

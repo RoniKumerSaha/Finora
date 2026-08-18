@@ -20,7 +20,7 @@
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
-import { goalSavedFromTxns } from '../domain/math';
+import { goalSaved } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
 
 export function GoalsListScreen() {
@@ -62,7 +62,7 @@ export function GoalsListScreen() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {gs.map(g => {
-            const saved = goalSavedFromTxns(g, state.transactions);
+            const saved = goalSaved(g);
             const pct = Math.min(100, Math.round((saved / (Number(g.target) || 1)) * 100));
             return (
               <Link

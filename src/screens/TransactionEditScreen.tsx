@@ -184,6 +184,7 @@ export function TransactionEditScreen() {
                 categories={cats}
                 selectedId={categoryId}
                 onPick={setCategoryId}
+                variant={type === 'expense' ? 'grouped' : 'flat'}
               />
             </Field>
           </div>

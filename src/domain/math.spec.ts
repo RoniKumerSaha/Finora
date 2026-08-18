@@ -24,9 +24,8 @@ import {
   investmentMaturityDate,
   deriveInvestmentStatus,
   daysToMaturity,
-  goalSavedFromTxns,
+  goalSaved,
   goalProgress,
-  goalRequiredPerMonthDerived,
   dpsMaturityValue,
   dpsContributedSoFar,
   dpsPaidOutSoFar,
@@ -112,20 +111,20 @@ describe('R3 — account balance', () => {
 
 describe('R5 — goal required per month', () => {
   it('returns positive number when on track', () => {
-    const goal = { id: 'g1', name: 'g', target: 12000, saved: 0, targetDate: '2027-02-13', createdAt: NOW };
+    const goal: Goal = { id: 'g1', name: 'g', target: 12000, saved: 0, contributions: [], targetDate: '2027-02-13', createdAt: NOW };
     // 6 months left from 2026-08-13.
     expect(goalRequiredPerMonth(goal, 0, NOW)).toBe(2000);
   });
   it('returns 0 when goal is met', () => {
-    const goal = { id: 'g1', name: 'g', target: 100, saved: 100, targetDate: '2099-01-01', createdAt: NOW };
+    const goal: Goal = { id: 'g1', name: 'g', target: 100, saved: 100, contributions: [], targetDate: '2099-01-01', createdAt: NOW };
     expect(goalRequiredPerMonth(goal, 100, NOW)).toBe(0);
   });
   it('returns Infinity when expired', () => {
-    const goal = { id: 'g1', name: 'g', target: 1000, saved: 0, targetDate: '2026-01-01', createdAt: NOW };
+    const goal: Goal = { id: 'g1', name: 'g', target: 1000, saved: 0, contributions: [], targetDate: '2026-01-01', createdAt: NOW };
     expect(goalRequiredPerMonth(goal, 0, NOW)).toBe(Infinity);
   });
   it('isGoalCompleted + isGoalExpired', () => {
-    const g = { id: 'g1', name: 'g', target: 100, saved: 50, targetDate: '2099-01-01', createdAt: NOW };
+    const g: Goal = { id: 'g1', name: 'g', target: 100, saved: 50, contributions: [], targetDate: '2099-01-01', createdAt: NOW };
     expect(isGoalCompleted(g, 50)).toBe(false);
     expect(isGoalCompleted(g, 100)).toBe(true);
     expect(isGoalExpired({ ...g, targetDate: '2025-01-01' }, NOW)).toBe(true);
@@ -201,42 +200,38 @@ describe('R9 / R10 — investment maturity', () => {
   });
 });
 
-// ---------- R6 — goal saved derived from transactions ----------
+// ---------- R6 — goal saved (stored, but plan-only) ----------
 
-describe('R6 — goal saved (derived)', () => {
+describe('R6 — goal saved (stored on goal.contributions)', () => {
   const goal: Goal = {
-    id: 'g1', name: 'g', target: 1000, saved: 0, targetDate: '2099-01-01', createdAt: NOW,
+    id: 'g1', name: 'g', target: 1000, saved: 350, contributions: [
+      { id: 'c1', amount: 100, date: '2026-08-01' },
+      { id: 'c2', amount: 250, date: '2026-08-02' },
+    ], targetDate: '2099-01-01', createdAt: NOW,
   };
-  it('aggregates only expense txns linked to the goal', () => {
-    const txs: Transaction[] = [
-      tx({ type: 'expense', amount: 100, linkedGoalId: 'g1' }),
-      tx({ type: 'expense', amount: 250, linkedGoalId: 'g1' }),
-      tx({ type: 'income',  amount: 999, linkedGoalId: 'g1' }),  // ignored
-      tx({ type: 'expense', amount: 50,  linkedGoalId: 'g2' }),  // other goal
-      tx({ type: 'expense', amount: 7,   linkedGoalId: undefined }),
-    ];
-    expect(goalSavedFromTxns(goal, txs)).toBe(350);
+  it('goalSaved reads the stored total, not transaction aggregates', () => {
+    // Even with stray txns around, no derivation happens — goals are
+    // plan-only and don't read from transactions.
+    expect(goalSaved(goal)).toBe(350);
   });
-  it('zero when no linked txns', () => {
-    expect(goalSavedFromTxns(goal, [])).toBe(0);
+  it('zero when saved is 0', () => {
+    const empty: Goal = { ...goal, saved: 0, contributions: [] };
+    expect(goalSaved(empty)).toBe(0);
   });
   it('goalProgress caps at 1.0', () => {
-    const txs = [tx({ type: 'expense', amount: 9999, linkedGoalId: 'g1' })];
-    expect(goalProgress(goal, txs)).toBe(1);
+    const overFunded: Goal = { ...goal, saved: 9999, target: 1000 };
+    expect(goalProgress(overFunded)).toBe(1);
   });
-  it('goalRequiredPerMonthDerived uses derived saved, not stored field', () => {
+  it('goalRequiredPerMonth uses the supplied saved value', () => {
     // Goal with targetDate ~6 months out from 2026-08-13:
-    //   targetDate = 2027-02-13, target = 1200, derived saved = 200
+    //   targetDate = 2027-02-13, target = 1200, saved = 200
     //   remaining = 1000, months left = 6
     //   → 1000 / 6 ≈ 166.67 / month
     const g: Goal = {
-      id: 'g2', name: 'g', target: 1200, saved: 0,  // stored is 0
-      targetDate: '2027-02-13', createdAt: NOW,
+      id: 'g2', name: 'g', target: 1200, saved: 200,
+      contributions: [], targetDate: '2027-02-13', createdAt: NOW,
     };
-    const txs = [
-      tx({ type: 'expense', amount: 200, linkedGoalId: 'g2', date: '2026-08-01' }),
-    ];
-    expect(goalRequiredPerMonthDerived(g, txs, NOW)).toBeCloseTo(1000 / 6, 5);
+    expect(goalRequiredPerMonth(g, g.saved, NOW)).toBeCloseTo(1000 / 6, 5);
   });
 });
 

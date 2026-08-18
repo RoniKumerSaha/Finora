@@ -78,17 +78,23 @@ export function seedDemo(state: State): State {
   ];
 
   // ---------- categories ----------
+  // Seed categories mirror DEFAULT_EXPENSE_CATEGORIES /
+  // DEFAULT_INCOME_CATEGORIES from persistence.ts. Adding a default
+  // there means adding it here too — otherwise seeded data points at
+  // phantom ids the picker can never resolve. Demo seed only uses a
+  // subset below (the ones referenced by transactions); the rest
+  // surface through mergeDefaults() on every load.
   const catSalary    = uid();
   const catFreelance = uid();
   const catBusiness  = uid();
   const catGift      = uid();
   const catIncomeOth = uid();
+  const catRent      = uid();
   const catFood      = uid();
   const catTransport = uid();
-  const catRent      = uid();
-  const catGifts     = uid();
   const catUtilities = uid();
   const catShopping  = uid();
+  const catGifts     = uid();
   const catPhone     = uid();
   const catHealth    = uid();
   const catEdu       = uid();
@@ -121,12 +127,15 @@ export function seedDemo(state: State): State {
   const goalMedId        = uid();
 
   const goals = [
-    { id: goalEmergencyId,  name: 'Emergency fund (6 months)', target: 300000, saved: 0, targetDate: dateOffset(365),  createdAt: dateOffset(-700) },
-    { id: goalLaptopId,     name: 'New laptop',                target: 120000, saved: 0, targetDate: dateOffset(180),  createdAt: dateOffset(-540) },
-    { id: goalVacationId,   name: 'Cox\u2019s Bazar trip',     target: 40000,  saved: 0, targetDate: dateOffset(60),   createdAt: dateOffset(-480) },
-    { id: goalParentsId,    name: 'Parents\u2019 anniversary gift', target: 25000, saved: 0, targetDate: dateOffset(45),  createdAt: dateOffset(-300) },
-    { id: goalHomeId,       name: 'Home renovation',           target: 500000, saved: 0, targetDate: dateOffset(900),  createdAt: dateOffset(-200) },
-    { id: goalMedId,        name: 'Medical buffer',            target: 80000,  saved: 0, targetDate: dateOffset(220),  createdAt: dateOffset(-150) },
+    // `saved` values reflect progress a long-running user might have
+    // (Emergency: 6 × 15000 = 90000, etc.) so the demo doesn't look
+    // entirely flat. Goals are plan-only — these don't touch accounts.
+    { id: goalEmergencyId,  name: 'Emergency fund (6 months)', target: 300000, saved: 90000,  contributions: [], targetDate: dateOffset(365),  createdAt: dateOffset(-700) },
+    { id: goalLaptopId,     name: 'New laptop',                target: 120000, saved: 48000,  contributions: [], targetDate: dateOffset(180),  createdAt: dateOffset(-540) },
+    { id: goalVacationId,   name: 'Cox\u2019s Bazar trip',     target: 40000,  saved: 24000,  contributions: [], targetDate: dateOffset(60),   createdAt: dateOffset(-480) },
+    { id: goalParentsId,    name: 'Parents\u2019 anniversary gift', target: 25000, saved: 10000,  contributions: [], targetDate: dateOffset(45),  createdAt: dateOffset(-300) },
+    { id: goalHomeId,       name: 'Home renovation',           target: 500000, saved: 25000,  contributions: [], targetDate: dateOffset(900),  createdAt: dateOffset(-200) },
+    { id: goalMedId,        name: 'Medical buffer',            target: 80000,  saved: 5000,   contributions: [], targetDate: dateOffset(220),  createdAt: dateOffset(-150) },
   ];
 
   // ---------- debts ----------
@@ -427,54 +436,9 @@ export function seedDemo(state: State): State {
   // Closed DPS — full history (would have been 36 monthly contributions)
   pushDpsContribs(bankId, dpsClosedId, 3000, 36, pushTx);
 
-  /* ---- Goal contributions (R6 — sums into goalSavedFromTxns) ---- */
-  // Emergency fund — 6 contributions
-  for (const days of [-30, -90, -150, -210, -300, -420]) {
-    pushTx({
-      id: uid(), type: 'expense', amount: 15000,
-      date: dateOffset(days), accountId: bankId, categoryId: catGifts,
-      linkedGoalId: goalEmergencyId, note: 'Emergency fund contribution',
-    });
-  }
-
-  // Laptop fund — 4 contributions
-  for (const days of [-30, -90, -180, -270]) {
-    pushTx({
-      id: uid(), type: 'expense', amount: 12000,
-      date: dateOffset(days), accountId: bkashId, categoryId: catShopping,
-      linkedGoalId: goalLaptopId, note: 'Laptop fund',
-    });
-  }
-
-  // Vacation — 3 contributions
-  for (const days of [-30, -90, -120]) {
-    pushTx({
-      id: uid(), type: 'expense', amount: 8000,
-      date: dateOffset(days), accountId: bkashId, categoryId: catGifts,
-      linkedGoalId: goalVacationId, note: 'Cox\u2019s Bazar — saving up',
-    });
-  }
-
-  // Parents' gift
-  pushTx({
-    id: uid(), type: 'expense', amount: 10000, date: dateOffset(-60),
-    accountId: bkashId, categoryId: catGifts, linkedGoalId: goalParentsId,
-    note: 'Anniversary gift savings',
-  });
-
-  // Home renovation — modest start
-  pushTx({
-    id: uid(), type: 'expense', amount: 25000, date: dateOffset(-90),
-    accountId: savingsId, categoryId: catShopping, linkedGoalId: goalHomeId,
-    note: 'Home renovation — initial',
-  });
-
-  // Medical buffer
-  pushTx({
-    id: uid(), type: 'expense', amount: 5000, date: dateOffset(-30),
-    accountId: savingsId, categoryId: catHealth, linkedGoalId: goalMedId,
-    note: 'Medical buffer seed',
-  });
+  // Goals are plan-only scratchpads — no transactions are seeded for
+  // them. The `saved` values on the goal entities above are the
+  // source of truth for demo progress.
 
   return {
     ...state,

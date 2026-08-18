@@ -84,12 +84,16 @@ describe('computeStats', () => {
       transactions: [
         { id: '1', type: 'income',  amount: 100000, date: '2026-08-10' } as any,
         { id: '2', type: 'expense', amount:  30000, date: '2026-08-11' } as any,
-        { id: '3', type: 'expense', amount:  10000, date: '2026-08-12', linkedGoalId: 'g1' } as any,
+      ],
+      goals: [
+        { id: 'g1', name: 'Laptop', target: 100000, saved: 10000, contributions: [
+          { id: 'c1', amount: 10000, date: '2026-08-12' },
+        ], targetDate: '2027-01-01', createdAt: '2026-01-01' } as any,
       ],
     });
     const stats = computeStats(aug, r, 'thisMonth');
-    expect(stats.netFlow).toBe(60000);
-    expect(stats.avgMonthlyExpense).toBe(40000);
+    expect(stats.netFlow).toBe(70000);
+    expect(stats.avgMonthlyExpense).toBe(30000);
     expect(stats.savedTowardGoals).toBe(10000);
   });
 });
@@ -173,13 +177,10 @@ describe('goalsForInsights', () => {
   it('skips completed goals and sorts by date', () => {
     const state = makeState({
       goals: [
-        { id: 'g1', name: 'B', target: 100, saved: 0, targetDate: '2026-12-01', createdAt: '2026-01-01' },
-        { id: 'g2', name: 'A', target: 200, saved: 0, targetDate: '2026-09-01', createdAt: '2026-01-01' },
-        { id: 'g3', name: 'Done', target: 100, saved: 0, targetDate: '2026-01-01', createdAt: '2026-01-01' },
-      ],
-      transactions: [
-        // Make "Done" actually completed via a linked contribution.
-        { id: 't1', type: 'expense', amount: 100, date: '2026-08-01', linkedGoalId: 'g3' } as any,
+        { id: 'g1', name: 'B', target: 100, saved: 0,   contributions: [], targetDate: '2026-12-01', createdAt: '2026-01-01' },
+        { id: 'g2', name: 'A', target: 200, saved: 0,   contributions: [], targetDate: '2026-09-01', createdAt: '2026-01-01' },
+        // "Done" is fully funded via its `saved` field — plan-only.
+        { id: 'g3', name: 'Done', target: 100, saved: 100, contributions: [], targetDate: '2026-01-01', createdAt: '2026-01-01' },
       ],
     });
     const rows = goalsForInsights(state, new Date(Date.UTC(2026, 7, 14)));

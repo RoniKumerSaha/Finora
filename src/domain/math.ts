@@ -276,39 +276,27 @@ export function daysToMaturity(investment: Investment, now: string | Date = new 
   return daysBetween(today(now), mat);
 }
 
-// ---------- Goals (R5 — derived `saved`) ----------
+// ---------- Goals (R5 — stored `saved`) ----------
 
 /**
- * R6 (derived): sum of `expense` transactions where `linkedGoalId === goal.id`.
- * `goal.saved` is the legacy stored field; this is the source of truth.
+ * R6 (stored): `goal.saved` is the running total of
+ * `goal.contributions[].amount`. Recomputed on every load by
+ * `recomputeGoalSaved` so the stored total never drifts from the line
+ * items. This helper is kept for callers that need to read the value
+ * with a fallback (e.g. mock data in tests).
  */
-export function goalSavedFromTxns(goal: Goal, transactions: Transaction[]): number {
+export function goalSaved(goal: Goal): number {
   if (!goal) return 0;
-  let total = 0;
-  for (const t of transactions) {
-    if (t.linkedGoalId !== goal.id) continue;
-    if (t.type === 'expense') total += Number(t.amount) || 0;
-  }
-  return total;
+  return Number(goal.saved) || 0;
 }
 
-/** Convenience: progress ratio (0..1) considering derived saved. */
-export function goalProgress(goal: Goal, transactions: Transaction[]): number {
+/** Convenience: progress ratio (0..1) considering stored saved. */
+export function goalProgress(goal: Goal): number {
   if (!goal) return 0;
   const target = Number(goal.target) || 0;
   if (target <= 0) return 1;
-  const saved = goalSavedFromTxns(goal, transactions);
+  const saved = goalSaved(goal);
   return Math.min(1, saved / target);
-}
-
-/** R5 wrapper using the derived saved amount. */
-export function goalRequiredPerMonthDerived(
-  goal: Goal,
-  transactions: Transaction[],
-  now: string | Date = new Date()
-): number {
-  const saved = goalSavedFromTxns(goal, transactions);
-  return goalRequiredPerMonth(goal, saved, now);
 }
 
 // ---------- Investments (R9, R10 — DPS support) ----------

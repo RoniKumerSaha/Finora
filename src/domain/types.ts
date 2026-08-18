@@ -41,7 +41,17 @@ export interface Transaction {
   categoryId?: string;
   linkedDebtId?: string;
   linkedInvestmentId?: string;
-  linkedGoalId?: string;     // contribution to a savings goal (expense)
+  note?: string;
+}
+
+/** A single contribution entry on a savings goal. Plan-only — does NOT
+ *  create a transaction. Users track their real money in accounts; the
+ *  goal is a scratchpad for "how much of the target have I set aside
+ *  so far?". */
+export interface GoalContribution {
+  id: string;
+  amount: number;
+  date: ISODate;
   note?: string;
 }
 
@@ -49,10 +59,13 @@ export interface Goal {
   id: string;
   name: string;
   target: number;
-  /** Deprecated — kept for v1 reads; `saved` is now derived from
-   *  transactions where `linkedGoalId === goal.id` (R6 discipline).
-   *  Writers should never set this directly. */
+  /** What the user has set aside toward this goal — sum of
+   *  `contributions[].amount`, but stored (not derived) so reads are
+   *  O(1). Recomputed on every load by `recomputeGoalSaved`. */
   saved: number;
+  /** Individual contribution entries. Plan-only — never touches the
+   *  ledger. */
+  contributions: GoalContribution[];
   targetDate: ISODate;
   createdAt: ISODate;
 }
