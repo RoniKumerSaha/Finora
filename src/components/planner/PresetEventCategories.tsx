@@ -60,14 +60,18 @@ function shiftDateISO(iso: string | undefined, days: number): string | undefined
  */
 function suggestKit(eventName: string | undefined): EventKit {
   const name = (eventName ?? '').toLowerCase();
-  if (/\bwedding|byah\b|বিয়ে/i.test(name)) return 'wedding';
+  if (/\bwedding|byah\b|বিয়ে|shadi\b/i.test(name)) return 'wedding';
   if (/\btrip|tour|travel|vacation|holiday\b/i.test(name)) return 'trip';
-  if (/\beid\b/i.test(name)) return 'eid';
+  // Religious-occasion kit is intentionally broad — any faith-based
+  // celebration. We match across faiths because the kit itself is
+  // generic (no per-clergy presets). Order: eid → puja → christmas →
+  // vesak etc., so the heuristic never stalls on ties.
+  if (/\beid|puja|pooja|christmas|vesak|diwali|buddha|holi|ramadan|navratri|দূর্গা|পূজা/i.test(name)) return 'religious';
   if (/\bbirthday|party|anniversary\b/i.test(name)) return 'party';
   return 'generic';
 }
 
-const KIT_ORDER: EventKit[] = ['wedding', 'trip', 'eid', 'party', 'generic'];
+const KIT_ORDER: EventKit[] = ['wedding', 'trip', 'religious', 'party', 'generic'];
 
 export function PresetEventCategories({ plan }: { plan: EventPlan }) {
   const addEventCategories = useStore(s => s.addEventCategories);
@@ -100,7 +104,6 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
   // header chrome stays stable when the user flips tabs (no surprise
   // numbers / chrome jumps).
   const totalAcrossKits = PRESET_EVENT_CATEGORIES.length;
-  const activeKitName = tiles[0]?.name ?? '';
   const addedCount = useMemo(
     () => PRESET_EVENT_CATEGORIES.filter(p => existingNames.has(p.name.toLowerCase())).length,
     [existingNames],
@@ -148,12 +151,27 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
   }
 
   function addAll() {
+    // Kit-scoped: when the user is on the Wedding tab, "Add all" means
+    // "add the Wedding starter kit". This is the natural "predefined
+    // event" gesture — pick a kit, get its categories with seeded dates.
+    const missing = tiles.filter(t => !existingNames.has(t.name.toLowerCase()));
+    if (missing.length === 0) return;
+    addTiles(missing);
+    showBanner({
+      kind: 'success',
+      what: `${missing.length} ${EVENT_KIT_LABELS[activeKit]} categor${missing.length === 1 ? 'y' : 'ies'} added`,
+      why: 'Dates suggested relative to the event, each with a starting line item. Tap any category below to adjust.',
+      fix: 'Flip tabs to add from another kit, or tap Save plan when you\u2019re done.',
+    });
+  }
+
+  function addAllAcrossKits() {
     const missing = PRESET_EVENT_CATEGORIES.filter(t => !existingNames.has(t.name.toLowerCase()));
     if (missing.length === 0) return;
     addTiles(missing);
     showBanner({
       kind: 'success',
-      what: `${missing.length} categor${missing.length === 1 ? 'y' : 'ies'} added`,
+      what: `${missing.length} categor${missing.length === 1 ? 'y' : 'ies'} added across all kits`,
       why: 'Dates suggested relative to the event, each with a starting line item. Tap any category below to adjust.',
       fix: 'Remove what you don\u2019t need, or tap Save plan when you\u2019re done.',
     });
@@ -223,22 +241,44 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                 ? 'Pick a kit, tap tiles to add. Dates suggested relative to the event.'
                 : allAdded
                   ? 'Tap "Browse presets" to remove individual categories, or "Remove all" to start over.'
-                  : 'Wedding, trip, Eid, party — pick a kit and drop in the basics.'}
+                  : 'Wedding, trip, religious occasions, party — pick a kit and drop in the basics.'}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {missingCount > 0 && (
-            <button
-              type="button"
-              onClick={addAll}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-semibold transition bg-surface border border-border text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
-                <path d="M2 6 L5 9 L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Add all
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={addAll}
+                title={`Add every missing ${EVENT_KIT_LABELS[activeKit]} preset`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-semibold transition bg-surface border border-border text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path d="M2 6 L5 9 L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Add {EVENT_KIT_LABELS[activeKit]} kit
+              </button>
+              {(() => {
+                // Only show the cross-kit "Add all" affordance when there
+                // are missing categories from OTHER kits — otherwise it
+                // duplicates the kit-scoped button.
+                const missingOtherKits = PRESET_EVENT_CATEGORIES.filter(
+                  p => p.kit !== activeKit && !existingNames.has(p.name.toLowerCase()),
+                );
+                if (missingOtherKits.length === 0) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={addAllAcrossKits}
+                    title={`Add ${missingOtherKits.length} more preset${missingOtherKits.length === 1 ? '' : 's'} from other kits`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-medium transition bg-surface border border-border text-muted hover:text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    + Add all kits ({missingOtherKits.length})
+                  </button>
+                );
+              })()}
+            </>
           )}
           {addedCount > 0 && (
             <button
@@ -431,13 +471,16 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
           <div className="text-[11.5px] text-muted pt-2 border-t border-border/60 flex flex-wrap gap-x-4 gap-y-1">
             <span>
               <b className="text-ink">{EVENT_KIT_LABELS[activeKit]}</b> kit
-              {activeKitName ? ` · ${tiles.length} presets` : ''}
+              {tiles.length > 0 ? ` · ${tiles.length} preset${tiles.length === 1 ? '' : 's'}` : ''}
             </span>
             <span>
               Dates land at <b className="text-ink">event date + offset</b>. Adjust per category.
             </span>
             {activeKit === 'generic' && (
               <span>Generic covers events that don't fit the named kits.</span>
+            )}
+            {activeKit === 'religious' && (
+              <span>Religious covers faith-based occasions — Eid, Puja, Christmas, Buddha Purnima, etc. Add your own clergy presets.</span>
             )}
           </div>
         </>

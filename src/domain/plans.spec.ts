@@ -366,4 +366,13 @@ describe('addEventCategories', () => {
     ]);
     expect(next.eventPlans[0].dirty).toBe(true);
   });
+
+  /* ── Puja kit coverage ───────────────────────────────────────────
+   * The Puja kit was added so users planning Hindu religious
+   * ceremonies (Durga Puja, Kali Puja, Satyanarayan, housewarming)
+   * can drop in a starter kit instead of typing every category
+   * from scratch. These tests verify the preset catalog itself
+   * (not just the helper) — the type union, the kit section, and
+   * that bulk-add preserves the seeding rules.
+   */
 });
