@@ -27,7 +27,6 @@
  */
 import type { State } from '../domain/types';
 import { uid } from '../domain/ids';
-import { buildDefaultMonthPlans, buildDefaultEventPlans } from '../domain/persistence';
 
 function dateOffset(daysFromToday: number): string {
   const d = new Date();
@@ -485,8 +484,10 @@ export function seedDemo(state: State): State {
     goals,
     debts,
     investments,
-    monthPlans: buildDefaultMonthPlans(),
-    eventPlans: buildDefaultEventPlans(),
+    // Plans stay as the user had them — `Load demo data` should not
+    // touch the planner. The plans are personal scratchpads.
+    monthPlans: state.monthPlans,
+    eventPlans: state.eventPlans,
     settings: { ...state.settings, onboardingComplete: true },
   };
 }

@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { useStore } from '../domain/store';
 import type { Theme } from '../domain/store';
-import { seedDemo } from '../lib/demoSeed';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
@@ -22,28 +21,8 @@ export function SettingsScreen() {
   const update = useStore(s => s.update);
   const importAndReplace = useStore(s => s.importAndReplace);
   const showBanner = useStore(s => s.showBanner);
-  const hasData = useStore(s => s.state.accounts.length > 0 || s.state.transactions.length > 0);
   const { confirm, dialog } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  async function onSeedDemo() {
-    const ok = hasData
-      ? await confirm({
-          title: 'Replace existing data with demo?',
-          body: 'This will overwrite your current accounts, transactions, goals, and investments with a small demo dataset.',
-          confirmLabel: 'Replace',
-          danger: true,
-        })
-      : true;
-    if (!ok) return;
-    update(seedDemo);
-    showBanner({
-      kind: 'success',
-      what: 'Demo data loaded',
-      why: 'You\'re now seeing 3 accounts, 4 transactions, 1 goal, 1 investment.',
-      fix: 'Open any module from the sidebar.',
-    });
-  }
 
   async function onWipe() {
     const ok = await confirm({
@@ -125,7 +104,7 @@ export function SettingsScreen() {
     <div className="flex flex-col gap-6 max-w-[1100px]">
       <div>
         <h1 className="heading h1-screen">Settings</h1>
-        <div className="text-muted text-[13px] mt-1.5">Theme, backup, demo data, and reset.</div>
+        <div className="text-muted text-[13px] mt-1.5">Theme, backup, and reset.</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
@@ -172,14 +151,6 @@ export function SettingsScreen() {
             <p className="text-xs text-muted mt-4">
               Save a JSON file to your device. Use Import to restore from a backup later (replaces all data after confirmation).
             </p>
-          </section>
-
-          <section className="card">
-            <h2 className="heading h3-modal mb-4">Demo data</h2>
-            <p className="text-[13px] text-muted mb-4">
-              Load a small sample dataset (3 accounts, 4 transactions, 1 goal, 1 DPS) so the app isn't empty.
-            </p>
-            <Button variant="primary" onClick={onSeedDemo}>Load demo data</Button>
           </section>
 
           <section
