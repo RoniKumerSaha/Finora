@@ -97,15 +97,28 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* Card link — applied to .card surfaces that are clickable. Subtle
    1px upward translate + shadow tightens from card → modal on hover.
-   Decorative only; keyboard focus is already covered by .focus-ring. */
+   Decorative only; keyboard focus is already covered by .focus-ring.
+   2026-08-18: the full lift + modal-shadow swap looked too aggressive
+   on the light-mode parchment surface. Both modes now lift the same
+   amount (-1px), but light mode skips the heavy shadow-modal swap and
+   stays on the lighter shadow-card so the warm-cream surface doesn't
+   fight the calm tone. The dark-mode "pop" stays intact. */
 .card-link {
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
 }
-.card-link:hover {
+[data-theme="dark"] .card-link:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-modal), var(--card-inset);
   border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+[data-theme="light"] .card-link:hover {
+  /* Same lift as dark mode, but skips the modal-tier shadow swap.
+     Border accent is bumped to 55% so the visual signal stays clear
+     even with the lighter shadow. */
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card), var(--card-inset);
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
 }
 
 /* Focus ring contract: every interactive element uses the same primary

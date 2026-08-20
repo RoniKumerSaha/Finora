@@ -72,13 +72,13 @@ export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const theme = useStore(s => s.state.settings.theme);
   const setTheme = useStore(s => s.setTheme);
-  // Hide the "Add Transaction" shortcut on add/edit/form screens where
-  // it'd duplicate a screen's own submit button.
-  const onForm =
-    /\/add$/.test(location.pathname) ||
-    /\/transactions\/new/.test(location.pathname) ||
-    /\/transactions\/[^/]+\/edit$/.test(location.pathname) ||
-    /\/[^/]+\/[^/]+\/edit$/.test(location.pathname);
+  // Hide the "Add Transaction" shortcut only on the add-transaction
+  // screens themselves (`/transactions/new` and its per-type variants
+  // /transactions/new/expense, /income, /transfer) — there the sidebar
+  // CTA would duplicate the screen's own submit button. On every
+  // other screen, including entity edits like DebtEditScreen, the
+  // button is the fastest path to recording a new transaction.
+  const hideAddTx = /\/transactions\/new/.test(location.pathname);
 
   // Mobile drawer state. Closed by default; opened by tapping the
   // hamburger in the mobile topbar. Closes on navigation, on backdrop
@@ -202,31 +202,29 @@ export function Shell({ children }: { children: ReactNode }) {
 
           {/* Theme toggle — Dark / Light segmented control. Fast path
              between the two most-used values; "Auto" lives in Settings.
-             Hides on form/edit screens because the primary CTA is the
-             only primary action visible there, and the toggle would
-             dilute that. */}
-          {!onForm && (
-            <div
-              role="radiogroup"
-              aria-label="Theme"
-              className="flex items-center gap-1 p-1 rounded-pill bg-surface-2 border border-border mb-3"
-            >
-              <ThemePill
-                glyph={<span aria-hidden>{'\u263D'}</span>}
-                label="Dark"
-                isOn={theme === 'dark'}
-                onClick={() => setTheme('dark')}
-              />
-              <ThemePill
-                glyph={<span aria-hidden>{'\u2600'}</span>}
-                label="Light"
-                isOn={theme === 'light'}
-                onClick={() => setTheme('light')}
-              />
-            </div>
-          )}
+             Always visible — it's a global preference and not a primary
+             action, so it never competes with the screen's own
+             Save/Submit button (unlike the Add transaction CTA below). */}
+          <div
+            role="radiogroup"
+            aria-label="Theme"
+            className="flex items-center gap-1 p-1 rounded-pill bg-surface-2 border border-border mb-3"
+          >
+            <ThemePill
+              glyph={<span aria-hidden>{'\u263D'}</span>}
+              label="Dark"
+              isOn={theme === 'dark'}
+              onClick={() => setTheme('dark')}
+            />
+            <ThemePill
+              glyph={<span aria-hidden>{'\u2600'}</span>}
+              label="Light"
+              isOn={theme === 'light'}
+              onClick={() => setTheme('light')}
+            />
+          </div>
 
-          {!onForm && (
+          {!hideAddTx && (
             <NavLink
               to="/transactions/new"
               className="inline-flex items-center justify-center gap-2 text-primary-on px-4 py-2.5 rounded-btn font-bold text-[13px] hover:opacity-95 active:translate-y-px transition"

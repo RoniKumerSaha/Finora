@@ -18,12 +18,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { accountBalance, debtPaidSoFar } from '../domain/math';
-import { fmtBDT } from '../lib/format';
+import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import type { DebtDirection } from '../domain/types';
+
+const MIDDOT = '\u00B7';
 
 export function DebtEditScreen() {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +68,17 @@ export function DebtEditScreen() {
   const linkedTxCount = state.transactions.filter(
     t => t.linkedDebtId === debt.id
   ).length;
+
+  // Activity feed — every transaction tagged with this debt, sorted
+  // newest first. Paid-down debts (i_owe) surface linked expense
+  // transactions as "Payment"; receivables (owed_to_me) surface linked
+  // income as "Received". Mirrors the Activity card in
+  // InvestmentDetailScreen.
+  const linkedTx = state.transactions
+    .filter(t => t.linkedDebtId === debt.id)
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const accountById = new Map(state.accounts.map(a => [a.id, a]));
 
   // When fully paid, look up the most-recently-used account from the
   // linked transactions and show its current balance — gives the user
@@ -238,6 +251,72 @@ export function DebtEditScreen() {
           <Button variant="ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>
+
+      {/* Activity — every transaction tagged with this debt, newest
+          first. Hidden when there are no linked transactions so the
+          page stays uncluttered for fresh debts. Mirrors the Activity
+          card in InvestmentDetailScreen (linked contributions +
+          payouts), adapted for the debt semantics: i_owe expenses are
+          "Payment" (primary tone), owed_to_me incomes are "Received"
+          (success tone). The opposite direction would mean a tagging
+          mistake — we still render those rows so the user sees them,
+          but flag them with a neutral tone. */}
+      {linkedTx.length > 0 && (
+        <section className="card">
+          <h2 className="heading h3-modal mb-4">Activity</h2>
+          <div className="divide-y divide-border">
+            {linkedTx.map(t => {
+              const acc = accountById.get(t.accountId ?? '');
+              const isIOwe = debt.direction === 'i_owe';
+              // Tag tone: matches the directional flow the user
+              // expects. i_owe → expense is the normal "payment"
+              // (primary); owed_to_me → income is "received"
+              // (success). Cross combinations are shown with a muted
+              // neutral pill so they stand out without alarming.
+              const tag =
+                isIOwe && t.type === 'expense'
+                  ? { label: 'Payment',  cls: 'bg-primary-soft text-primary' }
+                  : !isIOwe && t.type === 'income'
+                  ? { label: 'Received', cls: 'bg-success-soft text-success' }
+                  : isIOwe && t.type === 'income'
+                  ? { label: 'Reversal', cls: 'bg-warn-soft text-warn' }
+                  : { label: 'Adjust',   cls: 'bg-surface-2 text-muted' };
+              const amountColor =
+                t.type === 'income'
+                  ? 'text-primary'
+                  : t.type === 'expense'
+                  ? 'text-danger'
+                  : 'text-ink';
+              const amountPrefix =
+                t.type === 'income' ? '+ ' : t.type === 'expense' ? '\u2212 ' : '';
+              return (
+                <div key={t.id} className="py-2.5 flex justify-between items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`text-[14px] font-semibold tabular ${amountColor}`}>
+                        {amountPrefix}{fmtBDT(t.amount)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10px] font-bold uppercase tracking-wider ${tag.cls}`}
+                      >
+                        {tag.label}
+                      </span>
+                    </div>
+                    <div className="text-[11.5px] text-muted mt-1 truncate tabular">
+                      {fmtDate(t.date)}{acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[12px] text-muted mt-3 leading-relaxed">
+            {debt.direction === 'i_owe'
+              ? 'Payments you make toward this debt. Recorded as expenses tagged with this debt — usually via Add transaction → Expense.'
+              : 'Payments you receive against this debt. Recorded as income tagged with this debt — usually via Add transaction → Income.'}
+          </div>
+        </section>
+      )}
 
       <section
         className="rounded-card p-6"

@@ -1,26 +1,32 @@
 /**
- * DebtsListScreen — one card per active debt, flat list.
+ * DebtsListScreen — one card per active debt, full-width stacked.
  *
- * 2026-08-18 polish: each active debt is its own .card surface
- * (matching the Accounts / Goals / Investments grids). The direction
- * label ("I OWE" / "OWED TO ME") sits in the top-left of each card
- * as a small uppercase tag, so the user can scan direction at a
- * glance without a separate group header. Completed debts stay in a
- * quieter group at the bottom (no hover lift — record-only).
+ * 2026-08-18 redesign: switched the active-debt card to the same
+ * horizontal split the investment card uses (left = identity + terms,
+ * right = headline amount, separated by a 1px divider). One card per
+ * debt, stacked in a single column so meta doesn't truncate at lg
+ * widths. Summary card pinned to the right at lg+ summarises the
+ * remaining balance per direction (mirrors InvestmentsListScreen).
  *
- * Card shape (per the reference):
- *   ┌─ I OWE                       ← direction tag (top-left)
- *   │  [↓] dfgh           − ৳1,234 ← icon + name + remaining
- *   │       Paid ৳0 of ৳1,234 total
- *   │  ━━━━━━━━━━━━━━━━━━━━━━━━━━ ← progress bar (danger→warn gradient)
- *   │  0% paid
- *   └─
+ * Card shape (one row, on the left column):
+ *   ┌─ I OWE                                          ┌────────────┐
+ *   │  [↓] City Bank Loan                       │     │ − ৳12,26,261│
+ *   │       Paid ৳100 of ৳12,26,361 total     │     │   Remaining │
+ *   │       Due 12 Aug 2027 · Person                  │  of ৳Y total│
+ *   ├─────────────────────────────────────────────┴────────────┤
+ *   │  ◯━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░  0.8% paid               │
+ *   └────────────────────────────────────────────────────────────┘
+ *
+ * Completed debts stay in a quieter group at the bottom (no hover
+ * lift — record-only).
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
-import { ArrowUp, ArrowDown, Check, ChevronRight } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, Check } from '../components/icons/Icons';
 import { fmtBDT, fmtDate } from '../lib/format';
+
+const MIDDOT = '\u00B7';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -29,6 +35,17 @@ export function DebtsListScreen() {
   // section so the active list stays focused on what's still owed.
   const active = ds.filter(d => d.status === 'active');
   const completed = ds.filter(d => d.status === 'completed');
+
+  // Per-direction remaining totals for the Summary card.
+  let oweRemaining = 0;
+  let receivableRemaining = 0;
+  for (const d of active) {
+    const left = Math.max(0, (Number(d.total) || 0) - (Number(d.paidSoFar) || 0));
+    if (d.direction === 'i_owe') oweRemaining += left;
+    else receivableRemaining += left;
+  }
+  const showReceivable = receivableRemaining > 0;
+  const showOwe = oweRemaining > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,14 +74,46 @@ export function DebtsListScreen() {
           </div>
         </section>
       ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+          <div className="flex flex-col gap-4">
             {active.map(d => <DebtCard key={d.id} debt={d} />)}
+            {completed.length > 0 && (
+              <CompletedSection rows={completed} />
+            )}
           </div>
-          {completed.length > 0 && (
-            <CompletedSection rows={completed} />
+
+          {/* Summary card — pinned on the right at lg+ so the totals
+              stay visible while scrolling the list. Stacks below the
+              list at smaller breakpoints. */}
+          {(showOwe || showReceivable) && (
+            <section className="card h-fit lg:sticky lg:top-4">
+              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">Summary</h2>
+              <div className="flex flex-col gap-5">
+                {showOwe && (
+                  <div>
+                    <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">You owe</div>
+                    <div className="text-[26px] font-bold text-danger mt-2 tabular tracking-tight leading-none">
+                      {fmtBDT(oweRemaining)}
+                    </div>
+                    <div className="text-[11px] text-muted mt-1.5 tabular">Across {active.filter(d => d.direction === 'i_owe').length} debt{active.filter(d => d.direction === 'i_owe').length === 1 ? '' : 's'}</div>
+                  </div>
+                )}
+                {showReceivable && (
+                  <div>
+                    <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Owed to you</div>
+                    <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
+                      {fmtBDT(receivableRemaining)}
+                    </div>
+                    <div className="text-[11px] text-muted mt-1.5 tabular">Across {active.filter(d => d.direction === 'owed_to_me').length} debt{active.filter(d => d.direction === 'owed_to_me').length === 1 ? '' : 's'}</div>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-muted mt-5 leading-relaxed">
+                <strong className="text-ink">How it works:</strong> <em>Remaining</em> is what's still owed on each active debt — total minus payments recorded against it. When you pay toward an <em>i_owe</em> debt, record it as an Expense tagged with the debt; when someone pays back an <em>owed_to_me</em> debt, record it as Income tagged the same way.
+              </div>
+            </section>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -76,7 +125,6 @@ function DebtCard({ debt: d }: { debt: any }) {
   const isIOwe = d.direction === 'i_owe';
   // Tone pair follows the existing palette: i_owe is danger (you're
   // paying it down), owed_to_me is primary (you'd receive it back).
-  const tone = isIOwe ? 'danger' : 'primary';
   const iconBg = isIOwe ? 'bg-danger-soft text-danger' : 'bg-primary-soft text-primary';
   const barFill = isIOwe ? 'bg-gradient-to-r from-danger to-warn' : 'bg-gradient-to-r from-primary to-accent';
   const amtColor = isIOwe ? 'text-danger' : 'text-primary';
@@ -84,49 +132,78 @@ function DebtCard({ debt: d }: { debt: any }) {
   return (
     <Link
       to={`/debts/${d.id}/edit`}
-      className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden"
     >
-      {/* Direction tag — top-left, uppercase, muted. The first thing
-          the user scans so the polarity of the card is clear before
-          reading the number. */}
-      <div
-        className="text-[10.5px] text-muted uppercase tracking-[0.12em] font-semibold"
-        title={tone === 'danger' ? 'You owe this person' : 'This person owes you'}
-      >
-        {directionLabel}
-      </div>
-
-      {/* Identity + remaining row. Push to the top of the card so the
-          progress bar + caption sit at the bottom. */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${iconBg}`}>
-          {isIOwe
-            ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
-            : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-semibold text-[15px] tracking-tight truncate">{d.name}</div>
-          <div className="text-[11.5px] text-muted tabular mt-1 truncate">
-            Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
-            {d.dueDate ? ` · due ${fmtDate(d.dueDate)}` : ''}
-            {d.person ? ` · ${d.person}` : ''}
-          </div>
-        </div>
-        <div className={`font-bold tabular text-[16px] shrink-0 ${amtColor}`}>
-          {isIOwe ? '\u2212' : '+'} {fmtBDT(left)}
-        </div>
-      </div>
-
-      {/* Progress bar + caption. mt-auto pushes to the card bottom so
-          cards in a row share a baseline regardless of meta length. */}
-      <div className="mt-auto flex flex-col gap-1.5">
-        <div className="h-2 bg-surface-2 rounded-pill overflow-hidden">
+      {/* Top row — horizontal split: identity (left) + remaining (right),
+          separated by a 1px divider. Mirrors the investment card. */}
+      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-5 pb-4">
+        {/* Left zone — direction tag, icon, name, meta. */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
+          {/* Direction tag — top-left, uppercase, muted. The first thing
+              the user scans so the polarity of the card is clear before
+              reading the number. */}
           <div
-            className={`h-full rounded-pill ${barFill}`}
+            className="text-[10.5px] text-muted uppercase tracking-[0.12em] font-semibold"
+            title={isIOwe ? 'You owe this person' : 'This person owes you'}
+          >
+            {directionLabel}
+          </div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${iconBg}`}>
+              {isIOwe
+                ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
+                : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />}
+            </div>
+            <div className="font-semibold text-[16px] tracking-tight truncate">
+              {d.name}
+            </div>
+          </div>
+          <div className="text-[12px] text-muted tabular truncate">
+            Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
+          </div>
+          {(d.dueDate || d.person) && (
+            <div className="text-[12px] text-muted flex items-center gap-2 flex-wrap">
+              {d.dueDate ? <span>Due {fmtDate(d.dueDate)}</span> : null}
+              {d.dueDate && d.person ? <span className="opacity-50" aria-hidden>{MIDDOT}</span> : null}
+              {d.person ? <span className="truncate">{d.person}</span> : null}
+            </div>
+          )}
+        </div>
+
+        {/* Vertical divider between identity and amounts. */}
+        <div
+          aria-hidden
+          className="w-px self-stretch my-1 shrink-0"
+          style={{ background: 'var(--border-2)' }}
+        />
+
+        {/* Right zone — Remaining, right-aligned. flex flex-col +
+            items-end keeps the figures right-aligned; shrink-0 prevents
+            the right zone from being squeezed when the left zone gets
+            long names. */}
+        <div className="flex flex-col gap-1.5 items-end justify-center shrink-0 sm:min-w-[200px]">
+          <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+            Remaining
+          </span>
+          <span className={`font-bold tabular text-[24px] tracking-tight ${amtColor}`}>
+            {isIOwe ? '\u2212' : '+'} {fmtBDT(left)}
+          </span>
+          <span className="text-[10.5px] text-muted tabular">
+            of {fmtBDT(d.total)} total
+          </span>
+        </div>
+      </div>
+
+      {/* Progress strip — full card width, sits below the divider row.
+          Thin (h-1.5) so it doesn't compete with the headline amounts. */}
+      <div className="px-6 pb-5">
+        <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
+          <div
+            className={`h-full rounded-pill ${barFill} transition-all duration-200`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="text-[10.5px] text-muted tabular">{pct}% paid</div>
+        <div className="text-[10.5px] text-muted tabular mt-1.5">{pct}% paid</div>
       </div>
     </Link>
   );
@@ -176,7 +253,7 @@ function CompletedSection({ rows }: { rows: any[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
+                  <span className="text-[10px] text-muted uppercase tracking-wider font-semibold opacity-0 group-hover:opacity-100 transition">View</span>
                 </div>
               </div>
             </Link>
