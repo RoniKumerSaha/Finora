@@ -31,7 +31,7 @@
  * is total balance + active investments + receivables (money owed to
  * me still outstanding) − money I still owe.
  */
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../domain/store';
 import {
@@ -356,6 +356,7 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
 function DemoBanner() {
   const [show, setShow] = useState(true);
   const completeOnboarding = useStore(s => s.completeOnboarding);
+  const navigate = useNavigate();
   if (!show) return null;
   return (
     <div
@@ -367,11 +368,11 @@ function DemoBanner() {
     >
       <span className="w-2 h-2 rounded-full bg-accent" />
       <span className="grow">
-        <strong className="text-ink font-semibold">You're viewing demo data.</strong>{' '}
-        This is a sample dashboard.{' '}
+        <strong className="text-ink font-semibold">Welcome to Finora.</strong>{' '}
+        Set up your first account to start tracking.{' '}
         <button
           type="button"
-          onClick={() => { completeOnboarding(); setShow(false); }}
+          onClick={() => { completeOnboarding(); setShow(false); navigate('/onboarding'); }}
           className="text-primary font-semibold hover:underline underline-offset-2"
         >
           Start using Finora {'\u2192'}
