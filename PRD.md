@@ -10,8 +10,8 @@
 | **Primary Language** | English |
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
-| **Authentication** | None in V1 (optional local PIN lock) |
-| **Last Updated** | 2026-08-18 (list-card polish + UX ship) |
+| **Authentication** | None in V1 (the app uses device-local storage; no PIN or login surface) |
+| **Last Updated** | 2026-08-24 (Plan + Insights documented; Settings simplified; rules expanded) |
 
 ---
 
@@ -129,14 +129,16 @@ A user should be able to:
 
 | # | Module | V1 Scope |
 |---|---|---|
-| 1 | Dashboard | This month's totals + accounts preview + recent activity + a 3-up net-worth row (Total debt, Total investments, Net worth). Period-bounded analytics live on **Insights**. **2026-08-18:** restructured to a 6-section point-in-time snapshot; removed the Goals / Debts / Investments preview cards that previously lived on Home (they now live exclusively on Insights). |
+| 1 | Dashboard | This month's totals + accounts preview + recent activity + a 3-up net-worth row (Total debt, Total investments, Net worth). Period-bounded analytics live on **Insights**. **2026-08-18:** restructured to a 6-section point-in-time snapshot; removed the Goals / Debts / Investments preview cards that previously lived on Home (they now live exclusively on Insights). **2026-08-24:** Net-worth tile surfaces dual values (current + projected projection). When demo data is loaded, a dismissible "You're viewing demo data" banner shows until the user completes onboarding. |
 | 2 | Transactions | Income, Expense, Transfer (with optional debt-link or investment-link tag) |
 | 3 | Accounts | Add, edit, list, see balance. **2026-08-18:** each account is rendered as its own full-width card in a 1/2/3 responsive grid (matching the goals / investments / debts pattern), with hover lift. |
 | 4 | Categories | Pre-defined set; user can add/edit/disable. **2026-08-18:** 31+ expense categories shipped by default, grouped for the picker (Housing · Utilities & bills · Daily life · Family & health · Giving & saving · Fun & occasions). Bangladesh-first prioritization. |
-| 5 | Savings Goals | Target amount, target date, progress bar |
+| 5 | Savings Goals | Target amount, target date, progress bar. Goal progress is now tracked via a `contributions: GoalContribution[]` line-item array (auto-migrated from legacy `saved: number` field on load). |
 | 6 | Debts | Record-only: total owed / owed to you, payments, auto-complete at 0. No interest math. **2026-08-18:** each active debt is its own full-width card with a direction tag (I OWE / OWED TO ME) in the top-left, a hover lift, and a progress bar + "X% paid" caption. No section grouping — direction reads at a glance from the tag. |
-| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. **2026-08-17:** every investment card and the dashboard net-worth tile now surface two values — **current value** (money tied up right now) and **at maturity** (projection if every installment is paid). This stops a DPS with one paid installment from inflating the headline net worth. **2026-08-18:** list redesigned — one full-width card per investment (identity + terms + amounts in a horizontal split), Summary card pinned to the right at lg+ and stacking below at smaller breakpoints. |
-| 8 | Settings | Currency (locked to BDT in V1), theme (Dark/Light/Auto), app PIN (optional), export, import, delete all data |
+| 7 | Investments | Interest-bearing deposits (DPS, FDR, savings certificates, term deposits). Record principal, rate, term; app shows calculated maturity value; auto-mature on date; user records payout as Income. Rollover supported. **2026-08-17:** every investment card and the dashboard net-worth tile now surface two values — **current value** (money tied up right now) and **at maturity** (projection if every installment is paid). This stops a DPS with one paid installment from inflating the headline net worth. **2026-08-18:** list redesigned — one full-width card per investment (identity + terms + amounts in a horizontal split), Summary card pinned to the right at lg+ and stacking below at smaller breakpoints. **2026-08-24:** `termMonths` and `termDays` are mutually exclusive at the schema layer; rate is capped at 100%. |
+| 8 | Plan (2026-08-17 ship) | A pure-scratch planner module with two surfaces — **Month Planner** (one per calendar month, with budget "jars" per category, batch editor, preset kit) and **Event Planner** (per-event scratchpad with categories + line items, preset kits for wedding / trip / religious / party / generic events). Plan state is **never** part of the ledger — nothing in the Plan module moves money, updates balances, or shows up in Home / Insights / Transactions. The user explicitly taps **Save plan** to keep changes; an unsaved-edit dot warns before they leave. See §9.15. |
+| 9 | Insights (2026-08-14 ship; 2026-08-24 expanded) | Period-bounded analytics companion to Home. Range picker persists to `localStorage` under `finora.insights.range`. Surfaces: 3-up stat row (net flow, avg monthly expense, saved toward goals) with **period-comparison captions** ("+12% vs previous N months"), a dual-line cash-flow chart, spending-by-category breakdown (top 6 + Other bucket), a net-worth bar chart, and full Goals / Debts / Investments lists. See §9.16. |
+| 10 | Settings | Theme (Dark / Light / Auto), Backup (Export / Import `.json`), Danger zone (Wipe all data), About panel (version + privacy + entry count). **2026-08-24:** no app PIN in V1 (was listed in earlier drafts; removed from the surface — there is no recovery flow in V1 and the field was unused). Currency is locked to BDT in V1 and not shown. |
 
 **Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Financial Health, Net Worth history, stocks/mutual funds/crypto. **Insights** shipped on 2026-08-14 as a period-bounded analytics companion to Home; Home now exposes only the point-in-time snapshot. **Plan** (Month + Event Planner scratchpads) shipped on 2026-08-17 — see §9.16.
 
@@ -174,7 +176,7 @@ A user should be able to:
 - **Roll-over:** Creates a new investment with same terms + 1 day after maturity date; old investment status becomes "rolled into X".
 - **Debts list (2026-08-18):** Each active debt is its own full-width card in a responsive grid (1 / 2 / 3 columns on mobile / sm / lg). No section grouping — every card carries the direction label (**I OWE** / **OWED TO ME**) as a small uppercase tag in its top-left so the polarity is readable at a glance without a section header. Each card shows: direction tag → icon tile + name + "Paid ৳X of ৳Y total" meta + remaining amount on the right → progress bar → "X% paid" caption. A separate **Completed (N)** section appears below the active grid once any debt is fully paid; rows in that section show a green check, the total paid off, the person, and the name of the most-recently-used account. The header count shows "N active · M completed". Completely paid debts are hidden from the active grid so the list stays focused on what's still owed.
 - **Debt detail / create:** Name, direction (I owe / Owed to me), total, paid so far (defaults to 0), optional due date, optional person/entity. Shows linked transactions. When the debt is fully paid, a green callout appears under the heading: *"Fully paid. Last transaction used {AccountName} — current balance: ৳X."* (the account is the most-recently-used account from the linked transactions; the balance is its live balance).
-- **Settings:** Theme (Dark / Light / Auto), App PIN, Export data, Import data, Delete all data, About.
+- **Settings:** Theme (Dark / Light / Auto), Backup (Export / Import `.json`), Danger zone (Wipe all data), About panel (version + privacy + entry count).
 
 ---
 
@@ -488,11 +490,11 @@ Required per month = Remaining ÷ Months left   (if Months left > 0)
 
 | Setting | Behavior |
 |---|---|
-| App PIN (optional) | 4-digit PIN. If set, asked at app open. V1 has no recovery — if forgotten, user must delete all data. |
-| Export data | Downloads a `.json` file containing everything. |
-| Import data | Replaces current data with file contents. Asks for confirmation. |
-| Delete all data | Permanently wipes local data. Confirmation required. |
-| About | App name, version, link to docs/feedback. |
+| Theme | Three buttons — **Dark**, **Light**, **Auto**. `Auto` follows `prefers-color-scheme`. Persisted in `settings.theme`. Sidebar also has a fast-path Dark/Light segmented toggle (see §9.14). |
+| Export backup | Downloads a single `.json` file named `finora-backup-YYYY-MM-DD.json` containing the full state (accounts, transactions, goals, debts, investments, plans, settings). |
+| Import backup | File picker → JSON → schema + version check → confirm → replace all current data. |
+| Wipe all data | Permanently wipes local data. Confirmation required. Plan state (`monthPlans` / `eventPlans`) is wiped along with the ledger. |
+| About panel | App name, version (`VITE_APP_VERSION`), privacy statement ("All data lives in your browser"), entry-count summary, and a "Erase everything and start over →" affordance. |
 
 **Currency is fixed to BDT in V1. No selector shown.**
 
@@ -673,7 +675,7 @@ Rules:
 - All savings goals
 - All debts
 - All investments
-- App settings (PIN is **not** exported)
+- App settings
 - A version field (e.g., `"version": 1`)
 
 CSV export is **not required** for V1. JSON is sufficient and lossless.
@@ -800,7 +802,174 @@ Five polish ideas were shipped in one pass, all reusing existing design-system t
 - A fresh app with no data shows the new illustration + learn-more overlay for Accounts, Transactions, and Goals.
 - All `prefers-reduced-motion` cases strip animations while preserving functionality.
 - The contribution modal closes immediately after a successful save (the modal did not close in v1; this regression was fixed).
-- 165/165 unit tests pass throughout.
+- All unit tests pass throughout (count tracked in §20).
+
+---
+
+## 9.15 Plan Module (shipped 2026-08-17)
+
+The **Plan** module is a pure-scratch budgeting surface. It never touches the ledger. No Plan action moves money, updates balances, or shows up on Home, Insights, or Transactions. Plans are what the user *intends* to spend; transactions are what the user *did* spend.
+
+**Routes:**
+
+- `/plan` — hub with two cards (Month + Event).
+- `/plan/month` — Month Planner editor for the current month.
+- `/plan/event` — Event Planner list.
+- `/plan/event/:id` — Event Plan detail with categories + line items.
+
+### 9.15.1 Month Planner
+
+A **MonthPlan** is a per-calendar-month scratchpad keyed by `YYYY-MM`. Each plan has:
+
+| Field | Type | Notes |
+|---|---|---|
+| `key` | `YYYY-MM` | The month the plan belongs to (UTC). |
+| `plannedIncome` | number | User's expected income for the month (free input, scratchpad only). |
+| `categories` | `PlanCategory[]` | "Jar" cards with emoji, name, budget, planned, tone. |
+| `savedAt` | `ISODate \| null` | When the user last tapped **Save plan**. |
+| `dirty` | boolean | True while there are unsaved edits. |
+
+**`PlanCategory` fields:** `id`, `emoji`, `name`, `budget`, `planned`, `tone` (one of `primary | accent | info | warn | violet | danger | success`).
+
+**UI elements:**
+- **Save / Reset toolbar** at the top of the screen — shows a warn (dirty) / success (saved) dot, a Reset button (with confirm dialog → `resetMonthPlan`) and a Save plan button (`saveMonthPlan`).
+- **Card-total checker** — an ephemeral scratchpad row above the items grid: enter this month's income, pick categories, see live "Total ৳X / Saved ৳Y (or Over by ৳Y)" math. Nothing in this row is persisted.
+- **Preset budget cards** — a 27-card starter kit (rent, service charge, groceries, utilities, LPG, WiFi, transport, food, EMI, phone, health, education, coaching, kids, insurance, maid, pets, gym, entertainment, shopping, personal, gifts, charity, puja, savings, investment, goals). Auto-expands when the plan is empty; bulk **Add all** / **Remove all** controls.
+- **Items grid** — jar cards in a 2/3-column responsive layout with stable random colour rings, hover-X delete, and tap-to-edit.
+- **New item modal** — auto-suggests emoji from the name via `suggestEmojiForName`.
+- **Selection-mode batch edit** — long-press a jar to enter; `BatchFloatingBar` appears with Select all / Clear / Edit budgets; `BatchEditorControls` modal supports four modes:
+  - **Custom amounts** — per-card text inputs + "Fill all with…" + "Clear all" + footer total + delta.
+  - **Same amount** — one number applied to every selected jar.
+  - **Adjust %** — `+10%` style multiplier.
+  - **Clear** — set all to 0.
+
+**Save model:** Edits flip `dirty` immediately. The user must tap **Save plan** to persist. **Reset** reverts to the last `savedAt` snapshot (wipes in-progress edits; preserves the shell). The user can navigate away mid-edit without losing saved state.
+
+**V1 does NOT support:** Recurring monthly templates, rollover of unused budget between months, automatic pull-from-income calculations, plan sharing.
+
+### 9.15.2 Event Planner
+
+An **EventPlan** is a per-event scratchpad. Each plan has:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | UUID. |
+| `name` | string | Free text (e.g., "Holud", "Cox's Bazar trip"). |
+| `eventDate` | `ISODate` | When the event happens. |
+| `emoji` | string | Optional, auto-suggested from name. |
+| `budget` | number | Total budget for the event. |
+| `planned` | number | Sum of category budgets. |
+| `categories` | `Array<PlanCategory & { items: PlanItem[]; dueDate?: ISODate }>` | Each category can carry line items. |
+| `savedAt` | `ISODate \| null` | Last save timestamp. |
+| `dirty` | boolean | True while there are unsaved edits. |
+| `savedSnapshot` | snapshot | Captured at save time to power Reset. |
+
+**`PlanItem` fields:** `id`, `label`, `amount`, `done` (boolean checkbox).
+
+**Event kits — preset categories by archetype:** Five kits ship by default. The event name is matched against regex hints (wedding, trip, eid, puja, etc.) and the matching kit is auto-selected on event creation.
+
+| Kit | Categories (count) | Notes |
+|---|---|---|
+| Wedding | 16 | BD/IN cultural coverage (holud, mehndi, walima, pan/paan, mishti). |
+| Trip | 9 | Travel/event kit. |
+| Religious | 11 | Faith-agnostic (puja, charity, hajj, etc.). |
+| Party | 8 | Birthday / celebration kit. |
+| Generic | 9 | Default kit for any event. |
+
+Each preset has a `suggestedOffsetDays` (e.g. `-7`, `-3`, `0`, `+7`) so its `dueDate` is auto-seeded relative to the event date. Each preset has a `defaultItemLabel` so a starter line item is auto-created when added.
+
+**Event Plan hub (`/plan/event`):** Sortable card grid by event date asc. Each card shows:
+- Status dot (fill colour from `fillStatus`).
+- Emoji + name.
+- Date + "N days to go / days ago".
+- Progress bar (planned / budget, capped at 100%).
+- "৳X / ৳Y" pill + percentage pill (or "No budget").
+- Status line: "N overdue / N due soon / N categories".
+
+**Save model:** Same as Month Planner. Edits flip `dirty`. **Reset** restores `savedSnapshot`. **Delete** wipes the event entirely.
+
+**V1 does NOT support:** Multi-collaborator events, recurring events, vendor contact book, attachments / photos, ticket links.
+
+### 9.15.3 Plan → Ledger boundary
+
+- Plan edits never create transactions.
+- Plan edits never affect account balances.
+- Plan edits never appear in Insights aggregations.
+- The only Plan field visible outside Plan screens is `goal.contributions` — those are explicitly user-created contributions that do show up in the Insights "Saved toward goals" stat and in `goalSaved`. They never auto-create transactions; they are pure plan data.
+- Demo-data seeding (`/settings → Load demo data`) does **not** touch `monthPlans` / `eventPlans` — plans are personal scratchpads and survive a demo load.
+
+---
+
+## 9.16 Insights Module (shipped 2026-08-14; expanded 2026-08-24)
+
+**Insights** is the period-bounded analytics companion to Home. Home shows what you have *right now*; Insights shows what *happened* over a chosen period.
+
+**Route:** `/insights`.
+
+### 9.16.1 Range picker
+
+Five range options, rendered as a pill row at the top:
+
+| Range | Window | Notes |
+|---|---|---|
+| This month | 1st of current month → today | UTC midnight anchors. |
+| Last 3 | Last 3 calendar months | Default for short bursts. |
+| Last 6 | Last 6 calendar months | **Default selection on fresh install.** |
+| Last 12 | Last 12 calendar months | Year-at-a-glance. |
+| All | Earliest recorded date → today | Capped at 12 bars on the cash-flow chart. |
+
+The selection is persisted to `localStorage` under `finora.insights.range` and restored on next open.
+
+### 9.16.2 3-up stat row
+
+Three tiles, each with a **period-comparison caption** (only when the previous period has data):
+
+| Tile | Definition |
+|---|---|
+| Net flow | Income − Expenses over the range. Caption: "+X% vs previous N months" or "−X%". |
+| Avg monthly expense | Expenses divided by number of months in range. Caption compares against the prior window. |
+| Saved toward goals | Sum of `goal.contributions` amounts in range. Caption compares against the prior window. |
+
+Period-comparison captions only render for `last3`, `last6`, `last12` — they don't make sense for `thisMonth` or `all`.
+
+### 9.16.3 Cash-flow chart
+
+A dual-line SVG chart with:
+- **Income line** in `--primary` (sage/teal).
+- **Expense line** in `--danger`.
+- **X-axis** = each month in the range.
+- **Y-axis** = total taka.
+- **Hover tooltip** = month label + income + expense.
+
+Continuous timeline: months with zero activity still render as 0-valued points. Capped at 12 months for the `all` range.
+
+### 9.16.4 Spending by category
+
+Top-6 expense categories for the range, each with:
+- Emoji + name.
+- Total spent.
+- Percentage of total expenses (with gradient bar).
+
+A seventh "Other" row aggregates everything beyond the top 6.
+
+### 9.16.5 Net-worth bar chart
+
+A bar chart of net worth by month for the range (capped at 12 months). Each bar is the month-end `currentNetWorth`. Hover shows the exact figure.
+
+### 9.16.6 Goals / Debts / Investments cards
+
+- **Goals card** — active goals only (skips completed), sorted by deadline. Each row: progress %, remaining, required-per-month, target date.
+- **Debts card** — active debts only. Each row: direction tag, paid/total, ETA (last-90-day payment pace → "by YYYY-MM-DD" or "no recent payments to project ETA").
+- **Investments card** — **dual-value treatment**: each row shows **Current value** (money tied up right now) as the headline and **At maturity (projection)** as a smaller muted secondary line. Headline totals on the card mirror the Investments list pattern.
+
+### 9.16.7 V1 does NOT support
+
+- Custom date ranges (e.g. "Jan 1 – Mar 15").
+- Export of analytics as PNG/CSV.
+- Comparison against specific past months (only the prior N-month window).
+- Forecasting / trend projection beyond the existing data.
+
+---
 
 ---
 
@@ -814,10 +983,17 @@ Five polish ideas were shipped in one pass, all reusing existing design-system t
 | R4 | Transfer rule | Transfers move money between accounts; they are not income or expense |
 | R5 | Goal requirement | Remaining = Target − Current; Required per month = Remaining ÷ Months left |
 | R6 | Source of truth | The user's recorded transactions are the only thing that changes account balances |
-| R7 | Debt paid_so_far | `paid_so_far` = sum of linked transactions' amounts (Expense for `i_owe`, Income for `owed_to_me`) |
+| R7 | Debt paid_so_far | `paid_so_far` = sum of linked transactions' amounts (Expense for `i_owe`, Income for `owned_to_me`) |
 | R8 | Debt completion | When `paid_so_far >= total`, debt is auto-completed and dashboard totals drop |
-| R9 | Investment maturity value | `maturity_value = principal × (1 + rate/100 × term_months/12)` — simple-interest display, recalculated on edit, not a live ticking balance |
-| R10 | Investment status | Auto-flips to `matured` when today >= maturity date; record-payout flips to `closed`; roll-over flips old to `rolled_over` and creates a new `active` |
+| R9 | Investment maturity value | `maturity_value = principal × (1 + rate/100 × term_months/12)` — simple-interest display for FDR / savings; DPS uses an annuity-due formula (see R13). Recalculated on edit, not a live ticking balance. |
+| R10 | Investment status | Auto-flips to `matured` when today >= maturity date; record-payout flips to `closed` (DPS auto, FDR/savings manual); roll-over flips old to `rolled_over` and creates a new `active`. `closed` and `rolled_over` are **sticky** — they never auto-revert. |
+| R11 | Plan isolation | Plan state (`monthPlans` / `eventPlans`) never affects accounts, transactions, totals, or Insights aggregations — except `goal.contributions` is summed into the Insights "Saved toward goals" stat (those are explicitly user-created; they don't auto-create transactions). |
+| R12 | Plan dirty/save | Any edit to a Plan flips its `dirty` flag. Only `savePlan` clears it (and captures `savedAt` / `savedSnapshot`); `resetPlan` restores the last saved snapshot. There is **no auto-save** and **no guard rail** when the user navigates away mid-edit — the dirty dot is the indicator. |
+| R13 | DPS maturity value | For DPS: `M × ((1 + r/12)^T − 1) / (r/12) × (1 + r/12)` where `M` is monthly installment, `r` is annual rate as decimal, `T` is term in months. Display only. Zero-rate uses a linear fallback: `M × T`. |
+| R14 | DPS current value | Sum over each contributed installment of `M × (1 + r/12)^k` compounded to today, where `k` is months since that installment. Contributions come from expense transactions with `linked_investment_id` on this DPS. |
+| R15 | Dual-value net worth | `currentNetWorth = cash + active investments (current) + receivables − owe`; `projectedNetWorth = currentNetWorth − active investments (current) + active investments (projected)`. For DPS, current is `dpsCurrentValue`; for FDR/savings, current equals projected equals `principal`. |
+| R16 | Investment term XOR | Exactly one of `termMonths` or `termDays` must be set; the schema rejects both or neither. Rate is capped at 0–100% inclusive. |
+| R17 | Insights range persistence | The selected range (`thisMonth` / `last3` / `last6` / `last12` / `all`) is persisted to `localStorage` under `finora.insights.range`. Defaults to `last6` on first open. |
 
 ---
 
@@ -850,6 +1026,13 @@ Every error message must:
 | User rolls over an investment that isn't matured yet | *"This investment hasn't matured yet. You can roll it over once it matures."* |
 | User records the payout on a closed or rolled-over investment | *"This investment is already closed. You can't record a payout."* |
 | User has no accounts when starting the Add Investment wizard | *"Add an account first — investments need a payout account."* |
+| User enters an investment rate outside 0–100% | *"Enter a rate between 0 and 100."* |
+| User sets both `termMonths` and `termDays` on an investment | *"Pick either months or days, not both."* |
+| User sets neither `termMonths` nor `termDays` on an investment | *"Pick a term length in months or days."* |
+| User tries to import a V0 or V2 backup | *"This file isn't from Finora V1. Make sure you exported from V1 (not V0 or V2)."* |
+| User tries to add the same account as both From and To on a transfer | *"Pick a different account. Transfers move money between two accounts."* |
+| User resets a dirty Plan | *"Reset plan" — discards unsaved edits and restores the last saved snapshot. Plan is reset, not deleted.* (confirmation, not error) |
+| User enters a past target date on a new goal | *"Goals with past target dates have no time left to save. Pick a future date."* |
 
 ---
 
@@ -883,7 +1066,7 @@ Every error message must:
 - No analytics by default.
 - Export files contain sensitive data — treat accordingly.
 - Import files are treated as untrusted input and validated.
-- App PIN (if set) is stored locally and never exported.
+- All data — including settings — is stored locally and never leaves the device.
 
 ### 13.3 Accessibility
 
@@ -982,6 +1165,22 @@ Every error message must:
 - Closing a matured investment without recording payout (allowed, with explicit confirmation)
 - Rolling over a non-matured investment (block with helpful error)
 - Investment with 0% rate (allowed — DPS schemes sometimes have 0% headline rate but include bonuses)
+- Investment rate > 100% (block at schema with "Enter a rate between 0 and 100.")
+- Investment with both `termMonths` and `termDays` set (block at schema with "Pick either months or days, not both.")
+- Investment with neither `termMonths` nor `termDays` set (block at schema with "Pick a term length in months or days.")
+- Investment term in days for sub-1-month FDR/savings (allowed — formula dispatches to `investmentMaturityValueFromDays = principal × (1 + rate/100 × days/365)`)
+- Demo data loaded into a fresh app (Home shows a dismissible "You're viewing demo data" banner until `completeOnboarding()` fires)
+- Plan dirty when user navigates away (no guard rail; the warn dot is the only indicator)
+- Plan reset (wipes planning content, preserves `savedAt` and event shell; not destructive)
+- Plan empty state for a fresh month (auto-expands `PresetBudgetCards` so the user can tap to seed)
+- Goal legacy blob with `saved: number` only (auto-migrated to `contributions: GoalContribution[]` on first read via `migrateGoalsAddContributions`; `saved` is left as 0 once migrated)
+- Insights range selected on one device (persisted to `localStorage` under `finora.insights.range`; no cross-device sync — that's the local-first trade-off)
+- Insights range with no data (empty states render gracefully; period-comparison captions are suppressed when the previous window has no data)
+- Settings `theme === 'auto'` (follows `prefers-color-scheme`; re-evaluated on browser/OS theme change without a reload)
+- Event Plan with a past `eventDate` (allowed — for retrospective budgeting; card shows "N days ago")
+- Event Plan with a `budget` of 0 (allowed — "No budget" pill renders; category line items still tick `done`)
+- Deleting the only Account (block at store level with "Add another account first" — accounts cannot be deleted while at least one transaction references them)
+- Deleting a debt that is the only thing with its `linked_debt_id` (soft-archive only; the transactions retain the link and render an "Archived debt" tag)
 
 ---
 
@@ -992,7 +1191,6 @@ These belong in the technical specification phase and should not change product 
 - Exact local storage implementation
 - Exact data schema
 - Backup file schema / versioning
-- App PIN hashing approach
 - Frontend framework
 - State management
 
@@ -1004,7 +1202,7 @@ These belong in the technical specification phase and should not change product 
 |---|---|---|
 | 1 | User enters wrong amount and doesn't notice | Recent transactions list on dashboard makes entries easy to spot and edit |
 | 2 | User loses device and loses data | Export-to-file is one tap; user is reminded once at setup to back up |
-| 3 | User forgets PIN | V1 has no recovery; user must delete all data and restore from backup |
+| 3 | User wipes data by accident | Wipe-all-data confirmation copy is explicit; user can recover from a recent export |
 | 4 | User opens app, sees empty state, leaves | Dashboard has prominent "Add" button; recent activity is shown even with one entry |
 | 5 | User is confused by accounting terms | All labels are plain English; no jargon without a one-line explanation |
 | 6 | User pays a debt but forgets to tag it | The "Tag as debt payment →" toggle is shown on every Expense and Income flow; debt completion status is visible on Home and the debt's own screen |
@@ -1081,13 +1279,20 @@ The MVP is complete when **all** of the following are true:
 - [ ] User can delete all data with confirmation.
 - [ ] All data is local; no backend or account is required.
 - [ ] All V1 features work fully offline.
-- [ ] Unit tests for all financial rules pass (165/165).
+- [ ] Unit tests for all financial rules pass (133/133 across `goalContributions`, `insights`, `math`, `plans`, `recompute`, `categoryEmoji`, `exportImport`, `validation`).
 - [ ] End-to-end tests for the four core journeys pass.
 - [ ] Save-flow successes show a transient toast (2.4s, top-right) instead of a sticky banner; deletes / batch edits / settings actions still use the banner.
 - [ ] Dark / Light segmented toggle in the sidebar cross-fades the theme and persists across reloads.
 - [ ] Clickable cards (accounts, goals, investments, debts, event plans) lift 1px + shadow tightens on hover.
 - [ ] Primary CTA pulses sage + shows ✓ for 600ms on successful save.
 - [ ] First-run empty states (Accounts, Transactions, Goals) show illustration + learn-more overlay.
+- [ ] Plan hub is reachable from the sidebar and renders two cards (Month + Event).
+- [ ] Month Planner supports add/edit/delete/batch-edit (Custom / Same / Adjust % / Clear) on PlanCategory jars, auto-suggests emoji from name, and the Save / Reset toolbar reflects dirty/saved state. Plan edits never move money.
+- [ ] Event Planner supports add/edit/delete events, auto-suggests a kit from the event name, applies kit `suggestedOffsetDays` and `defaultItemLabel` seeding, and tracks `dirty` + `savedSnapshot`.
+- [ ] Insights page renders 3-up stat row with period-comparison captions, cash-flow chart, spending-by-category (top 6 + Other), net-worth bar chart, and full Goals / Debts / Investments lists.
+- [ ] Insights range picker persists to `localStorage` under `finora.insights.range` and restores on next open.
+- [ ] Goal `saved` legacy blobs are auto-migrated to `contributions: GoalContribution[]` on first read without data loss.
+- [ ] Demo-data banner shows on Home when demo state is active and dismisses via `completeOnboarding()`.
 - [ ] No feature from the "Non-Goals" list is implemented.
 
 ---
