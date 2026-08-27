@@ -11,7 +11,7 @@ sources:
   - src/domain/store.ts
   - src/domain/transactions.ts
   - src/lib/exportImport.ts
-updated: 2026-08-13
+updated: 2026-08-27
 ---
 
 # Finora — EXPERIENCE.md
@@ -94,7 +94,7 @@ Microcopy. Brand voice and aesthetic posture live in `DESIGN.md.Brand & Style`. 
 - **One verb per action.** "Save." "Delete." "Wipe all data." — never "Let's get productive! 🚀" or "Are you sure?"
 - **Failures name the cause, then the fix.** Every banner has three lines: `what` (the symptom), `why` (the cause), `fix` (what to do about it). Every line is one sentence.
 - **User-imperative imperative.** "Add an account to start tracking again." — not "You should add an account."
-- **No exclamation marks.** No emoji in body copy (emoji in the add-tx category grid is the one exception — it's content, not chrome).
+- **No exclamation marks.** No emoji in body copy. The Add Transaction category picker is also emoji-free — chips are pure name tags. Emoji still appears in the Month Planner and Event Planner cards (it's content for those surfaces).
 - **No "you" in feature names.** The app describes things, not the user. "Goal progress" not "Your progress."
 
 ### Microcopy register
@@ -134,11 +134,19 @@ Behavioral. Visual specs live in `DESIGN.md.Components`.
 
 - **Auto-focus on amount input.** The amount is the first field; the user opens the form to type a number, so the keyboard appears immediately.
 - **Preset chips** (expense only): `[50, 100, 250, 500, 1000]` BDT. Tap a chip to fill the amount. Tap the same chip again to clear it. (Implementation: select-set semantics — see State Patterns.)
-- **Category grid:** 5-column, emoji tiles. Tap to select; tap again to deselect (no enforced single-select at the form level — domain accepts `undefined`).
+- **Category picker** (income / expense only; transfer has no category): label `Category (optional)`. Field is **fully optional** — saving with no category is allowed at the domain layer and surfaces no error.
+  - **Shape:** chips (`rounded-pill`, `px-3 py-1.5`, `text-[13px]`). No emoji, no icon button, no `+` placeholder.
+  - **Hover** (unselected chip): background lifts to `primary-soft`, text and border tint to primary — a soft "ready to be picked" affordance using the same color family as the selected state, just lighter.
+  - **Income (flat):** always renders the full list (income ships ~5 categories). No search, no collapse.
+  - **Expense (grouped):** ships 31+ categories across Housing / Utilities & bills / Daily life / Family & health / Giving & saving / Fun & occasions. Default state shows just the first group (Housing) with a primary `Show all 31 categories` button beneath. Clicking expands all groups inline; `Hide list` collapses back.
+  - **Selected state:** primary border + `primary-hi` bg + primary text. Selected pill above the chip cloud shows `Selected: <name>` with a `×` clear button.
+  - **No search** in v1 — was explored and removed because the chip cloud with Show all / Hide list already keeps the modal compact.
+  - **No emoji affordance** in Add Transaction. The `Category.emoji` data field exists for the Month / Event Planner cards but is not surfaced from this flow.
 - **Account/date grid** (income/expense): 2-column, `Account` then `Date`. Default account = first account in list.
 - **Transfer grid:** 1fr / auto / 1fr with `⇄` glyph centered. `To` select filters out the currently selected `From` account. Each side shows a live `Balance: ৳ X` line so the user knows what they're moving from.
 - **Linked fields:** expense shows `Linked debt (optional)` only if there are active debts; income shows `Linked investment (optional)` only if there are non-closed investments. Transfer shows neither.
 - **Note:** free-text textarea on income/expense, hidden on transfer.
+- **Modal width:** `max-width: 720px` (was 560px). Wider column gives the chip cloud enough horizontal room to wrap efficiently without forcing tall stacks.
 - **Action row:** right-aligned. `Cancel` (secondary) → back to picker (or `/transactions` for edit). `Save` (primary, type=submit).
 - **Edit adds a left-side destructive action.** `🗑 Delete` (variant=danger) on the left of the action row → `ConfirmDialog` with `dangerText` callout.
 
@@ -284,7 +292,7 @@ Named-protagonist flows, each with a single climax beat. Format inspired by `UI-
 1. Tahmid is on `/home`. Sidebar bottom CTA reads `+ Add Transaction`.
 2. Tap the CTA → `/transactions/new` (picker). 3 TypePicker cards: Income / Expense / Transfer.
 3. Tap `Expense` → `/transactions/new/expense`. AmountInput auto-focused; keyboard up.
-4. Tap a preset chip `250` — amount fills. Tap `🍔 Food` in the category grid — selected. `Account` defaults to the first account in the list.
+4. Tap a preset chip `250` — amount fills. Tap the `Food` chip under `Housing` — selected. `Account` defaults to the first account in the list. (No emoji on the chip — it's a pure name tag.)
 5. Tap `Save` → `transactions.add` → navigate `/transactions`. Home re-renders with the new totals.
 
 > If the form is invalid (e.g. amount is empty), the banner appears and the form stays mounted. The user fixes the field and submits again.
@@ -294,7 +302,7 @@ Named-protagonist flows, each with a single climax beat. Format inspired by `UI-
 **Climax:** Salary lands; all balances and Home stats update in under a second.
 
 1. Tap `+ Add Transaction` → picker → `Income`.
-2. Category grid: `Salary` is pre-selected at the data layer (default `categoryId` for income). Tap `💼`.
+2. Category chips: income shows the full flat list (~5 categories). No category is pre-selected — the field is fully optional, so the user picks one only if they want to tag the income. Tap `Salary` to select.
 3. Amount: `60,000`. Account defaults to the first account (which is the salary account in the demo seed).
 4. Tap `Save`. Toast-style feedback: today, the form silently navigates to `/transactions` (no toast). The Home dashboard re-renders off the same Zustand store; income stat updates, balance updates.
 
@@ -351,7 +359,7 @@ These are tracked here for the Reviewer Gate (or for a future spike). None are b
 - `src/components/ConfirmDialog.tsx` — modal API, backdrop-button trick, Escape cancel.
 - `src/components/RoleAlertBanner.tsx` — banner subscription + auto-dismiss.
 - `src/components/Field.tsx` — `Field` / `Input` / `Select` / `Textarea` / `AmountInput` labels.
-- `src/components/TypePicker.tsx` — `TypePicker` (3-up) + `CategoryGrid` (5-col) + `PresetChips`.
+- `src/components/TypePicker.tsx` — `TypePicker` (3-up) + `CategoryGrid` (chip cloud, grouped/flat) + `PresetChips`.
 - `src/domain/store.ts` — Zustand store, `update()` lifecycle, `recomputeDerived`, `loadInitial`.
 - `src/domain/transactions.ts` — `add` / `update` / `remove` / `list` / `get` and validation rules.
 - `src/lib/exportImport.ts` — `downloadExport` filename + `parseImport` errors.

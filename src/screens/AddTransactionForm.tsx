@@ -3,10 +3,10 @@
  * (AddExpenseScreen / AddIncomeScreen / AddTransferScreen).
  *
  * Visual target: docs/ux-designs/.../mockups/v1/index.html#add-expense
- *   - .card max-width 560px, padding 24px (rounded-card)
+ *   - .card max-width 720px, padding 24px (rounded-card)
  *   - label micro-uppercase 12px tracked muted
  *   - big primary amount field (32px, primary text, r-btn)
- *   - 5-col category emoji grid (expense / income only)
+ *   - chip cloud for category picker (expense grouped, income flat)
  *   - 1fr 1fr grid for Account + Date
  *   - action row: right-aligned Cancel + Save primary buttons
  *
@@ -67,7 +67,11 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   const [accountId, setAccountId] = useState(prefillAccountId || accs[0]?.id || '');
   const [fromAccountId, setFromAccountId] = useState(accs[0]?.id ?? '');
   const [toAccountId, setToAccountId] = useState(accs[1]?.id ?? accs[0]?.id ?? '');
-  const [categoryId, setCategoryId] = useState(cats[0]?.id ?? '');
+  // Category is optional — start with nothing selected. The grouped picker
+  // shows a soft "No category picked yet." pill until the user picks one,
+  // and the user can clear the selection with the × button next to the
+  // Selected pill.
+  const [categoryId, setCategoryId] = useState('');
   const [linkedDebtId, setLinkedDebtId] = useState('');
   const [linkedInvestmentId, setLinkedInvestmentId] = useState(prefillLinkedInvestmentId);
   const [note, setNote] = useState(prefillNote);
@@ -186,7 +190,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[560px]">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[720px]">
       <div>
         <h1 className="heading h1-screen">{title}</h1>
         <div className="text-muted text-[13px] mt-1.5">{subtitle}</div>
@@ -217,14 +221,18 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 
         {type !== 'transfer' && cats.length > 0 && (
           <div className="mt-5">
-            <Field label="Category">
+            <Field
+              label="Category (optional)"
+              hint="Pick a category, or skip — transactions can be uncategorised."
+            >
               <CategoryGrid
                 categories={cats}
                 selectedId={categoryId}
                 onPick={setCategoryId}
-                // Expenses ship 31+ categories — grouped + search lets
-                // the user find one without a wall of tiles. Income has
-                // 5 categories and stays flat.
+                // Expenses ship 31+ categories — grouped sections make
+                // the list scannable. Income has 5 categories and stays
+                // flat. The emoji picker affordance was dropped from
+                // Add Transaction; chips are pure name tags now.
                 variant={type === 'expense' ? 'grouped' : 'flat'}
               />
             </Field>

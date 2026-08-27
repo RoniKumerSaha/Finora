@@ -2,8 +2,8 @@
  * TypePicker + CategoryGrid + PresetChips
  *
  * Visual target: docs/ux-designs/.../mockups/v1/index.html
- * - .cat-tile: aspect-ratio 1, surface-2 bg, 10px radius, 22px emoji,
- *   selected => primary border + primary-hi bg + primary text
+ * - .cat-tile: compact rounded pill, surface bg, primary border on select,
+ *   primary-hi bg + primary text when selected
  * - .filter pill: 6px 14px padding, r-pill radius, surface bg,
  *   active => primary-soft bg + primary text + primary/40 border
  *
@@ -12,19 +12,26 @@
  * the filter pills get a slight transition.
  *
  * 2026-08-18 polish: CategoryGrid gained a `variant` prop:
- *   - 'flat' (default): every category in one grid (income + transfer;
- *     anything < 12 categories). Original v1 behaviour.
+ *   - 'flat' (default): every category in one chip cloud (income +
+ *     transfer; anything < 12 categories). Original v1 behaviour.
  *   - 'grouped': splits expense categories into labelled sections
  *     (Housing / Utilities & bills / Daily life / Family & health /
- *     Giving / Fun) and adds a search input to filter the visible
- *     sections. Used on the Add Expense screen because it now ships
- *     31+ categories and a flat grid becomes a wall of tiles.
- * Pure presentational — parent owns selected-id state.
+ *     Giving / Fun) for the Add Expense screen.
+ *
+ * 2026-08-27 polish: tiles are compact chips (no row rectangles, no
+ * icon button, no `+` placeholder). Income (flat) shows the full
+ * chip list; expense (grouped) shows just the first group
+ * (Housing) with a primary "Show all N categories" button beneath
+ * it. Clicking expands all groups inline; "Hide list" collapses
+ * back. No emoji picker affordance on Add Transaction; the
+ * Category.emoji data field still exists (used by the Month /
+ * Event Planner) but no UI surfaces it from this flow. Pure
+ * presentational — parent owns the selected-id.
  */
 import { useMemo, useState } from 'react';
 import type { Category } from '../domain/types';
-import { emojiForCategory, groupExpenseCategories } from '../lib/categoryEmoji';
-import { ArrowUp, ArrowDown, ArrowLeftRight } from './icons/Icons';
+import { groupExpenseCategories } from '../lib/categoryEmoji';
+import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from './icons/Icons';
 
 /* ---------- Type picker (Income / Expense / Transfer cards) ---------- */
 
@@ -71,46 +78,63 @@ export function TypePicker({
   );
 }
 
-/* ---------- Category tile grid (5 cols, emoji + label) ---------- */
+/* ---------- Category row (icon button + name) ---------- */
 
 type CategoryGridProps = {
   categories: Category[];
   selectedId?: string;
   onPick: (id: string) => void;
   /**
-   * 'flat' (default) renders every category in one grid. 'grouped'
-   * splits expense categories into labelled sections and adds a
-   * search input. 'grouped' is intended for the expense picker — the
-   * defaults ship 31 categories and a flat grid becomes a wall.
+   * 'flat' (default) renders every category as a chip cloud (income +
+   * transfer; anything < 12 categories). 'grouped' splits expense
+   * categories into labelled sections (Housing / Utilities & bills /
+   * Daily life / Family & health / Giving / saving / Fun & occasions).
    */
   variant?: 'flat' | 'grouped';
 };
 
 /**
- * Single category tile — shared by both modes so the visual treatment
- * is identical regardless of which grid wrapper renders it.
+ * Single category chip — compact "label" / pill. Clicking the chip
+ * selects the category. Pure name tag; no icon affordances. The
+ * Category.emoji data field still exists for the planners but is not
+ * surfaced from the Add Transaction flow.
+ *
+ * Visual: small horizontal padding, tight vertical padding, fully
+ * rounded (rounded-pill), name only. Selected state matches the
+ * existing Selected pill (primary border + primary-hi bg + primary
+ * text).
  */
-function CategoryTile({ category, selected, onPick }: {
+function CategoryTile({
+  category,
+  selected,
+  onPick,
+}: {
   category: Category;
   selected: boolean;
   onPick: (id: string) => void;
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onPick(category.id)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPick(category.id);
+        }
+      }}
       className={[
-        'aspect-square rounded-btn flex flex-col items-center justify-center gap-1.5',
-        'text-xs font-medium transition border',
+        'inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-[13px] font-medium',
+        'transition cursor-pointer select-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         selected
           ? 'border-primary bg-primary-hi text-primary'
-          : 'bg-surface-2 border-border text-muted hover:bg-surface-3 hover:text-ink',
+          : 'bg-surface border-border text-muted hover:bg-primary-soft hover:text-primary hover:border-primary',
       ].join(' ')}
     >
-      <span className="text-[22px] leading-none">{emojiForCategory(category.name)}</span>
-      <span className="truncate w-full px-1 text-center">{category.name}</span>
-    </button>
+      <span className="truncate">{category.name}</span>
+    </div>
   );
 }
 
@@ -120,106 +144,169 @@ export function CategoryGrid({
   onPick,
   variant = 'flat',
 }: CategoryGridProps) {
+  // Local toggle for the expense (grouped) variant — defaults to
+  // collapsed (just the first group rendered, with a prominent Show
+  // all button). Resetting the form remounts the picker, so reopening
+  // Add Transaction starts fresh.
+  const [showAll, setShowAll] = useState(false);
   if (categories.length === 0) {
     return <div className="text-muted text-sm">No categories yet.</div>;
   }
-  if (variant === 'flat') {
-    return (
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-        {categories.map(c => (
-          <CategoryTile key={c.id} category={c} selected={selectedId === c.id} onPick={onPick} />
-        ))}
-      </div>
-    );
-  }
-  return <GroupedCategoryGrid categories={categories} selectedId={selectedId} onPick={onPick} />;
-}
-
-/**
- * Grouped picker (used for expenses) — labels each section, exposes a
- * search field that filters sections in place, and pins the selected
- * tile as a "Selected" row above the search so the user can confirm
- * what they picked before scrolling back up.
- */
-function GroupedCategoryGrid({
-  categories,
-  selectedId,
-  onPick,
-}: { categories: Category[]; selectedId?: string; onPick: (id: string) => void }) {
-  const [query, setQuery] = useState('');
-  const groups = useMemo(() => groupExpenseCategories(categories), [categories]);
-  const q = query.trim().toLowerCase();
-  const filtered = useMemo(() => {
-    if (!q) return groups;
-    return groups
-      .map(g => ({
-        ...g,
-        items: g.items.filter(c => c.name.toLowerCase().includes(q)),
-      }))
-      .filter(g => g.items.length > 0);
-  }, [groups, q]);
   const selected = categories.find(c => c.id === selectedId);
-  const totalShown = filtered.reduce((n, g) => n + g.items.length, 0);
+  const flat = variant === 'flat';
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Selected row — always visible so the user can confirm their pick
-          without scrolling back up. Empty state is a soft hint instead of
-          a forever-empty space. */}
-      <div className="flex items-center gap-2 min-h-[28px]">
-        <span className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
-          Selected
-        </span>
-        {selected ? (
+      {/* Selected row — visible only when the user has picked something.
+          The empty-state hint is dropped: the chips themselves are the
+          affordance. */}
+      {selected && (
+        <div className="flex items-center gap-2 min-h-[28px]">
+          <span className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+            Selected
+          </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-primary-hi text-primary text-[13px] font-semibold">
-            <span aria-hidden>{emojiForCategory(selected.name)}</span>
             {selected.name}
           </span>
-        ) : (
-          <span className="text-xs text-muted">No category picked yet.</span>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={() => onPick('')}
+            aria-label="Clear selected category"
+            className="text-muted hover:text-ink rounded-full p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Close className="w-3.5 h-3.5" strokeWidth={2} />
+          </button>
+        </div>
+      )}
 
-      {/* Search input — clears to default state when emptied. */}
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Search categories…"
-          aria-label="Search categories"
-          className="w-full bg-surface-2 text-ink rounded-input border border-border px-[14px] py-2.5 pl-9 text-sm leading-tight transition shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+      {/* Income (flat) — short chip cloud, always visible. No search,
+          no group headings, no Show all toggle (categories < 12). */}
+      {flat && (
+        <FlatList
+          categories={categories}
+          selectedId={selectedId}
+          onPick={onPick}
         />
-        <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[15px]">
-          {'\u{1F50D}'}
-        </span>
-      </div>
+      )}
 
-      {filtered.length === 0 ? (
-        <div className="text-sm text-muted py-6 text-center">
-          No categories match “{query}”.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {filtered.map(g => (
-            <div key={g.key}>
-              <div className="flex items-baseline justify-between mb-2">
-                <h4 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
-                  {g.label}
-                </h4>
-                <span className="text-[11px] text-muted">{g.items.length}</span>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {g.items.map(c => (
-                  <CategoryTile key={c.id} category={c} selected={selectedId === c.id} onPick={onPick} />
-                ))}
-              </div>
+      {/* Expense (grouped) — first group (Housing) by default, with a
+          Show all button to expand the rest of the groups inline. */}
+      {!flat && (
+        <GroupedList
+          categories={categories}
+          selectedId={selectedId}
+          onPick={onPick}
+          showAll={showAll}
+          setShowAll={setShowAll}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------- List sub-components ---------- */
+
+/**
+ * Flat (income-style) list — no grouping, no emoji affordance. Used
+ * for the un-filtered "Show all" view and the filtered search view.
+ *
+ * Chips wrap horizontally as a tag cloud (flex-wrap). Each chip is
+ * a compact pill — labels are short enough that line-wrapping inside
+ * the chip itself is rare; the section grid wraps instead.
+ */
+function FlatList({
+  categories,
+  selectedId,
+  onPick,
+}: {
+  categories: Category[];
+  selectedId?: string;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {categories.map(c => (
+        <CategoryTile
+          key={c.id}
+          category={c}
+          selected={selectedId === c.id}
+          onPick={onPick}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Grouped expense-category list — sections with chips. When `showAll`
+ * is false, only the first group (Housing) renders; a "Show all N
+ * categories" button sits beneath it. When `showAll` is true, all
+ * groups render and a "Hide list" pill sits beneath them. Keeps the
+ * modal compact for the common case (user picks a Housing category)
+ * while staying one tap away from the full list.
+ *
+ * Chips are pure name tags; the Category.emoji data field still exists
+ * for the planners but no UI surfaces it from Add Transaction.
+ */
+function GroupedList({
+  categories,
+  selectedId,
+  onPick,
+  showAll,
+  setShowAll,
+}: {
+  categories: Category[];
+  selectedId?: string;
+  onPick: (id: string) => void;
+  showAll: boolean;
+  setShowAll: (v: boolean) => void;
+}) {
+  const groups = useMemo(() => groupExpenseCategories(categories), [categories]);
+  const visibleGroups = showAll ? groups : groups.slice(0, 1);
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
+        {visibleGroups.map(g => (
+          <div key={g.key}>
+            <h4 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-2">
+              {g.label}
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {g.items.map(c => (
+                <CategoryTile
+                  key={c.id}
+                  category={c}
+                  selected={selectedId === c.id}
+                  onPick={onPick}
+                />
+              ))}
             </div>
-          ))}
-          <div className="text-[11px] text-muted text-right">
-            {totalShown} of {categories.length}
           </div>
-        </div>
+        ))}
+      </div>
+      {groups.length > 1 && (
+        showAll ? (
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={() => setShowAll(false)}
+              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 text-[13px] font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <Close className="w-3.5 h-3.5" strokeWidth={2} />
+              Hide list
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 text-[13px] font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              Show all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}
+            </button>
+          </div>
+        )
       )}
     </div>
   );

@@ -10,7 +10,7 @@ sources:
   - UI-UX-FLOW.md
   - ../UI-UX-FLOW.md
   - src/styles/theme.css
-updated: 2026-08-14
+updated: 2026-08-27
 colors:
   primary: '#5DBFA0'        # dark ; bright teal
   primary-light: '#0D8275'  # light ; deep teal
@@ -404,7 +404,7 @@ These are all additive refinements — the add/edit/delete flows, the data model
 - **No SVG icon library.** All icons are Unicode glyphs.
 - **Nav**: `⌂` Home, `⇄` Transactions, `◎` Accounts, `★` Goals, `🏦` Investments, `◐` Debts, `⚙` Settings.
 - **Transaction direction**: `↑` income (primary), `↓` expense (danger), `⇄` transfer (accent), `✓` paid-off.
-- **Category**: emoji tiles (🍔🛍🚗🏠💡💊🎓👨‍👩‍👧🎬💼💻🏪🎁`). Looked up via `src/lib/categoryEmoji.ts`.
+- **Category (Add Transaction):** plain name chips — `rounded-pill`, `px-3 py-1.5`, `text-[13px]`. No emoji. Hover lifts unselected chips to `bg-primary-soft` with `text-primary` and a `border-primary` border — same color family as the selected state, lighter tint. The `Category.emoji` data field is reserved for the Month / Event Planner cards (where the emoji is content, not decoration) and is not surfaced from the Add Transaction flow. The `emojiForCategory` lookup in `src/lib/categoryEmoji.ts` is still used by the planners.
 - **Actions**: `+` add, `✕` close, `⚠` warn, `⬇` download, `⬆` upload, `⌕` search, `🗑` delete.
 - **Theme**: `🌙☀📱` for the dark/light/auto picker.
 - **Brand mark**: the real `finora-logo.svg` (three bars — gray, purple, teal — in a black rounded rect). Not a glyph.

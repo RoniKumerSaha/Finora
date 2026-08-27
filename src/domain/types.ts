@@ -111,6 +111,13 @@ export interface Category {
   id: string;
   type: 'income' | 'expense';
   name: string;
+  /**
+   * Optional icon chosen by the user. Categories ship without one and the
+   * picker lets the user attach an emoji on a per-category basis. The
+   * field is intentionally free-form (a single grapheme cluster) so we
+   * can swap to SVG icons later without a migration.
+   */
+  emoji?: string;
 }
 
 export interface Settings {

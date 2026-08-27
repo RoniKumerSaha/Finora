@@ -1,10 +1,15 @@
 /**
- * EmojiPicker — small grid picker shared by the Month Planner jars and
- * the Event Planner categories. Click the icon button to toggle; click
- * an emoji to commit and close.
+ * EmojiPicker — small grid picker shared by the Month Planner jars,
+ * the Event Planner categories, and the Add Transaction category tiles.
+ * Click the icon button to toggle; click an emoji to commit and close.
  *
  * Backed by `CATEGORY_EMOJI_LIBRARY` so the picker stays in sync with
  * the pre-defined budget cards on the Month Planner.
+ *
+ * If `onRemove` is provided, the popover gets a leading "Remove" tile
+ * that clears the value (calls `onChange('')` + `onRemove?.()`). This
+ * is what the Add Transaction category tiles use so the user can drop
+ * a category's icon after picking one.
  */
 import { useState } from 'react';
 import { CATEGORY_EMOJI_LIBRARY } from '../../lib/categoryEmoji';
@@ -12,10 +17,12 @@ import { CATEGORY_EMOJI_LIBRARY } from '../../lib/categoryEmoji';
 export function EmojiPicker({
   value,
   onChange,
+  onRemove,
   compact,
 }: {
   value: string;
   onChange: (next: string) => void;
+  onRemove?: () => void;
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -32,6 +39,15 @@ export function EmojiPicker({
       >{value}</button>
       {open && (
         <div className={`absolute left-0 top-full mt-1.5 z-10 bg-surface border border-border rounded-btn p-1.5 grid gap-1 shadow-lg ${panel}`}>
+          {onRemove && (
+            <button
+              type="button"
+              title="Remove icon"
+              aria-label="Remove icon"
+              onClick={() => { onRemove(); setOpen(false); }}
+              className={`${tile} rounded-md hover:bg-surface-2 text-muted flex items-center justify-center`}
+            >×</button>
+          )}
           {CATEGORY_EMOJI_LIBRARY.map(({ emoji, label }) => (
             <button
               key={emoji}
