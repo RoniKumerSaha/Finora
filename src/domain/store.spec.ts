@@ -36,7 +36,6 @@ describe('store.importAndReplace', () => {
           type: 'cash',
           openingBalance: 1234,
           createdAt: '2026-01-01',
-          archived: false,
         },
       ],
       transactions: [],
@@ -65,7 +64,6 @@ describe('store.importAndReplace', () => {
           type: 'cash',
           openingBalance: 99,
           createdAt: '2025-01-01',
-          archived: false,
         },
       ],
     });
@@ -79,7 +77,6 @@ describe('store.importAndReplace', () => {
           type: 'cash',
           openingBalance: 500,
           createdAt: '2026-08-30',
-          archived: false,
         },
       ],
     });
