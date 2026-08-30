@@ -11,6 +11,10 @@
  * 2026-08-14 polish pass: refined shadow tokens, sharper focus rings, an
  * additional inset highlight on cards for a more "premium finance app"
  * feel. Color palette and roles unchanged.
+ *
+ * 2026-08-30 light refresh: dropped the warm-cream monolith for a cool
+ * neutral paper with a sage hint. Real value separation between page,
+ * sidebar, and cards.
  */
 
 @import "tailwindcss";
@@ -145,60 +149,63 @@
 }
 
 [data-theme="light"] {
-  /* Card top-edge highlight (light mode): softer white against cream. */
-  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  /* Card shadow (light): warm brown ambient instead of pure black. */
-  --shadow-card: 0 1px 2px rgba(42, 38, 32, 0.06), 0 8px 24px rgba(42, 38, 32, 0.08);
-  /* Frosted pill on planner cards — nearly opaque cream wash with a
-     deeper brown border and a subtle lift shadow so the pill text
-     stays readable on every band. Higher opacity than dark mode because
-     the cream surface beneath is already light, so the pill needs to
-     dominate the band instead of blending with it. */
-  --frost-pill-bg:     rgba(250, 244, 230, 0.97);  /* matches --surface-2 card cream */
-  --frost-pill-border: rgba(42, 38, 32, 0.20);
-  --frost-pill-shadow: 0 1px 2px rgba(42, 38, 32, 0.10);
-  /* Light-mode summary pill uses the same warm cream as the card
-     surface so it sits inside the card like a chip, not on top of
-     it like a button. The slightly darker border (--surface-3) keeps
-     the pill shape readable against the card background. */
-  --summary-pill-bg:     #FAF4E6;
-  --summary-pill-border: rgba(42, 38, 32, 0.18);
-  /* Liquid fill needs enough colour to read but not so much that it
-     drowns the pill text. Tuned with the cream card surface in mind. */
-  --liquid-fill-opacity: 0.48;
-  --bg:           #EFE5D0;   /* warm parchment cream (2026-08-14 light-parchment) */
-  --surface:      #F5ECD9;   /* soft cream — sits between bg and the card surface (2026-08-17) */
-  --surface-2:    #FAF4E6;   /* card surface — lighter than surface, still warm cream, NOT pure white (2026-08-17) */
-  --surface-3:    #E0D4B6;   /* deepest cream (2026-08-14) */
-  --ink:          #2A2620;
-  --muted:        #7A6F5E;
-  --muted-2:      #B5A992;
-  /* 2026-08-17 darken: planner ramp colours deepened so jars and
-     category cards retain weight against the cream surface. Soft
-     variants lifted in opacity so the band still reads as coloured
-     rather than as a flatter wash. */
-  --primary:      #086157;
-  --primary-soft: rgba(8, 97, 87, 0.16);
-  --primary-hi:   rgba(8, 97, 87, 0.08);
+  /* 2026-08-30 light refresh · Cool Paper.
+     Dropped the warm-cream monolith. New scheme is cool-neutral paper
+     with a hint of sage — every surface layer has real value separation
+     (page > nav > card > raised chip), so cards float, the sidebar reads
+     as cut from the wall, and planner pills pop without needing
+     cream-on-cream. Sage/green identity from dark mode stays; cream
+     warmth goes. */
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-card: 0 1px 2px rgba(15, 30, 25, 0.04), 0 6px 18px rgba(15, 30, 25, 0.06);
+  /* Frosted pill on planner cards — cool white wash; the pill is no
+     longer fighting cream, so opacity drops and the border lifts just
+     enough to keep the shape readable on the deepest ramp band. */
+  --frost-pill-bg:     rgba(255, 255, 255, 0.88);
+  --frost-pill-border: rgba(15, 30, 25, 0.10);
+  --frost-pill-shadow: 0 1px 2px rgba(15, 30, 25, 0.06);
+  /* Summary pill (Income / Saved / Spent) — cool white on a sage-tinted
+     surface; reads as a chip against the card, not as cream-on-cream. */
+  --summary-pill-bg:     #FFFFFF;
+  --summary-pill-border: rgba(15, 30, 25, 0.10);
+  /* Liquid fill behind frosted pills — cool against cool now, so the
+     ink can take a stronger 0.55 fill and still feel light. */
+  --liquid-fill-opacity: 0.55;
+  /* Surface stack — four real steps, no near-duplicates. Page is the
+     palest cool-paper; nav surface sits one step deeper; cards lift a
+     step lighter; --surface-3 is reserved for the deepest chip band. */
+  --bg:           #EEEDE7;   /* page — cool paper with a hint of sage */
+  --surface:      #E2E4DC;   /* sidebar / drawers — one step deeper, holds the nav */
+  --surface-2:    #F7F7F2;   /* card — lightest layer, so cards visibly lift */
+  --surface-3:    #D6D9CF;   /* deepest chip band */
+  --ink:          #161B17;   /* near-black with a sage cast (vs warm brown) */
+  --muted:        #6B7268;
+  --muted-2:      #A8ADA3;
+  /* Planner ramp — sage/honey/ember. Deepened vs the previous light
+     palette so jars still have weight against the cooler page; soft
+     variants lifted so the bands feel coloured, not washed. */
+  --primary:      #1F6F5A;   /* sage, matches dark-mode brand */
+  --primary-soft: rgba(31, 111, 90, 0.14);
+  --primary-hi:   rgba(31, 111, 90, 0.07);
   --primary-on:   #FFFFFF;
-  --accent:       #876620;
-  --accent-soft:  rgba(135, 102, 32, 0.18);
-  --danger:       #993328;
-  --danger-soft:  rgba(153, 51, 40, 0.18);
-  --danger-title: #762A21;
-  --danger-callout-bg: #F5E6DD;   /* warm parchment-tinted (2026-08-14) */
-  --warn:         #8E6520;
-  --warn-soft:    rgba(142, 101, 32, 0.36);
-  --orange:       #9E4A18;   /* jar-fill ramp step: 80%→100% (light) */
-  --orange-soft:  rgba(158, 74, 24, 0.36);
-  --info:         #1F4F84;   /* deep steel-blue, readable on cream (light) */
-  --info-soft:    rgba(31, 79, 132, 0.16);
-  --cyan:         #0E7A6E;   /* planner ramp step: 30-60% (light) — deep teal, leans toward green */
-  --cyan-soft:    rgba(14, 122, 110, 0.20);
-  --success:      #3F6E55;
-  --success-soft: rgba(63, 110, 85, 0.36);
-  --success-title:#2E5A44;
-  --success-callout-bg: #E8EFE5;  /* warm parchment-tinted (2026-08-14) */
-  --border:       #D8C9A6;   /* deeper for soft-cream cards (2026-08-14) */
-  --border-2:     #C8B98F;   /* deeper (2026-08-14) */
+  --accent:       #8A6A1F;   /* warm honey gold for investments headline */
+  --accent-soft:  rgba(138, 106, 31, 0.16);
+  --danger:       #B03222;
+  --danger-soft:  rgba(176, 50, 34, 0.14);
+  --danger-title: #8A2818;
+  --danger-callout-bg: #F6E4DD;   /* still warm, but only used in danger callouts */
+  --warn:         #94671A;
+  --warn-soft:    rgba(148, 103, 26, 0.32);
+  --orange:       #A04A1A;   /* jar-fill ramp step: 80%→100% (light) */
+  --orange-soft:  rgba(160, 74, 26, 0.32);
+  --info:         #1F4F84;   /* deep steel-blue for digital wallets */
+  --info-soft:    rgba(31, 79, 132, 0.14);
+  --cyan:         #147F70;   /* teal — sits between green (≥60%) and blue (60-30%) */
+  --cyan-soft:    rgba(20, 127, 112, 0.18);
+  --success:      #2F6E4A;
+  --success-soft: rgba(47, 110, 74, 0.30);
+  --success-title:#224E33;
+  --success-callout-bg: #DFEAE2;  /* sage-tinted, not cream */
+  --border:       #D2D5CB;   /* cool-neutral, no yellow cast */
+  --border-2:     #BCC0B5;
 }
