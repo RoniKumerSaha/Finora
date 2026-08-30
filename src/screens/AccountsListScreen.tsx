@@ -84,7 +84,7 @@ export function AccountsListScreen() {
           />
         </section>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {accs.map(a => {
             const bal = accountBalance(a, state.transactions);
             const tone = accountTone(a.type);
@@ -100,7 +100,7 @@ export function AccountsListScreen() {
                       <AccountTypeIcon type={a.type} />
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-[15px] tracking-tight truncate">{a.name}</div>
+                      <div className="font-semibold text-[15px] tracking-tight leading-tight line-clamp-2 min-h-[2.6em]">{a.name}</div>
                       <div className="text-xs text-muted tabular mt-1">
                         {accountTypeLabel(a.type)}
                       </div>

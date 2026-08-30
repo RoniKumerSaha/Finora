@@ -2,9 +2,9 @@
  * InvestmentProgressBar — thin progress strip showing how far through
  * a mock investment's term the user is.
  *
- *   - 0%      → plan hasn't started yet (`starts in N days`)
- *   - 1–99%   → in-progress, `month N of M` label
- *   - 100%    → matured, full bar in `--accent`
+ *   - pre-start (≤0d) → empty bar + `starts in N days`
+ *   - in-progress     → `month N of M · P%` + partial bar in `--primary`
+ *   - matured         → full bar in `--accent`
  *
  * Uses `parseISODate` / `daysBetween` so the calculation matches
  * the rest of the app's date math (UTC, midnight).
@@ -30,13 +30,16 @@ export function InvestmentProgressBar({
                                   // at-a-glance progress, not exact
                                   // accounting. The maturity date
                                   // is computed precisely elsewhere.
-  // Before start: empty bar + "starts in N days" caption.
-  if (elapsedDays < 0) {
+  // Before start (or day-of-start): empty bar + "starts in N days" caption.
+  // Treat day-of-start as pre-start so the copy is consistent — a plan
+  // that hasn't elapsed a full day yet shows "starts in 1 day" rather
+  // than the meaningless "month 0 of 36 · 0%".
+  if (elapsedDays <= 0) {
     return (
       <div className="flex flex-col gap-1">
         <div className="h-1 rounded-pill bg-surface-2" />
         <div className="text-[10.5px] text-muted">
-          starts in <b className="text-ink font-semibold">{Math.abs(elapsedDays)}</b> days
+          starts in <b className="text-ink font-semibold">{Math.max(1, Math.abs(elapsedDays))}</b> days
         </div>
       </div>
     );

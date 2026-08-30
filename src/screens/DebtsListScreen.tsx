@@ -154,7 +154,7 @@ function DebtCard({ debt: d }: { debt: any }) {
                 ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
                 : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />}
             </div>
-            <div className="font-semibold text-[16px] tracking-tight truncate">
+            <div className="font-semibold text-[16px] tracking-tight leading-tight line-clamp-2 min-h-[2.7em]">
               {d.name}
             </div>
           </div>

@@ -1,11 +1,12 @@
 /**
  * LoanCalculatorListScreen — list of saved loan projections.
  *
- * Each card surfaces EMI as the hero number, then a coin-bar split
- * showing "your principal vs interest you'll pay". The same visual
- * pattern as the Investment Planner list, but the storytelling is
- * inverted: for a loan, the bar shows the cost of borrowing, not the
- * gain from saving.
+ * 2026-08-30 polish: cards mirror the InvestmentsListScreen design —
+ * horizontal split (identity left, amounts right), hero EMI on the
+ * right, total interest under it. A "PLANNED" pill flags that these
+ * are projections, not real debts. The only differences from the
+ * investment card are the danger-tinted accent (loans are about
+ * cost) and the "interest you'll pay" copy.
  *
  * Tap through to edit inputs or inspect the full amortization table.
  */
@@ -14,13 +15,24 @@ import { useStore } from '../domain/store';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
-import { SplitBar } from '../components/planner/SplitBar';
+
+const MIDDOT = '\u00B7';
 
 export function LoanCalculatorListScreen() {
   const navigate = useNavigate();
   const state = useStore(s => s.state);
   const addLoanPlan = useStore(s => s.addLoanPlan);
+  const removeLoanPlan = useStore(s => s.removeLoanPlan);
   const plans = listLoanPlans(state);
+
+  // Treat empty projections (no principal, no rate, no name) as
+  // placeholders — most likely an unsaved draft the user abandoned.
+  // Filter them out so the screen doesn't look like it's filled with
+  // four "Untitled loan ₹0" cards.
+  const isEmpty = (p: typeof plans[number]) =>
+    !p.name.trim() && !(Number(p.principal) > 0) && !(Number(p.rate) > 0);
+  const usable = plans.filter(p => !isEmpty(p));
+  const drafts = plans.filter(isEmpty);
 
   function startNew() {
     const today = new Date().toISOString().slice(0, 10);
@@ -32,6 +44,19 @@ export function LoanCalculatorListScreen() {
       startDate: today,
     });
     navigate(`/plan/loan/${id}`);
+  }
+
+  // Aggregate totals for the sidebar summary card.
+  let totalMonthly = 0;
+  let totalPaid = 0;
+  let totalPrincipal = 0;
+  let totalInterest = 0;
+  for (const plan of usable) {
+    const s = summariseLoanPlan(plan);
+    totalMonthly += s.emi;
+    totalPaid += s.totalPaid;
+    totalPrincipal += Math.max(0, Number(plan.principal) || 0);
+    totalInterest += Math.max(0, s.totalInterest);
   }
 
   return (
@@ -54,80 +79,238 @@ export function LoanCalculatorListScreen() {
           </p>
           <Button variant="primary" onClick={startNew}>Start a projection</Button>
         </div>
+      ) : usable.length === 0 ? (
+        // Every existing plan is an empty draft — offer to clean up
+        // so the user doesn't accumulate a wall of placeholder cards.
+        <div className="card flex flex-col gap-3 items-start">
+          <div className="text-[15px] font-semibold text-ink">
+            You have {drafts.length} unsaved draft{drafts.length === 1 ? '' : 's'}
+          </div>
+          <p className="text-sm text-muted leading-relaxed max-w-prose">
+            Empty projections don't show anything useful. Start a fresh one, or clear the drafts to start over.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="primary" onClick={startNew}>Start a projection</Button>
+            <Button variant="ghost" onClick={() => { drafts.forEach(d => removeLoanPlan(d.id)); }}>
+              Clear drafts
+            </Button>
+          </div>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {plans.map(plan => {
-            const s = summariseLoanPlan(plan);
-            const principal = Math.max(0, Number(plan.principal) || 0);
-            const interest = Math.max(0, s.totalInterest);
-            return (
-              <button
-                key={plan.id}
-                type="button"
-                onClick={() => navigate(`/plan/loan/${plan.id}`)}
-                className="card card-link relative overflow-hidden flex flex-col gap-3 text-left p-4 pl-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                {/* Left-edge danger-tinted band — loan cards are
-                    about cost, so we use the danger accent rather
-                    than the type-band pattern. */}
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-0 bottom-0 w-1"
-                  style={{ background: 'var(--danger)' }}
-                />
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+            {/* Left column — full-width loan cards stacked. The 2fr
+                width matches InvestmentsListScreen and InvestmentPlannerScreen
+                so the three surfaces share one shape. */}
+            <div className="flex flex-col gap-3">
+              {usable.map(plan => {
+                const s = summariseLoanPlan(plan);
+                const principal = Math.max(0, Number(plan.principal) || 0);
+                const interest = Math.max(0, s.totalInterest);
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => navigate(`/plan/loan/${plan.id}`)}
+                    className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative text-left"
+                  >
+                  {/* Left-edge danger-tinted band — loan cards are
+                      about cost, so we use the danger accent rather
+                      than a type-specific band. The PLANNED pill in
+                      the left zone tells the user this isn't a real
+                      debt. */}
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-0 bottom-0 w-1"
+                    style={{ background: 'var(--danger)', opacity: 0.7 }}
+                  />
 
-                {/* Top row: name + term chip */}
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <div className="text-[15px] font-semibold text-ink truncate">
-                      {plan.name || 'Untitled loan'}
+                  {/* Left zone — identity, terms, total cost.
+                      Same py-1 padding as the real InvCard so the
+                      planned and real cards have matching weight. */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-1">
+                    {/* Row 1: emoji + (name + Loan pill + PLANNED
+                        pill) on one row. Both pills hug the title
+                        text on the left. PLANNED is outlined so
+                        it reads as a state stamp sibling of the
+                        Loan pill, not a different category. Title
+                        is truncated to 1 line so the pills
+                        always sit against the title baseline. */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-2xl shrink-0 leading-none" aria-hidden>{'\u{1F4B0}'}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
+                          {plan.name || 'Untitled loan'}
+                        </div>
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
+                          style={{
+                            background: 'var(--danger-soft, rgba(239, 68, 68, 0.12))',
+                            color: 'var(--danger)',
+                          }}
+                        >
+                          Loan
+                        </span>
+                        {/* PLANNED pill — outlined so it reads as
+                            a state stamp, not a category badge.
+                            Sits right next to the Loan pill. */}
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 border"
+                          style={{
+                            background: 'transparent',
+                            color: 'var(--muted)',
+                            borderColor: 'var(--border-2)',
+                          }}
+                          title="This is a projection — no real loan has been taken."
+                        >
+                          Planned
+                        </span>
+                      </div>
                     </div>
-                    {plan.rate > 0 && (
-                      <div className="text-[11.5px] text-muted tabular">
-                        {plan.rate}% APR
+
+                    {/* Row 2: optional Draft pill (only when the
+                        plan has unsaved edits). The PLANNED pill
+                        moved to row 1. */}
+                    {plan.dirty && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 text-warn">
+                          Draft
+                        </span>
                       </div>
                     )}
+
+                    {/* Row 3: rate · term · start date. APR and
+                        termMonths are the critical pair — wrapped
+                        in a non-shrinking span so the start date
+                        (when present) doesn't push them off. */}
+                    <div className="text-[12px] text-muted tabular truncate">
+                      <span className="shrink-0">{plan.rate}% APR {MIDDOT} {plan.termMonths}mo</span>
+                      {plan.startDate && <span className="opacity-70"> {MIDDOT} starts {plan.startDate}</span>}
+                    </div>
+
+                    {/* Row 4: principal + interest cost on stacked
+                        rows so tokens like "₹" and "2,00,000" never
+                        split across lines. mt-auto pins to bottom. */}
+                    <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
+                      <div className="tabular shrink-0">
+                        Principal <b className="text-ink font-semibold">{fmtBDT(principal)}</b>
+                      </div>
+                      <div className="tabular shrink-0">
+                        Pay <b className="text-danger font-semibold">{fmtBDT(interest)}</b> interest
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10.5px] text-muted font-semibold uppercase tracking-[0.04em] shrink-0">
-                    {plan.termMonths} mo
-                  </span>
+
+                  {/* Vertical divider between identity and amounts.
+                      self-stretch + my-1 matches the real card. */}
+                  <div
+                    aria-hidden
+                    className="w-px self-stretch my-1 shrink-0"
+                    style={{ background: 'var(--border-2)' }}
+                  />
+
+                  {/* Right zone — amounts, right-aligned. EMI is the
+                      hero (the figure the user plans around); Total
+                      you pay sits below as the secondary figure.
+                      sm:min-w-[200px] matches the real card so the
+                      planned and real cards align visually. */}
+                  <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
+                    <div className="flex flex-col items-end leading-none">
+                      <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+                        Monthly EMI
+                      </span>
+                      <span className="font-bold tabular text-[24px] tracking-tight text-ink mt-1.5">
+                        {fmtBDT(s.emi)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end leading-none">
+                      <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+                        Total you pay
+                      </span>
+                      <span className="font-bold tabular text-[15px] text-danger mt-1">
+                        {fmtBDT(s.totalPaid)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+            </div>
+
+            {/* Right column — Summary sidebar (sticky at lg+). Mirrors
+                InvestmentsListScreen's Summary card so the three
+                list screens (real / planned / loan) share one shape. */}
+            <section className="card h-fit lg:sticky lg:top-4">
+              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
+                Summary
+              </h2>
+              <div className="flex flex-col gap-5">
+                <div>
+                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
+                    Total monthly EMI
+                  </div>
+                  <div className="text-[26px] font-bold text-ink mt-2 tabular tracking-tight leading-none">
+                    {fmtBDT(totalMonthly)}
+                  </div>
+                  <div className="text-[11px] text-muted mt-1.5 tabular">
+                    Across {usable.length} projection{usable.length === 1 ? '' : 's'}
+                  </div>
                 </div>
-
-                {/* Hero number: EMI per month */}
-                <div className="flex flex-col gap-0.5">
-                  <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-semibold">
-                    Monthly EMI
+                <div>
+                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
+                    If you borrow this much
                   </div>
-                  <div className="text-[28px] font-bold tracking-[-0.02em] tabular text-ink leading-none">
-                    {fmtBDT(s.emi)}
+                  <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
+                    {fmtBDT(totalPrincipal)}
+                  </div>
+                  <div className="text-[11px] text-muted mt-1.5 tabular">
+                    you'd pay <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> in interest
                   </div>
                 </div>
-
-                {/* Coin-bar split: principal vs interest */}
-                <SplitBar
-                  a={principal}
-                  b={interest}
-                  aLabel="Principal"
-                  bLabel="Interest"
-                  aColor="var(--primary)"
-                  bColor="var(--danger)"
-                  formatValue={fmtBDT}
-                />
-
-                {/* Footer: total you pay */}
-                <div className="text-[11.5px] text-muted tabular pt-0.5">
-                  Total you pay <b className="text-ink font-semibold">{fmtBDT(s.totalPaid)}</b>
-                </div>
-
-                {plan.dirty && (
-                  <div className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-warn">
-                    Unsaved draft
+                <div>
+                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
+                    Total you pay
                   </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                  <div className="text-[26px] font-bold text-danger mt-2 tabular tracking-tight leading-none">
+                    {fmtBDT(totalPaid)}
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-muted mt-5 leading-relaxed">
+                <strong className="text-ink">How it works:</strong>{' '}
+                <em>Total monthly EMI</em> is the sum of every projection's
+                monthly payment — what your bank account would need to
+                cover each month if every loan went through.{' '}
+                <em>Total you pay</em> is the sum of every EMI across
+                every term, including interest. Nothing here moves real
+                money.
+              </div>
+            </section>
+          </div>
+
+          {/* If there are also drafts tucked away, surface them in a
+              quieter footer row so the user can resume or discard. */}
+          {drafts.length > 0 && (
+            <section className="card">
+              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3">
+                Empty drafts ({drafts.length})
+              </h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-[12.5px] text-muted leading-relaxed m-0">
+                  Saved projections don't show drafts. Open a draft to continue, or clear them.
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => navigate(`/plan/loan/${drafts[0].id}`)}>
+                    Open latest draft
+                  </Button>
+                  <Button variant="ghost" onClick={() => { drafts.forEach(d => removeLoanPlan(d.id)); }}>
+                    Clear drafts
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

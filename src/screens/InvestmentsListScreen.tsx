@@ -173,20 +173,28 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
     >
       {/* Left zone — identity, terms, maturity countdown. */}
       <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
+        {/* Title row: emoji + (name + pill) on one row, vertically
+            centered. Title is truncated to 1 line so the pill
+            always sits against the title baseline. The pill is
+            wrapped in the same flex group as the title (no
+            flex-1 on the title), so it hugs the title text on the
+            left instead of being pushed to the far right. */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-2xl shrink-0" aria-hidden>{invEmoji(inv.type)}</span>
-          <div className="font-semibold text-[16px] tracking-tight truncate">
-            {inv.name}
+          <span className="text-2xl shrink-0 leading-none" aria-hidden>{invEmoji(inv.type)}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
+              {inv.name}
+            </div>
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
+              style={{
+                background: isDps ? 'var(--primary-soft)' : 'var(--accent-soft)',
+                color: isDps ? 'var(--primary)' : 'var(--accent)',
+              }}
+            >
+              {isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings'}
+            </span>
           </div>
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
-            style={{
-              background: isDps ? 'var(--primary-soft)' : 'var(--accent-soft)',
-              color: isDps ? 'var(--primary)' : 'var(--accent)',
-            }}
-          >
-            {isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings'}
-          </span>
         </div>
         <div className="text-[12px] text-muted tabular truncate">
           {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
