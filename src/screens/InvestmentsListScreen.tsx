@@ -28,6 +28,7 @@ import {
   daysToMaturity,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
+import { investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
 
 const MIDDOT = '\u00B7';
 
@@ -169,8 +170,25 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
   return (
     <Link
       to={`/investments/${inv.id}`}
-      className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden"
+      className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
     >
+      {/* Left-edge type band — 4px colored stripe that runs the full
+          height of the card. Per-type colour (info for DPS, accent
+          for FDR, cyan for savings) gives the card a clear type
+          identity at a glance. 0.7 opacity so the band harmonises
+          with the card surface — same width + opacity as the
+          Planner + Loan + Debt cards, so all four list surfaces
+          share one visual signature. The card's border-radius
+          clips the top-left and bottom-left corners so the band
+          reads as baked into the surface. */}
+      <span
+        aria-hidden
+        className="absolute left-0 top-0 h-full w-1 pointer-events-none"
+        style={{
+          background: investmentTypeColor(inv.type as 'dps' | 'fdr' | 'savings'),
+          opacity: 0.7,
+        }}
+      />
       {/* Left zone — identity, terms, maturity countdown. */}
       <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
         {/* Title row: emoji + (name + pill) on one row, vertically

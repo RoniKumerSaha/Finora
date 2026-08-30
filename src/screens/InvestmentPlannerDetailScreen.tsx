@@ -113,7 +113,7 @@ export function InvestmentPlannerDetailScreen() {
     <div className="flex flex-col gap-5 max-w-2xl">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="heading h1-screen">Mock investment</h1>
+          <h1 className="heading h1-screen">Plan</h1>
           <div className="text-muted text-[13px] mt-1.5 max-w-prose">
             Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
           </div>
@@ -123,7 +123,7 @@ export function InvestmentPlannerDetailScreen() {
             type="button"
             onClick={async () => {
               const ok = await confirm({
-                title: 'Delete this mock investment?',
+                title: 'Delete this plan?',
                 body: 'The plan is removed. This cannot be undone.',
                 confirmLabel: 'Delete',
                 danger: true,
@@ -134,7 +134,7 @@ export function InvestmentPlannerDetailScreen() {
               }
             }}
             className="text-[12.5px] font-semibold px-2.5 py-1.5 rounded-btn text-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition"
-            aria-label="Delete this mock investment"
+            aria-label="Delete this plan"
           >
             Delete
           </button>
@@ -227,7 +227,7 @@ export function InvestmentPlannerDetailScreen() {
             placeholder="DBBL 1-year FDR"
           />
         </Field>
-        <Field label="Type" hint="Pick the scheme you want to mock.">
+        <Field label="Type" hint="Pick the scheme you want to plan.">
           <Select
             value={type}
             onChange={e => { const v = e.target.value as InvestmentType; setType(v); patch({ type: v }); }}
@@ -295,7 +295,7 @@ export function InvestmentPlannerDetailScreen() {
       </section>
 
       <section className="text-[11px] text-muted text-center">
-        Mock plans never touch your ledger.
+        Plans never touch your ledger.
       </section>
 
       {dialog}

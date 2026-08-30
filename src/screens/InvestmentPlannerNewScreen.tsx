@@ -45,7 +45,7 @@ export function InvestmentPlannerNewScreen() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <header>
-        <h1 className="heading h1-screen">New mock investment</h1>
+        <h1 className="heading h1-screen">New plan</h1>
         <div className="text-muted text-[13px] mt-1.5 max-w-prose">
           Pick a starter kit to fill in sensible defaults, or start from a blank form.
         </div>

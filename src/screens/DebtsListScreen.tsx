@@ -132,8 +132,24 @@ function DebtCard({ debt: d }: { debt: any }) {
   return (
     <Link
       to={`/debts/${d.id}/edit`}
-      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden"
+      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
     >
+      {/* Left-edge direction band — 4px colored stripe that runs the
+          full height of the card. Direction-encoded: danger for
+          i_owe, primary for owed_to_me. 0.7 opacity so the band
+          harmonises with the card surface — same width + opacity
+          as the Planner + Loan + Investment cards, so all four
+          list surfaces share one visual signature. The card's
+          border-radius clips the top-left and bottom-left corners
+          so the band reads as baked into the surface. */}
+      <span
+        aria-hidden
+        className="absolute left-0 top-0 h-full w-1 pointer-events-none"
+        style={{
+          background: isIOwe ? 'var(--danger)' : 'var(--primary)',
+          opacity: 0.7,
+        }}
+      />
       {/* Top row — horizontal split: identity (left) + remaining (right),
           separated by a 1px divider. Mirrors the investment card. */}
       <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-5 pb-4">

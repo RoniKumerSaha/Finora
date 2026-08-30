@@ -73,10 +73,10 @@
   /* Refined shadows: tightened spread + a hair more depth at modal.
      card adds a subtle inset highlight via JS where used (see .card).
      Note: --shadow-card is overridden per theme in [data-theme="light"]
-     (2026-08-14 light-parchment) to use a warm-brown ambient. */
+     (2026-08-14 light-parchment) to use a warm-brown ambient.
+     --shadow-modal / --shadow-nav / --shadow-inset / --shadow-planner-*
+     are defined under :root (above) so both modes have explicit values. */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.32);
-  --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.32), 0 24px 60px rgba(0, 0, 0, 0.55);
-  --shadow-nav: 0 1px 0 rgba(0, 0, 0, 0.32);
 }
 
 /* Tabular numerals on numbers everywhere — amount alignment matters
@@ -86,7 +86,8 @@
 /* v1 modal backdrop: darkened + 6px blur overlay. */
 :root {
   --overlay: rgba(15, 20, 25, 0.6);
-  /* Sidebar inner shadow — keeps nav feeling "cut from the wall". */
+  /* Sidebar inner shadow — keeps nav feeling "cut from the wall".
+     Both modes are defined; light mode overrides below. */
   --sidebar-inset: inset -1px 0 0 rgba(0, 0, 0, 0.16);
   /* Frosted pill on planner cards (jar tiles, category cards). The pill
      sits on top of a coloured liquid fill, so it needs contrast against
@@ -106,6 +107,21 @@
      0.55 in light mode so the cream card surface doesn't drown the colour;
      0.32 in dark mode where the surface is already deep. */
   --liquid-fill-opacity: 0.32;
+
+  /* Component-level shadows. Hardcoded `rgba(0,0,0,...)` looked right
+     on the dark `#1E2A26` page but produced visible artifacts on the
+     cool-paper light page. These tokens swap in lighter, sage-tinted
+     shadows under [data-theme="light"] so the same component renders
+     consistently across modes. */
+  --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.32), 0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-nav: 0 1px 0 rgba(0, 0, 0, 0.32);
+  /* Inset shadow used by .field (recessed inputs). */
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+  /* Three-tier planner card lift — used in MonthPlanScreen for the
+     progressively-heavier shadows on hover and selected state. */
+  --shadow-planner-card:    0 2px 6px  rgba(0, 0, 0, 0.18);
+  --shadow-planner-card-hi: 0 4px 12px rgba(0, 0, 0, 0.22);
+  --shadow-planner-card-hi2: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] {
@@ -158,6 +174,16 @@
      warmth goes. */
   --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --shadow-card: 0 1px 2px rgba(15, 30, 25, 0.04), 0 6px 18px rgba(15, 30, 25, 0.06);
+  /* Component-level shadows — light-mode overrides. The dark values
+     use rgba(0,0,0,...) which works on the dark page but produces
+     visible artifacts on cool-paper. Swap in sage-tinted shadows. */
+  --shadow-modal: 0 4px 12px rgba(15, 30, 25, 0.08), 0 24px 60px rgba(15, 30, 25, 0.14);
+  --shadow-nav: 0 1px 0 rgba(15, 30, 25, 0.08);
+  --sidebar-inset: inset -1px 0 0 rgba(15, 30, 25, 0.08);
+  --shadow-inset: inset 0 1px 2px rgba(15, 30, 25, 0.06);
+  --shadow-planner-card:    0 2px 6px  rgba(15, 30, 25, 0.06);
+  --shadow-planner-card-hi: 0 4px 12px rgba(15, 30, 25, 0.08);
+  --shadow-planner-card-hi2: 0 6px 14px rgba(15, 30, 25, 0.10);
   /* Frosted pill on planner cards — cool white wash; the pill is no
      longer fighting cream, so opacity drops and the border lifts just
      enough to keep the shape readable on the deepest ramp band. */

@@ -1,18 +1,29 @@
 /**
  * PlanScreen — hub for the scratchpad planner.
  *
- * Two cards: Month Planner and Event Planner. Each links to its own
- * feature screen. Nothing here writes to the ledger — plans are
- * separate from `state.transactions`.
+ * Four cards: Investment Planner, Loan Calculator, Month Planner,
+ * Event Planner. Each links to its own feature screen. Nothing here
+ * writes to the ledger — plans are separate from `state.transactions`.
  *
- * The Month card stays lean: just a count + an empty-state nudge. The
- * detailed totals live on the Card-total checker mounted above and on
- * the Month Planner page itself. The Event card shows the next few
- * events with days-to-go.
+ * 2026-08-30 polish: the top two cards (Investment + Loan) now surface
+ * a tiny aggregate visualisation so the user can see at a glance what
+ * their plans are projecting, without opening the planner. The
+ * investment card shows a Now-vs-At-Maturity stacked bar; the loan
+ * card shows Principal-vs-Interest split. Bottom two cards keep their
+ * existing mini-list pattern.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as plans from '../domain/plans';
+import {
+  investmentPlanMaturityValue,
+  investmentPlanTotalContributed,
+  listInvestmentPlans,
+} from '../domain/investmentPlans';
+import {
+  listLoanPlans,
+  summariseLoanPlan,
+} from '../domain/loanPlans';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
 
@@ -25,6 +36,35 @@ export function PlanScreen() {
   const events = plans.listEventPlans(state);
   const todayISO = today().toISOString().slice(0, 10);
 
+  // ── Investment aggregate (for the chart in card 1) ────────────────
+  const investmentPlans = listInvestmentPlans(state);
+  let invCommitted = 0;
+  let invProjected = 0;
+  for (const plan of investmentPlans) {
+    invCommitted += investmentPlanTotalContributed(plan);
+    invProjected += investmentPlanMaturityValue(plan);
+  }
+  const invGain = invProjected - invCommitted;
+  const invHasPlans = investmentPlans.length > 0;
+
+  // ── Loan aggregate (for the chart in card 2) ──────────────────────
+  const loanPlans = listLoanPlans(state);
+  // Treat empty drafts as placeholders so the chart doesn't show ৳0.
+  const usableLoans = loanPlans.filter(
+    p => p.name.trim() || Number(p.principal) > 0 || Number(p.rate) > 0,
+  );
+  let loanPrincipal = 0;
+  let loanInterest = 0;
+  let loanEmi = 0;
+  for (const plan of usableLoans) {
+    const s = summariseLoanPlan(plan);
+    loanPrincipal += Math.max(0, Number(plan.principal) || 0);
+    loanInterest += Math.max(0, s.totalInterest);
+    loanEmi += s.emi;
+  }
+  const loanTotal = loanPrincipal + loanInterest;
+  const loanHasPlans = usableLoans.length > 0;
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -34,8 +74,8 @@ export function PlanScreen() {
         </div>
       </header>
 
+      {/* ── Top row: investment + loan (with charts) ──────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Investment Planner card (mock — PRD §9.17) */}
         <Link
           to="/plan/invest"
           className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -43,19 +83,78 @@ export function PlanScreen() {
           <div className="flex justify-between items-start gap-3">
             <div className="min-w-0">
               <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Investment Planner</div>
-              <div className="font-semibold text-[18px] tracking-tight mt-1.5">Mock a DPS or FDR</div>
+              <div className="font-semibold text-[18px] tracking-tight mt-1.5">Plan an investment</div>
             </div>
             <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surface-2 text-[10px] font-bold uppercase tracking-[0.04em] text-muted border border-border">
               <span aria-hidden className="w-1 h-1 rounded-full bg-primary" />
-              {state.investmentPlans.length} {state.investmentPlans.length === 1 ? 'plan' : 'plans'}
+              {investmentPlans.length} {investmentPlans.length === 1 ? 'plan' : 'plans'}
             </span>
           </div>
+
           <p className="text-sm text-muted leading-relaxed">
-            Sketch a mock DPS, FDR, or savings certificate. See the projected maturity value — no real money moves.
+            Sketch a DPS, FDR, or savings certificate. See the projected maturity value — no real money moves.
           </p>
+
+          {/* Aggregate chart — Now (accent) vs At maturity (primary)
+              as a stacked horizontal bar so the user can see the
+              projected gain without opening the planner. Only renders
+              when there's at least one plan. */}
+          {invHasPlans && (
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-[11px] text-muted tabular">
+                <span>
+                  Now <b className="text-ink font-semibold">{fmtBDT(invCommitted)}</b>
+                </span>
+                <span>
+                  At maturity <b className="text-ink font-semibold">{fmtBDT(invProjected)}</b>
+                </span>
+              </div>
+              <div
+                className="flex h-3 rounded-pill overflow-hidden bg-surface-2 border border-border"
+                title={`Committed ${fmtBDT(invCommitted)} → projected ${fmtBDT(invProjected)}`}
+              >
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(invCommitted / Math.max(1, invProjected)) * 100}%`,
+                    background: 'var(--accent)',
+                  }}
+                />
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(invGain / Math.max(1, invProjected)) * 100}%`,
+                    background: 'var(--primary)',
+                  }}
+                />
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-[11px] text-muted">
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--accent)' }} />
+                  Principal
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--primary)' }} />
+                  Projected gain
+                </span>
+                {invGain > 0 && (
+                  <span className="ml-auto font-bold text-primary tabular">
+                    +{fmtBDT(invGain)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!invHasPlans && (
+            <div className="flex items-center gap-2 text-[11.5px] text-muted">
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-muted opacity-50" />
+              No plans yet — pick a starter kit on the next screen.
+            </div>
+          )}
         </Link>
 
-        {/* Loan Calculator card (PRD §9.17) */}
         <Link
           to="/plan/loan"
           className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -66,16 +165,77 @@ export function PlanScreen() {
               <div className="font-semibold text-[18px] tracking-tight mt-1.5">Plan a loan</div>
             </div>
             <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surface-2 text-[10px] font-bold uppercase tracking-[0.04em] text-muted border border-border">
-              <span aria-hidden className="w-1 h-1 rounded-full bg-primary" />
-              {state.loanPlans.length} {state.loanPlans.length === 1 ? 'projection' : 'projections'}
+              <span aria-hidden className="w-1 h-1 rounded-full bg-danger" />
+              {usableLoans.length} {usableLoans.length === 1 ? 'projection' : 'projections'}
             </span>
           </div>
+
           <p className="text-sm text-muted leading-relaxed">
             Enter principal, rate, and term — get an EMI and a full amortization table back. Projection only.
           </p>
+
+          {/* Aggregate chart — Principal (ink) vs Interest (danger)
+              as a stacked horizontal bar so the user sees the
+              cost-vs-amount split. Only renders when at least one
+              usable plan exists. */}
+          {loanHasPlans && loanTotal > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-[11px] text-muted tabular">
+                <span>
+                  Principal <b className="text-ink font-semibold">{fmtBDT(loanPrincipal)}</b>
+                </span>
+                <span>
+                  Total you pay <b className="text-ink font-semibold">{fmtBDT(loanTotal)}</b>
+                </span>
+              </div>
+              <div
+                className="flex h-3 rounded-pill overflow-hidden bg-surface-2 border border-border"
+                title={`Borrow ${fmtBDT(loanPrincipal)} → pay ${fmtBDT(loanTotal)}`}
+              >
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(loanPrincipal / Math.max(1, loanTotal)) * 100}%`,
+                    background: 'var(--ink)',
+                  }}
+                />
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${(loanInterest / Math.max(1, loanTotal)) * 100}%`,
+                    background: 'var(--danger)',
+                  }}
+                />
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-[11px] text-muted">
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--ink)' }} />
+                  Principal
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span aria-hidden className="w-2.5 h-2.5 rounded-sm" style={{ background: 'var(--danger)' }} />
+                  Interest
+                </span>
+                {loanEmi > 0 && (
+                  <span className="ml-auto font-bold text-ink tabular">
+                    {fmtBDT(loanEmi)} <span className="text-muted font-normal">/mo EMI</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!loanHasPlans && (
+            <div className="flex items-center gap-2 text-[11.5px] text-muted">
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-muted opacity-50" />
+              No projections yet — start one to see the EMI.
+            </div>
+          )}
         </Link>
       </div>
 
+      {/* ── Bottom row: month + event (mini-list pattern) ─────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Month Planner card */}
         <Link

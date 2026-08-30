@@ -59,14 +59,14 @@ export function InvestmentPlannerScreen() {
         <div>
           <h1 className="heading h1-screen">Investment Planner</h1>
           <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-            Sketch a mock DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
+            Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
           </div>
         </div>
         <Button
           variant="primary"
           onClick={() => navigate('/plan/invest/new')}
         >
-          + New mock investment
+          + New plan
         </Button>
       </header>
 
@@ -284,7 +284,7 @@ function InvestmentPlanCard({
       <span
         aria-hidden
         className="absolute left-0 top-0 bottom-0 w-1"
-        style={{ background: bandColor, opacity: 0.55 }}
+        style={{ background: bandColor, opacity: 0.7 }}
       />
 
       {/* Left zone — identity, terms, maturity countdown.

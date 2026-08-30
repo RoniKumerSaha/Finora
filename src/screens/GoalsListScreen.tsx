@@ -106,15 +106,17 @@ export function GoalsListScreen() {
             const completed = isGoalCompleted(g, saved);
             const pace = paceOf(g, saved, target);
 
-            // Pace chip colour tokens (no new design tokens — reuse
-            // the existing semantic palette: success / warn / danger /
-            // muted).
+            // Pace chip colour tokens — reuse the existing semantic palette
+            // (success / primary / warn / danger) so the colours stay
+            // consistent with the rest of the app in both light and
+            // dark modes. Every value resolves through the theme.css
+            // token system; no raw hex fallbacks.
             const paceChipStyle = {
-              completed: { background: 'var(--success-soft, var(--primary-soft))', color: 'var(--success, var(--primary))' },
-              ahead:     { background: 'var(--success-soft, var(--primary-soft))', color: 'var(--success, var(--primary))' },
+              completed: { background: 'var(--success-soft)', color: 'var(--success)' },
+              ahead:     { background: 'var(--success-soft)', color: 'var(--success)' },
               'on-track':{ background: 'var(--primary-soft)', color: 'var(--primary)' },
-              behind:    { background: 'var(--warn-soft, rgba(245, 158, 11, 0.12))', color: 'var(--warn, #f59e0b)' },
-              expired:   { background: 'rgba(239, 68, 68, 0.12)', color: 'var(--danger, #ef4444)' },
+              behind:    { background: 'var(--warn-soft)',   color: 'var(--warn)' },
+              expired:   { background: 'var(--danger-soft)', color: 'var(--danger)' },
             }[pace];
 
             return (

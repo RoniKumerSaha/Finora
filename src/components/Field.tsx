@@ -25,7 +25,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 const INPUT_BASE =
   'w-full bg-surface-2 text-ink rounded-input border border-border ' +
   'px-[14px] py-2.5 text-sm leading-tight ' +
-  'transition shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)] ' +
+  'transition shadow-[var(--shadow-inset)] ' +
   'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 ' +
   'disabled:opacity-50';
 
@@ -82,7 +82,7 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {
       className={[
         INPUT_BASE,
         'rounded-btn text-[32px] font-bold tabular text-primary py-3.5',
-        'shadow-[inset_0_1px_2px_rgba(0,0,0,0.18)]',
+        'shadow-[var(--shadow-inset)]',
         className || '',
       ].join(' ')}
     />

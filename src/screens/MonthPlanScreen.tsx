@@ -441,10 +441,10 @@ function JarTile({
             ? 'color-mix(in srgb, var(--primary) 14%, var(--surface-2))'
             : 'var(--surface-2)',
           boxShadow: showEditorRing
-            ? '0 6px 14px rgba(0,0,0,0.25)'
+            ? 'var(--shadow-planner-card-hi2)'
             : showPickedOverlay
-              ? '0 4px 12px rgba(0,0,0,0.22)'
-              : '0 2px 6px rgba(0,0,0,0.18)',
+              ? 'var(--shadow-planner-card-hi)'
+              : 'var(--shadow-planner-card)',
         }}
       >
         {/* Progress ring. Two layered circles: an outer ring and an
@@ -747,7 +747,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
             style={{
               background: 'var(--surface-2)',
               borderColor: 'var(--border)',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
+              boxShadow: 'var(--shadow-planner-card)',
             }}
           >
             <span

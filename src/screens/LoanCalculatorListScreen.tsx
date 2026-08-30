@@ -145,7 +145,7 @@ export function LoanCalculatorListScreen() {
                         <span
                           className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
                           style={{
-                            background: 'var(--danger-soft, rgba(239, 68, 68, 0.12))',
+                            background: 'var(--danger-soft)',
                             color: 'var(--danger)',
                           }}
                         >
