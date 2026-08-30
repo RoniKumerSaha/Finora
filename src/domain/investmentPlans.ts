@@ -159,9 +159,134 @@ export function investmentPlanMaturityDate(plan: InvestmentPlan): Date | null {
   return new Date(Date.UTC(year, normalizedMonth, day));
 }
 
+/**
+ * Total cumulative principal the user puts in over the full term.
+ * For DPS this is `monthlyContribution × termMonths` (NOT
+ * `plan.principal` — that's an informational field on DPS that's
+ * often stale or zero). For FDR / savings it's the lump-sum
+ * principal. Single source of truth so the helper, the list card,
+ * and the detail screen all agree on "your money".
+ */
+export function investmentPlanTotalContributed(plan: InvestmentPlan): number {
+  if (plan.type === 'dps') {
+    return (Number(plan.monthlyContribution) || 0) * (Math.max(0, Math.floor(Number(plan.termMonths) || 0)));
+  }
+  return Math.max(0, Number(plan.principal) || 0);
+}
+
 /** Convenience: total interest earned across the full term. */
 export function investmentPlanInterest(plan: InvestmentPlan): number {
-  return Math.max(0, investmentPlanMaturityValue(plan) - (Number(plan.principal) || 0));
+  return Math.max(0, investmentPlanMaturityValue(plan) - investmentPlanTotalContributed(plan));
+}
+
+/**
+ * Month-by-month balance series for a mock investment plan.
+ *
+ *   index 0  → balance at month 0 (start, before any deposits/interest)
+ *   index i  → balance at month i (0 ≤ i ≤ termMonths)
+ *   last     → maturity value (matches `investmentPlanMaturityValue`)
+ *
+ * For DPS the curve is the annuity-due future value: each month the
+ * contribution lands and then compounds. For FDR / savings it's a
+ * linear ramp from 0 to the maturity value.
+ *
+ * Used by the Investment Planner hero card to draw a small sparkline.
+ * Pure: never reads transactions, never touches the store.
+ */
+export function projectionSeries(plan: InvestmentPlan): number[] {
+  const months = Math.max(0, Math.floor(Number(plan.termMonths) || 0));
+  const days = Math.max(0, Math.floor(Number(plan.termDays) || 0));
+  if (plan.type === 'dps') {
+    const M = Math.max(0, Number(plan.monthlyContribution) || 0);
+    const r = Math.max(0, Number(plan.rate) || 0) / 100 / 12;
+    const out = new Array<number>(months + 1);
+    out[0] = 0;
+    for (let i = 1; i <= months; i++) {
+      // Annuity-due: contribution lands at the start of each period,
+      // then earns one month's interest. Matches `investmentPlanMaturityValue`.
+      // DPS curve starts at 0: the user is *building up* the balance
+      // month-by-month, so a 0 → maturity ramp is truthful.
+      if (r === 0) {
+        out[i] = M * i;
+      } else {
+        const pow = Math.pow(1 + r, i);
+        out[i] = M * ((pow - 1) / r) * (1 + r);
+      }
+    }
+    return out;
+  }
+  // FDR / savings: the principal lands in full on day 0 — the user
+  // doesn't earn it up month-by-month. The curve therefore starts at
+  // principal and the line traces only the *interest layer* on top.
+  // Drawing from 0 for an FDR would falsely suggest the principal was
+  // built up over time, which it wasn't.
+  //
+  // We sample N evenly-spaced points across the term (months-based
+  // uses `months`, days-based falls back to 12) and apply the simple-
+  // interest formula interest_so_far = principal × rate × elapsed/term.
+  const principal = Math.max(0, Number(plan.principal) || 0);
+  const rate = Math.max(0, Number(plan.rate) || 0);
+  const points = months > 0 ? months : 12;
+  const out = new Array<number>(points + 1);
+  for (let i = 0; i <= points; i++) {
+    const fraction = i / points;
+    if (days > 0) {
+      const interest = principal * (rate / 100) * (days * fraction / 365);
+      out[i] = principal + interest;
+    } else {
+      const interest = principal * (rate / 100) * (months * fraction / 12);
+      out[i] = principal + interest;
+    }
+  }
+  return out;
+}
+
+/**
+ * Month-by-month breakdown of the projection into principal (what
+ * the user put in) and interest (what the bank paid). Together the
+ * two series sum to `projectionSeries(plan)` at every index.
+ *
+ *   invested[i]  → cumulative principal at month i
+ *   interest[i]  → cumulative interest at month i
+ *
+ * For DPS the "invested" growth is the straight sum of monthly
+ * contributions, and the rest of the balance is interest. For
+ * FDR / savings: invested is constant (principal), interest
+ * grows linearly across the term (simple-interest split).
+ *
+ * Used by the stacked-area chart on the Investment Planner hero
+ * card so users can see *how much* of the maturity is their money
+ * vs. earned interest.
+ */
+export function projectionBreakdown(plan: InvestmentPlan): { invested: number[]; interest: number[] } {
+  const months = Math.max(0, Math.floor(Number(plan.termMonths) || 0));
+  const total = projectionSeries(plan);
+  if (plan.type === 'dps') {
+    const M = Math.max(0, Number(plan.monthlyContribution) || 0);
+    const invested = new Array<number>(months + 1);
+    const interest = new Array<number>(months + 1);
+    invested[0] = 0;
+    interest[0] = 0;
+    for (let i = 1; i <= months; i++) {
+      invested[i] = M * i;
+      // Balance = total[i]; interest = balance − principal.
+      interest[i] = Math.max(0, total[i] - invested[i]);
+    }
+    return { invested, interest };
+  }
+  // FDR / savings: principal is fully deposited at day 0 and never
+  // changes. Interest grows linearly (simple-interest split). Mirror
+  // the curve in `projectionSeries`: invested = principal at every
+  // index, interest = balance − principal.
+  const principal = Math.max(0, Number(plan.principal) || 0);
+  const points = months > 0 ? months : 12;
+  const invested = new Array<number>(points + 1);
+  const interest = new Array<number>(points + 1);
+  for (let i = 0; i <= points; i++) {
+    invested[i] = principal;
+    interest[i] = Math.max(0, total[i] - principal);
+  }
+  return { invested, interest };
 }
 
 /* ─────────────────────────────────────────────────────────────────────

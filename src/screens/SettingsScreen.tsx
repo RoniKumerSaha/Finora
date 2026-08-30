@@ -210,7 +210,7 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
 
       <div className="heading h3-modal mb-2">Finora</div>
       <p className="text-[13px] text-muted leading-[1.5] mb-5">
-        A Bangladesh-first personal finance notebook. Local-only, single user, one currency (BDT ৳).
+        A quiet place for your money. Track what you have, where it goes, and what you're aiming for — without an account, an inbox, or a notification asking for anything back.
       </p>
 
       <dl className="flex flex-col gap-3 text-[12.5px] mb-5">

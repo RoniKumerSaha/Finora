@@ -128,6 +128,54 @@ export function monthlyExpenses(transactions: Transaction[], year: number, month
 }
 
 /**
+ * Average monthly expenses over the last N *complete* calendar months.
+ *
+ * The current (in-progress) month is excluded — partial-month averages
+ * distort the signal, especially early in a month when almost nothing
+ * has been logged yet.
+ *
+ * Returns `null` when there's not enough history: callers should render
+ * a "Not enough data yet" hint instead of a misleading `৳0`. The
+ * threshold is that *every* of the last N complete months must have at
+ * least one expense entry; otherwise the average would be biased low
+ * (zero months dragging the mean down).
+ *
+ * Used by the Loan Calculator's "Can I afford this?" comparison in
+ * Phase B. Added to the domain now so the Phase A refactor doesn't
+ * have to touch this file again.
+ */
+export function averageMonthlyExpenses(
+  transactions: Transaction[],
+  opts: { months?: number; now?: string | Date } = {},
+): number | null {
+  const months = Math.max(1, Math.floor(opts.months ?? 3));
+  const t = today(opts.now ?? new Date());
+  // Walk back N complete months: (t.month - 1), (t.month - 2), …,
+  // (t.month - months). Using UTC components to match the rest of
+  // the date math in this file.
+  let total = 0;
+  for (let i = 1; i <= months; i++) {
+    // (y, m) for "this month minus i" in plain arithmetic. Decrement
+    // both month and year together so we never produce month=0 or
+    // month=-1.
+    const totalMonthsBack = i; // 1-based offset from current month
+    let m = t.getUTCMonth() + 1 - totalMonthsBack; // 1..12 then 0, -1, …
+    let y = t.getUTCFullYear();
+    while (m <= 0) { m += 12; y -= 1; }
+    const monthExpenses = monthlyExpenses(transactions, y, m);
+    if (monthExpenses > 0) {
+      total += monthExpenses;
+    } else {
+      // A zero month breaks the "I want a real signal" assumption.
+      // Returning null lets the caller show "Not enough history yet"
+      // instead of a misleadingly low average.
+      return null;
+    }
+  }
+  return total / months;
+}
+
+/**
  * R3: account balance = opening balance + sum of all transactions on the
  * account. For transfers, money leaves the from-account and lands in the
  * to-account.

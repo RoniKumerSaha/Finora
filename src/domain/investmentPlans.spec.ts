@@ -8,7 +8,9 @@ import {
   resetInvestmentPlan, removeInvestmentPlan, listInvestmentPlans,
   getInvestmentPlan,
   investmentPlanMaturityValue, investmentPlanMaturityDate,
-  investmentPlanInterest, INVESTMENT_PLAN_KITS,
+  investmentPlanInterest, investmentPlanTotalContributed,
+  projectionSeries,
+  INVESTMENT_PLAN_KITS,
 } from './investmentPlans';
 import { DEFAULT_STATE } from './persistence';
 import type { InvestmentPlan, State } from './types';
@@ -154,6 +156,140 @@ describe('investmentPlanInterest', () => {
       dirty: true, savedAt: null,
     };
     expect(investmentPlanInterest(plan)).toBeCloseTo(9_000, 0);
+  });
+
+  // Regression: DPS interest must be computed against the cumulative
+  // contributions (monthly × term), NOT against `plan.principal`,
+  // which is an informational field on DPS that's often stale or
+  // zero. The list card, detail card, and ribbon chart all read
+  // this number — if it's wrong, the split bar shows the wrong
+  // ratio of "your money vs interest".
+  it('DPS: subtracts cumulative contributions, not plan.principal', () => {
+    const plan: InvestmentPlan = {
+      id: 'p', name: 'DPS', type: 'dps',
+      principal: 0,            // ← would yield wrong answer if used as base
+      monthlyContribution: 5_000,
+      rate: 8,
+      startDate: '2026-01-01', termMonths: 12,
+      institution: '', notes: '', kit: 'dps',
+      dirty: true, savedAt: null,
+    };
+    // Maturity for 5,000/mo × 12mo at 8% annuity-due ≈ 62,665
+    // Interest = maturity − contributions = 62,665 − 60,000 ≈ 2,665
+    const expectedMat = investmentPlanMaturityValue(plan);   // ~62,665
+    const expectedContrib = 5_000 * 12;                       // 60,000
+    expect(investmentPlanTotalContributed(plan)).toBe(expectedContrib);
+    expect(investmentPlanInterest(plan))
+      .toBeCloseTo(expectedMat - expectedContrib, 0);
+    expect(investmentPlanInterest(plan)).toBeGreaterThan(2_500);
+    expect(investmentPlanInterest(plan)).toBeLessThan(2_800);
+
+    // Critical assertion — the bug was: `maturity − plan.principal`
+    // which, with `plan.principal = 0`, would equal `maturity` (62,665).
+    // The fixed helper subtracts the contributions (60,000) instead.
+    expect(investmentPlanInterest(plan))
+      .toBeCloseTo(investmentPlanMaturityValue(plan) - 5_000 * 12, 0);
+    // Belt-and-braces: also assert the helper does NOT collapse to
+    // `maturity - plan.principal` (which is what the old code did).
+    expect(investmentPlanInterest(plan))
+      .not.toBeCloseTo(investmentPlanMaturityValue(plan) - plan.principal, 0);
+  });
+
+  it('DPS kit default: matches what the cards actually show', () => {
+    // The DPS kit's `principal: 60_000` is informational. After the
+    // fix, the cards read interest from `monthlyContribution ×
+    // termMonths` (= 60,000 by coincidence) so this case happens
+    // to compute the right number either way. The non-trivial
+    // coverage is the previous test where `principal = 0`.
+    const kit = INVESTMENT_PLAN_KITS.find(k => k.id === 'dps')!;
+    const plan: InvestmentPlan = {
+      id: 'p', name: kit.name,
+      ...kit.defaults,
+      dirty: true, savedAt: null,
+    };
+    expect(investmentPlanTotalContributed(plan)).toBe(60_000);
+  });
+
+  it('FDR kit default: principal is the contribution', () => {
+    const kit = INVESTMENT_PLAN_KITS.find(k => k.id === 'fdr')!;
+    const plan: InvestmentPlan = {
+      id: 'p', name: kit.name,
+      ...kit.defaults,
+      dirty: true, savedAt: null,
+    };
+    expect(investmentPlanTotalContributed(plan)).toBe(kit.defaults.principal);
+  });
+
+  it('Savings kit default: principal is the contribution', () => {
+    const kit = INVESTMENT_PLAN_KITS.find(k => k.id === 'savings')!;
+    const plan: InvestmentPlan = {
+      id: 'p', name: kit.name,
+      ...kit.defaults,
+      dirty: true, savedAt: null,
+    };
+    expect(investmentPlanTotalContributed(plan)).toBe(kit.defaults.principal);
+  });
+});
+
+describe('projectionSeries', () => {
+  // Regression: DPS and FDR must produce visually distinct shapes.
+  // Before this fix, both ramps ran 0 → maturity which made the
+  // charts indistinguishable. After the fix, the DPS curve builds
+  // up the balance month-by-month (0 → maturity), while the FDR
+  // curve starts at principal on day 0 and traces only the
+  // interest layer on top.
+  it('DPS: starts at 0 and curves upward to maturity', () => {
+    const plan: InvestmentPlan = {
+      id: 'p', name: 'DPS', type: 'dps',
+      principal: 0, monthlyContribution: 5_000, rate: 8,
+      startDate: '2026-01-01', termMonths: 12,
+      institution: '', notes: '', kit: 'dps',
+      dirty: true, savedAt: null,
+    };
+    const s = projectionSeries(plan);
+    expect(s[0]).toBe(0);
+    expect(s[s.length - 1]).toBeCloseTo(investmentPlanMaturityValue(plan), 0);
+    // Curve must be monotonically increasing AND non-linear
+    // (later months add proportionally more than early ones,
+    // because of the compound).
+    for (let i = 1; i < s.length; i++) {
+      expect(s[i]).toBeGreaterThanOrEqual(s[i - 1]);
+    }
+    const earlyStep = s[4] - s[3];
+    const lateStep = s[s.length - 1] - s[s.length - 2];
+    expect(lateStep).toBeGreaterThan(earlyStep);
+  });
+
+  it('FDR: starts at principal (NOT 0), only interest grows', () => {
+    const plan: InvestmentPlan = {
+      id: 'p', name: 'FDR', type: 'fdr',
+      principal: 100_000, rate: 9,
+      startDate: '2026-01-01', termMonths: 12,
+      institution: '', notes: '', kit: 'fdr',
+      dirty: true, savedAt: null,
+    };
+    const s = projectionSeries(plan);
+    // Day-0 balance is the full principal — the user deposited the
+    // whole sum up front.
+    expect(s[0]).toBe(100_000);
+    // Maturity matches the maturity-value formula.
+    expect(s[s.length - 1]).toBeCloseTo(investmentPlanMaturityValue(plan), 0);
+    // If we still had the bug, s[0] would be 0 and the last value
+    // would be ~109,000. The fixed curve goes 100,000 → 109,000.
+    expect(s[s.length - 1] - s[0]).toBeCloseTo(9_000, 0);
+  });
+
+  it('Savings: starts at principal, only interest grows', () => {
+    const plan: InvestmentPlan = {
+      id: 'p', name: 'Savings', type: 'savings',
+      principal: 50_000, rate: 7,
+      startDate: '2026-01-01', termMonths: 36,
+      institution: '', notes: '', kit: 'other',
+      dirty: true, savedAt: null,
+    };
+    const s = projectionSeries(plan);
+    expect(s[0]).toBe(50_000);
+    expect(s[s.length - 1]).toBeCloseTo(investmentPlanMaturityValue(plan), 0);
   });
 });
 

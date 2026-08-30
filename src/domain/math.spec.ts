@@ -33,6 +33,7 @@ import {
   investmentMaturityValueTyped,
   investmentValue,
   computeNetWorth,
+  averageMonthlyExpenses,
 } from './math';
 import type { Account, Debt, Goal, Investment, Transaction } from './types';
 
@@ -601,5 +602,69 @@ describe('computeNetWorth — dual value (current vs projected)', () => {
     expect(currentNetWorth).toBe(200000);
     // Projected NW: cash 100000 + matured FDR 108000 = 208000.
     expect(projectedNetWorth).toBe(208000);
+  });
+});
+
+// ---------- 2026-08-30: averageMonthlyExpenses (Loan affordability) ----------
+
+describe('averageMonthlyExpenses — last N complete months', () => {
+  // NOW = 2026-08-13. The function reads the *current* UTC month as
+  // August 2026 and walks back 1, 2, 3 months from there (July, June,
+  // May 2026). The current month (August) is excluded.
+
+  it('returns null when there is no expense history at all', () => {
+    expect(averageMonthlyExpenses([], { now: NOW })).toBeNull();
+  });
+
+  it('returns null when one of the N months has zero expenses (no real signal)', () => {
+    // Three months of history but May is empty → can't trust the mean.
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 1000, date: '2026-05-15' }), // empty after
+      tx({ type: 'expense', amount: 2000, date: '2026-07-10' }),
+      tx({ type: 'expense', amount: 1500, date: '2026-08-10' }), // current month — ignored
+    ];
+    expect(averageMonthlyExpenses(txs, { now: NOW })).toBeNull();
+  });
+
+  it('averages the last 3 complete months when every month has data', () => {
+    // May: 1000, June: 3000, July: 2000 → mean = 2000.
+    // August is the current month and gets ignored.
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 1000, date: '2026-05-15' }),
+      tx({ type: 'expense', amount: 3000, date: '2026-06-15' }),
+      tx({ type: 'expense', amount: 2000, date: '2026-07-15' }),
+      tx({ type: 'expense', amount: 9999, date: '2026-08-10' }), // current — should be excluded
+    ];
+    expect(averageMonthlyExpenses(txs, { now: NOW })).toBe(2000);
+  });
+
+  it('respects a custom months=N', () => {
+    // 1 complete month back = July. Mean = 2000.
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 2000, date: '2026-07-15' }),
+    ];
+    expect(averageMonthlyExpenses(txs, { now: NOW, months: 1 })).toBe(2000);
+  });
+
+  it('crosses a year boundary correctly (Dec → Jan wrap)', () => {
+    // NOW = 2026-01-15 → walks back to Dec 2025, Nov 2025, Oct 2025.
+    const winter = '2026-01-15';
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 500, date: '2025-12-10' }),
+      tx({ type: 'expense', amount: 700, date: '2025-11-10' }),
+      tx({ type: 'expense', amount: 300, date: '2025-10-10' }),
+    ];
+    expect(averageMonthlyExpenses(txs, { now: winter, months: 3 })).toBe(500);
+  });
+
+  it('ignores income and transfer transactions', () => {
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 2000, date: '2026-05-15' }),
+      tx({ type: 'expense', amount: 2000, date: '2026-06-15' }),
+      tx({ type: 'expense', amount: 2000, date: '2026-07-15' }),
+      tx({ type: 'income', amount: 99999, date: '2026-07-15' }),
+      tx({ type: 'transfer', amount: 99999, date: '2026-07-15' }),
+    ];
+    expect(averageMonthlyExpenses(txs, { now: NOW })).toBe(2000);
   });
 });

@@ -76,7 +76,28 @@ export function LoanCalculatorDetailScreen() {
             Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.
           </div>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/plan/loan')}>Back</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={async () => {
+              const ok = await confirm({
+                title: 'Delete this projection?',
+                body: 'The plan is removed. This cannot be undone.',
+                confirmLabel: 'Delete',
+                danger: true,
+              });
+              if (ok) {
+                removeLoanPlan(plan.id);
+                navigate('/plan/loan');
+              }
+            }}
+            className="text-[12.5px] font-semibold px-2.5 py-1.5 rounded-btn text-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition"
+            aria-label="Delete this projection"
+          >
+            Delete
+          </button>
+          <Button variant="ghost" onClick={() => navigate('/plan/loan')}>Back</Button>
+        </div>
       </header>
 
       <SaveResetBar
@@ -85,7 +106,13 @@ export function LoanCalculatorDetailScreen() {
           resetLoanPlan(plan.id);
           navigate('/plan/loan');
         }}
-        onSave={() => { saveLoanPlan(plan.id); }}
+        onSave={() => {
+          // 2026-08-30: auto-close after save. The user has confirmed
+          // the values; the next thing they want to do is see this
+          // alongside their other projections on the list.
+          saveLoanPlan(plan.id);
+          navigate('/plan/loan');
+        }}
       />
 
       <section className="card flex flex-col gap-5">
@@ -191,27 +218,8 @@ export function LoanCalculatorDetailScreen() {
         )}
       </section>
 
-      <section className="flex flex-col gap-2">
-        <Button
-          variant="danger"
-          onClick={async () => {
-            const ok = await confirm({
-              title: 'Delete this projection?',
-              body: 'The plan is removed. This cannot be undone.',
-              confirmLabel: 'Delete',
-              danger: true,
-            });
-            if (ok) {
-              removeLoanPlan(plan.id);
-              navigate('/plan/loan');
-            }
-          }}
-        >
-          Delete projection
-        </Button>
-        <div className="text-[11px] text-muted text-center">
-          Projections never touch your ledger.
-        </div>
+      <section className="text-[11px] text-muted text-center">
+        Projections never touch your ledger.
       </section>
 
       {dialog}
