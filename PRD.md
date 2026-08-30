@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (the app uses device-local storage; no PIN or login surface) |
-| **Last Updated** | 2026-08-24 (Plan + Insights documented; Settings simplified; rules expanded) |
+| **Last Updated** | 2026-08-30 (Plan module extended with Investment Planner + Loan Calculator scratchpads — see §9.17; 68 new tests across `investmentPlans` and `loanPlans`; rules R18 + R19 added) |
 
 ---
 
@@ -139,6 +139,8 @@ A user should be able to:
 | 8 | Plan (2026-08-17 ship) | A pure-scratch planner module with two surfaces — **Month Planner** (one per calendar month, with budget "jars" per category, batch editor, preset kit) and **Event Planner** (per-event scratchpad with categories + line items, preset kits for wedding / trip / religious / party / generic events). Plan state is **never** part of the ledger — nothing in the Plan module moves money, updates balances, or shows up in Home / Insights / Transactions. The user explicitly taps **Save plan** to keep changes; an unsaved-edit dot warns before they leave. See §9.15. |
 | 9 | Insights (2026-08-14 ship; 2026-08-24 expanded) | Period-bounded analytics companion to Home. Range picker persists to `localStorage` under `finora.insights.range`. Surfaces: 3-up stat row (net flow, avg monthly expense, saved toward goals) with **period-comparison captions** ("+12% vs previous N months"), a dual-line cash-flow chart, spending-by-category breakdown (top 6 + Other bucket), a net-worth bar chart, and full Goals / Debts / Investments lists. See §9.16. |
 | 10 | Settings | Theme (Dark / Light / Auto), Backup (Export / Import `.json`), Danger zone (Wipe all data), About panel (version + privacy + entry count). **2026-08-24:** no app PIN in V1 (was listed in earlier drafts; removed from the surface — there is no recovery flow in V1 and the field was unused). Currency is locked to BDT in V1 and not shown. |
+| 11 | Investment Planner (2026-08-30 ship — mock) | A pure-scratch "what if I opened a DPS / FDR / savings certificate?" surface inside the Plan module. **Never touches the ledger.** User picks DPS / FDR / Other, fills the same fields as the real Investment screen (name, principal/installment, rate, term, dates), and the app computes a projected maturity value. Three starter kits (DPS, FDR, savings) and a blank-form option. See §9.17. |
+| 12 | Loan Calculator (2026-08-30 ship) | A pure-scratch loan projection surface inside the Plan module. **Never touches the ledger.** User enters principal, annual rate, term in months, and the first payment date — the app fills the full month-by-month amortization table (period, due date, EMI, interest, principal, remaining balance) plus an EMI / total-paid / total-interest summary card. See §9.17. |
 
 **Removed from V1 (compared to earlier draft):** advanced Debt (interest/amortization), Financial Health, Net Worth history, stocks/mutual funds/crypto. **Insights** shipped on 2026-08-14 as a period-bounded analytics companion to Home; Home now exposes only the point-in-time snapshot. **Plan** (Month + Event Planner scratchpads) shipped on 2026-08-17 — see §9.16.
 
@@ -149,7 +151,7 @@ A user should be able to:
 ### Primary Navigation (Bottom Bar / Sidebar)
 
 - **Home** (Dashboard)
-- **Plan** (Month Planner + Event Planner scratchpads — 2026-08-17 ship)
+- **Plan** (Month Planner + Event Planner + Investment Planner + Loan Calculator scratchpads — 2026-08-17 ship, extended 2026-08-30)
 - **Insights** (period-bounded analytics — 2026-08-14 ship)
 - **Transactions** (list of all entries)
 - **Accounts**
@@ -973,6 +975,129 @@ A bar chart of net worth by month for the range (capped at 12 months). Each bar 
 
 ---
 
+## 9.17 Investment Planner + Loan Calculator (shipped 2026-08-30)
+
+Two new sub-surfaces inside the **Plan** module. Both are pure scratchpads — no Plan edit ever moves real money or shows up on Home, Insights, or Transactions. They ride the existing Plan save/reset discipline: edits flip `dirty` immediately; the user must tap **Save plan** to keep changes; an unsaved-edit dot warns before they leave.
+
+### 9.17.1 Investment Planner (mock)
+
+A scratchpad for "what if I opened a DPS / FDR / savings certificate?". Reuses the same shape as the real `Investment` entity (PRD §9.8) but with no payout account, no linked transactions, and no status transitions.
+
+**Routes:**
+
+- `/plan/invest` — list of saved mock plans.
+- `/plan/invest/new` — starter-kit chooser (DPS, FDR, savings, blank).
+- `/plan/invest/:id` — edit + live projection.
+
+**Fields (per `InvestmentPlan`):**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | yes | UUID |
+| `name` | string | yes | Free text (e.g. "DBBL 1-year FDR") |
+| `type` | enum | yes | `dps` / `fdr` / `savings` |
+| `monthlyContribution` | number | DPS only | The installment the user would pay each month |
+| `principal` | number | FDR / savings | Lump-sum locked |
+| `rate` | number | yes | Annual rate, %. 0–100 cap (same as R16) |
+| `startDate` | ISO date | yes | When the deposit would land |
+| `termMonths` | integer | yes | Whole months. Mutually exclusive with `termDays` |
+| `termDays` | integer | optional | Whole days (sub-1-month FDRs) |
+| `institution` | string | optional | Bank / NBFI name |
+| `notes` | string | optional | One line |
+| `dirty` | boolean | yes | True while there are unsaved edits |
+| `savedAt` | ISO date | yes | Last user-saved timestamp (null until first save) |
+
+**Calculations (display only, NOT live and NOT ledger-affecting):**
+
+```
+Maturity value (FDR / savings) = principal × (1 + rate/100 × termMonths/12)
+Maturity value (DPS)            = M × ((1 + r/12)^T − 1) / (r/12) × (1 + r/12)
+                                 (M = installment, r = rate/100, T = termMonths)
+                                 0-rate falls back to linear: M × T
+Maturity date = startDate + termMonths  (clamped to month-end)
+```
+
+Every projection figure on screen carries the **(projection)** suffix or lives under a label that says "At maturity (projection)" so the user never reads a number as real money.
+
+**Starter kits:** three one-tap kits ship by default — **DPS** (5,000/mo × 12mo @ 8%), **FDR** (100,000 × 12mo @ 9%), **Savings / term deposit** (50,000 × 36mo @ 7%). Each is fully editable after insertion.
+
+**UI:**
+
+- **List screen:** responsive 1/2/3 grid of cards. Each card shows the type pill (DPS / FDR / SAVINGS), the projected maturity value, the interest earned, and "matures in X days" (or "matured N days ago"). Cards carry the `.card-link` hover lift from §9.14.
+- **Empty state:** three kit cards + a "New mock investment" CTA — mirrors the first-run empty-state pattern from §9.13.
+- **Detail screen:** Save/Reset toolbar (from §9.15) at the top, form card with name + type + principal/installment + rate + term + dates + institution, a live projection card that recomputes on every keystroke, and a danger Delete button with confirmation.
+
+**Save model:** identical to the rest of the Plan module — `dirty` flips on every edit, the user taps **Save plan** to persist, **Reset** clears the dirty flag (or removes the plan entirely if it was never saved).
+
+### 9.17.2 Loan Calculator
+
+A scratchpad for "what would this loan actually cost?". User enters principal, rate, term, and start date; the app fills the full amortization table.
+
+**Routes:**
+
+- `/plan/loan` — list of saved projections.
+- `/plan/loan/:id` — edit + amortization table.
+
+**Fields (per `LoanPlan`):**
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | yes | UUID |
+| `name` | string | yes | Free text (e.g. "Car loan") |
+| `principal` | number | yes | Total amount borrowed |
+| `rate` | number | yes | Annual rate, %. 0–100 cap |
+| `termMonths` | integer | yes | Whole months |
+| `startDate` | ISO date | yes | First payment date |
+| `emiOverride` | number | optional | Custom EMI; null = derived from the standard formula |
+| `dirty` | boolean | yes | True while unsaved |
+| `savedAt` | ISO date | yes | Last user-saved timestamp |
+
+**Calculations:**
+
+```
+EMI (standard) = P × r × (1 + r)^n / ((1 + r)^n − 1)
+                 r = annualRate/100/12, n = termMonths
+                 0-rate falls back to: P / n
+
+Each period:
+  interest       = outstanding × monthlyRate
+  principalPaid  = EMI − interest (capped at outstanding on the final row)
+  payment        = principalPaid + interest
+  remaining      = outstanding − principalPaid (floored at 0)
+  dueDate        = startDate + period months (clamped to month-end)
+```
+
+**UI:**
+
+- **List screen:** card grid; each card shows EMI (emphasis), Total you pay, Total interest, and the term length. Unsaved drafts show a "Unsaved draft" warn chip.
+- **Detail screen:** Save/Reset toolbar → form card (name, principal, rate, term, start date) → summary card (EMI · Total paid · Total interest) → amortization table (Period · Due · Payment · Interest · Principal · Balance) → Delete.
+- **Amortization table** is rendered as a 6-column `<table>` inside a horizontally scrollable card. The first 60 rows are shown inline; longer terms get a "Showing first 60 of N rows" caption.
+- Every EMI / total figure carries the **(projection)** suffix so the user never reads a number as a real monthly obligation.
+
+**Save model:** identical to the Investment Planner — `dirty` flips on every edit, explicit Save, Reset reverts or removes.
+
+### 9.17.3 Plan → Ledger boundary (applies to both new surfaces)
+
+- Investment Planner and Loan Calculator edits never create transactions.
+- They never affect account balances.
+- They never appear in Insights aggregations.
+- They are included in JSON export / import (the import schema marks the new arrays as `.optional()` for forward-compat with older backups — the persistence layer fills `[]` on load).
+- Demo-data seeding does **not** touch `investmentPlans` / `loanPlans` — they are personal scratchpads and survive a demo load.
+
+### 9.17.4 V1 does NOT support
+
+- Linking a mock investment to a real Account (no `payoutAccountId`).
+- Linking a loan projection to a real Debt (the loan calculator doesn't create a debt record).
+- Daily accrual on a mock investment (mirror of R9's "no daily tick" rule).
+- Compounding frequencies other than the standard monthly model.
+- Pre-closure interest on a mock investment.
+- Tax (TDS) tracking on mock interest income.
+- Custom payment schedules (the calculator is monthly-only).
+- Extra payments / prepayments on the loan.
+- Floating-rate loans.
+
+---
+
 ## 10. Core Financial Rules (Authoritative)
 
 | # | Rule | Formula |
@@ -994,6 +1119,8 @@ A bar chart of net worth by month for the range (capped at 12 months). Each bar 
 | R15 | Dual-value net worth | `currentNetWorth = cash + active investments (current) + receivables − owe`; `projectedNetWorth = currentNetWorth − active investments (current) + active investments (projected)`. For DPS, current is `dpsCurrentValue`; for FDR/savings, current equals projected equals `principal`. |
 | R16 | Investment term XOR | Exactly one of `termMonths` or `termDays` must be set; the schema rejects both or neither. Rate is capped at 0–100% inclusive. |
 | R17 | Insights range persistence | The selected range (`thisMonth` / `last3` / `last6` / `last12` / `all`) is persisted to `localStorage` under `finora.insights.range`. Defaults to `last6` on first open. |
+| R18 | Mock investment maturity | `InvestmentPlan.maturity_value` is the same formula as R9/R13, but the source is `investmentPlans` (not `investments`). The figure is always suffixed "(projection)" — never real money in hand. No linked transactions, no auto-mature status, no payout prompt. |
+| R19 | Loan amortization | `EMI = P × r × (1 + r)^n / ((1 + r)^n − 1)` with `r = annualRate/100/12`, `n = termMonths`. Zero-rate falls back to `P / n`. Each period: `interest = outstanding × r`, `principalPaid = min(outstanding, EMI − interest)`, `remaining = max(0, outstanding − principalPaid)`. Sum of `principalPaid` across all rows = original `principal` (within rounding). |
 
 ---
 
@@ -1279,7 +1406,7 @@ The MVP is complete when **all** of the following are true:
 - [ ] User can delete all data with confirmation.
 - [ ] All data is local; no backend or account is required.
 - [ ] All V1 features work fully offline.
-- [ ] Unit tests for all financial rules pass (133/133 across `goalContributions`, `insights`, `math`, `plans`, `recompute`, `categoryEmoji`, `exportImport`, `validation`).
+- [ ] Unit tests for all financial rules pass (201/201 across `goalContributions`, `insights`, `investmentPlans`, `loanPlans`, `math`, `plans`, `recompute`, `categoryEmoji`, `exportImport`, `validation`).
 - [ ] End-to-end tests for the four core journeys pass.
 - [ ] Save-flow successes show a transient toast (2.4s, top-right) instead of a sticky banner; deletes / batch edits / settings actions still use the banner.
 - [ ] Dark / Light segmented toggle in the sidebar cross-fades the theme and persists across reloads.
@@ -1293,6 +1420,9 @@ The MVP is complete when **all** of the following are true:
 - [ ] Insights range picker persists to `localStorage` under `finora.insights.range` and restores on next open.
 - [ ] Goal `saved` legacy blobs are auto-migrated to `contributions: GoalContribution[]` on first read without data loss.
 - [ ] Demo-data banner shows on Home when demo state is active and dismisses via `completeOnboarding()`.
+- [ ] Investment Planner ships with three starter kits (DPS, FDR, savings), a list screen with a card grid, a detail screen with live maturity projection, and Save/Reset + Delete affordances. Every projected figure carries "(projection)". Mock plans never create transactions.
+- [ ] Loan Calculator ships with a list screen, a detail screen with live summary (EMI / Total paid / Total interest), and a full month-by-month amortization table. The first 60 rows are inline; longer terms show "Showing first 60 of N rows". Projections never create debts.
+- [ ] JSON export / import round-trips `investmentPlans` and `loanPlans`. Older backups without the new fields still load (filled with `[]`).
 - [ ] No feature from the "Non-Goals" list is implemented.
 
 ---

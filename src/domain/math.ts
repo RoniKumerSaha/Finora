@@ -26,7 +26,17 @@
  *   - All math uses UTC date components to avoid timezone drift.
  */
 
-import type { Account, Debt, Goal, Investment, State, Transaction, ISODate } from './types';
+import type {
+  Account,
+  Debt,
+  Goal,
+  Investment,
+  LoanInstallment,
+  LoanPlan,
+  State,
+  Transaction,
+  ISODate,
+} from './types';
 
 // ---------- Date helpers ----------
 
@@ -518,4 +528,118 @@ export function computeNetWorth(
     currentNetWorth: cash + invCurrent + receivables - oweRemaining,
     projectedNetWorth: cash + invProjected + receivables - oweRemaining,
   };
+}
+
+// ---------- Loan Calculator (PRD §9.17 — Plan module) ----------
+
+/**
+ * Standard EMI formula:
+ *   EMI = P × r × (1 + r)^n / ((1 + r)^n − 1)
+ * where r = monthlyRate = annualRate/12/100, n = termMonths.
+ *
+ * When annual rate is 0 (some BNPL / 0% promo loans) the EMI reduces
+ * to a flat `principal / termMonths`. We special-case that here so
+ * callers don't have to.
+ *
+ * Returns 0 when inputs are non-positive.
+ */
+export function loanEMI(
+  principal: number,
+  annualRatePct: number,
+  termMonths: number,
+): number {
+  const P = Number(principal) || 0;
+  const n = Math.floor(Number(termMonths) || 0);
+  if (P <= 0 || n <= 0) return 0;
+  const r = (Number(annualRatePct) || 0) / 100 / 12;
+  if (r === 0) return P / n;
+  const pow = Math.pow(1 + r, n);
+  return (P * r * pow) / (pow - 1);
+}
+
+/** Total of every EMI across the full term. Pure helper for the
+ *  "Total you pay" summary card on the loan calculator screen. */
+export function loanTotalPaid(emi: number, termMonths: number): number {
+  return emi * Math.max(0, Math.floor(Number(termMonths) || 0));
+}
+
+/** Total interest paid across the full term. */
+export function loanTotalInterest(principal: number, emi: number, termMonths: number): number {
+  return Math.max(0, loanTotalPaid(emi, termMonths) - (Number(principal) || 0));
+}
+
+/**
+ * Build the full amortization table for a LoanPlan.
+ *
+ * Rules:
+ *   - EMI is computed from `loanEMI(principal, rate, termMonths)`
+ *     unless the user supplied an `emiOverride`. The override is
+ *     capped at the principal so the table can never be "decreasing
+ *     backwards"; if it's smaller than the standard EMI, the last
+ *     row simply has a smaller remaining.
+ *   - Each period's interest = outstanding × (rate/100/12).
+ *   - Each period's principal = EMI − interest.
+ *   - `remaining` after period = outstanding − principalPaid (floored
+ *     at 0 to absorb floating-point drift on the final row).
+ *   - `dueDate` is `startDate + period months` (clamped to month end
+ *     so a Jan 31 start + 1 month lands on Feb 28/29, same rule as
+ *     `investmentMaturityDate`).
+ *
+ * Returns an array of length `termMonths`. Empty array on bad input.
+ */
+export function loanAmortization(plan: LoanPlan): LoanInstallment[] {
+  const principal = Number(plan.principal) || 0;
+  const rate = Number(plan.rate) || 0;
+  const n = Math.floor(Number(plan.termMonths) || 0);
+  if (principal <= 0 || n <= 0) return [];
+
+  const standard = loanEMI(principal, rate, n);
+  // Use the user override if present; otherwise fall back to the
+  // standard formula. Clamp at 0 — a 0 override gives a zero-interest
+  // table, which is degenerate but legal.
+  const emi = Math.max(0, Number(plan.emiOverride ?? standard) || 0);
+  const monthlyRate = rate / 100 / 12;
+
+  const out: LoanInstallment[] = [];
+  let outstanding = principal;
+  for (let period = 1; period <= n; period++) {
+    const interestRaw = outstanding * monthlyRate;
+    // Cap principal at what's actually outstanding — the last row pays
+    // off the remainder cleanly. Round interest first, then derive
+    // principal as `EMI - interest` (rounded) so the three values
+    // always sum exactly. The last row's principal absorbs whatever
+    // rounding drift accumulated.
+    const interest = Math.round(interestRaw * 100) / 100;
+    let principalPaid = Math.round((emi - interestRaw) * 100) / 100;
+    if (principalPaid > outstanding) principalPaid = Math.round(outstanding * 100) / 100;
+    outstanding = Math.max(0, outstanding - principalPaid);
+    out.push({
+      period,
+      payment: Math.round((principalPaid + interest) * 100) / 100,
+      interest,
+      principalPaid,
+      remaining: Math.round(outstanding * 100) / 100,
+      dueDate: addMonthsISO(plan.startDate, period),
+    });
+  }
+  return out;
+}
+
+/**
+ * Date arithmetic that mirrors `investmentMaturityDate`: add N months
+ * to an ISO date, clamping the day-of-month to the target month's
+ * last day. e.g. 2026-01-31 + 1 month = 2026-02-28.
+ *
+ * Always returns an ISO date string (YYYY-MM-DD).
+ */
+export function addMonthsISO(iso: string, months: number): ISODate {
+  const d = parseISODate(iso);
+  const startDay = d.getUTCDate();
+  const targetMonth = d.getUTCMonth() + months;
+  const yearShift = Math.floor(targetMonth / 12);
+  const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+  const year = d.getUTCFullYear() + yearShift;
+  const lastDay = new Date(Date.UTC(year, normalizedMonth + 1, 0)).getUTCDate();
+  const day = Math.min(startDay, lastDay);
+  return new Date(Date.UTC(year, normalizedMonth, day)).toISOString().slice(0, 10);
 }

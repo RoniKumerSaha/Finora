@@ -121,6 +121,10 @@ export const DEFAULT_STATE: State = {
   // have plans yet" state, not a missing one.
   monthPlans: [],
   eventPlans: [],
+  // New in 2026-08-30: mock investment + loan scratchpads (PRD §9.17).
+  // Empty by default — these are personal plans, not sample data.
+  investmentPlans: [],
+  loanPlans: [],
   settings: { theme: 'dark', onboardingComplete: false },
 };
 
@@ -151,7 +155,7 @@ function validate(s: unknown): s is Partial<State> {
   if (!s || typeof s !== 'object') return false;
   const obj = s as Record<string, unknown>;
   return ['accounts', 'transactions', 'goals', 'debts', 'investments', 'categories',
-          'monthPlans', 'eventPlans', 'settings']
+          'monthPlans', 'eventPlans', 'investmentPlans', 'loanPlans', 'settings']
     .every(k => Array.isArray(obj[k]) || (k === 'settings' && typeof obj[k] === 'object'));
 }
 

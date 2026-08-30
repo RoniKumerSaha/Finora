@@ -34,6 +34,8 @@ const baseState = (): State => ({
   categories: [],
   monthPlans: [],
   eventPlans: [],
+  investmentPlans: [],
+  loanPlans: [],
   settings: { theme: 'auto', onboardingComplete: true },
 });
 

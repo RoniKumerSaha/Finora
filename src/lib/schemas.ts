@@ -121,6 +121,10 @@ export const exportEnvelopeSchema = z.object({
     // the persistence layer fills them with [] on load.
     monthPlans: z.array(z.any()).optional(),
     eventPlans: z.array(z.any()).optional(),
+    // Investment Planner + Loan Calculator scratchpads — added in
+    // 2026-08-30 (PRD §9.17). Same forward-compat pattern.
+    investmentPlans: z.array(z.any()).optional(),
+    loanPlans: z.array(z.any()).optional(),
     settings: z.object({
       theme: z.enum(['dark', 'light', 'auto']),
       onboardingComplete: z.boolean(),

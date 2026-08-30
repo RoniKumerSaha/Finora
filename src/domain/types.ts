@@ -191,6 +191,87 @@ export interface EventPlan {
   savedSnapshot?: Omit<EventPlan, 'savedSnapshot'>;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Plan types — Investment Planner (mock) + Loan Calculator (PRD §9.17).
+   Strictly separate from `transactions` — these never touch the ledger.
+   Persisted via the same localStorage blob as State.
+   ──────────────────────────────────────────────────────────────────────*/
+
+/** A mock investment plan. Mirrors `Investment` but with NO payout
+ *  account, NO linked transactions, and NO status transitions — these
+ *  are pure scratchpad projections (DPS, FDR, savings, term deposit). */
+export interface InvestmentPlan {
+  id: string;
+  name: string;
+  /** Mirror of `Investment.type` for parity. */
+  type: InvestmentType;
+  /** For DPS: monthly installment in BDT. For FDR / savings: ignored. */
+  monthlyContribution?: number;
+  /** For FDR / savings: lump-sum principal in BDT. For DPS: derived
+   *  from `monthlyContribution × termMonths` (informational only). */
+  principal: number;
+  /** Annual interest rate, %. Same 0–100 cap as the real Investment
+   *  type. Recomputes the projection on edit. */
+  rate: number;
+  /** Plan start date (ISO YYYY-MM-DD). For DPS, the first installment
+   *  is assumed to land on this date. For FDR / savings, the deposit
+   *  is assumed to land on this date. */
+  startDate: ISODate;
+  /** Term in whole months. Mutually exclusive with `termDays`. */
+  termMonths: number;
+  /** Term in whole calendar days. Mutually exclusive with `termMonths`. */
+  termDays?: number;
+  institution?: string;
+  notes?: string;
+  /** "Monthly deposit scheme" / "Fixed deposit receipt" / "Other". */
+  kit?: 'dps' | 'fdr' | 'other';
+  /** Last user-saved ISO timestamp. Null until first save. */
+  savedAt?: ISODate | null;
+  dirty: boolean;
+}
+
+/** A single row in the loan amortization table. Mirrors standard
+ *  amortisation math: each period the borrower pays a fixed amount
+ *  (EMI), the interest for that period is `outstanding × rate/12`,
+ *  and the principal portion is `EMI − interest`. */
+export interface LoanInstallment {
+  /** 1-based period index. */
+  period: number;
+  /** The fixed monthly payment (EMI). */
+  payment: number;
+  /** Interest portion of the payment (`outstanding × monthlyRate`). */
+  interest: number;
+  /** Principal portion of the payment (`EMI − interest`). */
+  principalPaid: number;
+  /** Outstanding balance after this period's payment. */
+  remaining: number;
+  /** The calendar month this payment falls in (ISO YYYY-MM-DD, day = 1). */
+  dueDate: ISODate;
+}
+
+/** A loan calculator scratchpad. Like `InvestmentPlan`, this is a pure
+ *  projection: no real money movement, no link to debts, no link to
+ *  any account. The user enters principal + rate + term + start month
+ *  and the app fills in the amortization table. */
+export interface LoanPlan {
+  id: string;
+  name: string;
+  /** Total borrowed amount in BDT. */
+  principal: number;
+  /** Annual interest rate, %. 0–100 cap (same as the Investment rules). */
+  rate: number;
+  /** Term in whole months. Must be > 0. */
+  termMonths: number;
+  /** When the first payment is due (ISO YYYY-MM-DD, day = 1). */
+  startDate: ISODate;
+  /** Optional EMI override. When null the EMI is derived from the
+   *  standard formula. */
+  emiOverride?: number;
+  /** Last user-saved ISO timestamp. */
+  savedAt?: ISODate | null;
+  dirty: boolean;
+}
+
 export interface State {
   version: 1;
   accounts: Account[];
@@ -203,6 +284,12 @@ export interface State {
   monthPlans: MonthPlan[];
   /** Independent event scratchpads. Each event is its own plan. */
   eventPlans: EventPlan[];
+  /** Mock investment scratchpads — DPS / FDR / savings projections.
+   *  Never moves real money. (PRD §9.17.) */
+  investmentPlans: InvestmentPlan[];
+  /** Loan calculator scratchpads with amortization tables. Never
+   *  moves real money. (PRD §9.17.) */
+  loanPlans: LoanPlan[];
   settings: Settings;
 }
 

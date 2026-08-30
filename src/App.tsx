@@ -42,6 +42,11 @@ import { PlanScreen } from './screens/PlanScreen';
 import { MonthPlanScreen } from './screens/MonthPlanScreen';
 import { EventPlanScreen } from './screens/EventPlanScreen';
 import { EventPlanDetailScreen } from './screens/EventPlanDetailScreen';
+import { InvestmentPlannerScreen } from './screens/InvestmentPlannerScreen';
+import { InvestmentPlannerNewScreen } from './screens/InvestmentPlannerNewScreen';
+import { InvestmentPlannerDetailScreen } from './screens/InvestmentPlannerDetailScreen';
+import { LoanCalculatorListScreen } from './screens/LoanCalculatorListScreen';
+import { LoanCalculatorDetailScreen } from './screens/LoanCalculatorDetailScreen';
 
 export function App() {
   const theme = useStore(s => s.state.settings.theme);
@@ -131,6 +136,11 @@ export function App() {
           <Route path="/plan/month" element={<MonthPlanScreen />} />
           <Route path="/plan/event" element={<EventPlanScreen />} />
           <Route path="/plan/event/:id" element={<EventPlanDetailScreen />} />
+          <Route path="/plan/invest" element={<InvestmentPlannerScreen />} />
+          <Route path="/plan/invest/new" element={<InvestmentPlannerNewScreen />} />
+          <Route path="/plan/invest/:id" element={<InvestmentPlannerDetailScreen />} />
+          <Route path="/plan/loan" element={<LoanCalculatorListScreen />} />
+          <Route path="/plan/loan/:id" element={<LoanCalculatorDetailScreen />} />
 
           <Route path="*" element={<div className="p-8 text-muted">Not found.</div>} />
         </Route>

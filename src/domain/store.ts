@@ -21,6 +21,8 @@ import type { State, Banner, Theme, Toast } from './types';
 import { load, save, clear, DEFAULT_STATE } from './persistence';
 import { recomputeDerived } from './recompute';
 import * as plans from './plans';
+import * as investmentPlans from './investmentPlans';
+import * as loanPlans from './loanPlans';
 import { uid } from './ids';
 
 export type { Theme } from './types';
@@ -72,6 +74,20 @@ interface Store {
   updateEventItem: (id: string, catId: string, itemId: string, patch: Parameters<typeof plans.updateEventItem>[4]) => void;
   removeEventItem: (id: string, catId: string, itemId: string) => void;
 
+  // ── Plan: Investment Planner (mock — PRD §9.17) ──────────────────
+  addInvestmentPlan: (input: Parameters<typeof investmentPlans.addInvestmentPlan>[1]) => string;
+  updateInvestmentPlan: (id: string, patch: Parameters<typeof investmentPlans.updateInvestmentPlan>[2]) => void;
+  saveInvestmentPlan: (id: string) => void;
+  resetInvestmentPlan: (id: string) => void;
+  removeInvestmentPlan: (id: string) => void;
+
+  // ── Plan: Loan Calculator (PRD §9.17) ────────────────────────────
+  addLoanPlan: (input: Parameters<typeof loanPlans.addLoanPlan>[1]) => string;
+  updateLoanPlan: (id: string, patch: Parameters<typeof loanPlans.updateLoanPlan>[2]) => void;
+  saveLoanPlan: (id: string) => void;
+  resetLoanPlan: (id: string) => void;
+  removeLoanPlan: (id: string) => void;
+
   // Mutation bridge: takes a (state) → state mutator and persists the result.
   // All per-entity mutations (addAccount, etc.) ultimately call this.
   update: (mutator: (s: State) => State) => void;
@@ -111,10 +127,14 @@ export const useStore = create<Store>((set, get) => ({
   importAndReplace: (next) => {
     // Older backups (pre-2026-08-17) won't have the plan scratchpads.
     // Fill with empty arrays so consumers can rely on them existing.
+    // Investment + loan scratchpads (added 2026-08-30) follow the same
+    // back-compat pattern.
     const normalised: State = {
       ...next,
       monthPlans: next.monthPlans ?? [],
       eventPlans: next.eventPlans ?? [],
+      investmentPlans: next.investmentPlans ?? [],
+      loanPlans: next.loanPlans ?? [],
     };
     set({ state: recomputeDerived(normalised) });
   },
@@ -172,6 +192,30 @@ export const useStore = create<Store>((set, get) => ({
   addEventItem: (id, catId, item) => runPlan(get, s => plans.addEventItem(s, id, catId, item)),
   updateEventItem: (id, catId, itemId, patch) => runPlan(get, s => plans.updateEventItem(s, id, catId, itemId, patch)),
   removeEventItem: (id, catId, itemId) => runPlan(get, s => plans.removeEventItem(s, id, catId, itemId)),
+
+  // ── Investment Planner (mock — PRD §9.17) ───────────────────────
+  addInvestmentPlan: (input) => {
+    const { state: next, id } = investmentPlans.addInvestmentPlan(get().state, input);
+    useStore.setState({ state: next });
+    save(next);
+    return id;
+  },
+  updateInvestmentPlan: (id, patch) => runPlan(get, s => investmentPlans.updateInvestmentPlan(s, id, patch)),
+  saveInvestmentPlan: (id) => runPlan(get, s => investmentPlans.saveInvestmentPlan(s, id)),
+  resetInvestmentPlan: (id) => runPlan(get, s => investmentPlans.resetInvestmentPlan(s, id)),
+  removeInvestmentPlan: (id) => runPlan(get, s => investmentPlans.removeInvestmentPlan(s, id)),
+
+  // ── Loan Calculator (PRD §9.17) ──────────────────────────────────
+  addLoanPlan: (input) => {
+    const { state: next, id } = loanPlans.addLoanPlan(get().state, input);
+    useStore.setState({ state: next });
+    save(next);
+    return id;
+  },
+  updateLoanPlan: (id, patch) => runPlan(get, s => loanPlans.updateLoanPlan(s, id, patch)),
+  saveLoanPlan: (id) => runPlan(get, s => loanPlans.saveLoanPlan(s, id)),
+  resetLoanPlan: (id) => runPlan(get, s => loanPlans.resetLoanPlan(s, id)),
+  removeLoanPlan: (id) => runPlan(get, s => loanPlans.removeLoanPlan(s, id)),
 
   update: (mutator) => run(get, mutator),
 }));

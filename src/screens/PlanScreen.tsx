@@ -35,6 +35,48 @@ export function PlanScreen() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Investment Planner card (mock — PRD §9.17) */}
+        <Link
+          to="/plan/invest"
+          className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          <div className="flex justify-between items-start gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Investment Planner</div>
+              <div className="font-semibold text-[18px] tracking-tight mt-1.5">Mock a DPS or FDR</div>
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surface-2 text-[10px] font-bold uppercase tracking-[0.04em] text-muted border border-border">
+              <span aria-hidden className="w-1 h-1 rounded-full bg-primary" />
+              {state.investmentPlans.length} {state.investmentPlans.length === 1 ? 'plan' : 'plans'}
+            </span>
+          </div>
+          <p className="text-sm text-muted leading-relaxed">
+            Sketch a mock DPS, FDR, or savings certificate. See the projected maturity value — no real money moves.
+          </p>
+        </Link>
+
+        {/* Loan Calculator card (PRD §9.17) */}
+        <Link
+          to="/plan/loan"
+          className="card card-link flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          <div className="flex justify-between items-start gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Loan Calculator</div>
+              <div className="font-semibold text-[18px] tracking-tight mt-1.5">Plan a loan</div>
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-surface-2 text-[10px] font-bold uppercase tracking-[0.04em] text-muted border border-border">
+              <span aria-hidden className="w-1 h-1 rounded-full bg-primary" />
+              {state.loanPlans.length} {state.loanPlans.length === 1 ? 'projection' : 'projections'}
+            </span>
+          </div>
+          <p className="text-sm text-muted leading-relaxed">
+            Enter principal, rate, and term — get an EMI and a full amortization table back. Projection only.
+          </p>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Month Planner card */}
         <Link
           to="/plan/month"

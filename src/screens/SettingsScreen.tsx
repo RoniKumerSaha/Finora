@@ -36,6 +36,7 @@ export function SettingsScreen() {
       version: 1,
       accounts: [], transactions: [], goals: [], debts: [], investments: [], categories: [],
       monthPlans: [], eventPlans: [],
+      investmentPlans: [], loanPlans: [],
       settings: { ...s.settings, onboardingComplete: true },
     }));
     showBanner({
