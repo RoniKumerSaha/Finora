@@ -136,7 +136,12 @@ export const useStore = create<Store>((set, get) => ({
       investmentPlans: next.investmentPlans ?? [],
       loanPlans: next.loanPlans ?? [],
     };
-    set({ state: recomputeDerived(normalised) });
+    const recomputed = recomputeDerived(normalised);
+    set({ state: recomputed });
+    // Persist immediately. Without this, the imported data only lives in
+    // memory and is lost on reload — the in-memory store and localStorage
+    // would diverge until the next mutation re-saved (regression 2026-08-30).
+    save(recomputed);
   },
 
   showBanner: (b) => set({ banner: b }),
