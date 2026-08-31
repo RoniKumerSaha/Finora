@@ -231,12 +231,28 @@ export function ArrowUp(props: IconProps) {
   );
 }
 
-/** ArrowDown — used for "expense" tiles and "i owe" debts. */
+/** ArrowDown — used for "expense" tiles and "i owe" loan debts. */
 export function ArrowDown(props: IconProps) {
   return (
     <svg {...COMMON} {...props}>
       <path d="M12 20V4" />
       <path d="m6 14 6 6 6-6" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * User — a single person silhouette (head + shoulders). Used as the
+ * flat-kind debt icon: a flat debt is a personal IOU between two
+ * specific people, so a person glyph reads more naturally than a
+ * directional arrow. Loan-kind debts keep ArrowDown/ArrowUp since
+ * the arrow encodes the periodic money-flow of a loan.
+ */
+export function User(props: IconProps) {
+  return (
+    <svg {...COMMON} {...props}>
+      <circle cx="12" cy="9" r="3.5" />
+      <path d="M4.5 20c.6-3.5 3.7-6 7.5-6s6.9 2.5 7.5 6" />
     </svg>
   );
 }

@@ -94,6 +94,17 @@ export function DebtEditScreen() {
     .sort((a, b) => b.date.localeCompare(a.date));
   const accountById = new Map(state.accounts.map(a => [a.id, a]));
 
+  // Summary widgets for the Activity panel — total paid (matching
+  // direction only) + last payment date. Only used for display; the
+  // card's headline figure still comes from outstandingFor() so it
+  // stays consistent with the Debts list.
+  const isIOwe = debt.direction === 'i_owe';
+  const matchingTx = linkedTx.filter(t =>
+    isIOwe ? t.type === 'expense' : t.type === 'income'
+  );
+  const totalPaid = matchingTx.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const lastPaymentDate = matchingTx[0]?.date;
+
   // V1.1 (L4.1): per-row loan split — for loan-kind debts only.
   // We replay the transactions in chronological (oldest-first) order,
   // tracking running outstanding, and stash each transaction's
@@ -256,18 +267,29 @@ export function DebtEditScreen() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <div className="flex items-center gap-3">
-        <Link to="/debts" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Debts</Link>
-      </div>
-
-      <div>
+    // Page-level layout: a full-width header (back-link + title +
+    // description) on top, then a two-column grid below for the form
+    // (left) + Activity feed (right). Putting the header above the
+    // grid means both columns start at the same y-coordinate — the
+    // Activity card's top aligns with the form card's top without
+    // needing magic-number margin offsets.
+    <div className="flex flex-col gap-6">
+      <header>
+        <div className="flex items-center gap-3 mb-2">
+          <Link to="/debts" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Debts</Link>
+        </div>
         <h1 className="heading h1-screen">Edit debt</h1>
         <div className="text-muted text-[13px] mt-1.5">
           {debt.status === 'completed'
             ? 'This debt is fully paid. Editing the total keeps the record accurate.'
             : 'Change the debt details. Linked transactions stay as they are.'}
         </div>
+      </header>
+
+      {/* Two-column shell at lg+: form (left, max-w-md) + Activity
+          feed (right). At mobile widths the columns stack. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md w-full">
         {isFullyPaid && relatedAccount && (
           <div
             className="mt-4 text-[13px] rounded-btn px-3.5 py-3"
@@ -297,7 +319,6 @@ export function DebtEditScreen() {
             <strong>Fully paid.</strong>
           </div>
         )}
-      </div>
 
       <section className="card flex flex-col gap-5">
         <Field label="Direction" hint="Changing direction flips how linked payments are interpreted.">
@@ -398,89 +419,6 @@ export function DebtEditScreen() {
         </div>
       </section>
 
-      {/* Activity — every transaction tagged with this debt, newest
-          first. Hidden when there are no linked transactions so the
-          page stays uncluttered for fresh debts. Mirrors the Activity
-          card in InvestmentDetailScreen (linked contributions +
-          payouts), adapted for the debt semantics: i_owe expenses are
-          "Payment" (primary tone), owed_to_me incomes are "Received"
-          (success tone). The opposite direction would mean a tagging
-          mistake — we still render those rows so the user sees them,
-          but flag them with a neutral tone. */}
-      {linkedTx.length > 0 && (
-        <section className="card">
-          <h2 className="heading h3-modal mb-4">Activity</h2>
-          <div className="divide-y divide-border">
-            {linkedTx.map(t => {
-              const acc = accountById.get(t.accountId ?? '');
-              const isIOwe = debt.direction === 'i_owe';
-              // Tag tone: matches the directional flow the user
-              // expects. i_owe → expense is the normal "payment"
-              // (primary); owed_to_me → income is "received"
-              // (success). Cross combinations are shown with a muted
-              // neutral pill so they stand out without alarming.
-              const tag =
-                isIOwe && t.type === 'expense'
-                  ? { label: 'Payment',  cls: 'bg-primary-soft text-primary' }
-                  : !isIOwe && t.type === 'income'
-                  ? { label: 'Received', cls: 'bg-success-soft text-success' }
-                  : isIOwe && t.type === 'income'
-                  ? { label: 'Reversal', cls: 'bg-warn-soft text-warn' }
-                  : { label: 'Adjust',   cls: 'bg-surface-2 text-muted' };
-              const amountColor =
-                t.type === 'income'
-                  ? 'text-primary'
-                  : t.type === 'expense'
-                  ? 'text-danger'
-                  : 'text-ink';
-              const amountPrefix =
-                t.type === 'income' ? '+ ' : t.type === 'expense' ? '\u2212 ' : '';
-              return (
-                <div key={t.id} className="py-2.5 flex justify-between items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`text-[14px] font-semibold tabular ${amountColor}`}>
-                        {amountPrefix}{fmtBDT(t.amount)}
-                      </span>
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10px] font-bold uppercase tracking-wider ${tag.cls}`}
-                      >
-                        {tag.label}
-                      </span>
-                    </div>
-                    <div className="text-[11.5px] text-muted mt-1 truncate tabular">
-                      {fmtDate(t.date)}{acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}
-                    </div>
-                    {/* V1.1 (L4.1): loan split line — only for loan-kind
-                        debts, only on rows that actually contributed
-                        (so cross-direction tagging mistakes don't add
-                        noise). */}
-                    {debt.kind === 'loan' && (() => {
-                      const split = splitByTxId.get(t.id);
-                      if (!split) return null;
-                      const meaningful = split.interest > 0 || split.principal > 0;
-                      if (!meaningful) return null;
-                      return (
-                        <div className="text-[11.5px] text-muted mt-0.5 tabular">
-                          <span className="text-danger">{fmtBDT(split.interest)}</span> interest
-                          {' · '}
-                          <span className="text-primary">{fmtBDT(split.principal)}</span> principal
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="text-[12px] text-muted mt-3 leading-relaxed">
-            {debt.direction === 'i_owe'
-              ? 'Payments you make toward this debt. Recorded as expenses tagged with this debt — usually via Add transaction → Expense.'
-              : 'Payments you receive against this debt. Recorded as income tagged with this debt — usually via Add transaction → Income.'}
-          </div>
-        </section>
-      )}
-
       <section
         className="rounded-card p-6"
         style={{
@@ -498,7 +436,114 @@ export function DebtEditScreen() {
         <Button variant="danger" onClick={onDelete}>Delete debt</Button>
       </section>
 
-      {dialog}
-    </form>
+        {dialog}
+      </form>
+
+      {/* Activity — every transaction tagged with this debt, newest
+          first. Hidden when there are no linked transactions so the
+          page stays uncluttered for fresh debts. Sits in the right
+          column at lg+, stacks below the form on smaller widths.
+          Mirrors the Activity card in InvestmentDetailScreen
+          (linked contributions + payouts), adapted for the debt
+          semantics: i_owe expenses are "Payment" (primary tone),
+          owed_to_me incomes are "Received" (success tone). The
+          opposite direction would mean a tagging mistake — we
+          still render those rows so the user sees them, but flag
+          them with a neutral tone. */}
+      {linkedTx.length > 0 && (
+        <section className="card lg:sticky lg:top-4">
+          <h2 className="heading h3-modal mb-4">Activity</h2>
+          {/* Summary widgets — three small stats that mirror the form
+              card's visual rhythm so the two cards sit at a similar
+              height. All values are derived from the linked
+              transaction list. */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div>
+              <div className="text-[10.5px] text-muted uppercase tracking-wider font-semibold">Payments</div>
+              <div className="text-[18px] font-bold text-ink tabular mt-1 leading-none">{matchingTx.length}</div>
+            </div>
+            <div>
+              <div className="text-[10.5px] text-muted uppercase tracking-wider font-semibold">Total paid</div>
+              <div className="text-[18px] font-bold text-ink tabular mt-1 leading-none">{fmtBDT(totalPaid)}</div>
+            </div>
+            <div>
+              <div className="text-[10.5px] text-muted uppercase tracking-wider font-semibold">Last payment</div>
+              <div className="text-[13px] font-semibold text-ink tabular mt-1 leading-none">
+                {lastPaymentDate ? fmtDate(lastPaymentDate) : <span className="text-muted">—</span>}
+              </div>
+            </div>
+          </div>
+          <div className="divide-y divide-border">
+            {linkedTx.map(t => {
+              const acc = accountById.get(t.accountId ?? '');
+              const isIOwe = debt.direction === 'i_owe';
+              // Tag tone: matches the directional flow the user
+              // expects. i_owe → expense is the normal "payment"
+              // (primary); owed_to_me → income is "received"
+              // (success). Cross combinations are shown with a muted
+              // neutral tone so they stand out without alarming.
+              const tag =
+                isIOwe && t.type === 'expense'
+                  ? { label: 'Payment',  cls: 'text-danger' }
+                  : !isIOwe && t.type === 'income'
+                  ? { label: 'Received', cls: 'text-primary' }
+                  : isIOwe && t.type === 'income'
+                  ? { label: 'Reversal', cls: 'text-warn' }
+                  : { label: 'Adjust',   cls: 'text-muted' };
+              const amountColor =
+                t.type === 'income'
+                  ? 'text-primary'
+                  : t.type === 'expense'
+                  ? 'text-danger'
+                  : 'text-ink';
+              const amountPrefix =
+                t.type === 'income' ? '+ ' : t.type === 'expense' ? '\u2212 ' : '';
+              return (
+                <div key={t.id} className="py-2.5 flex flex-col gap-1">
+                  <div className="flex justify-between items-center gap-3">
+                    <span className={`text-[9.5px] font-bold uppercase tracking-[0.1em] ${tag.cls}`}>
+                      {tag.label}
+                      <span className="text-muted font-semibold"> {MIDDOT} {fmtDate(t.date)}</span>
+                    </span>
+                    <span className={`text-[15px] font-bold tabular ${amountColor}`}>
+                      {amountPrefix}{fmtBDT(t.amount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center gap-3 text-[11px] tabular">
+                    <span className="text-ink truncate min-w-0">
+                      {acc?.name ?? '\u2014'}
+                      {t.note ? <span className="text-muted"> {MIDDOT} {t.note}</span> : null}
+                    </span>
+                    {/* V1.1 (L4.1): loan split line — only for loan-kind
+                        debts, only on rows that actually contributed
+                        (so cross-direction tagging mistakes don't add
+                        noise). */}
+                    {debt.kind === 'loan' && (() => {
+                      const split = splitByTxId.get(t.id);
+                      if (!split) return null;
+                      const meaningful = split.interest > 0 || split.principal > 0;
+                      if (!meaningful) return null;
+                      return (
+                        <span className="text-muted shrink-0">
+                          <span className="text-danger">{fmtBDT(split.interest)}</span> int
+                          {' '}{MIDDOT}{' '}
+                          <span className="text-primary">{fmtBDT(split.principal)}</span> princ
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[12px] text-muted mt-3 leading-relaxed">
+            {debt.direction === 'i_owe'
+              ? 'Payments you make toward this debt. Recorded as expenses tagged with this debt — usually via Add transaction → Expense.'
+              : 'Payments you receive against this debt. Recorded as income tagged with this debt — usually via Add transaction → Income.'}
+          </div>
+        </section>
+      )}
+      </div>
+    </div>
   );
 }

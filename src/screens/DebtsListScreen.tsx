@@ -25,7 +25,7 @@ import { useState } from 'react';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { loanPaymentSplit } from '../domain/math';
-import { ArrowUp, ArrowDown, Check } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, Check, User } from '../components/icons/Icons';
 import { Button } from '../components/Button';
 import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT, fmtDate } from '../lib/format';
@@ -236,9 +236,16 @@ function DebtCard({ debt: d }: { debt: any }) {
           </div>
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${iconBg}`}>
-              {isIOwe
-                ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
-                : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />}
+              {/* Icon distinguishes flat vs loan:
+                  - loan-kind → directional ArrowUp/ArrowDown (money flow)
+                  - flat-kind → User silhouette (personal IOU between people) */}
+              {isLoan ? (
+                isIOwe
+                  ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
+                  : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />
+              ) : (
+                <User className="w-[18px] h-[18px]" strokeWidth={2} />
+              )}
             </div>
             {/* Single-line name. Matches the investment / loan card
                 so short names don't reserve a phantom second line of
