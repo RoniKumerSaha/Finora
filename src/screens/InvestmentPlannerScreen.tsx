@@ -380,7 +380,7 @@ function InvestmentPlanCard({
       <div
         aria-hidden
         className="w-px self-stretch my-1 shrink-0"
-        style={{ background: 'var(--border-2)' }}
+        style={{ background: 'var(--divider)' }}
       />
 
       {/* Right zone — amounts, right-aligned. NOW is the hero (what

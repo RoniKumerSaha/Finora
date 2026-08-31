@@ -230,7 +230,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
       <div
         aria-hidden
         className="w-px self-stretch my-1 shrink-0"
-        style={{ background: 'var(--border-2)' }}
+        style={{ background: 'var(--divider)' }}
       />
 
       {/* Right zone — amounts, right-aligned. flex flex-col + items-end

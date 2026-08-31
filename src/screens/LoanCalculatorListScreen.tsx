@@ -58,6 +58,7 @@ export function LoanCalculatorListScreen() {
     totalPrincipal += Math.max(0, Number(plan.principal) || 0);
     totalInterest += Math.max(0, s.totalInterest);
   }
+  const count = usable.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -206,7 +207,7 @@ export function LoanCalculatorListScreen() {
                   <div
                     aria-hidden
                     className="w-px self-stretch my-1 shrink-0"
-                    style={{ background: 'var(--border-2)' }}
+                    style={{ background: 'var(--divider)' }}
                   />
 
                   {/* Right zone — amounts, right-aligned. EMI is the
@@ -237,9 +238,16 @@ export function LoanCalculatorListScreen() {
             })}
             </div>
 
-            {/* Right column — Summary sidebar (sticky at lg+). Mirrors
-                InvestmentsListScreen's Summary card so the three
-                list screens (real / planned / loan) share one shape. */}
+            {/* Right column — Summary sidebar (sticky at lg+). The
+                sidebar carries the aggregates the cards don't show on
+                their own: a count, the total principal across every
+                projection ("if you borrow this much"), and the total
+                interest across all. Per-card EMI and total-paid live
+                on the card itself; the sidebar aggregates are only
+                interesting once you have multiple projections stacked.
+                Mirrors InvestmentsListScreen's Summary card so the
+                three list screens (real / planned / loan) share one
+                shape. */}
             <section className="card h-fit lg:sticky lg:top-4">
               <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
                 Summary
@@ -247,13 +255,13 @@ export function LoanCalculatorListScreen() {
               <div className="flex flex-col gap-5">
                 <div>
                   <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-                    Total monthly EMI
+                    Projections
                   </div>
                   <div className="text-[26px] font-bold text-ink mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalMonthly)}
+                    {count}
                   </div>
                   <div className="text-[11px] text-muted mt-1.5 tabular">
-                    Across {usable.length} projection{usable.length === 1 ? '' : 's'}
+                    {count === 1 ? 'saved loan plan' : 'saved loan plans'}
                   </div>
                 </div>
                 <div>
@@ -264,25 +272,29 @@ export function LoanCalculatorListScreen() {
                     {fmtBDT(totalPrincipal)}
                   </div>
                   <div className="text-[11px] text-muted mt-1.5 tabular">
-                    you'd pay <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> in interest
+                    Total principal across every projection
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-                    Total you pay
+                    Total interest across all
                   </div>
                   <div className="text-[26px] font-bold text-danger mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalPaid)}
+                    {fmtBDT(totalInterest)}
+                  </div>
+                  <div className="text-[11px] text-muted mt-1.5 tabular">
+                    {count === 1
+                      ? 'Over the full term of this loan'
+                      : 'Sum of interest across every projection'}
                   </div>
                 </div>
               </div>
               <div className="text-xs text-muted mt-5 leading-relaxed">
                 <strong className="text-ink">How it works:</strong>{' '}
-                <em>Total monthly EMI</em> is the sum of every projection's
-                monthly payment — what your bank account would need to
-                cover each month if every loan went through.{' '}
-                <em>Total you pay</em> is the sum of every EMI across
-                every term, including interest. Nothing here moves real
+                <em>Total monthly EMI</em> and <em>total you pay</em>
+                live on each card. This sidebar carries the aggregates
+                across every projection — what you'd borrow in total,
+                and what that costs in interest. Nothing here moves real
                 money.
               </div>
             </section>

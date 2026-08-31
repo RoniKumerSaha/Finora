@@ -52,6 +52,7 @@
   --color-success-callout-bg: var(--success-callout-bg);
   --color-border: var(--border);
   --color-border-2: var(--border-2);
+  --color-divider: var(--divider);
 
   /* Type families — single system font everywhere for visual consistency.
      Heading, body, and numeric all reference the same family; numeric
@@ -162,6 +163,13 @@
   --success-callout-bg: #1A2620;
   --border:       #324139;
   --border-2:     #28332D;
+  /* Card-internal vertical divider (e.g. left/right split on
+     Investments / Loan / Debt / Planner cards). Needs enough
+     contrast against the dark card surface (#253229) to read as
+     a separator — --border-2 (#28332D) sits ~3 luminance units
+     above the card and disappears in dark mode, hence this
+     dedicated token. */
+  --divider:      #43524A;
 }
 
 [data-theme="light"] {
@@ -234,4 +242,8 @@
   --success-callout-bg: #DFEAE2;  /* sage-tinted, not cream */
   --border:       #D2D5CB;   /* cool-neutral, no yellow cast */
   --border-2:     #BCC0B5;
+  /* Card-internal vertical divider — same hue family as --border-2
+     but matched to the light card surface so the separator reads
+     clearly in both themes. */
+  --divider:      #BCC0B5;
 }

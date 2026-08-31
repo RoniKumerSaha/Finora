@@ -190,7 +190,7 @@ function DebtCard({ debt: d }: { debt: any }) {
         <div
           aria-hidden
           className="w-px self-stretch my-1 shrink-0"
-          style={{ background: 'var(--border-2)' }}
+          style={{ background: 'var(--divider)' }}
         />
 
         {/* Right zone — Remaining, right-aligned. flex flex-col +
