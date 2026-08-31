@@ -20,7 +20,7 @@
  *   - ghost:     transparent bg, hover surface-2
  *   - icon:      36×36 square with surface bg + border (IconButton)
  */
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -40,15 +40,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-export function Button({
-  variant = 'secondary',
-  size = 'md',
-  children,
-  className,
-  success,
-  successLabel,
-  ...rest
-}: ButtonProps) {
+/**
+ * Button — ref is forwarded so parents can imperatively focus the
+ * underlying <button> (e.g. ConfirmDialog autofocusing Cancel).
+ * 2026-08-31 component-consistency: confirmed.
+ */
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'secondary',
+    size = 'md',
+    children,
+    className,
+    success,
+    successLabel,
+    ...rest
+  },
+  ref,
+) {
   const base =
     'relative overflow-visible inline-flex items-center justify-center gap-2 rounded-btn font-bold tracking-tight ' +
     'transition disabled:opacity-50 disabled:cursor-not-allowed ' +
@@ -63,6 +71,7 @@ export function Button({
   }[variant];
   return (
     <button
+      ref={ref}
       type="button"
       {...rest}
       className={[base, sizeCls, variantClass, className || ''].join(' ')}
@@ -87,22 +96,25 @@ export function Button({
       )}
     </button>
   );
-}
+});
 
 /** Icon-only button — 36×36 square, surface bg, border. */
-export function IconButton({ children, className, ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type="button"
-      {...rest}
-      className={[
-        'w-9 h-9 rounded-btn bg-surface text-muted border border-border grid place-items-center',
-        'hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none',
-        'focus-visible:ring-2 focus-visible:ring-primary/40',
-        className || '',
-      ].join(' ')}
-    >
-      {children}
-    </button>
-  );
-}
+export const IconButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
+  function IconButton({ children, className, ...rest }, ref) {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        {...rest}
+        className={[
+          'w-9 h-9 rounded-btn bg-surface text-muted border border-border grid place-items-center',
+          'hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none',
+          'focus-visible:ring-2 focus-visible:ring-primary/40',
+          className || '',
+        ].join(' ')}
+      >
+        {children}
+      </button>
+    );
+  },
+);

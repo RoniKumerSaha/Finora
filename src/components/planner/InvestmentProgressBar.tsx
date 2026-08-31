@@ -49,7 +49,14 @@ export function InvestmentProgressBar({
     return (
       <div className="flex flex-col gap-1">
         <div className="h-1 rounded-pill bg-surface-2 overflow-hidden">
-          <div className="h-full rounded-pill" style={{ width: '100%', background: 'var(--accent)' }} />
+          <div
+            className="h-full rounded-pill"
+            style={{
+              width: '100%',
+              background: 'var(--accent)',
+              transition: 'width 200ms ease',
+            }}
+          />
         </div>
         <div className="text-[10.5px] text-muted">
           <b className="text-ink font-semibold">matured</b>
@@ -64,8 +71,12 @@ export function InvestmentProgressBar({
     <div className="flex flex-col gap-1">
       <div className="h-1 rounded-pill bg-surface-2 overflow-hidden">
         <div
-          className="h-full rounded-pill transition-all"
-          style={{ width: `${pct}%`, background: 'var(--primary)' }}
+          className="h-full rounded-pill"
+          style={{
+            width: `${pct}%`,
+            background: 'var(--primary)',
+            transition: 'width 200ms ease',
+          }}
         />
       </div>
       <div className="text-[10.5px] text-muted">

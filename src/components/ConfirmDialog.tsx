@@ -120,14 +120,9 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
           </div>
         )}
         <div className="flex gap-2.5 justify-end mt-5">
-          <button
-            type="button"
-            ref={cancelRef}
-            onClick={() => onAnswer(false)}
-            className="inline-flex items-center justify-center px-[18px] py-2.5 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
+          <Button variant="secondary" ref={cancelRef} onClick={() => onAnswer(false)}>
             {opts.cancelLabel ?? 'Cancel'}
-          </button>
+          </Button>
           <Button variant={opts.danger ? 'danger' : 'primary'} onClick={() => onAnswer(true)}>
             {opts.confirmLabel ?? 'Confirm'}
           </Button>

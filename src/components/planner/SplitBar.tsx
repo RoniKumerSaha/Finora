@@ -4,6 +4,8 @@
  * "your money vs bank interest" at a glance.
  *
  * - Two stops; the bar is filled with a base→accent gradient.
+ * - 4px track (h-1) matches InvestmentProgressBar and the rest of
+ *   the planner module. Transitions at 200ms ease for value changes.
  * - Renders the part labels with their absolute values, plus the
  *   percentages so the user can read both the magnitude and the
  *   ratio without doing math.
@@ -39,7 +41,7 @@ export function SplitBar({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="h-2 rounded-pill bg-surface-2 overflow-hidden flex">
+      <div className="h-1 rounded-pill bg-surface-2 overflow-hidden flex">
         <div
           className="h-full"
           style={{

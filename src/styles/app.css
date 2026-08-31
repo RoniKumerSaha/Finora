@@ -40,6 +40,14 @@ input[type="number"]::-webkit-inner-spin-button {
   cursor: pointer;
 }
 
+/* Canonical placeholder color — every text input inherits --muted-2
+   for placeholder text. Removes the need for inline
+   `placeholder:text-muted` overrides. 2026-08-31 component-consistency. */
+input::placeholder, textarea::placeholder {
+  color: var(--muted-2);
+  opacity: 1; /* Firefox renders default 0.5; normalise so all engines match */
+}
+
 /* Refined scrollbar — narrower, more elegant. */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }

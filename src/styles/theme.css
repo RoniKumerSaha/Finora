@@ -36,10 +36,13 @@
   --color-primary-on: var(--primary-on);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-on: var(--accent-on);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-danger-on: var(--danger-on);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-warn-on: var(--warn-on);
   --color-orange: var(--orange);
   --color-orange-soft: var(--orange-soft);
   --color-info: var(--info);
@@ -49,6 +52,7 @@
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-success-title: var(--success-title);
+  --color-success-on: var(--success-on);
   --color-success-callout-bg: var(--success-callout-bg);
   --color-border: var(--border);
   --color-border-2: var(--border-2);
@@ -145,12 +149,15 @@
   --primary-on:   #0F1419;
   --accent:       #D9B26B;
   --accent-soft:  rgba(217, 178, 107, 0.18);
+  --accent-on:    #1A140A;
   --danger:       #DC8678;
   --danger-soft:  rgba(220, 134, 120, 0.22);
+  --danger-on:    #1A0805;
   --danger-title: #F0A093;
   --danger-callout-bg: #2A1A18;
   --warn:         #F8CE82;
   --warn-soft:    rgba(248, 206, 130, 0.38);
+  --warn-on:      #1A1305;
   --orange:       #F0AC75;   /* jar-fill ramp step: 80%→100% */
   --orange-soft:  rgba(240, 172, 117, 0.38);
   --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
@@ -160,6 +167,7 @@
   --success:      #8DC4A6;
   --success-soft: rgba(141, 196, 166, 0.38);
   --success-title:#9CD6B5;
+  --success-on:   #0F1419;
   --success-callout-bg: #1A2620;
   --border:       #324139;
   --border-2:     #28332D;
@@ -224,12 +232,15 @@
   --primary-on:   #FFFFFF;
   --accent:       #8A6A1F;   /* warm honey gold for investments headline */
   --accent-soft:  rgba(138, 106, 31, 0.16);
+  --accent-on:    #FFFFFF;
   --danger:       #B03222;
   --danger-soft:  rgba(176, 50, 34, 0.14);
+  --danger-on:    #FFFFFF;
   --danger-title: #8A2818;
   --danger-callout-bg: #F6E4DD;   /* still warm, but only used in danger callouts */
   --warn:         #94671A;
   --warn-soft:    rgba(148, 103, 26, 0.32);
+  --warn-on:      #FFFFFF;
   --orange:       #A04A1A;   /* jar-fill ramp step: 80%→100% (light) */
   --orange-soft:  rgba(160, 74, 26, 0.32);
   --info:         #1F4F84;   /* deep steel-blue for digital wallets */
@@ -239,6 +250,7 @@
   --success:      #2F6E4A;
   --success-soft: rgba(47, 110, 74, 0.30);
   --success-title:#224E33;
+  --success-on:   #FFFFFF;
   --success-callout-bg: #DFEAE2;  /* sage-tinted, not cream */
   --border:       #D2D5CB;   /* cool-neutral, no yellow cast */
   --border-2:     #BCC0B5;

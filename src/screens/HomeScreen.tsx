@@ -47,6 +47,7 @@ import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accou
 import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
 import { EmptyState, AccountsIllustration, TransactionsIllustration } from '../components/EmptyState';
+import { Stat, type StatTone } from '../components/Stat';
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
@@ -114,8 +115,8 @@ export function HomeScreen() {
          These are the "where my money lives right now" trio. Stacks to a
          single column below sm (640px) so the 28px values don't overflow. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}.`} tone="primary" />
-        <Stat
+        <Tile label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}.`} tone="primary" />
+        <Tile
           label="Total debt"
           value={fmtDebtMagnitude(netDebt)}
           trend={
@@ -129,7 +130,7 @@ export function HomeScreen() {
           }
           tone={netDebt > 0 ? 'out' : netDebt < 0 ? 'in' : 'neutral'}
         />
-        <Stat
+        <Tile
           label="Total investments"
           value={fmtBDT(totalInvestment)}
           trend={investmentCount === 0 ? 'none yet' : `Money locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'} (DPS, FDR, savings).`}
@@ -141,8 +142,8 @@ export function HomeScreen() {
          The income/expense pair are the action-oriented duo; net worth
          closes the section as the derived summary. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Stat label="Income (this month)"   value={fmtBDT(income)}    trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
-        <Stat label="Expenses (this month)" value={fmtBDT(expenses)} trend={`${expenseCount} entries`} tone="out" />
+        <Tile label="Income (this month)"   value={fmtBDT(income)}    trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
+        <Tile label="Expenses (this month)" value={fmtBDT(expenses)} trend={`${expenseCount} entries`} tone="out" />
         <NetWorthTile
           current={currentNetWorth}
           projected={projectedNetWorth}
@@ -267,19 +268,35 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
   );
 }
 
-function Stat({ label, value, trend, tone }: { label: string; value: string; trend?: string; tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' | 'info' }) {
-  const color =
-    tone === 'out'    ? 'text-danger' :
-    tone === 'in'     ? 'text-primary' :
-    tone === 'accent' ? 'text-accent' :
-    tone === 'info'   ? 'text-info' :
-    tone === 'primary' ? 'text-primary' :
-                        'text-ink';
+/**
+ * Tile — card surface around the shared <Stat>. The Home screen
+ * renders every stat inside a card; centralising the chrome here
+ * keeps the migration to the canonical Stat lossless.
+ *
+ * Tone mapping (legacy → canonical):
+ *   'in' / 'primary' / 'info' → primary
+ *   'out'                    → danger
+ *   'accent'                 → accent
+ *   'neutral' / undefined    → ink
+ */
+function Tile({
+  label, value, trend, tone,
+}: {
+  label: string;
+  value: string;
+  trend?: string;
+  tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' | 'info';
+}) {
+  const mapped: StatTone =
+    tone === 'out'    ? 'danger'  :
+    tone === 'in'     ? 'primary' :
+    tone === 'primary'? 'primary' :
+    tone === 'info'   ? 'primary' :
+    tone === 'accent' ? 'accent'  :
+                        'ink';
   return (
     <div className="card">
-      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
-      <div className={`text-[24px] sm:text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${color} break-words`}>{value}</div>
-      {trend && <div className="text-xs text-muted mt-2">{trend}</div>}
+      <Stat label={label} value={value} size="lg" tone={mapped} hint={trend} />
     </div>
   );
 }

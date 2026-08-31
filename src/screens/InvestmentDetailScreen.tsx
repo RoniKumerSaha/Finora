@@ -37,6 +37,8 @@ import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { Stat } from '../components/Stat';
+import { Pill } from '../components/Pill';
 import type { Account, Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -289,25 +291,25 @@ export function InvestmentDetailScreen() {
         <h2 className="heading h3-modal mb-4">{isDps ? 'Plan vs progress' : 'Maturity'}</h2>
         <div className="grid grid-cols-2 gap-4">
           {!isDps && (
-            <Stat label="Principal" value={fmtBDT(inv.principal)} />
+            <StatCell label="Principal" value={fmtBDT(inv.principal)} />
           )}
           {isDps && (
             <>
-              <Stat label="Contributed so far" value={fmtBDT(contributed)} />
-              <Stat label="Current value" value={fmtBDT(currentValue)} hint="What the bank would pay you if you cashed out today." />
+              <StatCell label="Contributed so far" value={fmtBDT(contributed)} />
+              <StatCell label="Current value" value={fmtBDT(currentValue)} hint="What the bank would pay you if you cashed out today." />
             </>
           )}
           {paidOut > 0 && (
-            <Stat label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
+            <StatCell label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
           )}
-          <Stat
+          <StatCell
             label={isDps ? 'Estimated payout when the term ends' : 'Maturity value'}
             value={fmtBDT(projected)}
             accent
             hint={isDps ? 'If you pay every installment on time.' : 'Simple interest.'}
           />
-          <Stat label="Expected interest" value={fmtBDT(expectedInterest)} />
-          <Stat label="Rate" value={`${inv.rate}% / yr`} />
+          <StatCell label="Expected interest" value={fmtBDT(expectedInterest)} />
+          <StatCell label="Rate" value={`${inv.rate}% / yr`} />
         </div>
         {/* 2026-08-17 net-worth clarity: for DPS, surface both numbers
             explicitly so the user is never confused about whether the
@@ -483,26 +485,40 @@ export function InvestmentDetailScreen() {
   );
 }
 
-function Stat({ label, value, accent, hint }: { label: string; value: string; accent?: boolean; hint?: string }) {
+/**
+ * StatCell — small 2-column label/value pair inside the money card.
+ * Local wrapper because this grid uses a tighter 2-col layout than
+ * the canonical <Stat> (which assumes a larger card surface). Maps
+ * `accent` → primary tone so the maturity-value cell stands out.
+ */
+function StatCell({ label, value, accent, hint }: { label: string; value: string; accent?: boolean; hint?: string }) {
   return (
-    <div>
-      <div className="text-[11px] text-muted uppercase tracking-wider">{label}</div>
-      <div className={['text-xl font-bold tabular mt-1', accent ? 'text-primary' : 'text-ink'].join(' ')}>{value}</div>
-      {hint && <div className="text-[11px] text-muted mt-0.5">{hint}</div>}
-    </div>
+    <Stat
+      label={label}
+      value={value}
+      size="md"
+      tone={accent ? 'primary' : 'ink'}
+      hint={hint}
+    />
   );
 }
 
+/**
+ * StatusChip — investment lifecycle badge. Uses the shared <Pill> with
+ * the soft variant. Tone mapping:
+ *   active   → accent  (running, honey)
+ *   matured  → success  (reached its end, sage)
+ *   closed   → muted   (retired, neutral)
+ *   rolled_over / other → warn (needs attention)
+ */
 function StatusChip({ status }: { status: string }) {
-  const styles =
-    status === 'active' ? 'bg-accent-soft text-accent'
-    : status === 'matured' ? 'bg-success-soft text-success'
-    : status === 'closed' ? 'bg-surface-2 text-muted'
-    : 'bg-warn-soft text-warn';
+  const tone =
+    status === 'active' ? 'accent'
+    : status === 'matured' ? 'success'
+    : status === 'closed' ? 'muted'
+    : 'warn';
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-pill text-[12px] font-semibold ${styles}`}>
-      {status}
-    </span>
+    <Pill tone={tone} variant="soft">{status}</Pill>
   );
 }
 
@@ -631,13 +647,7 @@ function ContributeModal({
           />
         </Field>
         <div className="flex gap-2.5 justify-end mt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
-          >
-            Cancel
-          </button>
+          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button variant="primary" type="submit" disabled={amountInvalid}>Record contribution</Button>
         </div>
       </form>

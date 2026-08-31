@@ -44,6 +44,7 @@ import {
 } from '../domain/math';
 import { ArrowUp, ArrowDown, ChevronRight } from '../components/icons/Icons';
 import { DualValueLine } from '../components/DualValueLine';
+import { Stat, type StatTone } from '../components/Stat';
 import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -217,21 +218,16 @@ function StatTile({
   tone: 'primary' | 'danger' | 'ink' | 'accent' | 'info';
   caption: string | null;
 }) {
-  const valueColor =
-    tone === 'primary' ? 'text-primary'
-    : tone === 'danger' ? 'text-danger'
-    : tone === 'accent' ? 'text-accent'
-    : tone === 'info'   ? 'text-info'
-    : 'text-ink';
+  // Tone mapping (legacy → canonical Stat tone):
+  //   'info' → 'primary' (info-blue used to convey "neutral positive",
+  //   which the canonical Stat collapses to primary). The Insights
+  //   screen never actually calls StatTile with 'info' — kept in the
+  //   signature for forward compatibility.
+  const mapped: StatTone =
+    tone === 'info' ? 'primary' : tone;
   return (
     <div className="card" role="group" aria-label={`${label}: ${value}${caption ? ', ' + caption : ''}`}>
-      <div className="text-[11px] text-muted uppercase tracking-wider">{label}</div>
-      <div className={`text-[28px] font-bold tabular mt-1 leading-[1.0] tracking-[-0.02em] ${valueColor}`}>
-        {value}
-      </div>
-      {caption && (
-        <div className="text-[12px] text-muted mt-2">{caption}</div>
-      )}
+      <Stat label={label} value={value} size="xl" tone={mapped} hint={caption ?? undefined} />
     </div>
   );
 }

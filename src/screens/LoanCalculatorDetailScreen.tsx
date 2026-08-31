@@ -26,6 +26,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input } from '../components/Field';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
 import { InvestmentDonut } from '../components/planner/InvestmentDonut';
+import { Stat } from '../components/Stat';
 import { fmtBDT } from '../lib/format';
 
 const MAX_INLINE_ROWS = 60;
@@ -135,9 +136,9 @@ export function LoanCalculatorDetailScreen() {
             ariaLabel={`Loan composition: ${fmtBDT(summary.totalPaid - summary.totalInterest)} of principal, ${fmtBDT(summary.totalInterest)} of interest, total ${fmtBDT(summary.totalPaid)}`}
           />
           <div className="grid grid-cols-3 gap-3 min-w-0">
-            <Stat label="EMI" value={fmtBDT(summary.emi)} emphasis />
-            <Stat label="Total you pay" value={fmtBDT(summary.totalPaid)} />
-            <Stat label="Total interest" value={fmtBDT(summary.totalInterest)} />
+            <Stat label="EMI" value={fmtBDT(summary.emi)} size="xl" />
+            <Stat label="Total you pay" value={fmtBDT(summary.totalPaid)} size="md" />
+            <Stat label="Total interest" value={fmtBDT(summary.totalInterest)} size="md" />
           </div>
         </div>
         <div className="text-[11px] text-warn pt-1">
@@ -240,18 +241,6 @@ export function LoanCalculatorDetailScreen() {
       </section>
 
       {dialog}
-    </div>
-  );
-}
-
-function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
-      <div className={[
-        'tabular leading-none',
-        emphasis ? 'text-[28px] font-extrabold text-ink' : 'text-[14px] font-semibold text-ink',
-      ].join(' ')}>{value}</div>
     </div>
   );
 }
