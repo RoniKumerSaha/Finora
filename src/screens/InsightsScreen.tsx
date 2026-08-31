@@ -748,7 +748,7 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
           </div>
         </div>
         <div className="mt-2">
-          <ProgressBar value={debt.pct} height={6} />
+          <ProgressBar value={debt.pct} height={4} />
         </div>
         <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
           <span>{debt.pct}% paid {MIDDOT} {fmtBDT(debt.paid)} of {fmtBDT(debt.total)}</span>

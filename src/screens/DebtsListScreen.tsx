@@ -295,7 +295,7 @@ function DebtCard({ debt: d }: { debt: any }) {
           above the full-card <Link>. */}
       <div className="px-6 pb-2.5 flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          <ProgressBar value={pct} height={6} />
+          <ProgressBar value={pct} height={4} />
           <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
         </div>
         {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.
