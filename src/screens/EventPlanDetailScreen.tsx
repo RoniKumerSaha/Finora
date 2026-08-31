@@ -32,6 +32,7 @@ import { EmojiPicker } from '../components/planner/EmojiPicker';
 import { PresetEventCategories } from '../components/planner/PresetEventCategories';
 import { formatPct, pctOf, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
+import { ProgressBar } from '../components/ProgressBar';
 import { uid } from '../domain/ids';
 import type { PlanCategory, PlanItem } from '../domain/types';
 
@@ -658,7 +659,7 @@ function CategoryCard({ cat, todayISO, onSelect }: {
   const cFill = CATEGORY_FILL[cStatus];
   const paid = cat.items.length > 0 && cat.items.every(i => i.done);
   const dueDays = cat.dueDate ? daysBetween(todayISO, cat.dueDate) : null;
-  const barWidth = budget > 0 ? Math.min(100, overflow ? 100 : pct) : 0;
+
 
   let chip: React.ReactNode = null;
   // Status chips use a leading coloured dot so the category state
@@ -722,22 +723,14 @@ function CategoryCard({ cat, todayISO, onSelect }: {
           <div className="flex items-center gap-2 shrink-0">{chip}</div>
         </div>
 
-        {/* Horizontal bar — primary fill signal. Track uses a muted
-            border-on-surface mix so it reads on either cream or deep
-            surface; fill takes the colour ramp's solid colour. */}
-        <div
-          aria-hidden
-          className="h-1.5 rounded-pill overflow-hidden"
-          style={{ background: 'color-mix(in srgb, var(--border) 60%, var(--surface-2))' }}
-          title={budget > 0 ? cFill.label : 'No budget set'}
-        >
-          <span
-            className="block h-full rounded-pill transition-[width]"
-            style={{
-              width: `${barWidth}%`,
-              background: cFill.color,
-              opacity: cStatus === 'empty' ? 0 : 1,
-            }}
+        {/* Progress bar — same canonical primary → accent gradient
+            every other progress bar in the app uses. The original
+            category-ramp colour carries over to figures / labels /
+            jar fill, so the visual meaning isn't lost. */}
+        <div title={budget > 0 ? cFill.label : 'No budget set'}>
+          <ProgressBar
+            value={budget > 0 ? Math.min(100, overflow ? 100 : pct) : 0}
+            height={6}
           />
         </div>
 

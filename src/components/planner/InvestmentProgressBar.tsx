@@ -3,13 +3,17 @@
  * a mock investment's term the user is.
  *
  *   - pre-start (≤0d) → empty bar + `starts in N days`
- *   - in-progress     → `month N of M · P%` + partial bar in `--primary`
- *   - matured         → full bar in `--accent`
+ *   - in-progress     → `month N of M · P%` + partial gradient bar
+ *   - matured         → full gradient bar + `matured` caption
  *
  * Uses `parseISODate` / `daysBetween` so the calculation matches
- * the rest of the app's date math (UTC, midnight).
+ * the rest of the app's date math (UTC, midnight). The fill itself
+ * uses the canonical primary → accent gradient (via `<ProgressBar>`)
+ * so this planner preview reads identically to the same bars on
+ * the Insights page and the list-card surfaces.
  */
 import { daysBetween, parseISODate, today } from '../../domain/math';
+import { ProgressBar } from '../ProgressBar';
 
 export function InvestmentProgressBar({
   startDate,
@@ -37,27 +41,18 @@ export function InvestmentProgressBar({
   if (elapsedDays <= 0) {
     return (
       <div className="flex flex-col gap-1">
-        <div className="h-1 rounded-pill bg-surface-2" />
+        <ProgressBar value={0} height={4} />
         <div className="text-[10.5px] text-muted">
           starts in <b className="text-ink font-semibold">{Math.max(1, Math.abs(elapsedDays))}</b> days
         </div>
       </div>
     );
   }
-  // After maturity: full bar in accent.
+  // After maturity: full gradient bar + "matured" caption.
   if (elapsedDays >= totalDays) {
     return (
       <div className="flex flex-col gap-1">
-        <div className="h-1 rounded-pill bg-surface-2 overflow-hidden">
-          <div
-            className="h-full rounded-pill"
-            style={{
-              width: '100%',
-              background: 'var(--accent)',
-              transition: 'width 200ms ease',
-            }}
-          />
-        </div>
+        <ProgressBar value={100} height={4} />
         <div className="text-[10.5px] text-muted">
           <b className="text-ink font-semibold">matured</b>
         </div>
@@ -69,16 +64,7 @@ export function InvestmentProgressBar({
   const elapsedMonths = Math.min(months, Math.floor(elapsedDays / 30));
   return (
     <div className="flex flex-col gap-1">
-      <div className="h-1 rounded-pill bg-surface-2 overflow-hidden">
-        <div
-          className="h-full rounded-pill"
-          style={{
-            width: `${pct}%`,
-            background: 'var(--primary)',
-            transition: 'width 200ms ease',
-          }}
-        />
-      </div>
+      <ProgressBar value={pct} height={4} />
       <div className="text-[10.5px] text-muted">
         month <b className="text-ink font-semibold">{elapsedMonths}</b> of <b className="text-ink font-semibold">{months}</b> · {pct}%
       </div>

@@ -43,8 +43,10 @@ import {
   investmentValue,
 } from '../domain/math';
 import { ArrowUp, ArrowDown, ChevronRight } from '../components/icons/Icons';
-import { DualValueLine } from '../components/DualValueLine';
 import { Stat, type StatTone } from '../components/Stat';
+import { ProgressBar } from '../components/ProgressBar';
+import { Pill } from '../components/Pill';
+import { investmentTone } from '../lib/cardSurface';
 import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -452,11 +454,8 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
                   {fmtBDT(r.amount)} {`\u00B7 ${Math.round(r.pct)}%`}
                 </div>
               </div>
-              <div className="mt-1 h-1.5 rounded-pill overflow-hidden bg-surface-2">
-                <div
-                  className="h-full rounded-pill"
-                  style={{ width: `${(r.amount / max) * 100}%`, background: 'linear-gradient(90deg, var(--accent), var(--primary))' }}
-                />
+              <div className="mt-1">
+                <ProgressBar value={(r.amount / max) * 100} height={6} />
               </div>
             </div>
           ))}
@@ -679,14 +678,8 @@ function GoalRow({ goal }: { goal: ReturnType<typeof goalsForInsights>[number] }
             {goal.perMonthLabel}
           </div>
         </div>
-        <div className="mt-2 h-2 rounded-pill overflow-hidden bg-surface-2">
-          <div
-            className="h-full rounded-pill"
-            style={{
-              width: `${goal.pct}%`,
-              background: 'linear-gradient(90deg, var(--primary), var(--accent))',
-            }}
-          />
+        <div className="mt-2">
+          <ProgressBar value={goal.pct} height={8} />
         </div>
         <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
           <span>{goal.pct}% {MIDDOT} {fmtBDT(goal.saved)} / {fmtBDT(goal.target)}</span>
@@ -727,10 +720,11 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
   const isOwed = debt.direction === 'owed_to_me';
   // Gradient matches the goal-card treatment: progress-positive uses
   // primary → accent; debt-reduction (i_owe) uses danger → warn. The
-  // gradient gives the bar visual depth at the small 1.5px height.
-  const trackColor = isOwed
-    ? 'linear-gradient(90deg, var(--primary), var(--accent))'
-    : 'linear-gradient(90deg, var(--danger), var(--warn))';
+  // All debt bars use the canonical primary → accent gradient —
+// the same one every progress bar in the app uses. The semantic
+// direction (owe vs owed-to-me) is already carried by the icon,
+// the arrow chip, the dollar colour, and the meta line; the bar
+// fill unifies the visual language across the app.
   const chipBg = isOwed ? 'bg-primary-soft text-primary' : 'bg-danger-soft text-danger';
   const remainingColor = isOwed ? 'text-primary' : 'text-danger';
   return (
@@ -753,8 +747,8 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
             {fmtBDT(debt.remaining)}
           </div>
         </div>
-        <div className="mt-2 h-1.5 rounded-pill overflow-hidden bg-surface-2">
-          <div className="h-full rounded-pill" style={{ width: `${debt.pct}%`, background: trackColor }} />
+        <div className="mt-2">
+          <ProgressBar value={debt.pct} height={6} />
         </div>
         <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
           <span>{debt.pct}% paid {MIDDOT} {fmtBDT(debt.paid)} of {fmtBDT(debt.total)}</span>
@@ -781,10 +775,13 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
     const current = full
       ? investmentValue(full, state.transactions).currentValue
       : Number(inv.principal) || 0;
-    const projected = inv.maturityValue;
+    // Per-row only needs `current` (the headline tiles up top still
+    // aggregate `totalProjected` for the At-maturity summary). The
+    // row no longer renders its own at-maturity figure or progress
+    // bar — keep it scannable.
     totalCurrent += current;
-    totalProjected += projected;
-    return { inv, current, projected };
+    totalProjected += inv.maturityValue;
+    return { inv, current };
   });
   const hasAny = investments.length > 0;
   const showProjection = totalProjected - totalCurrent > 0;
@@ -821,8 +818,8 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
       ) : (
         <>
           <div className="flex flex-col gap-1">
-            {rows.slice(0, 5).map(({ inv, current, projected }) => (
-              <InvestmentRow key={inv.id} inv={inv} current={current} projected={projected} />
+            {rows.slice(0, 5).map(({ inv, current }) => (
+              <InvestmentRow key={inv.id} inv={inv} current={current} />
             ))}
           </div>
           {investments.length > 5 && (
@@ -839,16 +836,16 @@ function InvestmentsCard({ investments }: { investments: ReturnType<typeof inves
 }
 
 function InvestmentRow({
-  inv, current, projected,
+  inv, current,
 }: {
   inv: ReturnType<typeof investmentsForInsights>[number];
   current: number;
-  projected: number;
 }) {
   const days = inv.daysToMaturity;
   const daysLabel = days <= 0 ? 'Matured' : `${days} ${days === 1 ? 'day' : 'days'}`;
   const isDps = inv.type === 'dps';
-  const showBoth = isDps && projected - current > 1;
+  const typeTone = investmentTone(inv.type);
+  const typeLabel = isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings';
   return (
     <Link
       to={`/investments/${inv.id}`}
@@ -860,18 +857,17 @@ function InvestmentRow({
         style={{ background: 'var(--primary)' }}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center gap-3">
-          <div className="font-semibold text-[14px] tracking-tight truncate">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="font-semibold text-[14px] tracking-tight truncate min-w-0">
             <span aria-hidden className="mr-1">{investmentEmoji(inv.type as Investment['type'])}</span>
             {inv.name}
           </div>
-          <DualValueLine
-            current={current}
-            projected={projected}
-            currentTone="accent"
-            headlinePrefix={showBoth ? 'Now' : undefined}
-            className="shrink-0"
-          />
+          {/* DPS / FDR / Savings category stamp — same `<Pill>` every
+              list card uses, so the Insights investment row reads as
+              a sibling of the same row on the Investments list. */}
+          <Pill tone={typeTone} variant="solid" className="shrink-0">
+            {typeLabel}
+          </Pill>
         </div>
         <div className="text-[11px] text-muted mt-1 tabular truncate">
           {daysLabel}
@@ -880,7 +876,13 @@ function InvestmentRow({
           {' '}{MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo
         </div>
       </div>
-      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
+      {/* Single "now" value — the Insights widget already surfaces
+          total + projection up top in the headline tiles, so the row
+          just shows what's tied up right now. No progress bar, no
+          at-maturity projection here — keep the row scannable. */}
+      <div className="text-[14px] font-bold tabular text-accent shrink-0">
+        {fmtBDT(current)}
+      </div>
     </Link>
   );
 }

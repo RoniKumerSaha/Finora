@@ -28,8 +28,9 @@ import { loanPaymentSplit } from '../domain/math';
 import { ArrowUp, ArrowDown, Check, User } from '../components/icons/Icons';
 import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, debtTone, leftBarClass, toneFillClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
+import { ProgressBar } from '../components/ProgressBar';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -144,7 +145,6 @@ function DebtCard({ debt: d }: { debt: any }) {
   // Loan-kind debts override direction and use warn (amber).
   const cardTone = debtTone(d.direction, d.kind);
   const iconBg = toneTileClass(cardTone);
-  const barFill = toneFillClass(cardTone);
   const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
 
@@ -295,12 +295,7 @@ function DebtCard({ debt: d }: { debt: any }) {
           above the full-card <Link>. */}
       <div className="px-6 pb-2.5 flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
-            <div
-              className={`h-full rounded-pill ${barFill} transition-all duration-200`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          <ProgressBar value={pct} height={6} />
           <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
         </div>
         {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.

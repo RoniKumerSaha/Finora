@@ -47,6 +47,7 @@
   --color-orange-soft: var(--orange-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
+  --color-info-on: var(--info-on);
   --color-cyan: var(--cyan);
   --color-cyan-soft: var(--cyan-soft);
   --color-success: var(--success);
@@ -162,6 +163,7 @@
   --orange-soft:  rgba(240, 172, 117, 0.38);
   --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
   --info-soft:    rgba(111, 168, 220, 0.22);
+  --info-on:      #0F1419;   /* near-black; reads on the bright info in dark mode and stays legible in light mode */
   --cyan:         #4FC6B8;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
   --cyan-soft:    rgba(79, 198, 184, 0.24);
   --success:      #8DC4A6;
@@ -245,6 +247,7 @@
   --orange-soft:  rgba(160, 74, 26, 0.32);
   --info:         #1F4F84;   /* deep steel-blue for digital wallets */
   --info-soft:    rgba(31, 79, 132, 0.14);
+  --info-on:      #0F1419;   /* near-black; the deep info fill needs a dark, contrast-rich text colour in both themes */
   --cyan:         #147F70;   /* teal — sits between green (≥60%) and blue (60-30%) */
   --cyan-soft:    rgba(20, 127, 112, 0.18);
   --success:      #2F6E4A;

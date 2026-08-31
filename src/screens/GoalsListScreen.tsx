@@ -20,9 +20,15 @@
  * 2026-08-31 polish: every goal card now carries the shared
  * info-tone wash + 3px accent bar — the same treatment the
  * account / debt / investment / planned-loan cards use, so the
- * goal list feels of-a-piece with the rest of the app. Progress
- * bar fill follows --info so the card reads as one themed unit
- * (wash + bar + accent bar all share the cool-blue family).
+ * goal list feels of-a-piece with the rest of the app.
+ *
+ * 2026-09-01 polish: progress bar moved to the canonical
+ * primary → accent gradient (same component as Goals / Debts /
+ * Investments widgets on Insights + the planner preview). The
+ * card's info wash + accent bar still carry the cool-blue theme
+ * locally; the gradient bar carries the universal "money
+ * growing" language so every progress-bar surface in the app
+ * reads as one shape.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -39,6 +45,7 @@ import { EmptyState, GoalsIllustration } from '../components/EmptyState';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
+import { ProgressBar } from '../components/ProgressBar';
 
 /**
  * Classify the user's pace toward a goal as ahead / on-track / behind.
@@ -160,12 +167,7 @@ export function GoalsListScreen() {
                     {pct}%
                   </Pill>
                 </div>
-                <div className="h-2.5 bg-surface-2 rounded-pill overflow-hidden">
-                  <div className="h-full rounded-pill" style={{
-                    width: `${pct}%`,
-                    background: 'var(--info)',
-                  }} />
-                </div>
+                <ProgressBar value={pct} height={10} />
 
                 {/* Two-line meta:
                        line 1 — saved / target + deadline

@@ -25,6 +25,7 @@ import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { fillStatus, FILL, formatPct, pctOf, frostedPillStyle } from '../components/planner/jarVisuals';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
+import { ProgressBar } from '../components/ProgressBar';
 
 export function EventPlanScreen() {
   const state = useStore(s => s.state);
@@ -180,15 +181,7 @@ export function EventPlanScreen() {
                     Delete
                   </button>
                 </div>
-                <div className="h-2 bg-surface-2 rounded-pill overflow-hidden">
-                  <div
-                    className="h-full rounded-pill transition-all"
-                    style={{
-                      width: summary.budget > 0 ? `${Math.min(100, pct)}%` : '0%',
-                      background: fill.color,
-                    }}
-                  />
-                </div>
+                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} />
                 <div className="flex justify-between items-center text-xs tabular gap-2">
                   <span
                     className="px-2 py-0.5 rounded-pill text-ink"
