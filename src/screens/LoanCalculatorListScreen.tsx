@@ -20,7 +20,8 @@ import { useStore } from '../domain/store';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass } from '../lib/cardSurface';
+import { Pill } from '../components/Pill';
 
 const MIDDOT = '\u00B7';
 
@@ -148,25 +149,13 @@ export function LoanCalculatorListScreen() {
                         <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
                           {plan.name || 'Untitled loan'}
                         </div>
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(loanPlanTone())}`}
-                        >
-                          Loan
-                        </span>
-                        {/* PLANNED pill — outlined so it reads as
-                            a state stamp, not a category badge.
-                            Sits right next to the Loan pill. */}
-                        <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 border"
-                          style={{
-                            background: 'transparent',
-                            color: 'var(--muted)',
-                            borderColor: 'var(--border-2)',
-                          }}
-                          title="This is a projection — no real loan has been taken."
-                        >
+                        <Pill tone={loanPlanTone()} variant="solid">Loan</Pill>
+                        {/* PLANNED pill — solid muted tone so it reads as
+                            a state stamp, not a category badge. Sits
+                            right next to the Loan pill. */}
+                        <Pill tone="muted" variant="solid" title="This is a projection — no real loan has been taken.">
                           Planned
-                        </span>
+                        </Pill>
                       </div>
                     </div>
 
@@ -175,9 +164,7 @@ export function LoanCalculatorListScreen() {
                         moved to row 1. */}
                     {plan.dirty && (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 text-warn">
-                          Draft
-                        </span>
+                        <Pill tone="warn" variant="solid">Draft</Pill>
                       </div>
                     )}
 

@@ -24,7 +24,8 @@ import {
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
-import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
+import { Pill } from '../components/Pill';
 
 export function InvestmentPlannerScreen() {
   const navigate = useNavigate();
@@ -300,27 +301,16 @@ function InvestmentPlanCard({
             <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
               {plan.name}
             </div>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(cardTone)}`}
-            >
+            <Pill tone={cardTone} variant="solid">
               {isDps ? 'DPS' : plan.type === 'fdr' ? 'FDR' : 'Savings'}
-            </span>
-            {/* PLANNED pill — same shape as the type pill but
-                outlined (transparent fill, muted color, border)
-                so it reads as a state stamp rather than another
-                category badge. Sits right next to the type pill
-                just like DPS does on the real card. */}
-            <span
-              className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 border"
-              style={{
-                background: 'transparent',
-                color: 'var(--muted)',
-                borderColor: 'var(--border-2)',
-              }}
-              title="This is a projection — no real money is involved."
-            >
+            </Pill>
+            {/* PLANNED pill — solid muted tone so it reads as a state
+                stamp rather than another category badge. Sits right
+                next to the type pill just like DPS does on the real
+                card. */}
+            <Pill tone="muted" variant="solid" title="This is a projection — no real money is involved.">
               Planned
-            </span>
+            </Pill>
           </div>
         </div>
 
@@ -328,9 +318,7 @@ function InvestmentPlanCard({
             unsaved edits). The PLANNED pill moved to row 1. */}
         {plan.dirty && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 text-warn">
-              Draft
-            </span>
+            <Pill tone="warn" variant="solid">Draft</Pill>
           </div>
         )}
 

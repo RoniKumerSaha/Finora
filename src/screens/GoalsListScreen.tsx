@@ -16,6 +16,13 @@
  * separate entity from transactions, so the global "Add transaction"
  * sidebar CTA doesn't help here. The empty state has its own contextual
  * button.
+ *
+ * 2026-08-31 polish: every goal card now carries the shared
+ * info-tone wash + 3px accent bar — the same treatment the
+ * account / debt / investment / planned-loan cards use, so the
+ * goal list feels of-a-piece with the rest of the app. Progress
+ * bar fill follows --info so the card reads as one themed unit
+ * (wash + bar + accent bar all share the cool-blue family).
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -30,6 +37,8 @@ import {
 } from '../domain/math';
 import { EmptyState, GoalsIllustration } from '../components/EmptyState';
 import { fmtBDT, fmtDate } from '../lib/format';
+import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
+import { Pill } from '../components/Pill';
 
 /**
  * Classify the user's pace toward a goal as ahead / on-track / behind.
@@ -62,6 +71,29 @@ const PACE_LABEL: Record<ReturnType<typeof paceOf>, string> = {
   ahead: 'Ahead',
   'on-track': 'On track',
   behind: 'Behind',
+};
+
+// Map a goal's pace state to the tone the pace chip + label should use.
+// Completed / ahead → success (you're winning). On-track → primary
+// (the neutral "fine" state). Behind → warn (slipping). Expired → danger
+// (deadline passed without hitting target).
+const PACE_TONE: Record<ReturnType<typeof paceOf>, 'success' | 'primary' | 'warn' | 'danger'> = {
+  completed: 'success',
+  ahead:     'success',
+  'on-track':'primary',
+  behind:    'warn',
+  expired:   'danger',
+};
+
+// Inline-label color matches the chip's tone — the small "Pace: Behind"
+// line below the meta block uses the same hue so the chip + caption read
+// as one themed unit.
+const PACE_TEXT_COLOR: Record<ReturnType<typeof paceOf>, string> = {
+  completed: 'var(--success)',
+  ahead:     'var(--success)',
+  'on-track':'var(--primary)',
+  behind:    'var(--warn)',
+  expired:   'var(--danger)',
 };
 
 export function GoalsListScreen() {
@@ -105,40 +137,33 @@ export function GoalsListScreen() {
             const required = goalRequiredPerMonth(g, saved);
             const completed = isGoalCompleted(g, saved);
             const pace = paceOf(g, saved, target);
-
-            // Pace chip colour tokens — reuse the existing semantic palette
-            // (success / primary / warn / danger) so the colours stay
-            // consistent with the rest of the app in both light and
-            // dark modes. Every value resolves through the theme.css
-            // token system; no raw hex fallbacks.
-            const paceChipStyle = {
-              completed: { background: 'var(--success-soft)', color: 'var(--success)' },
-              ahead:     { background: 'var(--success-soft)', color: 'var(--success)' },
-              'on-track':{ background: 'var(--primary-soft)', color: 'var(--primary)' },
-              behind:    { background: 'var(--warn-soft)',   color: 'var(--warn)' },
-              expired:   { background: 'var(--danger-soft)', color: 'var(--danger)' },
-            }[pace];
+            const paceTone = PACE_TONE[pace];
 
             return (
               <Link
                 key={g.id}
                 to={`/goals/${g.id}`}
-                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative overflow-hidden"
+                style={cardSurfaceStyle('info')}
               >
+                {/* Left accent bar — 3px info-tone stripe (matches the
+                    wash + progress-bar fill so the whole card reads as
+                    one themed unit). Same bar treatment as the
+                    account / debt / investment / planned-loan cards. */}
+                <span
+                  aria-hidden
+                  className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass('info')}`}
+                />
                 <div className="flex justify-between items-start gap-2">
                   <div className="font-semibold text-[15px] tracking-tight leading-tight line-clamp-2 min-h-[2.6em]">{g.name}</div>
-                  <div
-                    className="text-[11px] font-bold px-2.5 py-[3px] rounded-pill tabular shrink-0"
-                    style={paceChipStyle}
-                    title={`${pct}% saved vs target pace`}
-                  >
+                  <Pill tone={paceTone} variant="solid" title={`${pct}% saved vs target pace`}>
                     {pct}%
-                  </div>
+                  </Pill>
                 </div>
                 <div className="h-2.5 bg-surface-2 rounded-pill overflow-hidden">
                   <div className="h-full rounded-pill" style={{
                     width: `${pct}%`,
-                    background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+                    background: 'var(--info)',
                   }} />
                 </div>
 
@@ -174,7 +199,7 @@ export function GoalsListScreen() {
                     default, no-news state) to avoid noise. */}
                 {pace !== 'on-track' && pace !== 'completed' && pace !== 'expired' && (
                   <div className="text-[10.5px] text-muted tabular -mt-1.5">
-                    Pace: <b style={{ color: paceChipStyle.color }}>{PACE_LABEL[pace]}</b>
+                    Pace: <b style={{ color: PACE_TEXT_COLOR[pace] }}>{PACE_LABEL[pace]}</b>
                   </div>
                 )}
               </Link>

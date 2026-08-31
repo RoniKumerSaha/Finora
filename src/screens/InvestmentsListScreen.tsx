@@ -28,7 +28,8 @@ import {
   daysToMaturity,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
+import { Pill } from '../components/Pill';
 
 const MIDDOT = '\u00B7';
 
@@ -99,9 +100,7 @@ export function InvestmentsListScreen() {
                           <div className="font-semibold text-[14px] tracking-tight">
                             {invEmoji(inv.type)} {inv.name}
                           </div>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-pill text-[11px] font-semibold bg-surface-2 text-muted">
-                            {inv.status}
-                          </span>
+                          <Pill tone="muted" variant="solid">{inv.status}</Pill>
                         </div>
                         <div className="text-[11.5px] text-muted tabular">
                           {fmtBDT(inv.principal)} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
@@ -197,11 +196,9 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
             <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
               {inv.name}
             </div>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(cardTone)}`}
-            >
+            <Pill tone={cardTone} variant="solid">
               {isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings'}
-            </span>
+            </Pill>
           </div>
         </div>
         <div className="text-[12px] text-muted tabular truncate">

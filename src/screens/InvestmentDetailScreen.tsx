@@ -225,9 +225,9 @@ export function InvestmentDetailScreen() {
             <span>{invEmoji(inv.type)}</span>
             <span className="uppercase tracking-wider">{inv.type}</span>
             {isDps && inv.monthlyContribution ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-pill text-[11px] font-semibold bg-primary-soft text-primary">
+              <Pill tone="primary" variant="solid">
                 {fmtBDT(inv.monthlyContribution)}/mo
-              </span>
+              </Pill>
             ) : null}
           </div>
           <h1 className="heading h1-screen mt-1">{inv.name}</h1>
@@ -436,11 +436,12 @@ export function InvestmentDetailScreen() {
                       <div className="text-[13px] font-semibold tabular">{fmtBDT(t.amount)}</div>
                       <div className="text-[11px] text-muted">{fmtDate(t.date)} {acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}</div>
                     </div>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill ${
-                      t.type === 'income'
-                        ? 'bg-success-soft text-success'
-                        : 'bg-primary-soft text-primary'
-                    }`}>{tag}</span>
+                    <Pill
+                      tone={t.type === 'income' ? 'success' : 'primary'}
+                      variant="solid"
+                    >
+                      {tag}
+                    </Pill>
                   </div>
                 );
               })}

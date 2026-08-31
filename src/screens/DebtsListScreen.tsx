@@ -29,6 +29,7 @@ import { ArrowUp, ArrowDown, Check, User } from '../components/icons/Icons';
 import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT } from '../lib/format';
 import { cardSurfaceStyle, debtTone, leftBarClass, toneFillClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { Pill } from '../components/Pill';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -222,11 +223,7 @@ function DebtCard({ debt: d }: { debt: any }) {
           >
             {directionLabel}
             {isLoan && (
-              <span
-                className={`ml-2 inline-flex items-center px-1.5 py-px rounded-pill text-[9.5px] font-bold uppercase tracking-wider align-middle ${toneTileClass('danger')}`}
-              >
-                Loan
-              </span>
+              <Pill tone="danger" variant="solid" className="ml-2 align-middle">Loan</Pill>
             )}
           </div>
           <div className="flex items-center gap-2.5 min-w-0">
