@@ -36,7 +36,7 @@ const baseState = (): State => ({
   eventPlans: [],
   investmentPlans: [],
   loanPlans: [],
-  settings: { theme: 'auto', onboardingComplete: true },
+  settings: { theme: 'dark', onboardingComplete: true },
 });
 
 describe('goals.add', () => {

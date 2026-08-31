@@ -49,49 +49,15 @@ import { LoanCalculatorListScreen } from './screens/LoanCalculatorListScreen';
 import { LoanCalculatorDetailScreen } from './screens/LoanCalculatorDetailScreen';
 
 export function App() {
-  const theme = useStore(s => s.state.settings.theme);
-  const recompute = useStore(s => s.recompute);
-
-  // Reflect theme onto <html data-theme> so CSS custom properties switch.
-  // 'auto' listens to prefers-color-scheme. Each flip also cross-fades
-  // the UI (250ms) by toggling a `.theme-fade` class on <html>; without
-  // it the color swap is an instant snap that's noticeable on big
-  // surfaces. The class is removed once the transition completes so it
-  // doesn't permanently inflate transition specificity.
+  // Dark mode is the only supported theme (set once at boot — the
+  // Theme type is now `'dark'` only, so there's no runtime selection).
+  // The cross-fade machinery that used to handle light↔dark transitions
+  // is no longer needed.
   useEffect(() => {
-    const root = document.documentElement;
-    let cleanup: (() => void) | undefined;
+    document.documentElement.dataset.theme = 'dark';
+  }, []);
 
-    function applyWithFade(resolved: 'dark' | 'light') {
-      // No-op if the theme hasn't actually changed — avoid fading on
-      // initial mount where [data-theme] is still at the default.
-      if (root.dataset.theme === resolved) return;
-      root.dataset.theme = resolved;
-      root.classList.add('theme-fade');
-      const t = window.setTimeout(() => {
-        root.classList.remove('theme-fade');
-      }, 260); // 250ms transition + small buffer
-      cleanup = () => {
-        window.clearTimeout(t);
-        root.classList.remove('theme-fade');
-      };
-    }
-
-    if (theme === 'auto') {
-      const mql = window.matchMedia('(prefers-color-scheme: dark)');
-      applyWithFade(mql.matches ? 'dark' : 'light');
-      const onChange = (e: MediaQueryListEvent) => {
-        applyWithFade(e.matches ? 'dark' : 'light');
-      };
-      mql.addEventListener('change', onChange);
-      return () => {
-        mql.removeEventListener('change', onChange);
-        cleanup?.();
-      };
-    }
-    applyWithFade(theme);
-    return cleanup;
-  }, [theme]);
+  const recompute = useStore(s => s.recompute);
 
   // Recompute derived fields on boot (status flips, paidSoFar cache).
   useEffect(() => { recompute(); }, [recompute]);

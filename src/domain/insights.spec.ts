@@ -36,7 +36,7 @@ function makeState(overrides: Partial<State> = {}): State {
     eventPlans: [],
     investmentPlans: [],
     loanPlans: [],
-    settings: { theme: 'auto', onboardingComplete: true },
+    settings: { theme: 'dark', onboardingComplete: true },
     ...overrides,
   };
 }

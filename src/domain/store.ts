@@ -17,7 +17,7 @@
  * so re-renders stay predictable.
  */
 import { create } from 'zustand';
-import type { State, Banner, Theme, Toast } from './types';
+import type { State, Banner, Toast } from './types';
 import { load, save, clear, DEFAULT_STATE } from './persistence';
 import { recomputeDerived } from './recompute';
 import * as plans from './plans';
@@ -25,7 +25,6 @@ import * as investmentPlans from './investmentPlans';
 import * as loanPlans from './loanPlans';
 import { uid } from './ids';
 
-export type { Theme } from './types';
 
 interface Store {
   state: State;
@@ -46,7 +45,6 @@ interface Store {
   clearToast: () => void;
 
   // Settings
-  setTheme: (t: Theme) => void;
   completeOnboarding: () => void;
 
   // ── Plan: Month Planner (PRD §9.14) ──────────────────────────────
@@ -152,12 +150,6 @@ export const useStore = create<Store>((set, get) => ({
   // toast component owns the dwell timer so the store stays simple.
   showToast: (t) => set({ toast: { ...t, id: uid() } }),
   clearToast: () => set({ toast: null }),
-
-  setTheme: (t) => {
-    const next: State = { ...get().state, settings: { ...get().state.settings, theme: t } };
-    set({ state: next });
-    save(next);
-  },
 
   completeOnboarding: () => {
     const next: State = {

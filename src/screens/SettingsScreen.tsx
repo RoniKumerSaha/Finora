@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { useStore } from '../domain/store';
-import type { Theme } from '../domain/store';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
@@ -16,8 +15,6 @@ import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
  * zone.
  */
 export function SettingsScreen() {
-  const theme = useStore(s => s.state.settings.theme);
-  const setTheme = useStore(s => s.setTheme);
   const update = useStore(s => s.update);
   const importAndReplace = useStore(s => s.importAndReplace);
   const showBanner = useStore(s => s.showBanner);
@@ -105,37 +102,12 @@ export function SettingsScreen() {
     <div className="flex flex-col gap-6 max-w-[1100px]">
       <div>
         <h1 className="heading h1-screen">Settings</h1>
-        <div className="text-muted text-[13px] mt-1.5">Theme, backup, and reset.</div>
+        <div className="text-muted text-[13px] mt-1.5">Backup and reset.</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Left column — existing controls */}
         <div className="flex flex-col gap-6">
-          <section className="card">
-            <h2 className="heading h3-modal mb-4">Theme</h2>
-            <div className="flex gap-2 flex-wrap">
-              {(['dark', 'light', 'auto'] as Theme[]).map(t => {
-                const active = theme === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTheme(t)}
-                    className={[
-                      'px-4 py-2.5 rounded-btn text-[13.5px] font-bold transition border',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                      active
-                        ? 'bg-primary text-primary-on border-primary'
-                        : 'bg-surface text-muted border-border hover:text-ink hover:bg-surface-2',
-                    ].join(' ')}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
           <section className="card">
             <h2 className="heading h3-modal mb-4">Backup</h2>
             <div className="flex gap-2 flex-wrap">

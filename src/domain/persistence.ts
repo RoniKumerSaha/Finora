@@ -170,10 +170,15 @@ function validate(s: unknown): s is Partial<State> {
  * array, which means "I don't have plans") is respected.
  */
 function mergeDefaults(s: Partial<State>): State {
+  // Theme is always 'dark' now (light + auto removed). Old backups may
+  // still carry 'light' / 'auto' — coerce them on load so the loaded
+  // state always matches the current `Theme = 'dark'` contract.
+  const loadedSettings = { ...DEFAULT_STATE.settings, ...(s.settings || {}) };
+  if (loadedSettings.theme !== 'dark') loadedSettings.theme = 'dark';
   const merged: State = {
     ...DEFAULT_STATE,
     ...s,
-    settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
+    settings: loadedSettings,
   };
   merged.categories = mergeCategories(merged.categories ?? []);
   return merged;

@@ -51,7 +51,6 @@ import {
   NavGoals, NavInvestments, NavDebts, NavPlan, NavSettings,
   Menu, Close,
 } from './icons/Icons';
-import { useStore } from '../domain/store';
 import { Toast } from './Toast';
 
 interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element }
@@ -70,8 +69,6 @@ const NAV: NavDef[] = [
 
 export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const theme = useStore(s => s.state.settings.theme);
-  const setTheme = useStore(s => s.setTheme);
   // Hide the "Add Transaction" shortcut only on the add-transaction
   // screens themselves (`/transactions/new` and its per-type variants
   // /transactions/new/expense, /income, /transfer) — there the sidebar
@@ -200,29 +197,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="flex-1" />
 
-          {/* Theme toggle — Dark / Light segmented control. Fast path
-             between the two most-used values; "Auto" lives in Settings.
-             Always visible — it's a global preference and not a primary
-             action, so it never competes with the screen's own
-             Save/Submit button (unlike the Add transaction CTA below). */}
-          <div
-            role="radiogroup"
-            aria-label="Theme"
-            className="flex items-center gap-1 p-1 rounded-pill bg-surface-2 border border-border mb-3"
-          >
-            <ThemePill
-              glyph={<span aria-hidden>{'\u263D'}</span>}
-              label="Dark"
-              isOn={theme === 'dark'}
-              onClick={() => setTheme('dark')}
-            />
-            <ThemePill
-              glyph={<span aria-hidden>{'\u2600'}</span>}
-              label="Light"
-              isOn={theme === 'light'}
-              onClick={() => setTheme('light')}
-            />
-          </div>
+          {/* Theme toggle removed — dark is the only mode (see Settings
+             > Theme for the explanatory copy). The slot used to host a
+             Dark / Light segmented control. */}
 
           {!hideAddTx && (
             <NavLink
@@ -248,41 +225,7 @@ export function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * ThemePill — one segment of the Dark/Light toggle. Inherits the chip
- * selected treatment (primary-soft bg + primary text + transparent
- * border + inset ring) for parity with the rest of the system.
- */
-function ThemePill({
-  glyph, label, isOn, onClick,
-}: {
-  glyph: React.ReactNode;
-  label: string;
-  isOn: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={isOn}
-      onClick={onClick}
-      className={[
-        'grow inline-flex items-center justify-center gap-1.5 rounded-pill text-[12px] font-semibold leading-none py-2 px-2 transition',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        isOn
-          ? 'bg-primary-soft text-primary border border-transparent'
-          : 'text-muted hover:text-ink border border-transparent',
-      ].join(' ')}
-      style={isOn
-        ? { boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent)' }
-        : undefined}
-    >
-      <span className="text-[13px] leading-none" aria-hidden>{glyph}</span>
-      <span>{label}</span>
-    </button>
-  );
-}
+
 
 function NavItem({ to, label, Icon }: NavDef) {
   return (

@@ -1,12 +1,9 @@
 /**
  * theme.css — theme tokens (AD-17).
  *
- * Tailwind v4 reads these CSS custom properties directly. The tokens come
- * from docs/ux-designs/ux-finora-2026-08-13/mockups/v2/{dark,light}.html
- * (the V2 Soft design that the React app is meant to match).
- *
- * App.tsx flips [data-theme="dark"|"light"] on <html> based on settings.theme.
- * 'auto' listens to prefers-color-scheme.
+ * Tailwind v4 reads these CSS custom properties directly. Dark mode is
+ * the only supported theme as of 2026-09-01 (light + auto were removed);
+ * tokens live under `[data-theme="dark"]` which `<html>` always carries.
  *
  * 2026-08-14 polish pass: refined shadow tokens, sharper focus rings, an
  * additional inset highlight on cards for a more "premium finance app"
@@ -15,6 +12,8 @@
  * 2026-08-30 light refresh: dropped the warm-cream monolith for a cool
  * neutral paper with a sage hint. Real value separation between page,
  * sidebar, and cards.
+ *
+ * 2026-09-01 single-mode: light-mode token block removed.
  */
 
 @import "tailwindcss";
@@ -182,83 +181,3 @@
   --divider:      #43524A;
 }
 
-[data-theme="light"] {
-  /* 2026-08-30 light refresh · Cool Paper.
-     Dropped the warm-cream monolith. New scheme is cool-neutral paper
-     with a hint of sage — every surface layer has real value separation
-     (page > nav > card > raised chip), so cards float, the sidebar reads
-     as cut from the wall, and planner pills pop without needing
-     cream-on-cream. Sage/green identity from dark mode stays; cream
-     warmth goes. */
-  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --shadow-card: 0 1px 2px rgba(15, 30, 25, 0.04), 0 6px 18px rgba(15, 30, 25, 0.06);
-  /* Component-level shadows — light-mode overrides. The dark values
-     use rgba(0,0,0,...) which works on the dark page but produces
-     visible artifacts on cool-paper. Swap in sage-tinted shadows. */
-  --shadow-modal: 0 4px 12px rgba(15, 30, 25, 0.08), 0 24px 60px rgba(15, 30, 25, 0.14);
-  --shadow-nav: 0 1px 0 rgba(15, 30, 25, 0.08);
-  --sidebar-inset: inset -1px 0 0 rgba(15, 30, 25, 0.08);
-  --shadow-inset: inset 0 1px 2px rgba(15, 30, 25, 0.06);
-  --shadow-planner-card:    0 2px 6px  rgba(15, 30, 25, 0.06);
-  --shadow-planner-card-hi: 0 4px 12px rgba(15, 30, 25, 0.08);
-  --shadow-planner-card-hi2: 0 6px 14px rgba(15, 30, 25, 0.10);
-  /* Frosted pill on planner cards — cool white wash; the pill is no
-     longer fighting cream, so opacity drops and the border lifts just
-     enough to keep the shape readable on the deepest ramp band. */
-  --frost-pill-bg:     rgba(255, 255, 255, 0.88);
-  --frost-pill-border: rgba(15, 30, 25, 0.10);
-  --frost-pill-shadow: 0 1px 2px rgba(15, 30, 25, 0.06);
-  /* Summary pill (Income / Saved / Spent) — cool white on a sage-tinted
-     surface; reads as a chip against the card, not as cream-on-cream. */
-  --summary-pill-bg:     #FFFFFF;
-  --summary-pill-border: rgba(15, 30, 25, 0.10);
-  /* Liquid fill behind frosted pills — cool against cool now, so the
-     ink can take a stronger 0.55 fill and still feel light. */
-  --liquid-fill-opacity: 0.55;
-  /* Surface stack — four real steps, no near-duplicates. Page is the
-     palest cool-paper; nav surface sits one step deeper; cards lift a
-     step lighter; --surface-3 is reserved for the deepest chip band. */
-  --bg:           #EEEDE7;   /* page — cool paper with a hint of sage */
-  --surface:      #E2E4DC;   /* sidebar / drawers — one step deeper, holds the nav */
-  --surface-2:    #F7F7F2;   /* card — lightest layer, so cards visibly lift */
-  --surface-3:    #D6D9CF;   /* deepest chip band */
-  --ink:          #161B17;   /* near-black with a sage cast (vs warm brown) */
-  --muted:        #6B7268;
-  --muted-2:      #A8ADA3;
-  /* Planner ramp — sage/honey/ember. Deepened vs the previous light
-     palette so jars still have weight against the cooler page; soft
-     variants lifted so the bands feel coloured, not washed. */
-  --primary:      #1F6F5A;   /* sage, matches dark-mode brand */
-  --primary-soft: rgba(31, 111, 90, 0.14);
-  --primary-hi:   rgba(31, 111, 90, 0.07);
-  --primary-on:   #FFFFFF;
-  --accent:       #8A6A1F;   /* warm honey gold for investments headline */
-  --accent-soft:  rgba(138, 106, 31, 0.16);
-  --accent-on:    #FFFFFF;
-  --danger:       #B03222;
-  --danger-soft:  rgba(176, 50, 34, 0.14);
-  --danger-on:    #FFFFFF;
-  --danger-title: #8A2818;
-  --danger-callout-bg: #F6E4DD;   /* still warm, but only used in danger callouts */
-  --warn:         #94671A;
-  --warn-soft:    rgba(148, 103, 26, 0.32);
-  --warn-on:      #FFFFFF;
-  --orange:       #A04A1A;   /* jar-fill ramp step: 80%→100% (light) */
-  --orange-soft:  rgba(160, 74, 26, 0.32);
-  --info:         #1F4F84;   /* deep steel-blue for digital wallets */
-  --info-soft:    rgba(31, 79, 132, 0.14);
-  --info-on:      #0F1419;   /* near-black; the deep info fill needs a dark, contrast-rich text colour in both themes */
-  --cyan:         #147F70;   /* teal — sits between green (≥60%) and blue (60-30%) */
-  --cyan-soft:    rgba(20, 127, 112, 0.18);
-  --success:      #2F6E4A;
-  --success-soft: rgba(47, 110, 74, 0.30);
-  --success-title:#224E33;
-  --success-on:   #FFFFFF;
-  --success-callout-bg: #DFEAE2;  /* sage-tinted, not cream */
-  --border:       #D2D5CB;   /* cool-neutral, no yellow cast */
-  --border-2:     #BCC0B5;
-  /* Card-internal vertical divider — same hue family as --border-2
-     but matched to the light card surface so the separator reads
-     clearly in both themes. */
-  --divider:      #BCC0B5;
-}

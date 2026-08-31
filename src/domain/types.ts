@@ -32,7 +32,7 @@ export type InvestmentType = 'dps' | 'fdr' | 'savings';
 
 export type InvestmentStatus = 'active' | 'matured' | 'closed' | 'rolled_over';
 
-export type Theme = 'dark' | 'light' | 'auto';
+export type Theme = 'dark';
 
 export interface Account {
   id: string;
