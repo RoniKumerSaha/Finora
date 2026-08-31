@@ -25,6 +25,7 @@ import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input } from '../components/Field';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
+import { InvestmentDonut } from '../components/planner/InvestmentDonut';
 import { fmtBDT } from '../lib/format';
 
 const MAX_INLINE_ROWS = 60;
@@ -115,6 +116,35 @@ export function LoanCalculatorDetailScreen() {
         }}
       />
 
+      {/* Live summary card. Composition donut on the left
+          (principal vs interest) so the user can see the cost of the
+          loan at a glance; three stat tiles on the right carry the
+          precise numbers. Sits ABOVE the form so the user sees the
+          projection react to every keystroke before editing. */}
+      <section className="card flex flex-col gap-3">
+        <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Summary (projection)</div>
+        <div className="grid grid-cols-[auto_1fr] items-center gap-5">
+          <InvestmentDonut
+            total={summary.totalPaid}
+            invested={Math.max(0, summary.totalPaid - summary.totalInterest)}
+            interest={summary.totalInterest}
+            investedColor="var(--primary)"
+            interestColor="var(--accent)"
+            size={120}
+            strokeWidth={16}
+            ariaLabel={`Loan composition: ${fmtBDT(summary.totalPaid - summary.totalInterest)} of principal, ${fmtBDT(summary.totalInterest)} of interest, total ${fmtBDT(summary.totalPaid)}`}
+          />
+          <div className="grid grid-cols-3 gap-3 min-w-0">
+            <Stat label="EMI" value={fmtBDT(summary.emi)} emphasis />
+            <Stat label="Total you pay" value={fmtBDT(summary.totalPaid)} />
+            <Stat label="Total interest" value={fmtBDT(summary.totalInterest)} />
+          </div>
+        </div>
+        <div className="text-[11px] text-warn pt-1">
+          ⓘ Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.
+        </div>
+      </section>
+
       <section className="card flex flex-col gap-5">
         <Field label="Name" hint={'Free text. Try "Car loan" or "Personal loan 2026".'}>
           <Input
@@ -160,19 +190,6 @@ export function LoanCalculatorDetailScreen() {
               onChange={e => updateLoanPlan(plan.id, { startDate: e.target.value })}
             />
           </Field>
-        </div>
-      </section>
-
-      {/* Live summary card */}
-      <section className="card flex flex-col gap-3">
-        <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Summary (projection)</div>
-        <div className="grid grid-cols-3 gap-4">
-          <Stat label="EMI" value={fmtBDT(summary.emi)} emphasis />
-          <Stat label="Total you pay" value={fmtBDT(summary.totalPaid)} />
-          <Stat label="Total interest" value={fmtBDT(summary.totalInterest)} />
-        </div>
-        <div className="text-[11px] text-warn pt-1">
-          ⓘ Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.
         </div>
       </section>
 

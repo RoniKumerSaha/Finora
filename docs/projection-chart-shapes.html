@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Projection chart — different shapes</title>
+<style>
+  :root {
+    --bg:           #1B2620;
+    --surface:      #253229;
+    --surface-2:    #2E3C34;
+    --ink:          #F1F3EF;
+    --muted:        #94A59C;
+    --primary:      #7DD4B5;
+    --primary-soft: rgba(125, 212, 181, 0.22);
+    --accent:       #E6B454;
+    --accent-soft:  rgba(230, 180, 84, 0.22);
+    --border:       #324139;
+    --divider:      #43524A;
+    --r-card: 12px;
+    --r-md:    8px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    font-size: 14px;
+  }
+  .page { max-width: 1240px; margin: 0 auto; padding: 48px 32px 80px; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 36px; }
+  .grid { display: grid; gap: 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .variant { display: flex; flex-direction: column; gap: 10px; }
+  .caption { color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .caption strong { color: var(--ink); font-weight: 600; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    padding: 22px 24px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .head { display: flex; justify-content: space-between; align-items: center; }
+  .tag-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); font-weight: 600;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .head .big {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .head .big.primary { color: var(--primary); }
+  .sub-l {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); font-weight: 600;
+    margin-top: 2px;
+  }
+  .chart { width: 100%; height: 200px; }
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend .dot {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 3px; margin-right: 6px;
+    vertical-align: middle;
+  }
+  .legend .line {
+    display: inline-block; width: 14px; height: 3px;
+    border-radius: 2px; margin-right: 6px;
+    vertical-align: middle;
+  }
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .stat {
+    background: var(--surface-2);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+  }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .stat-val { font-size: 15px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat-val.accent { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Projection chart — different chart shapes</h1>
+  <p class="sub">Same projection data, different visualisation. Each card uses a distinct shape so you can compare stories.</p>
+
+  <div class="grid">
+
+    <!-- ============ 1. Stacked area (DPS) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <!-- baseline -->
+          <line x1="6" x2="514" y1="190" y2="190" stroke="currentColor" stroke-opacity="0.10"/>
+          <!-- stacked: principal on bottom, interest on top -->
+          <path d="M 6,190 L 6,190 L 60,180 L 110,170 L 160,160 L 210,150 L 260,140 L 310,130 L 360,120 L 410,110 L 460,100 L 510,90 L 514,90 L 514,190 Z"
+                fill="var(--primary)" fill-opacity="0.35"/>
+          <path d="M 6,190 L 60,180 L 110,170 L 160,160 L 210,150 L 260,140 L 310,130 L 360,120 L 410,110 L 460,100 L 510,90 L 514,86 L 514,90 L 510,90 L 460,100 L 410,110 L 360,120 L 310,130 L 260,140 L 210,150 L 160,160 L 110,170 L 60,180 L 6,190 Z"
+                fill="var(--accent)" fill-opacity="0.30"/>
+          <!-- maturity dot -->
+          <circle cx="514" cy="86" r="5" fill="var(--accent)" stroke="var(--bg)" stroke-width="2"/>
+          <!-- labels -->
+          <text x="514" y="68" text-anchor="end" font-size="10" fill="var(--accent)" font-family="inherit" font-weight="700">+2.7K</text>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--primary);"></span>Your money (60K)</span>
+          <span><span class="dot" style="background:var(--accent);"></span>Interest (2.7K)</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>1 — Stacked area.</strong> Two stacked bands show the *composition* of the final balance. The thin sliver on top = interest.</div>
+    </div>
+
+    <!-- ============ 2. Donut (DPS) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <!-- Donut: principal 95.7%, interest 4.3% -->
+          <g transform="translate(100,100)">
+            <circle r="62" fill="none" stroke="var(--primary)" stroke-opacity="0.30" stroke-width="22"/>
+            <!-- interest arc: 4.3% = 15.5deg on 360, dashed offset starts at top -->
+            <circle r="62" fill="none" stroke="var(--accent)" stroke-width="22"
+                    stroke-dasharray="16.7 372.7" stroke-dashoffset="0"
+                    transform="rotate(-90)"/>
+            <text text-anchor="middle" y="-2" font-size="22" fill="var(--ink)" font-family="inherit" font-weight="700">95.7%</text>
+            <text text-anchor="middle" y="18" font-size="10" fill="var(--muted)" font-family="inherit">your money</text>
+          </g>
+          <g transform="translate(380,100)" font-family="inherit">
+            <rect x="-110" y="-50" width="220" height="100" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="0" y="-22" text-anchor="middle" font-size="10" fill="var(--muted)" font-weight="600" letter-spacing="0.08em">AT MATURITY</text>
+            <text x="0" y="2" text-anchor="middle" font-size="26" fill="var(--ink)" font-weight="700" font-variant-numeric="tabular-nums">৳62,665</text>
+            <text x="0" y="24" text-anchor="middle" font-size="11" fill="var(--accent)" font-weight="700">+ ৳2,665 interest</text>
+            <text x="0" y="42" text-anchor="middle" font-size="10" fill="var(--muted)">12 months · 8% APR</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--primary);"></span>Your money · 60,000</span>
+          <span><span class="dot" style="background:var(--accent);"></span>Interest · 2,665</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>2 — Donut + summary.</strong> Composition of maturity value. The thin gold arc IS the interest; doesn't compete with the headline number.</div>
+    </div>
+
+    <!-- ============ 3. Bar chart (DPS) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <line x1="6" x2="514" y1="190" y2="190" stroke="currentColor" stroke-opacity="0.10"/>
+          <!-- 12 bars: principal (green, bottom) + interest (gold, top stacked) -->
+          <!-- each bar ~40px wide, gap 4px -->
+          <g>
+            <!-- Bar 1: M1 -->
+            <rect x="10" y="180" width="36" height="10" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="10" y="178" width="36" height="2" fill="var(--accent)"/>
+            <!-- Bar 2 -->
+            <rect x="50" y="170" width="36" height="20" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="50" y="166" width="36" height="4" fill="var(--accent)"/>
+            <!-- Bar 3 -->
+            <rect x="90" y="160" width="36" height="30" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="90" y="154" width="36" height="6" fill="var(--accent)"/>
+            <!-- Bar 4 -->
+            <rect x="130" y="148" width="36" height="42" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="130" y="140" width="36" height="8" fill="var(--accent)"/>
+            <!-- Bar 5 -->
+            <rect x="170" y="136" width="36" height="54" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="170" y="126" width="36" height="10" fill="var(--accent)"/>
+            <!-- Bar 6 -->
+            <rect x="210" y="124" width="36" height="66" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="210" y="112" width="36" height="12" fill="var(--accent)"/>
+            <!-- Bar 7 -->
+            <rect x="250" y="112" width="36" height="78" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="250" y="98" width="36" height="14" fill="var(--accent)"/>
+            <!-- Bar 8 -->
+            <rect x="290" y="100" width="36" height="90" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="290" y="84" width="36" height="16" fill="var(--accent)"/>
+            <!-- Bar 9 -->
+            <rect x="330" y="88" width="36" height="102" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="330" y="70" width="36" height="18" fill="var(--accent)"/>
+            <!-- Bar 10 -->
+            <rect x="370" y="76" width="36" height="114" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="370" y="56" width="36" height="20" fill="var(--accent)"/>
+            <!-- Bar 11 -->
+            <rect x="410" y="64" width="36" height="126" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="410" y="42" width="36" height="22" fill="var(--accent)"/>
+            <!-- Bar 12 -->
+            <rect x="450" y="52" width="36" height="138" fill="var(--primary)" fill-opacity="0.55"/>
+            <rect x="450" y="28" width="36" height="24" fill="var(--accent)"/>
+            <circle cx="468" cy="28" r="4" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>
+          </g>
+          <!-- x-axis ticks -->
+          <text x="28" y="206" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="inherit">M1</text>
+          <text x="248" y="206" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="inherit">M6</text>
+          <text x="468" y="206" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="inherit">M12</text>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--primary);"></span>Principal per month</span>
+          <span><span class="dot" style="background:var(--accent);"></span>Cumulative interest</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>3 — Monthly bars.</strong> Each month as a column. Principal bars + tiny gold cap = interest. Reads as a paycheck timeline.</div>
+    </div>
+
+    <!-- ============ 4. Step + tick (DPS) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <line x1="6" x2="514" y1="190" y2="190" stroke="currentColor" stroke-opacity="0.10"/>
+          <!-- step line: horizontal then jump up -->
+          <path d="M 6,190 L 46,190 L 46,180 L 86,180 L 86,170 L 126,170 L 126,160 L 166,160 L 166,150 L 206,150 L 206,140 L 246,140 L 246,130 L 286,130 L 286,120 L 326,120 L 326,110 L 366,110 L 366,100 L 406,100 L 406,90 L 446,90 L 446,80 L 486,80 L 486,70 L 514,70"
+                stroke="var(--primary)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <!-- month ticks below -->
+          <g stroke="var(--muted)" stroke-opacity="0.3" stroke-width="1">
+            <line x1="46" y1="190" x2="46" y2="194"/>
+            <line x1="86" y1="190" x2="86" y2="194"/>
+            <line x1="126" y1="190" x2="126" y2="194"/>
+            <line x1="166" y1="190" x2="166" y2="194"/>
+            <line x1="206" y1="190" x2="206" y2="194"/>
+            <line x1="246" y1="190" x2="246" y2="194"/>
+            <line x1="286" y1="190" x2="286" y2="194"/>
+            <line x1="326" y1="190" x2="326" y2="194"/>
+            <line x1="366" y1="190" x2="366" y2="194"/>
+            <line x1="406" y1="190" x2="406" y2="194"/>
+            <line x1="446" y1="190" x2="446" y2="194"/>
+            <line x1="486" y1="190" x2="486" y2="194"/>
+          </g>
+          <!-- deposit dots at each step -->
+          <g fill="var(--primary)">
+            <circle cx="46" cy="180" r="2"/>
+            <circle cx="86" cy="170" r="2"/>
+            <circle cx="126" cy="160" r="2"/>
+            <circle cx="166" cy="150" r="2"/>
+            <circle cx="206" cy="140" r="2"/>
+            <circle cx="246" cy="130" r="2"/>
+            <circle cx="286" cy="120" r="2"/>
+            <circle cx="326" cy="110" r="2"/>
+            <circle cx="366" cy="100" r="2"/>
+            <circle cx="406" cy="90" r="2"/>
+            <circle cx="446" cy="80" r="2"/>
+            <circle cx="486" cy="70" r="2.5" stroke="var(--accent)" stroke-width="1.5"/>
+          </g>
+          <text x="514" y="60" text-anchor="end" font-size="11" fill="var(--accent)" font-weight="700" font-family="inherit">Maturity: ৳62,665</text>
+          <text x="6" y="206" font-size="9" fill="var(--muted)" font-family="inherit">M0 (today)</text>
+          <text x="514" y="206" text-anchor="end" font-size="9" fill="var(--muted)" font-family="inherit">M12 (matures)</text>
+        </svg>
+        <div class="legend">
+          <span><span class="line" style="background:var(--primary);"></span>Balance after each monthly deposit</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>4 — Step chart.</strong> Discrete monthly jumps. Each step = one deposit. Most literal depiction of how DPS works.</div>
+    </div>
+
+    <!-- ============ 5. Sparkline ribbon (DPS compact) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <line x1="6" x2="514" y1="190" y2="190" stroke="currentColor" stroke-opacity="0.10"/>
+          <!-- area -->
+          <path d="M 6,190 L 6,185 L 514,40 L 514,190 Z" fill="var(--primary)" fill-opacity="0.18"/>
+          <!-- only the line, no fills or dashed principal line -->
+          <path d="M 6,185 L 514,40" stroke="var(--primary)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- month markers -->
+          <g fill="var(--primary)">
+            <circle cx="50" cy="180" r="2"/>
+            <circle cx="130" cy="166" r="2"/>
+            <circle cx="220" cy="146" r="2"/>
+            <circle cx="320" cy="118" r="2"/>
+            <circle cx="420" cy="80" r="2"/>
+            <circle cx="514" cy="40" r="4" stroke="var(--accent)" stroke-width="2"/>
+          </g>
+          <!-- year axis labels -->
+          <text x="6" y="206" font-size="9" fill="var(--muted)" font-family="inherit">Aug '26</text>
+          <text x="514" y="206" text-anchor="end" font-size="9" fill="var(--muted)" font-family="inherit">Aug '27</text>
+          <!-- value labels -->
+          <text x="6" y="180" font-size="9" fill="var(--muted)" font-family="inherit">৳0</text>
+          <text x="514" y="32" text-anchor="end" font-size="10" fill="var(--accent)" font-weight="700" font-family="inherit">৳62,665</text>
+        </svg>
+        <div class="legend">
+          <span><span class="line" style="background:var(--primary);"></span>Projected balance over 12 months</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>5 — Pure sparkline.</strong> Stripped down: line + month dots + year axis. No principal reference, no fills. Cleanest possible read.</div>
+    </div>
+
+    <!-- ============ 6. Donut (FDR — big chunk) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big">৳ 1,09,000</div>
+            <div class="sub-l">At maturity · FDR</div>
+          </div>
+          <div class="pill">🏦 FDR</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <g transform="translate(100,100)">
+            <circle r="62" fill="none" stroke="var(--accent)" stroke-opacity="0.30" stroke-width="22"/>
+            <!-- interest arc: 9K of 109K = 8.26% = 29.7deg; 8.26% of circumference 2π*62 = 32.2 units -->
+            <circle r="62" fill="none" stroke="var(--primary)" stroke-width="22"
+                    stroke-dasharray="32.2 357.3" stroke-dashoffset="0"
+                    transform="rotate(-90)"/>
+            <text text-anchor="middle" y="-2" font-size="22" fill="var(--ink)" font-family="inherit" font-weight="700">91.7%</text>
+            <text text-anchor="middle" y="18" font-size="10" fill="var(--muted)" font-family="inherit">principal</text>
+          </g>
+          <g transform="translate(380,100)" font-family="inherit">
+            <rect x="-110" y="-50" width="220" height="100" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="0" y="-22" text-anchor="middle" font-size="10" fill="var(--muted)" font-weight="600" letter-spacing="0.08em">AT MATURITY</text>
+            <text x="0" y="2" text-anchor="middle" font-size="26" fill="var(--ink)" font-weight="700" font-variant-numeric="tabular-nums">৳1,09,000</text>
+            <text x="0" y="24" text-anchor="middle" font-size="11" fill="var(--primary)" font-weight="700">+ ৳9,000 interest</text>
+            <text x="0" y="42" text-anchor="middle" font-size="10" fill="var(--muted)">12 months · 9% APR</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--accent);"></span>Principal · 1,00,000</span>
+          <span><span class="dot" style="background:var(--primary);"></span>Interest · 9,000</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 1,00,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 9,000</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>6 — Donut (FDR).</strong> Same donut pattern but for FDR. The 9K interest is a visible green sliver — proportionally similar to DPS.</div>
+    </div>
+
+    <!-- ============ 7. Lollipop (DPS) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big primary">৳ 62,665</div>
+            <div class="sub-l">At maturity · DPS</div>
+          </div>
+          <div class="pill">📅 DPS</div>
+        </div>
+        <svg class="chart" viewBox="0 0 520 200" preserveAspectRatio="none">
+          <line x1="6" x2="514" y1="190" y2="190" stroke="currentColor" stroke-opacity="0.10"/>
+          <!-- lollipops: thin stem + dot at the top, showing year-end balance -->
+          <g>
+            <line x1="50" y1="190" x2="50" y2="184" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="50" cy="184" r="5" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="50" y="176" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">5K</text>
+
+            <line x1="120" y1="190" x2="120" y2="170" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="120" cy="170" r="5" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="120" y="162" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">10K</text>
+
+            <line x1="190" y1="190" x2="190" y2="150" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="190" cy="150" r="5" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="190" y="142" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">15K</text>
+
+            <line x1="260" y1="190" x2="260" y2="120" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="260" cy="120" r="5" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="260" y="112" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">22K</text>
+
+            <line x1="330" y1="190" x2="330" y2="86" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="330" cy="86" r="6" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="330" y="78" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">32K</text>
+
+            <line x1="400" y1="190" x2="400" y2="58" stroke="var(--primary)" stroke-width="1.5"/>
+            <circle cx="400" cy="58" r="6" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="400" y="50" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="inherit">42K</text>
+
+            <line x1="470" y1="190" x2="470" y2="22" stroke="var(--accent)" stroke-width="2"/>
+            <circle cx="470" cy="22" r="7" fill="var(--accent)" stroke="var(--bg)" stroke-width="2"/>
+            <text x="470" y="14" text-anchor="middle" font-size="10" fill="var(--accent)" font-weight="700" font-family="inherit">৳62,665</text>
+          </g>
+          <text x="6" y="206" font-size="9" fill="var(--muted)" font-family="inherit">M0</text>
+          <text x="514" y="206" text-anchor="end" font-size="9" fill="var(--muted)" font-family="inherit">M12</text>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--primary); border-radius:50%;"></span>Bi-monthly snapshots</span>
+          <span><span class="dot" style="background:var(--accent); border-radius:50%;"></span>At maturity</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 60,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 2,665</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>7 — Lollipop.</strong> Discrete snapshots, value labelled on each. Reads as checkpoints, not a continuous curve. Quieter than a line.</div>
+    </div>
+
+    <!-- ============ 8. Compact stat + sparkline (FDR) ============ -->
+    <div class="variant">
+      <div class="card">
+        <div class="head">
+          <div>
+            <div class="tag-label">Projection</div>
+            <div class="big">৳ 1,09,000</div>
+            <div class="sub-l">At maturity · FDR</div>
+          </div>
+          <div class="pill">🏦 FDR</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: center;">
+          <div>
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:6px; height:6px; border-radius:50%; background:var(--accent);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Principal</div>
+                  <div style="font-size:18px; font-weight:700; color:var(--ink); margin-top:3px; font-variant-numeric:tabular-nums;">৳ 1,00,000</div>
+                </div>
+                <div style="font-size:13px; color:var(--muted); font-weight:600;">91.7%</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:6px; height:6px; border-radius:50%; background:var(--primary);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Interest earned</div>
+                  <div style="font-size:18px; font-weight:700; color:var(--primary); margin-top:3px; font-variant-numeric:tabular-nums;">৳ 9,000</div>
+                </div>
+                <div style="font-size:13px; color:var(--primary); font-weight:600;">+8.3%</div>
+              </div>
+              <div style="height:6px; background:var(--surface-2); border-radius:999px; overflow:hidden; display:flex;">
+                <div style="background:var(--accent); flex:91.7;"></div>
+                <div style="background:var(--primary); flex:8.3;"></div>
+              </div>
+            </div>
+          </div>
+          <svg viewBox="0 0 240 130" style="width:100%; height:130px;">
+            <!-- tiny sparkline -->
+            <path d="M 6,124 L 240,18" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="240" cy="18" r="4" fill="var(--primary)" stroke="var(--bg)" stroke-width="1.5"/>
+            <text x="240" y="10" text-anchor="end" font-size="10" fill="var(--primary)" font-weight="700" font-family="inherit">৳1.09L</text>
+            <text x="6" y="124" font-size="9" fill="var(--muted)" font-family="inherit">৳1.00L</text>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><span class="line" style="background:var(--accent);"></span>Balance over 12 months</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">You put in</div><div class="stat-val">৳ 1,00,000</div></div>
+          <div class="stat"><div class="stat-label">You earn</div><div class="stat-val accent">৳ 9,000</div></div>
+          <div class="stat"><div class="stat-label">Matures</div><div class="stat-val">31 Aug 2027</div></div>
+        </div>
+      </div>
+      <div class="caption"><strong>8 — Composition + tiny sparkline.</strong> For FDR where interest is small. The numbers do the work; chart is decorative.</div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

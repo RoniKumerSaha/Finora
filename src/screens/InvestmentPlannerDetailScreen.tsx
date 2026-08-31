@@ -24,16 +24,12 @@ import {
   investmentPlanInterest,
   investmentPlanMaturityValue,
   investmentPlanTotalContributed,
-  projectionSeries,
 } from '../domain/investmentPlans';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input, Select } from '../components/Field';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
-import {
-  InvestmentRibbonChart,
-  InvestmentRibbonLegend,
-} from '../components/planner/InvestmentRibbonChart';
+import { InvestmentDonut } from '../components/planner/InvestmentDonut';
 import { InvestmentTypeBadge, investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
 import { fmtBDT, fmtDate } from '../lib/format';
 import type { InvestmentType } from '../domain/types';
@@ -91,7 +87,6 @@ export function InvestmentPlannerDetailScreen() {
   const matValue = investmentPlanMaturityValue(livePlan);
   const totalContributed = investmentPlanTotalContributed(livePlan);
   const interest = investmentPlanInterest(livePlan);
-  const series = projectionSeries(livePlan);
   const bandColor = investmentTypeColor(type);
   const matDateISO = (() => {
     const term = Number(termMonths) || 0;
@@ -182,26 +177,44 @@ export function InvestmentPlannerDetailScreen() {
           </div>
         </div>
 
-        {/* Two-tone ribbon: one balance curve that splits colour
-            at the principal line. Every pixel above the dashed line
-            is bank interest; everything below is your money. */}
-        <div className="text-muted">
-          <InvestmentRibbonChart
-            series={series}
-            principal={totalContributed}
-            width={520}
-            height={112}
+        {/* Donut + summary. The donut shows the composition of the
+            maturity value: the dark ring is your money, the bright
+            arc is interest earned. Honest about the 9% FDR case
+            where a line chart would have been a flat lie. */}
+        <div className="grid grid-cols-[auto_1fr] items-center gap-5">
+          <InvestmentDonut
+            total={matValue}
+            invested={totalContributed}
+            interest={interest}
+            investedColor="var(--primary)"
+            interestColor="var(--accent)"
+            size={128}
+            strokeWidth={18}
             ariaLabel={
               type === 'dps'
                 ? `DPS projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${Number(termMonths) || 0} months`
                 : `${type.toUpperCase()} projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${Number(termMonths) || 0} months`
             }
           />
+          <div className="flex flex-col gap-2.5 min-w-0">
+            <LegendRow
+              swatch="var(--primary)"
+              label="Your money"
+              value={fmtBDT(totalContributed)}
+              pct={matValue > 0 ? Math.round((totalContributed / matValue) * 100) : 0}
+            />
+            <LegendRow
+              swatch="var(--accent)"
+              label="Interest earned"
+              value={fmtBDT(interest)}
+              pct={matValue > 0 ? Math.round((interest / matValue) * 100) : 0}
+              valueClass="text-accent"
+            />
+            <div className="text-[11px] text-muted mt-0.5">
+              Composition at maturity, over {Number(termMonths) || 0} months
+            </div>
+          </div>
         </div>
-        <InvestmentRibbonLegend
-          investedLabel="Your money (below the dashed line)"
-          interestLabel="Interest earned (above)"
-        />
 
         {/* Chip row: you put in / you earn / matures */}
         <div className="flex flex-wrap gap-2">
@@ -304,6 +317,33 @@ export function InvestmentPlannerDetailScreen() {
 }
 
 /* ── Tiny presentational atoms ──────────────────────────────────── */
+
+function LegendRow({
+  swatch, label, value, pct, valueClass = 'text-ink',
+}: {
+  swatch: string;
+  label: string;
+  value: string;
+  pct: number;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 min-w-0">
+      <span
+        aria-hidden
+        className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+        style={{ background: swatch }}
+      />
+      <div className="flex-1 min-w-0 flex items-baseline justify-between gap-3">
+        <span className="text-[12.5px] text-muted truncate">{label}</span>
+        <span className={`text-[13px] font-semibold tabular shrink-0 ${valueClass}`}>
+          {value}{' '}
+          <span className="text-muted font-normal">· {pct}%</span>
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function Chip({ label, value, tone }: { label: string; value: string; tone: 'neutral' | 'accent' }) {
   const isAccent = tone === 'accent';
