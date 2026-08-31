@@ -151,8 +151,11 @@ function DebtCard({ debt: d }: { debt: any }) {
         }}
       />
       {/* Top row — horizontal split: identity (left) + remaining (right),
-          separated by a 1px divider. Mirrors the investment card. */}
-      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-5 pb-4">
+          separated by a 1px divider. Mirrors the investment card.
+          Padding trimmed from pt-5 pb-4 → pt-4 pb-3 so the top block
+          lands at the same height as the investment card; the progress
+          strip below provides the card's breathing room. */}
+      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-4 pb-3">
         {/* Left zone — direction tag, icon, name, meta. */}
         <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
           {/* Direction tag — top-left, uppercase, muted. The first thing
@@ -170,7 +173,10 @@ function DebtCard({ debt: d }: { debt: any }) {
                 ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
                 : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />}
             </div>
-            <div className="font-semibold text-[16px] tracking-tight leading-tight line-clamp-2 min-h-[2.7em]">
+            {/* Single-line name. Matches the investment / loan card
+                so short names don't reserve a phantom second line of
+                vertical space. Long names still truncate with ellipsis. */}
+            <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
               {d.name}
             </div>
           </div>
@@ -211,8 +217,10 @@ function DebtCard({ debt: d }: { debt: any }) {
       </div>
 
       {/* Progress strip — full card width, sits below the divider row.
-          Thin (h-1.5) so it doesn't compete with the headline amounts. */}
-      <div className="px-6 pb-5">
+          Thin (h-1.5) so it doesn't compete with the headline amounts.
+          Bottom padding trimmed from pb-5 → pb-4 to keep the card
+          compact once the top row is shorter. */}
+      <div className="px-6 pb-4">
         <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
           <div
             className={`h-full rounded-pill ${barFill} transition-all duration-200`}
