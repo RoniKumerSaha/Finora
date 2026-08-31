@@ -24,7 +24,7 @@ import {
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
-import { cardSurfaceStyle, investmentTone, leftBarClass, pairTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 export function InvestmentPlannerScreen() {
   const navigate = useNavigate();
@@ -172,15 +172,11 @@ function PlannerSummary({
   let totalNow = 0;
   let totalProjected = 0;
   for (const plan of plans) {
-    const contributed = investmentPlanTotalContributed(plan);
-    const matValue = investmentPlanMaturityValue(plan);
-    // For DPS, NOW = what they've actually committed (the principal
-    //   line). For FDR / savings, NOW = the principal itself (it's all
-    //   locked up on day 0). Mirrors `showBoth` in the card.
-    const isDps = plan.type === 'dps';
-    const now = isDps ? contributed : contributed;
-    totalNow += now;
-    totalProjected += matValue;
+    // NOW = total contributed (or principal, for FDR / savings — it's
+    // all locked up on day 0). Projection = maturity value. Same math
+    // the list card uses to render NOW + AT MATURITY for every type.
+    totalNow += investmentPlanTotalContributed(plan);
+    totalProjected += investmentPlanMaturityValue(plan);
   }
   const showProjection = totalProjected - totalNow > 0;
 
@@ -271,7 +267,7 @@ function InvestmentPlanCard({
         : matDate
           ? `Matured ${-days}d ago`
           : '';
-  const showBoth = isDps && matValue - totalContributed > 1;
+  const showBoth = matValue - totalContributed > 1;
 
   return (
     <button
@@ -380,15 +376,13 @@ function InvestmentPlanCard({
         style={{ background: 'var(--divider)' }}
       />
 
-      {/* Right zone — amounts, right-aligned. NOW is the hero (what
-          the user has tied up right now in this projection = the
-          contributions or principal they've set aside); AT MATURITY
-          is the smaller projected value below. For DPS, NOW collapses
-          to the principal since the bank's running value can't be
-          computed without a contribution history. sm:min-w-[200px]
-          matches the real card. NOW picks up the card tone (hero);
-          AT MATURITY picks up the pair tone so the two figures read
-          as distinct values. */}
+      {/* Right zone — amounts, right-aligned. NOW is the hero (24px,
+          card tone); AT MATURITY is intentionally much smaller (12px,
+          ink) so the eye lands on NOW first. sm:min-w-[200px]
+          matches the real card. Hierarchy via size alone — no colour
+          shift needed. Both DPS and FDR/Savings show the pair
+          whenever there's projected growth (> 1৳); mirrors the real
+          list card so the two surfaces read identically. */}
       <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
         <div className="flex flex-col items-end leading-none">
           <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
@@ -403,7 +397,7 @@ function InvestmentPlanCard({
             <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
               At maturity
             </span>
-            <span className={`font-bold tabular text-[15px] mt-1 ${toneTextClass(pairTone(cardTone))}`}>
+            <span className="font-semibold tabular text-[12px] text-ink mt-1">
               {fmtBDT(matValue)}
             </span>
           </div>

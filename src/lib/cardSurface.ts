@@ -1,15 +1,16 @@
 /**
- * Card surface styles — the shared "warm gradient + bg tint" treatment
- * applied to list-card surfaces across the app (Accounts, Debts,
- * Investments, Investment plans, Loan plans).
+ * Card surface styles — the shared tone helpers used by list-card
+ * surfaces across the app. As of 2026-08-31 the "warm gradient + bg
+ * tint" wash is applied to two surfaces: the Accounts list card and
+ * every Investment card (real list, planned list, planner detail
+ * hero). Everything else (Debts, Loan plans, etc.) keeps only the
+ * 3px left accent bar + tone-themed pills/figures.
  *
- * The wash is theme-aware: it uses `var(--bg)` as the mix target so the
- * same percentage renders darker in dark mode (mixes with deep teal)
- * and lighter in light mode (mixes with paper white). Together with the
- * `leftBarClass` colour, every card in the app shares the same visual
- * signature.
- *
- * 2026-08-31 component-consistency: extracted from AccountsListScreen.
+ * The wash is theme-aware: it uses `var(--bg)` as the mix target so
+ * the same percentage renders darker in dark mode (mixes with deep
+ * teal) and lighter in light mode (mixes with paper white). Together
+ * with the `leftBarClass` colour, every washed card shares the same
+ * visual signature.
  */
 
 import type { CSSProperties } from 'react';
@@ -38,15 +39,20 @@ const BAR_CLASS: Record<CardTone, string> = {
 };
 
 /**
- * Returns a CSSProperties object to apply on a card surface. The result
- * combines:
+ * Returns the warm-gradient wash + bg tint for a card surface. Used by
+ * the Accounts list card and every Investment card (real list,
+ * planned list, planner detail hero) — the two surfaces that benefit
+ * from a "this card is part of a story" wash without flattening the
+ * visual hierarchy. Other card surfaces (Debts, Loan plans, etc.)
+ * intentionally leave the wash off so they read as quieter rows.
+ *
  *   - a 14%-opaque page-background tint (so the card sits a touch
  *     deeper than the page — gives the wash somewhere to anchor)
  *   - a top-down linear gradient using the tone colour, blended with
  *     `var(--bg)` so the gradient darkens in dark mode and tints
  *     deeper in light mode. Stronger than the previous wash so the
- *     account card carries a clear "this is part of a story" tint
- *     even in light mode.
+ *     card carries a clear "this is part of a story" tint even in
+ *     light mode.
  *
  * Use as `style={cardSurfaceStyle(tone)}` on any `.card` element.
  */
@@ -153,37 +159,4 @@ export function toneTextClass(tone: CardTone): string {
 /** `bg-*` class — for solid-fill chips / progress bars. */
 export function toneFillClass(tone: CardTone): string {
   return TONE_FILL[tone];
-}
-
-/** CSS color value — for the donut / progress bar fill style. */
-export function toneVar(tone: CardTone): string {
-  return TONE_VAR[tone];
-}
-
-/**
- * Pair tone for the secondary figure on an investment card. NOW uses
- * the card tone (hero); AT MATURITY uses the pair tone so the two
- * values read as distinct figures in the same color family but
- * different shades. Mappings:
- *
- *   primary → accent     (DPS: green NOW, gold AT MATURITY)
- *   accent  → primary    (FDR: gold NOW, green AT MATURITY)
- *   info    → accent     (Savings: blue NOW, gold AT MATURITY)
- *   danger  → warn       (Loans: red NOW, amber AT MATURITY — unused
- *                         on real investment cards but kept for
- *                         symmetry)
- *   warn    → danger
- *   success → primary
- *   muted   → muted
- */
-export function pairTone(tone: CardTone): CardTone {
-  switch (tone) {
-    case 'primary': return 'accent';
-    case 'accent':  return 'primary';
-    case 'info':    return 'accent';
-    case 'danger':  return 'warn';
-    case 'warn':    return 'danger';
-    case 'success': return 'primary';
-    default:        return 'muted';
-  }
 }

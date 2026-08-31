@@ -12,10 +12,13 @@
  * Reset already navigated; no change there.
  *
  * Layout (top to bottom):
- *   1. Save/Reset toolbar
+ *   1. Header (title + Delete + Back)
  *   2. Hero projection card (sparkline + chip row)
  *   3. Form card (name, type, principal / installment, rate, term, dates)
- *   4. Delete affordance (with confirmation)
+ *   4. Save/Reset toolbar (sticky-bottom so the user can save without
+ *      scrolling back up — the form is taller than one screen on most
+ *      devices and "scroll-up to save" was the main UX papercut).
+ *   5. Delete affordance (with confirmation)
  */
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -139,18 +142,6 @@ export function InvestmentPlannerDetailScreen() {
           <Button variant="ghost" onClick={() => navigate('/plan/invest')}>Back</Button>
         </div>
       </header>
-
-      <SaveResetBar
-        dirty={plan.dirty}
-        onReset={() => {
-          resetInvestmentPlan(plan.id);
-          navigate('/plan/invest');
-        }}
-        onSave={() => {
-          saveInvestmentPlan(plan.id);
-          navigate('/plan/invest');
-        }}
-      />
 
       {/* Hero projection card. Always renders — even with 0 inputs —
          so the user sees the projection react in real time as they
@@ -314,6 +305,24 @@ export function InvestmentPlannerDetailScreen() {
           </Field>
         </div>
       </section>
+
+      {/* Save/reset lives at the bottom of the form so the user can
+         commit without scrolling back up. Sticky to the bottom of the
+         viewport on small screens (where the form is taller than
+         one screen); inline-stacked on wider screens. */}
+      <div className="sticky bottom-2 z-10">
+        <SaveResetBar
+          dirty={plan.dirty}
+          onReset={() => {
+            resetInvestmentPlan(plan.id);
+            navigate('/plan/invest');
+          }}
+          onSave={() => {
+            saveInvestmentPlan(plan.id);
+            navigate('/plan/invest');
+          }}
+        />
+      </div>
 
       <section className="text-[11px] text-muted text-center">
         Plans never touch your ledger.

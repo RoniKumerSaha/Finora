@@ -10,6 +10,13 @@
  * of Month Planner's JarEditorModal). 4-step colour ramp + frosted
  * pills applied to category cards. Summary strip recoloured to match
  * the Month Planner's status-driven treatment.
+ *
+ * 2026-08-31 polish: Reset / Save plan moved off the top summary strip
+ * into a sticky-bottom bar. The status dot + summary pills (Allocated /
+ * Paid / Days to go) stay at the top — they're information the user
+ * scans — but the actions now live where the user actually finishes
+ * their work, so they don't have to scroll back up after editing a
+ * category.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -216,6 +223,12 @@ export function EventPlanDetailScreen() {
         </div>
       </div>
 
+      {/* Status + summary strip. The Reset + Save buttons used to live
+          here on the right; they moved to a sticky bottom bar so the
+          user can save without scrolling back up after editing a
+          category. The status dot + summary pills (allocated / paid /
+          days to go) are *information* the user scans, so they stay at
+          the top where they're always visible. */}
       <div className="card flex flex-wrap items-center gap-3 sm:gap-5 px-4 py-3">
         <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
           <span
@@ -275,25 +288,6 @@ export function EventPlanDetailScreen() {
               </>
             );
           })()}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="ghost" onClick={async () => {
-            // Reset drops every working-draft edit on the event —
-            // confirm before discarding, since the user may have
-            // typed per-category amounts they don't want to lose.
-            const ok = await confirm({
-              title: `Reset ${plan.name}?`,
-              body: 'The event will be blanked back to a clean slate — budget set to 0, date moved to today, every category removed.',
-              dangerText: 'Everything you\u2019ve planned on this event is wiped — this can\u2019t be undone.',
-              confirmLabel: 'Reset',
-              danger: true,
-            });
-            if (!ok) return;
-            resetEvent(plan.id);
-            setSelectedCatId(null);
-            setNewCatDraft(null);
-          }}>Reset</Button>
-          <Button variant="primary" onClick={() => saveEvent(plan.id)}>Save plan</Button>
         </div>
       </div>
 
@@ -459,6 +453,38 @@ export function EventPlanDetailScreen() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Sticky-bottom Save/Reset bar. Lives at the bottom of the
+          viewport so the user can save without scrolling back to the
+          top of the page after editing a category — the timeline +
+          categories panel is taller than most viewports on phones. */}
+      <div className="sticky bottom-3 z-20 mt-2 flex justify-end gap-2 px-1">
+        <Button
+          variant="ghost"
+          className="bg-surface/95 backdrop-blur-sm"
+          onClick={async () => {
+            // Reset drops every working-draft edit on the event —
+            // confirm before discarding, since the user may have
+            // typed per-category amounts they don't want to lose.
+            const ok = await confirm({
+              title: `Reset ${plan.name}?`,
+              body: 'The event will be blanked back to a clean slate — budget set to 0, date moved to today, every category removed.',
+              dangerText: 'Everything you\u2019ve planned on this event is wiped — this can\u2019t be undone.',
+              confirmLabel: 'Reset',
+              danger: true,
+            });
+            if (!ok) return;
+            resetEvent(plan.id);
+            setSelectedCatId(null);
+            setNewCatDraft(null);
+          }}
+        >Reset</Button>
+        <Button
+          variant="primary"
+          className="shadow-md"
+          onClick={() => saveEvent(plan.id)}
+        >Save plan</Button>
       </div>
 
       <div className="text-xs text-muted text-center">

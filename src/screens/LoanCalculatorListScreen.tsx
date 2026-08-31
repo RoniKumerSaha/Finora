@@ -6,7 +6,12 @@
  * right, total interest under it. A "PLANNED" pill flags that these
  * are projections, not real debts. The only differences from the
  * investment card are the danger-tinted accent (loans are about
- * cost) and the "interest you'll pay" copy.
+ * cost), the danger-tinted wash, and the "interest you'll pay" copy.
+ *
+ * 2026-08-31: restored the warm-gradient wash (was off during the
+ * "Accounts-only wash" interlude). The planned-loan page now reads as
+ * a sibling of the planned-investment and real-debt cards — all three
+ * list surfaces carry the same wash; only the tone differs.
  *
  * Tap through to edit inputs or inspect the full amortization table.
  */
@@ -221,10 +226,14 @@ export function LoanCalculatorListScreen() {
                       </span>
                     </div>
                     <div className="flex flex-col items-end leading-none">
-                      <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+                      {/* White on the danger wash — the previous text-danger
+                          was red-on-red and disappeared into the wash.
+                          The label sits at 70% white so it still reads
+                          as a subdued label, not a competing hero figure. */}
+                      <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">
                         Total you pay
                       </span>
-                      <span className="font-bold tabular text-[15px] text-danger mt-1">
+                      <span className="font-bold tabular text-[15px] text-white mt-1">
                         {fmtBDT(s.totalPaid)}
                       </span>
                     </div>

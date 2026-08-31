@@ -203,13 +203,16 @@ function DebtCard({ debt: d }: { debt: any }) {
           encoded: danger for i_owe, primary for owed_to_me. */}
       <span
         aria-hidden
-        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none z-[1] ${leftBarClass(cardTone)}`}
+        className={`absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full pointer-events-none z-[1] ${leftBarClass(cardTone)}`}
       />
       {/* Top row — horizontal split: identity (left) + remaining/outstanding
-          (right), separated by a 1px divider. Mirrors the investment card. */}
-      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-4 pb-3">
+          (right), separated by a 1px divider. Mirrors the investment card.
+          Padding tightened to pt-2.5 pb-2 + inner gap-1 (down from gap-1.5
+          + py-0.5) so the card reads as one line of identity plus a
+          compact second row. */}
+      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-2.5 pb-2">
         {/* Left zone — direction tag, icon, name, meta. */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
           {/* Direction tag — top-left, uppercase, muted. The first thing
               the user scans so the polarity of the card is clear before
               reading the number. */}
@@ -293,7 +296,7 @@ function DebtCard({ debt: d }: { debt: any }) {
           left (flex-1); Pay-now chip on the right when this is a
           loan-kind active debt. z-[1] on the button keeps it clickable
           above the full-card <Link>. */}
-      <div className="px-6 pb-4 flex items-center gap-4">
+      <div className="px-6 pb-2.5 flex items-center gap-4">
         <div className="flex-1 min-w-0">
           <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
             <div
@@ -301,7 +304,7 @@ function DebtCard({ debt: d }: { debt: any }) {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="text-[10.5px] text-muted tabular mt-1.5">{pct}% paid</div>
+          <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
         </div>
         {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.
             Bottom-right of the card, opposite the figures up top.
@@ -314,21 +317,33 @@ function DebtCard({ debt: d }: { debt: any }) {
             primary stripe for owed_to_me. z-[1] so it stays
             clickable above the full-card <Link>. */}
         {isLoan && d.status === 'active' && (
-          // Tinted pill with a solid danger border — matches the
-          // icon-tile vocabulary used elsewhere on the card (soft
-          // tint fill + 1px tone border + tone-coloured text + dot).
-          // A plain <button> instead of <Button> so we control every
-          // aspect without fighting shared variant/size classes.
+          // Solid filled chip — the strongest call-to-action on the
+          // card. Matches fintech convention (Revolut/Wise solid pills
+          // for primary actions). Dark crimson fill + white text +
+          // white dot. A plain <button> instead of <Button> so we
+          // control every aspect without fighting shared
+          // variant/size classes.
           <button
             type="button"
             onClick={openPay}
             title={`Record a payment toward "${d.name}"`}
-            className="shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 bg-danger-soft text-danger text-[13px] font-bold tracking-tight border border-danger hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition active:translate-y-px"
+            // Darker crimson than the theme --danger surface tone.
+            // The base --danger is too pale in light mode (#DC8678
+            // salmon) and not punchy enough in dark mode (#B03222 —
+            // fine, but feels washed next to the deep bg). We darken
+            // both modes toward pure black so the chip lands in the
+            // same deep-oxblood range regardless of theme, giving
+            // white text the contrast it needs. Mixing with `black`
+            // (not --ink or --danger-on, both of which are white in
+            // dark mode and would *lighten* the chip there) keeps it
+            // consistently dark across themes.
+            style={{ background: 'color-mix(in srgb, var(--danger) 65%, black)' }}
+            className="shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition active:translate-y-px"
           >
-            {/* Filled dot — solid danger on the soft tint fill. */}
+            {/* Filled dot — solid white on the dark-red surface. */}
             <span
               aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-danger"
+              className="inline-block w-1.5 h-1.5 rounded-full bg-white"
             />
             Pay now
           </button>

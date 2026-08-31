@@ -28,7 +28,7 @@ import {
   daysToMaturity,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, investmentTone, leftBarClass, pairTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
 
@@ -170,7 +170,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
       : days === 0
         ? 'Matures today'
         : `Matured ${-days}d ago`;
-  const showBoth = isDps && projected - current > 1;
+  const showBoth = projected - current > 1;
   return (
     <Link
       to={`/investments/${inv.id}`}
@@ -226,10 +226,13 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
       {/* Right zone — amounts, right-aligned. flex flex-col + items-end
           keeps the figures right-aligned and lets "At maturity" stack
           under "Now". shrink-0 prevents the right zone from being
-          squeezed when the left zone gets long names. The "Now"
-          hero picks up the card tone. "At maturity" picks up the
-          pair tone — a contrasting shade in the same family so the
-          two figures read as distinct values. */}
+          squeezed when the left zone gets long names. NOW is the
+          hero (24px, card tone); AT MATURITY is intentionally much
+          smaller (12px, ink) so the eye lands on NOW first.
+          Hierarchy via size alone — no colour shift needed. Both
+          DPS and FDR/Savings show the pair whenever there's projected
+          growth (> 1৳); the previous DPS-only gate is gone since
+          every type carries a meaningful NOW vs AT MATURITY split. */}
       <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
         <div className="flex flex-col items-end leading-none">
           <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
@@ -244,7 +247,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
             <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
               At maturity
             </span>
-            <span className={`font-bold tabular text-[15px] mt-1 ${toneTextClass(pairTone(cardTone))}`}>
+            <span className="font-semibold tabular text-[12px] text-ink mt-1">
               {fmtBDT(projected)}
             </span>
           </div>

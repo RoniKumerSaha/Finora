@@ -33,7 +33,32 @@ import { EmptyState, AccountsIllustration } from '../components/EmptyState';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT, fmtRelative } from '../lib/format';
-import { cardSurfaceStyle, leftBarClass, type CardTone } from '../lib/cardSurface';
+import { leftBarClass, type CardTone } from '../lib/cardSurface';
+
+/**
+ * Inline wash for the account card — the only card surface in the app
+ * that still carries the warm gradient. Lives locally because the
+ * shared `cardSurfaceStyle` helper was removed (no other screen uses
+ * it). Combines:
+ *   - a 14%-opaque page-bg tint
+ *   - a top-down linear gradient using the tone colour, blended with
+ *     `var(--bg)` so the wash darkens in dark mode and tints deeper in
+ *     light mode.
+ */
+function accountCardSurfaceStyle(tone: CardTone): React.CSSProperties {
+  const toneVar =
+    tone === 'primary' ? 'var(--primary)' :
+    tone === 'danger'  ? 'var(--danger)'  :
+    tone === 'accent'  ? 'var(--accent)'  :
+    tone === 'warn'    ? 'var(--warn)'    :
+    tone === 'success' ? 'var(--success)' :
+    tone === 'info'    ? 'var(--info)'    :
+                         'var(--muted)';
+  return {
+    backgroundColor: 'color-mix(in srgb, var(--bg) 14%, transparent)',
+    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 10%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 8%, transparent) 35%, transparent 80%)`,
+  };
+}
 
 export function AccountsListScreen() {
   const state = useStore(s => s.state);
@@ -130,7 +155,7 @@ export function AccountsListScreen() {
                 key={a.id}
                 to={`/accounts/${a.id}/edit`}
                 className={`card card-link relative overflow-hidden flex flex-col gap-3 pl-7 pr-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30`}
-                style={cardSurfaceStyle(cardTone)}
+                style={accountCardSurfaceStyle(cardTone)}
               >
                 {/* 3px left accent strip — same colour as the wash. */}
                 <span

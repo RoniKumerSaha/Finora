@@ -82,43 +82,23 @@ export function MonthPlanScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl w-full">
-      {/* Toolbar row — saved status + Reset + Save plan, all on a
-          single row above the heading so the save/reset affordances
-          are the first thing the user sees no matter how far they
-          scroll. */}
-      <div className="flex flex-wrap items-center gap-3 sm:gap-5">
-        <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
-          <span
-            aria-hidden
-            className="w-2 h-2 rounded-full"
-            style={{
-              background: plan.dirty ? 'var(--warn)' : 'var(--success)',
-              boxShadow: `0 0 0 3px color-mix(in srgb, ${plan.dirty ? 'var(--warn)' : 'var(--success)'} 25%, transparent)`,
-            }}
-          />
-          <span>
-            {plan.dirty ? <>Unsaved changes</> : <>Saved</>}
-          </span>
-        </div>
-        <div className="hidden sm:block h-5 w-px bg-border" aria-hidden />
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
-          <Button variant="ghost" onClick={async () => {
-            // Reset wipes income + every item back to the plan's saved
-            // state — confirm before discarding the working draft.
-            const ok = await confirm({
-              title: 'Reset month plan?',
-              body: 'Your working draft will be discarded and the plan will snap back to the last saved state.',
-              dangerText: 'Income and every item value are reverted — this can\u2019t be undone.',
-              confirmLabel: 'Reset',
-              danger: true,
-            });
-            if (!ok) return;
-            resetPlan(activeKey);
-            setSelectedCatId(null);
-            setNewItemOpen(false);
-          }}>Reset</Button>
-          <Button variant="primary" onClick={() => savePlan(activeKey)}>Save plan</Button>
-        </div>
+      {/* Status row — saved/dirty indicator only, shown at the top so
+          the user can see at a glance whether they have unsaved changes.
+          The actual Reset + Save actions live in a sticky bottom bar
+          below — they're the things the user needs to *reach*, while
+          the indicator is something they just need to *see*. */}
+      <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
+        <span
+          aria-hidden
+          className="w-2 h-2 rounded-full"
+          style={{
+            background: plan.dirty ? 'var(--warn)' : 'var(--success)',
+            boxShadow: `0 0 0 3px color-mix(in srgb, ${plan.dirty ? 'var(--warn)' : 'var(--success)'} 25%, transparent)`,
+          }}
+        />
+        <span>
+          {plan.dirty ? <>Unsaved changes</> : <>Saved</>}
+        </span>
       </div>
 
       <div className="flex items-end justify-between gap-3 flex-wrap">
@@ -306,6 +286,41 @@ export function MonthPlanScreen() {
         }}
         onOpenEditor={() => setBatchEditorOpen(true)}
       />
+
+      {/* Sticky-bottom Save/Reset bar. Lives at the bottom of the
+          viewport so the user can save without scrolling back to the
+          top of the page — the items grid is taller than most viewports
+          on phones. Hidden when the BatchFloatingBar (selection mode)
+          is active so the two bottom bars don't fight for the same
+          32px of screen real estate. */}
+      {!selectionMode && (
+        <div className="sticky bottom-3 z-20 mt-2 flex justify-end gap-2 px-1">
+          <Button
+            variant="ghost"
+            className="bg-surface/95 backdrop-blur-sm"
+            onClick={async () => {
+              // Reset wipes income + every item back to the plan's saved
+              // state — confirm before discarding the working draft.
+              const ok = await confirm({
+                title: 'Reset month plan?',
+                body: 'Your working draft will be discarded and the plan will snap back to the last saved state.',
+                dangerText: 'Income and every item value are reverted — this can\u2019t be undone.',
+                confirmLabel: 'Reset',
+                danger: true,
+              });
+              if (!ok) return;
+              resetPlan(activeKey);
+              setSelectedCatId(null);
+              setNewItemOpen(false);
+            }}
+          >Reset</Button>
+          <Button
+            variant="primary"
+            className="shadow-md"
+            onClick={() => savePlan(activeKey)}
+          >Save plan</Button>
+        </div>
+      )}
 
       {/* Editor modal — same Custom / Same amount / Adjust % / Clear
           modes as before. Single store write per apply so the dirty
