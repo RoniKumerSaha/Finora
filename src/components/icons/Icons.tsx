@@ -163,6 +163,16 @@ export function NavSettings(props: IconProps) {
 
 /* ---------------- UI primitives ---------------- */
 
+/** Clock — circle with two hands, used for time-to-event on Plan. */
+export function Clock(props: IconProps) {
+  return (
+    <svg {...COMMON} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
 /** Hamburger menu — three horizontal lines. */
 export function Menu(props: IconProps) {
   return (

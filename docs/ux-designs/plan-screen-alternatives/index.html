@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Plan screen — alternative designs</title>
+<!--
+  Plan screen — four alternative directions.
+
+  Goal: less information, more clarity. The current live page has four
+  cards each carrying eyebrow + title + body + status pill + chart +
+  legend + footer = ~9 elements per card. The alternatives below each
+  cut that down to the essentials: one label, one number, one CTA.
+
+  Tokens reused from the live app:
+    --bg           #1E2A26
+    --surface      #253229
+    --surface-2    #2E3C34
+    --ink          #F1F3EF
+    --muted        #94A59C
+    --primary      #7DD4B5
+    --primary-on   #0F1419
+    --accent       #D9B26B
+    --danger       #DC8678
+    --border       #324139
+-->
+<style>
+  :root {
+    --bg:           #1E2A26;
+    --surface:      #253229;
+    --surface-2:    #2E3C34;
+    --surface-3:    #3A4A42;
+    --ink:          #F1F3EF;
+    --muted:        #94A59C;
+    --muted-2:      #647068;
+    --primary:      #7DD4B5;
+    --primary-on:   #0F1419;
+    --primary-soft: rgba(125, 212, 181, 0.22);
+    --accent:       #D9B26B;
+    --accent-soft:  rgba(217, 178, 107, 0.18);
+    --danger:       #DC8678;
+    --danger-soft:  rgba(220, 134, 120, 0.22);
+    --warn:         #F8CE82;
+    --border:       #324139;
+    --border-2:     #28332D;
+    --radius-card:  12px;
+    --radius-btn:   10px;
+    --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(0, 0, 0, 0.32);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ── Page chrome (sidebar + main column) — identical across all
+     four alternatives so the comparison is apples-to-apples. ──── */
+  .app {
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 16px; margin-bottom: 8px; border-bottom: 1px solid var(--border-2); }
+  .brand-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; color: var(--primary-on); font-weight: 900; font-size: 18px; }
+  .brand-text { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+  .brand-text span { color: var(--primary); }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--ink); }
+  .nav-item.active { background: var(--primary-soft); color: var(--primary); position: relative; }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 22px; background: var(--primary); border-radius: 0 999px 999px 0; }
+  .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .main { padding: 32px 40px; max-width: 1280px; }
+
+  .page-h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.015em; }
+  .page-sub { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 60ch; line-height: 1.5; }
+
+  /* ── Variant picker — visible at top of the comparison page ── */
+  .picker {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    margin: -32px -40px 32px; padding: 14px 40px;
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  }
+  .picker-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-right: 8px; }
+  .picker a {
+    display: inline-block; padding: 6px 12px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-weight: 600; text-decoration: none;
+    transition: all 150ms;
+  }
+  .picker a:hover { color: var(--ink); border-color: var(--surface-3); }
+  .picker a.current { background: var(--primary-soft); color: var(--primary); border-color: transparent; }
+
+  /* ── Variant sections ──────────────────────────────────────── */
+  .variant { padding-top: 24px; }
+  .variant + .variant { border-top: 1px solid var(--border); margin-top: 48px; }
+  .variant-label { display: inline-block; padding: 4px 10px; background: var(--primary-soft); color: var(--primary); border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+  .variant-title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .variant-blurb { color: var(--muted); font-size: 13px; max-width: 70ch; line-height: 1.55; margin-bottom: 24px; }
+
+  /* ── Generic card primitive (shared) ─────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 150ms, border-color 150ms;
+  }
+  .card-link:hover { border-color: var(--surface-3); transform: translateY(-1px); }
+
+  /* ── Shared chips ────────────────────────────────────────────── */
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .chip-primary { background: var(--primary-soft); color: var(--primary); }
+  .chip-danger  { background: var(--danger-soft);  color: var(--danger); }
+  .chip-accent  { background: var(--accent-soft);  color: var(--accent); }
+  .chip-muted   { background: var(--surface-2); color: var(--muted); }
+
+  .grad { background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ════════════════════════════════════════════════════════════════
+     VARIANT A — "One number, one chip"
+     Each card is a single row: icon · title · headline number · chip.
+     No chart, no legend, no body copy. Click → planner.
+     ════════════════════════════════════════════════════════════════ */
+  .a-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .a-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 20px;
+  }
+  .a-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); flex-shrink: 0;
+    color: var(--primary);
+  }
+  .a-icon.danger { color: var(--danger); }
+  .a-icon.accent { color: var(--accent); }
+  .a-body { flex: 1; min-width: 0; }
+  .a-title { font-size: 14px; font-weight: 700; letter-spacing: -0.005em; }
+  .a-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .a-num { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; tabular-nums; }
+  .a-num-mute { font-size: 12px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .a-cta { font-size: 11px; color: var(--muted); margin-left: 8px; }
+
+  /* ════════════════════════════════════════════════════════════════
+     VARIANT B — "Two-line tile, no chart"
+     Headline number on top, label below, soft chip in corner. The
+     chart from the live page is gone — replaced by a one-line delta
+     (gain, EMI, days-away).
+     ════════════════════════════════════════════════════════════════ */
+  .b-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .b-card {
+    padding: 22px 22px 18px;
+    display: flex; flex-direction: column; gap: 14px;
+    min-height: 156px; justify-content: space-between;
+  }
+  .b-head { display: flex; align-items: center; justify-content: space-between; }
+  .b-title { font-size: 13px; font-weight: 700; letter-spacing: -0.005em; }
+  .b-num { font-size: 26px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; }
+  .b-sub { font-size: 12px; color: var(--muted); }
+  .b-delta { font-size: 12px; font-weight: 700; }
+  .b-delta.gain { color: var(--primary); }
+  .b-delta.cost { color: var(--danger); }
+  .b-delta.warn { color: var(--warn); }
+  .b-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-2); }
+  .b-foot-l { font-size: 11.5px; color: var(--muted); }
+  .b-foot-r { font-size: 11.5px; color: var(--ink); font-weight: 600; }
+
+  /* ════════════════════════════════════════════════════════════════
+     VARIANT C — "Sticky-note planner"
+     Each card is a sticky / paper texture on the dark background.
+     Hand-written feel via slight rotation, paper colour, soft drop
+     shadow. Body text + one number. Minimal.
+     ════════════════════════════════════════════════════════════════ */
+  .c-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .c-card {
+    background: #F5EFE3;            /* warm paper */
+    color: #2B2519;                  /* brown-black ink */
+    border: none;
+    border-radius: 4px;
+    padding: 18px 20px 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18), 0 12px 28px rgba(0,0,0,0.32);
+    transform: rotate(-0.4deg);
+    position: relative;
+  }
+  .c-card:nth-child(even) { transform: rotate(0.5deg); }
+  .c-card:nth-child(3) { transform: rotate(0.3deg); }
+  .c-card:nth-child(4) { transform: rotate(-0.6deg); }
+  .c-tape {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+    width: 60px; height: 18px;
+    background: rgba(125, 212, 181, 0.6);
+    border-radius: 1px;
+  }
+  .c-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .c-eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #847357; }
+  .c-title { font-family: Georgia, serif; font-size: 19px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+  .c-body { font-family: Georgia, serif; font-size: 13px; color: #5B4F3A; line-height: 1.45; margin-bottom: 14px; }
+  .c-big { font-family: Georgia, serif; font-size: 22px; font-weight: 700; color: #2B2519; }
+  .c-big-sub { font-size: 12px; color: #847357; font-weight: 400; font-family: -apple-system, sans-serif; }
+  .c-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(43, 37, 25, 0.18); }
+  .c-foot-l { font-size: 11.5px; color: #847357; font-family: -apple-system, sans-serif; }
+  .c-foot-r { font-size: 11.5px; color: #2B2519; font-weight: 700; font-family: -apple-system, sans-serif; }
+
+  /* ════════════════════════════════════════════════════════════════
+     VARIANT D — "Single screen, vertical stack"
+     No grid of cards. One section per planner, separated by a thin
+     divider. Each row is a tight horizontal summary: icon, name,
+     number, days/items, chevron. Like a settings list.
+     ════════════════════════════════════════════════════════════════ */
+  .d-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .d-item {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto 16px;
+    align-items: center; gap: 14px;
+    padding: 16px 18px;
+    text-decoration: none; color: inherit;
+    transition: background 150ms;
+  }
+  .d-item + .d-item { border-top: 1px solid var(--border-2); }
+  .d-item:hover { background: var(--surface-2); }
+  .d-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); color: var(--primary);
+  }
+  .d-icon.danger { color: var(--danger); }
+  .d-icon.accent { color: var(--accent); }
+  .d-body { min-width: 0; }
+  .d-title { font-size: 14px; font-weight: 700; }
+  .d-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .d-num { font-size: 14px; font-weight: 800; tabular-nums; }
+  .d-chip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+  .d-chev { color: var(--muted-2); }
+
+  /* Nav placeholder squares so the sidebar isn't a stark rectangle */
+  .nav-icon-mock {
+    width: 18px; height: 18px; border-radius: 4px;
+    background: currentColor; opacity: 0.45;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar (identical across all variants) ──────────────── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">f</div>
+      <div class="brand-text">fin<span>ora</span></div>
+    </div>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Home</a>
+    <a class="nav-item active" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Plan</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Insights</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Transactions</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Accounts</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Goals</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Investments</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Debts</a>
+    <a class="nav-item" href="#"><span class="nav-icon"><span class="nav-icon-mock"></span></span>Settings</a>
+  </aside>
+
+  <!-- ── Main ──────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <div class="picker">
+      <span class="picker-label">Variant</span>
+      <a href="#a" class="current">A — Single row</a>
+      <a href="#b">B — Two-line tile</a>
+      <a href="#c">C — Sticky note</a>
+      <a href="#d">D — Settings list</a>
+    </div>
+
+    <header>
+      <h1 class="page-h1">Plan</h1>
+      <p class="page-sub">Scratchpads for what you intend to spend. Nothing here is recorded in your ledger — it's a way to think ahead.</p>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VARIANT A — "One number, one chip"
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="variant" id="a" style="margin-top: 32px;">
+      <span class="variant-label">Variant A</span>
+      <h2 class="variant-title">One number, one chip</h2>
+      <p class="variant-blurb">Each card is a single horizontal row. Icon, title, the one number that matters, and a chip with the count. No chart, no body copy, no footer — the planner screen behind each card carries the detail. Reads like a tightly-spaced list, not a dashboard.</p>
+
+      <div class="a-row">
+        <a class="card card-link a-card" href="#">
+          <div class="a-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>
+          </div>
+          <div class="a-body">
+            <div class="a-title">Investments</div>
+            <div class="a-meta">6 plans</div>
+          </div>
+          <div class="text-right">
+            <div class="a-num grad">৳ 14,72,370</div>
+            <div class="a-num-mute">at maturity</div>
+          </div>
+        </a>
+
+        <a class="card card-link a-card" href="#">
+          <div class="a-icon danger">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+          </div>
+          <div class="a-body">
+            <div class="a-title">Loans</div>
+            <div class="a-meta">3 projections</div>
+          </div>
+          <div class="text-right">
+            <div class="a-num">৳ 33,943</div>
+            <div class="a-num-mute">/mo EMI</div>
+          </div>
+        </a>
+
+        <a class="card card-link a-card" href="#">
+          <div class="a-icon accent">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+          </div>
+          <div class="a-body">
+            <div class="a-title">Month</div>
+            <div class="a-meta">August 2026</div>
+          </div>
+          <div class="text-right">
+            <div class="a-num">৳ 38,200</div>
+            <div class="a-num-mute">budgeted</div>
+          </div>
+        </a>
+
+        <a class="card card-link a-card" href="#">
+          <div class="a-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <div class="a-body">
+            <div class="a-title">Events</div>
+            <div class="a-meta">1 upcoming</div>
+          </div>
+          <div class="text-right">
+            <div class="a-num">73</div>
+            <div class="a-num-mute">days away</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VARIANT B — "Two-line tile, no chart"
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="variant" id="b">
+      <span class="variant-label">Variant B</span>
+      <h2 class="variant-title">Two-line tile, no chart</h2>
+      <p class="variant-blurb">A slightly larger card with a big number on top and a one-line delta below (gain, EMI, days-away). The stacked bar from the live page is gone — replaced by the single delta in colored type. Still four cards in a 2×2 grid, but each one is much quieter than today.</p>
+
+      <div class="b-row">
+        <a class="card card-link b-card" href="#">
+          <div>
+            <div class="b-head">
+              <div class="b-title">Investments</div>
+              <span class="chip chip-primary">6 plans</span>
+            </div>
+            <div class="b-num tabular grad">৳ 14,72,370</div>
+            <div class="b-sub">projected at maturity · ৳ 11,90,000 now</div>
+          </div>
+          <div class="b-foot">
+            <div class="b-delta gain tabular">+ ৳ 2,82,370 gain</div>
+            <div class="b-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="card card-link b-card" href="#">
+          <div>
+            <div class="b-head">
+              <div class="b-title">Loans</div>
+              <span class="chip chip-danger">3 projections</span>
+            </div>
+            <div class="b-num tabular">৳ 12,17,701</div>
+            <div class="b-sub">total you pay · ৳ 10,14,345 borrowed</div>
+          </div>
+          <div class="b-foot">
+            <div class="b-delta cost tabular">৳ 33,943 /mo EMI</div>
+            <div class="b-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="card card-link b-card" href="#">
+          <div>
+            <div class="b-head">
+              <div class="b-title">This month</div>
+              <span class="chip chip-muted">AUG 2026</span>
+            </div>
+            <div class="b-num tabular">৳ 38,200</div>
+            <div class="b-sub">budgeted across 12 items</div>
+          </div>
+          <div class="b-foot">
+            <div class="b-delta" style="color: var(--muted);">August 2026</div>
+            <div class="b-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="card card-link b-card" href="#">
+          <div>
+            <div class="b-head">
+              <div class="b-title">Next event</div>
+              <span class="chip chip-primary">1 EVENT</span>
+            </div>
+            <div class="b-num tabular">Sister's wedding</div>
+            <div class="b-sub">in 73 days · ring venue · Mar 2026</div>
+          </div>
+          <div class="b-foot">
+            <div class="b-delta warn tabular">73 days away</div>
+            <div class="b-foot-r">Open →</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VARIANT C — "Sticky note planner"
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="variant" id="c">
+      <span class="variant-label">Variant C</span>
+      <h2 class="variant-title">Sticky note planner</h2>
+      <p class="variant-blurb">A more playful direction — each planner becomes a paper sticky on the dark background, with washi tape at the top and a slight rotation. Serif type for the title, sans for everything else. Reads as "things you've written for yourself" rather than "metrics the app is tracking". Less dense, more personal.</p>
+
+      <div class="c-row">
+        <a class="c-card" href="#">
+          <div class="c-tape"></div>
+          <div class="c-head">
+            <div class="c-eyebrow">Investment Planner</div>
+            <span class="chip chip-primary">6 plans</span>
+          </div>
+          <div class="c-title">Plan an investment</div>
+          <div class="c-body">DPS, FDR, savings — see maturity with no money moving.</div>
+          <div class="c-big tabular">৳ 14,72,370<span class="c-big-sub"> at maturity</span></div>
+          <div class="c-foot">
+            <div class="c-foot-l">+ ৳ 2,82,370 gain</div>
+            <div class="c-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="c-card" href="#">
+          <div class="c-tape"></div>
+          <div class="c-head">
+            <div class="c-eyebrow">Loan Calculator</div>
+            <span class="chip chip-danger">3 projections</span>
+          </div>
+          <div class="c-title">Plan a loan</div>
+          <div class="c-body">Principal, rate, term → EMI + amortization.</div>
+          <div class="c-big tabular">৳ 33,943<span class="c-big-sub"> /mo EMI</span></div>
+          <div class="c-foot">
+            <div class="c-foot-l">৳ 12,17,701 total</div>
+            <div class="c-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="c-card" href="#">
+          <div class="c-tape"></div>
+          <div class="c-head">
+            <div class="c-eyebrow">Month Planner</div>
+            <span class="chip chip-accent">AUG 2026</span>
+          </div>
+          <div class="c-title">Plan my month</div>
+          <div class="c-body">Fill items by category, start from a typical set, edit freely.</div>
+          <div class="c-big tabular">৳ 38,200<span class="c-big-sub"> budgeted</span></div>
+          <div class="c-foot">
+            <div class="c-foot-l">12 items</div>
+            <div class="c-foot-r">Open →</div>
+          </div>
+        </a>
+
+        <a class="c-card" href="#">
+          <div class="c-tape"></div>
+          <div class="c-head">
+            <div class="c-eyebrow">Event Planner</div>
+            <span class="chip chip-primary">1 event</span>
+          </div>
+          <div class="c-title">Plan an event</div>
+          <div class="c-body">Weddings, trips, anything with a date and a budget.</div>
+          <div class="c-big tabular">Sister's wedding<span class="c-big-sub"> in 73 days</span></div>
+          <div class="c-foot">
+            <div class="c-foot-l">Next: {{ date }}</div>
+            <div class="c-foot-r">Open →</div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         VARIANT D — "Settings list"
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="variant" id="d">
+      <span class="variant-label">Variant D</span>
+      <h2 class="variant-title">Settings-list stack</h2>
+      <p class="variant-blurb">No card grid at all — one continuous list, like Settings. Each row carries everything: icon, name, sub-text, the headline number, the count chip, and a chevron. Compact, scannable, predictable. The visual hierarchy is much quieter than today because there's no chart competing for attention.</p>
+
+      <div class="d-list">
+        <a class="d-item" href="#">
+          <div class="d-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg>
+          </div>
+          <div class="d-body">
+            <div class="d-title">Investments</div>
+            <div class="d-meta">DPS, FDR, savings · projected at maturity</div>
+          </div>
+          <div class="d-num grad">৳ 14,72,370</div>
+          <span class="d-chip" style="background: var(--primary-soft); color: var(--primary);">6 plans</span>
+          <svg class="d-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+
+        <a class="d-item" href="#">
+          <div class="d-icon danger">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+          </div>
+          <div class="d-body">
+            <div class="d-title">Loans</div>
+            <div class="d-meta">Principal, rate, term → EMI</div>
+          </div>
+          <div class="d-num">৳ 33,943</div>
+          <span class="d-chip" style="background: var(--danger-soft); color: var(--danger);">3 plans</span>
+          <svg class="d-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+
+        <a class="d-item" href="#">
+          <div class="d-icon accent">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+          </div>
+          <div class="d-body">
+            <div class="d-title">This month</div>
+            <div class="d-meta">August 2026 · 12 budgeted items</div>
+          </div>
+          <div class="d-num">৳ 38,200</div>
+          <span class="d-chip" style="background: var(--accent-soft); color: var(--accent);">12 ITEMS</span>
+          <svg class="d-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+
+        <a class="d-item" href="#">
+          <div class="d-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <div class="d-body">
+            <div class="d-title">Events</div>
+            <div class="d-meta">Next: Sister's wedding · in 73 days</div>
+          </div>
+          <div class="d-num">1</div>
+          <span class="d-chip" style="background: var(--primary-soft); color: var(--primary);">UPCOMING</span>
+          <svg class="d-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+      <p style="margin-top: 16px; font-size: 11.5px; color: var(--muted); text-align: center;">ⓘ Plans are pure scratch — nothing here touches your real accounts or transactions.</p>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
