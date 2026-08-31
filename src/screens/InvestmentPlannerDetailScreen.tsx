@@ -30,8 +30,9 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input, Select } from '../components/Field';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
 import { InvestmentDonut } from '../components/planner/InvestmentDonut';
-import { InvestmentTypeBadge, investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
+import { InvestmentTypeBadge } from '../components/planner/InvestmentTypeBadge';
 import { fmtBDT, fmtDate } from '../lib/format';
+import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import type { InvestmentType } from '../domain/types';
 
 export function InvestmentPlannerDetailScreen() {
@@ -87,7 +88,9 @@ export function InvestmentPlannerDetailScreen() {
   const matValue = investmentPlanMaturityValue(livePlan);
   const totalContributed = investmentPlanTotalContributed(livePlan);
   const interest = investmentPlanInterest(livePlan);
-  const bandColor = investmentTypeColor(type);
+  // Per-category tone — DPS / FDR / Savings each carry one color
+  // family. Used for wash + bar + hero figure.
+  const cardTone = investmentTone(type);
   const matDateISO = (() => {
     const term = Number(termMonths) || 0;
     if (!startDate || term <= 0) return null;
@@ -152,11 +155,19 @@ export function InvestmentPlannerDetailScreen() {
       {/* Hero projection card. Always renders — even with 0 inputs —
          so the user sees the projection react in real time as they
          type. When inputs are missing the sparkline is a flat line
-         and the maturity value reads ৳0. */}
+         and the maturity value reads ৳0. The 3px accent bar + wash
+         match the planned card on the list screen so detail and list
+         read as one product. */}
       <section
         className="card relative overflow-hidden flex flex-col gap-4"
-        style={{ borderLeft: `3px solid ${bandColor}` }}
+        style={cardSurfaceStyle(cardTone)}
       >
+        {/* Left accent bar — shared 3px tone-coloured stripe, matched
+            to the plan's category. */}
+        <span
+          aria-hidden
+          className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
+        />
         <div className="flex items-start justify-between gap-3">
           <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
             Projection
@@ -166,10 +177,7 @@ export function InvestmentPlannerDetailScreen() {
 
         {/* Hero number */}
         <div>
-          <div
-            className="text-[36px] sm:text-[40px] font-extrabold tracking-[-0.02em] tabular leading-none"
-            style={{ color: bandColor }}
-          >
+          <div className={`text-[36px] sm:text-[40px] font-extrabold tracking-[-0.02em] tabular leading-none ${toneTextClass(cardTone)}`}>
             {fmtBDT(matValue)}
           </div>
           <div className="text-[11.5px] text-muted mt-2 uppercase tracking-[0.04em] font-semibold">

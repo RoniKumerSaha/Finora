@@ -198,6 +198,35 @@ export function accountBalance(account: Account | null | undefined, transactions
   return total;
 }
 
+/**
+ * Returns the most recent transaction date for the given account, or
+ * null if no transactions are linked. Mirrors the match rule used by
+ * accountBalance: accountId for income/expense, plus
+ * fromAccountId/toAccountId for transfers. Used to show a "last
+ * activity" timestamp on the Accounts list card.
+ *
+ * Returns the lexicographic-max ISO date — date strings sort
+ * correctly as strings because the data shape is YYYY-MM-DD.
+ */
+export function lastAccountActivity(
+  account: Account | null | undefined,
+  transactions: Transaction[],
+): ISODate | null {
+  if (!account) return null;
+  let max: ISODate | null = null;
+  for (const tx of transactions) {
+    let linked = false;
+    if (tx.type === 'income' || tx.type === 'expense') {
+      linked = tx.accountId === account.id;
+    } else if (tx.type === 'transfer') {
+      linked = tx.fromAccountId === account.id || tx.toAccountId === account.id;
+    }
+    if (!linked || !tx.date) continue;
+    if (max === null || tx.date > max) max = tx.date;
+  }
+  return max;
+}
+
 // ---------- Goals (R5) ----------
 
 /**

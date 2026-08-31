@@ -60,6 +60,10 @@ export function accountTone(type: AccountType | string): AccountTone {
  * Tailwind classes for the small rounded tile that wraps the icon.
  * Returns a single string so consumers can pass it directly.
  */
+/**
+ * Tile chrome: `bg-*-soft text-*-*` classes only. Use `accountTileStyle`
+ * to also overlay a radial highlight that makes the icon square glow.
+ */
 export function accountTileClass(tone: AccountTone): string {
   switch (tone) {
     case 'accent':  return 'bg-accent-soft text-accent';
@@ -68,6 +72,26 @@ export function accountTileClass(tone: AccountTone): string {
     case 'danger':  return 'bg-danger-soft text-danger';
     default:        return 'bg-surface-2 text-muted';
   }
+}
+
+/**
+ * Inline style for the icon tile that overlays a soft-tone flat fill
+ * with a radial highlight, so the centre of the square "lights up" in
+ * the tone colour. Used on card surfaces (Accounts list, Home rows)
+ * where the icon is large enough for the glow to read.
+ */
+export function accountTileStyle(tone: AccountTone): React.CSSProperties {
+  const toneVar =
+    tone === 'accent'  ? 'var(--accent)' :
+    tone === 'primary' ? 'var(--primary)' :
+    tone === 'info'    ? 'var(--info)' :
+    tone === 'danger'  ? 'var(--danger)' :
+                         'var(--muted)';
+  // backgroundImage layers on top of backgroundColor set via className,
+  // so the soft-tone fill shows through the radial highlight.
+  return {
+    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 12%, var(--bg)), transparent 70%)`,
+  };
 }
 
 /**

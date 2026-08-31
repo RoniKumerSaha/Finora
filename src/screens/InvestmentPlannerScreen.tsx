@@ -24,7 +24,7 @@ import {
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
-import { investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
+import { cardSurfaceStyle, investmentTone, leftBarClass, pairTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 export function InvestmentPlannerScreen() {
   const navigate = useNavigate();
@@ -95,24 +95,25 @@ export function InvestmentPlannerScreen() {
               const termLabel = kit.defaults.termMonths === 1
                 ? '1 month'
                 : `${kit.defaults.termMonths} months`;
+              const cardTone = investmentTone(kit.id as 'dps' | 'fdr' | 'savings');
               return (
                 <button
                   key={kit.id}
                   type="button"
                   onClick={() => startFromKit(kit.id)}
                   className="card card-link flex flex-col items-start gap-2 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative overflow-hidden"
+                  style={cardSurfaceStyle(cardTone)}
                 >
-                  {/* Left-edge colour band signalling type */}
+                  {/* Left accent bar — 3px tone-coloured stripe, matched
+                      to the kit's category (DPS / FDR / Savings). */}
                   <span
                     aria-hidden
-                    className="absolute left-0 top-0 bottom-0 w-1"
-                    style={{ background: investmentTypeColor(kit.id) }}
+                    className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
                   />
                   <span className="text-[28px] leading-none">{kit.emoji}</span>
                   <div className="text-[13.5px] font-semibold text-ink">{kit.name}</div>
                   <div
-                    className="text-[12.5px] font-bold tabular leading-tight"
-                    style={{ color: investmentTypeColor(kit.id) }}
+                    className={`text-[12.5px] font-bold tabular leading-tight ${toneTextClass(cardTone)}`}
                   >
                     → {fmtBDT(projected)} <span className="font-normal text-muted">in {termLabel}</span>
                   </div>
@@ -251,8 +252,10 @@ function InvestmentPlanCard({
   const matValue = investmentPlanMaturityValue(plan);
   const totalContributed = investmentPlanTotalContributed(plan);
   const interest = investmentPlanInterest(plan);
-  const bandColor = investmentTypeColor(plan.type);
   const isDps = plan.type === 'dps';
+  // Per-category tone — DPS / FDR / Savings each carry one color
+  // family. Used for wash + bar + pill + hero figure.
+  const cardTone = investmentTone(plan.type);
 
   // Maturity countdown label — mirrors InvestmentsListScreen so the
   // two cards tell the same story. Long durations read as years,
@@ -275,16 +278,14 @@ function InvestmentPlanCard({
       type="button"
       onClick={onOpen}
       className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative text-left"
+      style={cardSurfaceStyle(cardTone)}
     >
-      {/* Left-edge PLANNED band — same width/position as the type band
-          on the real InvestmentsListScreen card. Uses the per-type
-          colour at low opacity so the band still hints at type
-          (FDR/DPS/Savings) while the PLANNED pill carries the
-          "projection, no real money" message. */}
+      {/* Left accent bar — 3px tone-coloured stripe, matched to the
+          plan's category (DPS / FDR / Savings). The PLANNED pill carries
+          the "projection, no real money" message. */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 bottom-0 w-1"
-        style={{ background: bandColor, opacity: 0.7 }}
+        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
       />
 
       {/* Left zone — identity, terms, maturity countdown.
@@ -304,11 +305,7 @@ function InvestmentPlanCard({
               {plan.name}
             </div>
             <span
-              className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
-              style={{
-                background: isDps ? 'var(--primary-soft)' : 'var(--accent-soft)',
-                color: isDps ? 'var(--primary)' : 'var(--accent)',
-              }}
+              className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(cardTone)}`}
             >
               {isDps ? 'DPS' : plan.type === 'fdr' ? 'FDR' : 'Savings'}
             </span>
@@ -389,13 +386,15 @@ function InvestmentPlanCard({
           is the smaller projected value below. For DPS, NOW collapses
           to the principal since the bank's running value can't be
           computed without a contribution history. sm:min-w-[200px]
-          matches the real card. */}
+          matches the real card. NOW picks up the card tone (hero);
+          AT MATURITY picks up the pair tone so the two figures read
+          as distinct values. */}
       <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
         <div className="flex flex-col items-end leading-none">
           <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
             {showBoth ? 'Now' : 'Value'}
           </span>
-          <span className="font-bold tabular text-[24px] tracking-tight text-accent mt-1.5">
+          <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(cardTone)}`}>
             {fmtBDT(showBoth ? totalContributed : matValue)}
           </span>
         </div>
@@ -404,7 +403,7 @@ function InvestmentPlanCard({
             <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
               At maturity
             </span>
-            <span className="font-bold tabular text-[15px] text-primary mt-1">
+            <span className={`font-bold tabular text-[15px] mt-1 ${toneTextClass(pairTone(cardTone))}`}>
               {fmtBDT(matValue)}
             </span>
           </div>

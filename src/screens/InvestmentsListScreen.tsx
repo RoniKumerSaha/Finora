@@ -28,7 +28,7 @@ import {
   daysToMaturity,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
-import { investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
+import { cardSurfaceStyle, investmentTone, leftBarClass, pairTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
 
@@ -155,6 +155,10 @@ function invEmoji(type: string): string {
 function InvCard({ inv, current, projected }: { inv: any; current: number; projected: number }) {
   const days = daysToMaturity(inv);
   const isDps = inv.type === 'dps';
+  // Per-category tone — DPS / FDR / Savings each get their own color
+  // family. Applied to wash + bar + pill + hero figure so the whole
+  // card reads as one themed unit.
+  const cardTone = investmentTone(inv.type);
   // Long durations (≥ 1 year) read more naturally as years; short
   // durations stay in days. 1 decimal keeps the precision while
   // staying compact (e.g. "in ~2.4y" instead of "in 877d").
@@ -171,23 +175,13 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
     <Link
       to={`/investments/${inv.id}`}
       className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
+      style={cardSurfaceStyle(cardTone)}
     >
-      {/* Left-edge type band — 4px colored stripe that runs the full
-          height of the card. Per-type colour (info for DPS, accent
-          for FDR, cyan for savings) gives the card a clear type
-          identity at a glance. 0.7 opacity so the band harmonises
-          with the card surface — same width + opacity as the
-          Planner + Loan + Debt cards, so all four list surfaces
-          share one visual signature. The card's border-radius
-          clips the top-left and bottom-left corners so the band
-          reads as baked into the surface. */}
+      {/* Left accent bar — 3px tone-coloured stripe, matched to the
+          card's category. */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 h-full w-1 pointer-events-none"
-        style={{
-          background: investmentTypeColor(inv.type as 'dps' | 'fdr' | 'savings'),
-          opacity: 0.7,
-        }}
+        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
       />
       {/* Left zone — identity, terms, maturity countdown. */}
       <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
@@ -204,11 +198,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
               {inv.name}
             </div>
             <span
-              className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
-              style={{
-                background: isDps ? 'var(--primary-soft)' : 'var(--accent-soft)',
-                color: isDps ? 'var(--primary)' : 'var(--accent)',
-              }}
+              className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(cardTone)}`}
             >
               {isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings'}
             </span>
@@ -236,13 +226,16 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
       {/* Right zone — amounts, right-aligned. flex flex-col + items-end
           keeps the figures right-aligned and lets "At maturity" stack
           under "Now". shrink-0 prevents the right zone from being
-          squeezed when the left zone gets long names. */}
+          squeezed when the left zone gets long names. The "Now"
+          hero picks up the card tone. "At maturity" picks up the
+          pair tone — a contrasting shade in the same family so the
+          two figures read as distinct values. */}
       <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
         <div className="flex flex-col items-end leading-none">
           <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
             {showBoth ? 'Now' : 'Value'}
           </span>
-          <span className="font-bold tabular text-[24px] tracking-tight text-accent mt-1.5">
+          <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(cardTone)}`}>
             {fmtBDT(current)}
           </span>
         </div>
@@ -251,7 +244,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
             <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
               At maturity
             </span>
-            <span className="font-bold tabular text-[15px] text-primary mt-1">
+            <span className={`font-bold tabular text-[15px] mt-1 ${toneTextClass(pairTone(cardTone))}`}>
               {fmtBDT(projected)}
             </span>
           </div>

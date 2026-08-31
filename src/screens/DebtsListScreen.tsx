@@ -12,8 +12,8 @@
  *   ┌─ I OWE                                          ┌────────────┐
  *   │  [↓] City Bank Loan                       │     │ − ৳12,26,261│
  *   │       Paid ৳100 of ৳12,26,361 total     │     │   Remaining │
- *   │       Due 12 Aug 2027 · Person                  │  of ৳Y total│
- *   ├─────────────────────────────────────────────┴────────────┤
+ *   │                                                 │  of ৳Y total│
+ *   ├─────────────────────────────────────────────────┴────────────┤
  *   │  ◯━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░  0.8% paid               │
  *   └────────────────────────────────────────────────────────────┘
  *
@@ -26,11 +26,9 @@ import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { loanPaymentSplit } from '../domain/math';
 import { ArrowUp, ArrowDown, Check, User } from '../components/icons/Icons';
-import { Button } from '../components/Button';
 import { LoanPaymentModal } from './LoanPaymentModal';
-import { fmtBDT, fmtDate } from '../lib/format';
-
-const MIDDOT = '\u00B7';
+import { fmtBDT } from '../lib/format';
+import { cardSurfaceStyle, debtTone, leftBarClass, toneFillClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -140,11 +138,13 @@ function DebtCard({ debt: d }: { debt: any }) {
   const pct = d.total > 0 ? Math.min(100, Math.round(((d.paidSoFar || 0) / d.total) * 100)) : 0;
   const isIOwe = d.direction === 'i_owe';
   const isLoan = d.kind === 'loan';
-  // Tone pair follows the existing palette: i_owe is danger (you're
-  // paying it down), owed_to_me is primary (you'd receive it back).
-  const iconBg = isIOwe ? 'bg-danger-soft text-danger' : 'bg-primary-soft text-primary';
-  const barFill = isIOwe ? 'bg-gradient-to-r from-danger to-warn' : 'bg-gradient-to-r from-primary to-accent';
-  const amtColor = isIOwe ? 'text-danger' : 'text-primary';
+  // Per-category tone — derived once and reused everywhere on the
+  // card (wash, bar, icon tile, bold figure, pill, progress bar).
+  // Loan-kind debts override direction and use warn (amber).
+  const cardTone = debtTone(d.direction, d.kind);
+  const iconBg = toneTileClass(cardTone);
+  const barFill = toneFillClass(cardTone);
+  const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
 
   // Right-zone figure: flat = total − paidSoFar (today's behaviour);
@@ -190,27 +190,20 @@ function DebtCard({ debt: d }: { debt: any }) {
   }
 
   return (
-    <div className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative">
+    <div
+      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
+      style={cardSurfaceStyle(cardTone)}
+    >
       <Link
         to={`/debts/${d.id}/edit`}
         className="absolute inset-0 z-0"
         aria-label={`Edit debt "${d.name}"`}
       />
-      {/* Left-edge direction band — 4px colored stripe that runs the
-          full height of the card. Direction-encoded: danger for
-          i_owe, primary for owed_to_me. 0.7 opacity so the band
-          harmonises with the card surface — same width + opacity
-          as the Planner + Loan + Investment cards, so all four
-          list surfaces share one visual signature. The card's
-          border-radius clips the top-left and bottom-left corners
-          so the band reads as baked into the surface. */}
+      {/* Left-edge direction bar — 3px tone-coloured stripe. Direction-
+          encoded: danger for i_owe, primary for owed_to_me. */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 h-full w-1 pointer-events-none z-[1]"
-        style={{
-          background: isIOwe ? 'var(--danger)' : 'var(--primary)',
-          opacity: 0.7,
-        }}
+        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none z-[1] ${leftBarClass(cardTone)}`}
       />
       {/* Top row — horizontal split: identity (left) + remaining/outstanding
           (right), separated by a 1px divider. Mirrors the investment card. */}
@@ -227,8 +220,7 @@ function DebtCard({ debt: d }: { debt: any }) {
             {directionLabel}
             {isLoan && (
               <span
-                className="ml-2 inline-flex items-center px-1.5 py-px rounded-pill text-[9.5px] font-bold uppercase tracking-wider align-middle"
-                style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}
+                className={`ml-2 inline-flex items-center px-1.5 py-px rounded-pill text-[9.5px] font-bold uppercase tracking-wider align-middle ${toneTileClass('danger')}`}
               >
                 Loan
               </span>
@@ -264,19 +256,12 @@ function DebtCard({ debt: d }: { debt: any }) {
                 {' · '}
                 <span className="text-danger">{fmtBDT(totalInterest)}</span> interest
                 {' · '}
-                <span className="text-primary">{fmtBDT(totalPrincipal)}</span> principal
+                <span className={toneTextClass(cardTone)}>{fmtBDT(totalPrincipal)}</span> principal
               </>
             ) : (
               <>Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total</>
             )}
           </div>
-          {(d.dueDate && d.person) && (
-            <div className="text-[12px] text-muted flex items-center gap-2 flex-wrap">
-              {d.dueDate ? <span>Due {fmtDate(d.dueDate)}</span> : null}
-              {d.dueDate && d.person ? <span className="opacity-50" aria-hidden>{MIDDOT}</span> : null}
-              {d.person ? <span className="truncate">{d.person}</span> : null}
-            </div>
-          )}
         </div>
 
         {/* Vertical divider between identity and amounts. */}
@@ -329,37 +314,24 @@ function DebtCard({ debt: d }: { debt: any }) {
             primary stripe for owed_to_me. z-[1] so it stays
             clickable above the full-card <Link>. */}
         {isLoan && d.status === 'active' && (
-          <Button
-            variant="ghost"
-            size="sm"
+          // Tinted pill with a solid danger border — matches the
+          // icon-tile vocabulary used elsewhere on the card (soft
+          // tint fill + 1px tone border + tone-coloured text + dot).
+          // A plain <button> instead of <Button> so we control every
+          // aspect without fighting shared variant/size classes.
+          <button
+            type="button"
             onClick={openPay}
             title={`Record a payment toward "${d.name}"`}
-            className={[
-              'shrink-0 z-[1]',
-              // Pill shape + low-contrast fill + dot glyph + thin
-              // 1px border — geometrically and tonally distinct
-              // from the card's rounded-12px surface so it reads
-              // as a separate control. The soft-tint tokens
-              // (*-soft) are theme-aware, so the chip renders the
-              // same in dark and light mode.
-              '!rounded-full !px-3.5',
-              isIOwe
-                ? '!bg-danger-soft !text-danger !border !border-danger'
-                : '!bg-primary-soft !text-primary !border !border-primary',
-              'hover:!opacity-90',
-            ].join(' ')}
+            className="shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 bg-danger-soft text-danger text-[13px] font-bold tracking-tight border border-danger hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition active:translate-y-px"
           >
-            {/* Polarity dot — a tiny solid pill that color-matches
-                the card's direction band, so the chip's accent
-                reinforces which way this debt flows. */}
+            {/* Filled dot — solid danger on the soft tint fill. */}
             <span
               aria-hidden
-              className={`inline-block w-1.5 h-1.5 rounded-full ${
-                isIOwe ? 'bg-danger' : 'bg-primary'
-              }`}
+              className="inline-block w-1.5 h-1.5 rounded-full bg-danger"
             />
             Pay now
-          </Button>
+          </button>
         )}
       </div>
 

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Accounts page — before / after</title>
+<style>
+  :root {
+    --bg: #0E1514;
+    --surface: #141B1A;
+    --surface-2: #1B2422;
+    --surface-3: #232E2C;
+    --ink: #ECE6D7;
+    --muted: #8E978F;
+    --muted-2: #6B7268;
+    --primary: #7FB89B;
+    --primary-soft: #1F2E27;
+    --accent: #E0B564;
+    --accent-soft: #2C2418;
+    --danger: #D87A6B;
+    --danger-soft: #2A1A16;
+    --warn: #D8B26B;
+    --success: #7FB89B;
+    --info: #6BB0D8;
+    --border: #2A3633;
+    --border-2: #38453F;
+    --radius-card: 14px;
+    --radius-btn: 10px;
+    --shadow-card: 0 1px 0 rgba(255,255,255,0.02), 0 4px 12px rgba(0,0,0,0.18);
+    --card-inset: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+  }
+  h1.doc-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  .doc-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 48px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .section-hint {
+    font-size: 12px;
+    color: var(--muted-2);
+    margin: 0 0 24px;
+  }
+  .mock {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 40px;
+    margin-bottom: 56px;
+    box-shadow: var(--shadow-card);
+  }
+  .mock + .mock {
+    margin-top: 0;
+  }
+  /* ───── Shared page chrome (header) ───── */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 32px;
+  }
+  .page-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .page-header .meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 18px;
+    border-radius: var(--radius-btn);
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #0E1514;
+  }
+  .btn-primary:hover { opacity: 0.94; }
+  .btn-primary:active { transform: translateY(1px); }
+
+  /* ───── Card primitives ───── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .acc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-card), var(--card-inset);
+    position: relative;
+    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  }
+  .acc-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(127, 184, 155, 0.22), 0 8px 24px rgba(0,0,0,0.35);
+    border-color: rgba(127, 184, 155, 0.55);
+  }
+  .acc-card.negative {
+    /* NEW: subtle danger wash so the eye catches liabilities instantly */
+    background: linear-gradient(180deg, var(--danger-soft) 0%, var(--surface) 60%);
+    border-color: rgba(216, 122, 107, 0.32);
+  }
+  .acc-card.negative::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 24px; bottom: 24px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--danger);
+  }
+
+  .acc-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .acc-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .acc-icon.cash      { background: rgba(224, 181, 100, 0.18); color: var(--accent); }
+  .acc-icon.bank      { background: rgba(127, 184, 155, 0.18); color: var(--primary); }
+  .acc-icon.wallet    { background: rgba(107, 176, 216, 0.18); color: var(--info); }
+  .acc-icon.card      { background: rgba(216, 122, 107, 0.18); color: var(--danger); }
+  .acc-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  .acc-type {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .acc-menu {
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    opacity: 0.55;
+    transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+  }
+  .acc-card:hover .acc-menu { opacity: 1; }
+  .acc-menu:hover { background: var(--surface-3); color: var(--ink); }
+
+  .acc-label {
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .acc-balance {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .acc-balance.positive { color: var(--primary); }
+  .acc-balance.wallet   { color: var(--info); }
+  .acc-balance.negative { color: var(--danger); }
+
+  .acc-sub {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .acc-sub .delta {
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .acc-sub .delta.up   { color: var(--primary); }
+  .acc-sub .delta.down { color: var(--danger); }
+  .acc-sub .last {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Summary row (NEW in "after") */
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-card), var(--card-inset);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .summary-card .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .summary-card .value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .summary-card .caption {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .summary-card .value.pos { color: var(--primary); }
+  .summary-card .value.neg { color: var(--danger); }
+  .summary-card .value.wallet { color: var(--info); }
+
+  /* Section divider for "Liabilities" subhead (NEW) */
+  .subhead {
+    grid-column: 1 / -1;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .subhead::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Decorative SVG icons inside .acc-icon */
+  .acc-icon svg { width: 22px; height: 22px; }
+
+  /* For the "before" mock keep the redundant type label muted */
+  .acc-card.before .acc-type { display: block; }
+  .acc-card.after .acc-type.redundant { display: none; }
+
+  .legend {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px dashed var(--border-2);
+    border-radius: var(--radius-btn);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .legend b { color: var(--ink); font-weight: 700; }
+  .legend .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <h1 class="doc-title">Accounts page — before / after</h1>
+  <p class="doc-sub">Three changes: header summary row · danger treatment for negative cards · Δ since opening + last activity. Static HTML for visual review.</p>
+
+  <!-- ───────────────────────────────────────── -->
+  <!-- BEFORE                                      -->
+  <!-- ───────────────────────────────────────── -->
+  <p class="section-label">Before</p>
+  <p class="section-hint">5 cards. Sort: insertion order. No total. Negative balances look identical to positive ones. "Opening" is a stale snapshot.</p>
+
+  <div class="mock">
+    <div class="page-header">
+      <div>
+        <h2>Accounts</h2>
+        <div class="meta">5 total</div>
+      </div>
+      <button class="btn btn-primary">+ Add</button>
+    </div>
+
+    <div class="grid">
+      <!-- Cash (negative) -->
+      <div class="acc-card before">
+        <div class="acc-top">
+          <div class="acc-icon cash">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Cash</div>
+            <div class="acc-type">Cash</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance negative">৳ -25,400</div>
+        <div class="acc-sub" style="margin-top:14px">
+          <span class="acc-label" style="margin:0">Opening: ৳ 5,000</span>
+        </div>
+      </div>
+
+      <!-- Dutch-Bangla Bank -->
+      <div class="acc-card before">
+        <div class="acc-top">
+          <div class="acc-icon bank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 20h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Dutch-Bangla Bank</div>
+            <div class="acc-type">Bank Account</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance positive">৳ 2,56,170</div>
+        <div class="acc-sub" style="margin-top:14px">
+          <span class="acc-label" style="margin:0">Opening: ৳ 45,000</span>
+        </div>
+      </div>
+
+      <!-- bKash -->
+      <div class="acc-card before">
+        <div class="acc-top">
+          <div class="acc-icon wallet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="17" cy="12.5" r="1.4" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">bKash</div>
+            <div class="acc-type">Mobile Wallet</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance wallet">৳ 12,730</div>
+        <div class="acc-sub" style="margin-top:14px">
+          <span class="acc-label" style="margin:0">Opening: ৳ 3,200</span>
+        </div>
+      </div>
+
+      <!-- Nagad -->
+      <div class="acc-card before">
+        <div class="acc-top">
+          <div class="acc-icon wallet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="17" cy="12.5" r="1.4" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Nagad</div>
+            <div class="acc-type">Mobile Wallet</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance wallet">৳ 3,500</div>
+        <div class="acc-sub" style="margin-top:14px">
+          <span class="acc-label" style="margin:0">Opening: ৳ 1,500</span>
+        </div>
+      </div>
+
+      <!-- City Bank Credit Card -->
+      <div class="acc-card before">
+        <div class="acc-top">
+          <div class="acc-icon card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 11h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">City Bank Credit Card</div>
+            <div class="acc-type">Card</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance negative">৳ -13,680</div>
+        <div class="acc-sub" style="margin-top:14px">
+          <span class="acc-label" style="margin:0">Opening: ৳ 0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────────────────── -->
+  <!-- AFTER                                       -->
+  <!-- ───────────────────────────────────────── -->
+  <p class="section-label">After</p>
+  <p class="section-hint">Top summary row answers "what's my real position?" before reading a card. Negative cards visually distinct (danger wash + left edge). Each card shows Δ since opening + last activity. Cards are sorted (assets ↑ by balance, then liabilities ↓ by magnitude).</p>
+
+  <div class="mock">
+    <div class="page-header">
+      <div>
+        <h2>Accounts</h2>
+        <div class="meta">5 total · sorted by balance</div>
+      </div>
+      <button class="btn btn-primary">+ Add</button>
+    </div>
+
+    <!-- NEW: header summary -->
+    <div class="summary-row">
+      <div class="summary-card">
+        <span class="label">Net position</span>
+        <span class="value pos">৳ 2,33,320</span>
+        <span class="caption">assets − liabilities · 2 liabilities below</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">Assets · 3</span>
+        <span class="value pos">৳ 2,72,400</span>
+        <span class="caption">bank + wallets + cash on hand</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">Liabilities · 2</span>
+        <span class="value neg">৳ -39,080</span>
+        <span class="caption">cash gap + credit card</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">Δ this month</span>
+        <span class="value pos">+৳ 1,98,700</span>
+        <span class="caption">vs opening total</span>
+      </div>
+    </div>
+
+    <!-- ASSETS -->
+    <div class="grid">
+      <div class="subhead">Assets · 3</div>
+
+      <!-- Dutch-Bangla Bank (largest first) -->
+      <div class="acc-card after">
+        <div class="acc-top">
+          <div class="acc-icon bank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10 12 4l9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 20h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Dutch-Bangla Bank</div>
+            <div class="acc-type">Bank Account · DBBL</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance positive">৳ 2,56,170</div>
+        <div class="acc-sub">
+          <span class="delta up">↑ +৳ 2,11,170</span>
+          <span class="last">2 hr ago · salary</span>
+        </div>
+      </div>
+
+      <!-- bKash -->
+      <div class="acc-card after">
+        <div class="acc-top">
+          <div class="acc-icon wallet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="17" cy="12.5" r="1.4" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">bKash</div>
+            <div class="acc-type">Mobile Wallet</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance wallet">৳ 12,730</div>
+        <div class="acc-sub">
+          <span class="delta up">↑ +৳ 9,530</span>
+          <span class="last">yesterday · transfer</span>
+        </div>
+      </div>
+
+      <!-- Nagad -->
+      <div class="acc-card after">
+        <div class="acc-top">
+          <div class="acc-icon wallet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="17" cy="12.5" r="1.4" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Nagad</div>
+            <div class="acc-type">Mobile Wallet</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">Balance</div>
+        <div class="acc-balance wallet">৳ 3,500</div>
+        <div class="acc-sub">
+          <span class="delta up">↑ +৳ 2,000</span>
+          <span class="last">3 days ago · top-up</span>
+        </div>
+      </div>
+
+      <!-- LIABILITIES -->
+      <div class="subhead">Liabilities · 2</div>
+
+      <!-- City Bank Credit Card (smaller |balance| first... wait, larger first by magnitude) -->
+      <div class="acc-card after negative">
+        <div class="acc-top">
+          <div class="acc-icon card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 11h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">City Bank Credit Card</div>
+            <div class="acc-type">Credit Card · ending 4187</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">You owe</div>
+        <div class="acc-balance negative">৳ -13,680</div>
+        <div class="acc-sub">
+          <span class="delta down">↑ debt by ৳ 13,680</span>
+          <span class="last">due Nov 14 · 23 days</span>
+        </div>
+      </div>
+
+      <!-- Cash (gap) -->
+      <div class="acc-card after negative">
+        <div class="acc-top">
+          <div class="acc-icon cash">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+          </div>
+          <div>
+            <div class="acc-name">Cash</div>
+            <div class="acc-type">Cash on hand · shortfall</div>
+          </div>
+          <button class="acc-menu" aria-label="More">⋯</button>
+        </div>
+        <div class="acc-label">You owe</div>
+        <div class="acc-balance negative">৳ -25,400</div>
+        <div class="acc-sub">
+          <span class="delta down">↓ spent ৳ 30,400</span>
+          <span class="last">tracked from opening</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>What changed:</b>
+      <span class="dot" style="background:var(--primary)"></span>Header summary row (4 cards) gives net position + asset/liability split at a glance.
+      <span class="dot" style="background:var(--danger)"></span>Negative cards get a danger-tinted wash + left edge so the eye catches them while scanning.
+      <span class="dot" style="background:var(--primary)"></span>Δ since opening replaces "Opening: ৳ X" — turns a static snapshot into a useful signal.
+      <span class="dot" style="background:var(--muted)"></span>Each card carries a "last activity" heartbeat.
+      <span class="dot" style="background:var(--accent)"></span>Assets & liabilities grouped under subheads; cards sorted by magnitude within each group.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

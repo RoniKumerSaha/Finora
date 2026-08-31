@@ -3,15 +3,16 @@
  * (DPS / FDR / savings) with its emoji + a per-type accent colour.
  *
  * Used on the Investment Planner list cards and the detail screen's
- * hero card. The colour tokens match the rest of the app's planner
- * palette so the badges sit naturally next to other category chips.
+ * hero card. The per-type colour tracks the shared `investmentTone`
+ * mapping (DPS=primary, FDR=accent, Savings=info) so the badge, the
+ * card wash, and the 3px bar all carry one color family.
  */
 import type { InvestmentType } from '../../domain/types';
 
 const META: Record<InvestmentType, { label: string; emoji: string; color: string; soft: string }> = {
-  dps:     { label: 'DPS',           emoji: '🗓️', color: 'var(--info)',   soft: 'var(--info-soft)' },
-  fdr:     { label: 'FDR',           emoji: '🏦', color: 'var(--accent)', soft: 'var(--accent-soft)' },
-  savings: { label: 'Savings',       emoji: '💼', color: 'var(--cyan)',   soft: 'var(--cyan-soft)' },
+  dps:     { label: 'DPS',     emoji: '🗓️', color: 'var(--primary)', soft: 'var(--primary-soft)' },
+  fdr:     { label: 'FDR',     emoji: '🏦', color: 'var(--accent)',  soft: 'var(--accent-soft)' },
+  savings: { label: 'Savings', emoji: '💼', color: 'var(--info)',    soft: 'var(--info-soft)' },
 };
 
 export function InvestmentTypeBadge({

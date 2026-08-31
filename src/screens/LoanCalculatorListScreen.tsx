@@ -15,6 +15,7 @@ import { useStore } from '../domain/store';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
+import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass, toneTileClass } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
 
@@ -114,16 +115,15 @@ export function LoanCalculatorListScreen() {
                     type="button"
                     onClick={() => navigate(`/plan/loan/${plan.id}`)}
                     className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative text-left"
+                    style={cardSurfaceStyle(loanPlanTone())}
                   >
-                  {/* Left-edge danger-tinted band — loan cards are
-                      about cost, so we use the danger accent rather
-                      than a type-specific band. The PLANNED pill in
-                      the left zone tells the user this isn't a real
+                  {/* Left accent bar — 3px tone-coloured stripe. Loan
+                      cards use danger (cost/interest). The PLANNED pill
+                      in the left zone tells the user this isn't a real
                       debt. */}
                   <span
                     aria-hidden
-                    className="absolute left-0 top-0 bottom-0 w-1"
-                    style={{ background: 'var(--danger)', opacity: 0.7 }}
+                    className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(loanPlanTone())}`}
                   />
 
                   {/* Left zone — identity, terms, total cost.
@@ -144,11 +144,7 @@ export function LoanCalculatorListScreen() {
                           {plan.name || 'Untitled loan'}
                         </div>
                         <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0"
-                          style={{
-                            background: 'var(--danger-soft)',
-                            color: 'var(--danger)',
-                          }}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-pill text-[10.5px] font-bold uppercase tracking-wider shrink-0 ${toneTileClass(loanPlanTone())}`}
                         >
                           Loan
                         </span>
@@ -220,7 +216,7 @@ export function LoanCalculatorListScreen() {
                       <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
                         Monthly EMI
                       </span>
-                      <span className="font-bold tabular text-[24px] tracking-tight text-ink mt-1.5">
+                      <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(loanPlanTone())}`}>
                         {fmtBDT(s.emi)}
                       </span>
                     </div>
