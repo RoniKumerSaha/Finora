@@ -34,6 +34,7 @@ import {
   investmentValue,
   computeNetWorth,
   averageMonthlyExpenses,
+  loanPaymentSplit,
 } from './math';
 import type { Account, Debt, Goal, Investment, Transaction } from './types';
 
@@ -666,5 +667,90 @@ describe('averageMonthlyExpenses — last N complete months', () => {
       tx({ type: 'transfer', amount: 99999, date: '2026-07-15' }),
     ];
     expect(averageMonthlyExpenses(txs, { now: NOW })).toBe(2000);
+  });
+});
+
+// ---------- Loan-kind debt payment split (L1.2) ----------
+//
+// loanPaymentSplit splits a single payment on a loan-kind debt into the
+// interest portion (rounded off outstanding × monthly rate) and the
+// principal portion (the remainder, capped at outstanding for overpay).
+// Pure function; no side effects.
+
+describe('loanPaymentSplit', () => {
+  it('normal case — 12% APR on 1,00,000 outstanding with a 3,321 payment', () => {
+    // monthlyRate = 12 / 12 / 100 = 0.01
+    // interest = round(1,00,000 * 0.01) = 1000
+    // principal = 3,321 - 1,000 = 2,321
+    const out = loanPaymentSplit(100000, 3321, 12);
+    expect(out.interest).toBe(1000);
+    expect(out.principal).toBe(2321);
+  });
+
+  it('zero rate — interest is 0, all payment goes to principal', () => {
+    const out = loanPaymentSplit(50000, 5000, 0);
+    expect(out.interest).toBe(0);
+    expect(out.principal).toBe(5000);
+  });
+
+  it('underpayment — payment < interest, principal is 0', () => {
+    // monthlyRate = 12 / 12 / 100 = 0.01
+    // interest = 1,000; user only pays 800 → principal 0, interest absorbs all
+    const out = loanPaymentSplit(100000, 800, 12);
+    expect(out.interest).toBe(800);
+    expect(out.principal).toBe(0);
+  });
+
+  it('overpayment — principal is capped at outstanding, no negative carry', () => {
+    // outstanding 1,000; interest = 10; payment 5,000 — principal must clamp
+    const out = loanPaymentSplit(1000, 5000, 12);
+    expect(out.interest).toBe(10);
+    expect(out.principal).toBe(1000);
+  });
+
+  it('exact payoff — payment equals outstanding + interest', () => {
+    // outstanding 1,000; interest = 10; payment = 1,010
+    const out = loanPaymentSplit(1000, 1010, 12);
+    expect(out.interest).toBe(10);
+    expect(out.principal).toBe(1000);
+  });
+
+  it('zero outstanding — payment is fully interest (degenerate)', () => {
+    // outstanding 0; interest = 0; payment 500 → both go to principal
+    // (callers should never feed this; verify it's safe nonetheless)
+    const out = loanPaymentSplit(0, 500, 12);
+    expect(out.interest).toBe(0);
+    expect(out.principal).toBe(500);
+  });
+
+  it('negative payment — treated as 0 (no NaN, no negative principal)', () => {
+    // Defensive: callers validate > 0 at the form layer, but the math
+    // must never produce a negative principal even with bad input.
+    const out = loanPaymentSplit(100000, -100, 12);
+    expect(out.interest).toBe(0);
+    expect(out.principal).toBe(0);
+  });
+
+  it('fractional interest rounds to nearest taka', () => {
+    // outstanding = 33,333; rate 11%; monthly = 0.11/12
+    // interest raw = 33,333 * 0.11 / 12 ≈ 305.55
+    // rounds to 306
+    const out = loanPaymentSplit(33333, 1000, 11);
+    expect(out.interest).toBe(306);
+    expect(out.principal).toBe(694);
+  });
+
+  it('chained: two payments reduce outstanding correctly (worked example)', () => {
+    // Loan 1,00,000 @ 12% for 36 months. EMI = 3,321 (rounded).
+    // Month 1: outstanding 1,00,000 → interest 1,000 → principal 2,321 → new 97,679
+    // Month 2: outstanding 97,679 → interest 977 → principal 2,344 → new 95,335
+    const m1 = loanPaymentSplit(100000, 3321, 12);
+    expect(m1).toEqual({ interest: 1000, principal: 2321 });
+
+    const remainingAfterM1 = 100000 - m1.principal;
+    const m2 = loanPaymentSplit(remainingAfterM1, 3321, 12);
+    expect(m2).toEqual({ interest: 977, principal: 2344 });
+
+    expect(remainingAfterM1 - m2.principal).toBe(95335);
   });
 });

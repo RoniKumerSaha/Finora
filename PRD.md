@@ -11,7 +11,7 @@
 | **Currency** | BDT (৳) |
 | **Storage Model** | Local-first (device/browser) |
 | **Authentication** | None in V1 (the app uses device-local storage; no PIN or login surface) |
-| **Last Updated** | 2026-08-30 (Plan module extended with Investment Planner + Loan Calculator scratchpads — see §9.17; 68 new tests across `investmentPlans` and `loanPlans`; rules R18 + R19 added) |
+| **Last Updated** | 2026-08-31 (V1.1 — Loan-kind Debt: per-payment interest/principal split via `outstandingFor()` walking linked transactions; 23 new tests across `math.spec` (9) and new `debts.spec` (14); see §9.18; rules R20 + R21 added) |
 
 ---
 
@@ -1096,6 +1096,67 @@ Each period:
 - Extra payments / prepayments on the loan.
 - Floating-rate loans.
 
+### 9.18 V1.1 — Loan-kind Debt
+
+The **Debts** module gains a per-debt kind flag so a debt can behave as a reducing-balance **loan** (each payment splits interest vs. principal) instead of a flat personal IOU.
+
+**Scope:** an existing `Debt` optionally gains `kind`, `interestRate`, and `termMonths`. The transaction ledger and account-balance mechanics stay unchanged; the new behaviour is purely in *how outstanding is computed* for loan-kind debts.
+
+#### 9.18.1 Data model
+
+```
+Debt {
+  ...existing fields...            // name, direction, total, person, dueDate, status, …
+  kind?: 'flat' | 'loan'           // defaults to 'flat' on read for backwards compat
+  interestRate?: number            // annual %, required when kind === 'loan'
+  termMonths?: number              // optional — drives Pay modal's EMI pre-fill
+}
+```
+
+- `kind: 'flat'` is the V1 behaviour — outstanding = `total − paidSoFar`.
+- `kind: 'loan'` opts the debt into the reducing-balance split.
+- Missing `kind` on read defaults to `'flat'` so older JSON in localStorage continues to deserialize unchanged (no migration step).
+
+#### 9.18.2 Math (authoritative — R20)
+
+For a loan-kind debt, **outstanding is not stored** — it is *derived* from the transaction history on every read:
+
+```
+outstanding(0) = total
+for t in sorted(linkedTransactions):
+    split = loanPaymentSplit(outstanding(before t), t.amount, interestRate)
+    outstanding(after t) = max(0, outstanding(before t) − split.principal)
+outstandingNow = outstanding(after last t)
+```
+
+`loanPaymentSplit(outstanding, payment, annualRate)` returns `{ interest, principal }` where `interest = round(outstanding × annualRate/100/12)` (or `payment` when `payment < interest` — an underpayment does *not* grow the principal) and `principal = min(outstanding, payment − interest)`.
+
+Why derived, not stored: payments can be entered in either order (Pay shortcut on the card, or a plain expense from the Ledger); the card's "Outstanding" figure must always reflect the chronological run-down from `total`, no matter who entered which payment when.
+
+#### 9.18.3 UI surfaces
+
+- **Debts list card** — loan-kind cards gain a `Loan` pill in the direction tag, switch the right-zone headline from "Remaining" to "Outstanding", and append a one-line "Last: X int · Y prin" sub-figure (live, from the same `outstandingFor` walk). The progress strip and colour encoding (danger for `i_owe`, primary for `owed_to_me`) are unchanged.
+- **Pay shortcut** — loan-kind cards expose a `+ Pay` button in the right zone. Pre-fills with the standard EMI when `termMonths` is set; otherwise leaves the amount blank. Saves a single expense (or income for `owed_to_me`) transaction tagged with `linkedDebtId` — never a side-table. Shows a live split preview and an underpayment warning before submission.
+- **Debt edit screen** — adds an "Is this a loan with interest?" checkbox mirroring the Add flow. Flipping the toggle from `loan` → `flat` requires async confirm because it will discard the stored `interestRate`; the live "Outstanding" figure replays as a transaction-by-transaction activity feed under the form (each row annotated with its computed `int / prin` split) so the user can audit what the change will do to their running balance.
+- **Summary card** — per-direction remaining totals switch from `paidSoFar`-based to `outstandingFor()`-based when any active loan is present, so the sidebar shows the *real* outstanding principal for the whole list. The "How it works" copy picks up an extra sentence describing the split when at least one loan exists.
+
+#### 9.18.4 Edge cases
+
+- **Underpayment** — paying less than one month of interest is recorded as `interest = payment, principal = 0`. Outstanding does *not* grow. The Pay modal surfaces a warning ("Underpayment — this didn't cover the month's interest") and the post-save toast notes it.
+- **Overpayment** — `principal = min(outstanding, payment − interest)`. Excess interest is dropped (V1.1 has no prepayment / floating-rate support — see §9.17.4).
+- **Cross-direction tag** — an income transaction linked to an `i_owe` debt (or vice-versa) is recorded but does not reduce outstanding; it's a tagging-mistake hint, not a math error.
+- **Toggle loan → flat mid-life** — outstanding reverts to `total − paidSoFar` (V1 logic). No transactions are deleted; only the reading rule changes.
+- **Zero rate on a loan-kind debt** — blocked at validation (`kind: 'loan'` requires `interestRate > 0`).
+- **Missing `termMonths` on a loan-kind debt** — Pay modal leaves the amount blank. No EMI-derived defaults.
+
+#### 9.18.5 V1.1 does NOT change
+
+- The transaction ledger (R6, R7) — still the source of truth.
+- Account-balance mechanics (R3) — payments still touch the linked account.
+- Flat-kind debts (V1 behaviour unchanged).
+- Insights aggregations.
+- Storage shape — `kind`, `interestRate`, `termMonths` are optional additions on `Debt`; the import schema marks the new fields `.optional()` for forward-compat.
+
 ---
 
 ## 10. Core Financial Rules (Authoritative)
@@ -1121,6 +1182,8 @@ Each period:
 | R17 | Insights range persistence | The selected range (`thisMonth` / `last3` / `last6` / `last12` / `all`) is persisted to `localStorage` under `finora.insights.range`. Defaults to `last6` on first open. |
 | R18 | Mock investment maturity | `InvestmentPlan.maturity_value` is the same formula as R9/R13, but the source is `investmentPlans` (not `investments`). The figure is always suffixed "(projection)" — never real money in hand. No linked transactions, no auto-mature status, no payout prompt. |
 | R19 | Loan amortization | `EMI = P × r × (1 + r)^n / ((1 + r)^n − 1)` with `r = annualRate/100/12`, `n = termMonths`. Zero-rate falls back to `P / n`. Each period: `interest = outstanding × r`, `principalPaid = min(outstanding, EMI − interest)`, `remaining = max(0, outstanding − principalPaid)`. Sum of `principalPaid` across all rows = original `principal` (within rounding). |
+| R20 | Loan-kind Debt outstanding | For `kind: 'loan'` debts, outstanding is derived — never stored. `outstanding = total`; walk linked transactions chronologically (date asc, id asc tie-break); for each, `split = loanPaymentSplit(outstanding_before, amount, annualRate)` where `interest = round(outstanding_before × annualRate/100/12)` (or `amount` if `amount < interest`) and `principal = min(outstanding_before, amount − interest)`; `outstanding = max(0, outstanding_before − split.principal)`. Final `outstanding` is the result after the last linked transaction. Only direction-matching transactions count (`expense` for `i_owe`, `income` for `owed_to_me`). |
+| R21 | Loan-kind Debt validation | Saving a debt with `kind: 'loan'` requires `interestRate > 0`. Flipping `kind` back to `'flat'` clears the stored `interestRate` so flat debts never carry a stale rate. Missing `kind` on read defaults to `'flat'` — older JSON in localStorage continues to deserialize unchanged (no migration). |
 
 ---
 

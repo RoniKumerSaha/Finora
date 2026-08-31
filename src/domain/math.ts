@@ -605,6 +605,68 @@ export function loanEMI(
   return (P * r * pow) / (pow - 1);
 }
 
+/** Result of splitting one payment on a loan-kind debt into its
+ *  interest + principal portions. Both are integer taka (BDT). The
+ *  caller is responsible for routing the gross payment through the
+ *  ledger as a single transaction — `loanPaymentSplit` is a pure
+ *  derived-value helper, not a persistence layer. */
+export interface LoanPaymentSplit {
+  interest: number;
+  principal: number;
+}
+
+/**
+ * Split a single payment against outstanding principal on a loan-kind
+ * debt into interest + principal portions.
+ *
+ * Rules (PRD §8 — Loan-kind Debt):
+ *   monthlyRate = annualRate / 12 / 100
+ *   interest    = round(outstanding × monthlyRate)
+ *   principal   = max(0, payment − interest), capped at outstanding
+ *
+ * Edge cases:
+ *   - `payment <= 0` → both portions 0. Defensive only; form-layer
+ *     validation rejects ≤ 0 before this is called.
+ *   - `payment < interest` → underpayment. Interest absorbs the full
+ *     payment; principal is 0; outstanding is unchanged. The caller
+ *     surfaces a "this payment didn't cover this month's interest"
+ *     warning when principal is 0 on a non-zero-interest debt.
+ *   - `payment > outstanding + interest` → overpayment. Principal is
+ *     capped at outstanding; no negative carry.
+ *   - `outstanding <= 0` → all of the payment goes to principal.
+ *   - `annualRate <= 0` → interest is 0; the whole payment is
+ *     principal (caller is responsible for not passing rate=0 on a
+ *     `kind === 'loan'` debt; validation in `debts.add` enforces this).
+ */
+export function loanPaymentSplit(
+  outstanding: number,
+  payment: number,
+  annualRate: number,
+): LoanPaymentSplit {
+  const out = Number(outstanding) || 0;
+  const pay = Number(payment) || 0;
+  const rate = Number(annualRate) || 0;
+  if (pay <= 0) return { interest: 0, principal: 0 };
+  if (out <= 0) return { interest: 0, principal: pay };
+  const monthlyRate = rate / 100 / 12;
+  // The "would-be" interest — what a full month of interest is right
+  // now. Underpayment absorbs the full payment into interest (caller
+  // surfaces a warning); normal/overpayment uses this rounded value.
+  const fullInterest = monthlyRate > 0
+    ? Math.round(out * monthlyRate)
+    : 0;
+  if (pay < fullInterest) {
+    // Partial-month: unpaid interest does not accrue onto principal in
+    // v1.1; the full payment goes to "interest" and outstanding is
+    // unchanged. Caller is expected to warn the user.
+    return { interest: pay, principal: 0 };
+  }
+  // Normal case: interest absorbs fullInterest, principal = remainder.
+  // Overpayment: principal is clamped so outstanding can't go negative.
+  const principal = Math.min(pay - fullInterest, out);
+  return { interest: fullInterest, principal };
+}
+
 /** Total of every EMI across the full term. Pure helper for the
  *  "Total you pay" summary card on the loan calculator screen. */
 export function loanTotalPaid(emi: number, termMonths: number): number {

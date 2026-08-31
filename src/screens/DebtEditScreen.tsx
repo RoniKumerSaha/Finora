@@ -13,17 +13,17 @@
  * account's balance so the user can see what their accounts look like
  * after the debt was settled.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
-import { accountBalance, debtPaidSoFar } from '../domain/math';
+import { accountBalance, debtPaidSoFar, loanPaymentSplit } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
-import type { DebtDirection } from '../domain/types';
+import type { DebtDirection, DebtKind } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -42,17 +42,31 @@ export function DebtEditScreen() {
   const [total, setTotal] = useState(String(debt?.total ?? ''));
   const [person, setPerson] = useState(debt?.person ?? '');
   const [dueDate, setDueDate] = useState(debt?.dueDate ?? '');
+  // V1.1: loan-kind state, pre-filled from the existing debt. Defaults
+  // to off for legacy flat debts.
+  const [isLoan, setIsLoan] = useState(debt?.kind === 'loan');
+  const [interestRate, setInterestRate] = useState(debt?.interestRate != null ? String(debt.interestRate) : '');
+  const [termMonths, setTermMonths] = useState(debt?.termMonths != null ? String(debt.termMonths) : '');
+  // Snapshot the debt's kind at mount so we can detect a
+  // loan → flat downgrade and prompt for confirmation (the prior
+  // ledger entries will be reinterpreted as 1-for-1).
+  const [wasLoanAtMount] = useState(debt?.kind === 'loan');
   // One-shot confirm-state for the Save button. Pulse + ✓ glyph render
   // for the 600ms window before navigate.
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (saved) setSaved(false);
-  }, [name, direction, total, person, dueDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, direction, total, person, dueDate, isLoan, interestRate, termMonths]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
   // value is always valid; user can break it by typing a negative.
   const totalInvalid = !isPositiveMoney(total);
   const totalErrorClass = totalInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
+  // V1.1: rate is required when isLoan is true.
+  const rateInvalid = isLoan && !(Number(interestRate) > 0);
+  const rateErrorClass = rateInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
 
@@ -79,6 +93,34 @@ export function DebtEditScreen() {
     .slice()
     .sort((a, b) => b.date.localeCompare(a.date));
   const accountById = new Map(state.accounts.map(a => [a.id, a]));
+
+  // V1.1 (L4.1): per-row loan split — for loan-kind debts only.
+  // We replay the transactions in chronological (oldest-first) order,
+  // tracking running outstanding, and stash each transaction's
+  // {interest, principal} split so the row can render it.
+  // `linkedTx` is newest-first, so we build a Map keyed by transaction
+  // id and look it up in the row.
+  const splitByTxId = new Map<string, { interest: number; principal: number }>();
+  if (debt.kind === 'loan') {
+    const rate = Number(debt.interestRate) || 0;
+    const chronological = linkedTx.slice().sort((a, b) => {
+      const d = a.date.localeCompare(b.date);
+      return d !== 0 ? d : a.id.localeCompare(b.id);
+    });
+    let out = Number(debt.total) || 0;
+    for (const t of chronological) {
+      const matches =
+        (debt.direction === 'i_owe' && t.type === 'expense') ||
+        (debt.direction === 'owed_to_me' && t.type === 'income');
+      if (!matches) {
+        splitByTxId.set(t.id, { interest: 0, principal: 0 });
+        continue;
+      }
+      const split = loanPaymentSplit(out, Number(t.amount) || 0, rate);
+      splitByTxId.set(t.id, split);
+      out = Math.max(0, out - split.principal);
+    }
+  }
 
   // When fully paid, look up the most-recently-used account from the
   // linked transactions and show its current balance — gives the user
@@ -118,6 +160,21 @@ export function DebtEditScreen() {
       });
       return;
     }
+    if (isLoan && !(Number(interestRate) > 0)) {
+      showBanner({
+        kind: 'error',
+        what: 'Enter the annual interest rate',
+        why: 'A loan-kind debt needs a rate so each payment can be split into interest and principal.',
+        fix: 'Enter the rate as a percentage, e.g. 12 for 12% APR.',
+      });
+      return;
+    }
+    submitRef.current?.();
+  }
+
+  // Split the actual save into an async helper so we can intercept
+  // loan → flat downgrades with a confirm dialog before persisting.
+  async function performSave() {
     try {
       update(s => debts.update(s, debt!.id, {
         name,
@@ -125,6 +182,9 @@ export function DebtEditScreen() {
         total: Number(total),
         person: person.trim() || undefined,
         dueDate: dueDate || undefined,
+        kind: isLoan ? 'loan' as DebtKind : undefined,
+        interestRate: isLoan ? Number(interestRate) : undefined,
+        termMonths: isLoan && termMonths ? Number(termMonths) : undefined,
       }));
       showToast({
         kind: 'success',
@@ -142,6 +202,25 @@ export function DebtEditScreen() {
       });
     }
   }
+
+  // Imperative bridge: onSubmit does synchronous validation and then
+  // calls into this ref so we can `await confirm(...)` for the
+  // loan → flat downgrade path before mutating state.
+  const submitRef = useRef<() => Promise<void>>(async () => { /* replaced below */ });
+  submitRef.current = async () => {
+    // Downgrade guard: if this debt was a loan at mount and the user
+    // is flipping it back to flat, prompt before saving. The ledger
+    // entries stay; only their interpretation changes.
+    if (wasLoanAtMount && !isLoan) {
+      const ok = await confirm({
+        title: 'Treat this debt as a flat IOU?',
+        body: 'Past payments will be reinterpreted 1-for-1 going forward. The transaction records themselves stay unchanged.',
+        confirmLabel: 'Save as flat',
+      });
+      if (!ok) return;
+    }
+    await performSave();
+  };
 
   async function onDelete() {
     const target = debt;
@@ -246,8 +325,75 @@ export function DebtEditScreen() {
         <Field label="Due date (optional)">
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
+
+        {/* V1.1: optional loan toggle — same shape as DebtAddScreen.
+            Pre-filled from `debt.kind` / `debt.interestRate` / `debt.termMonths`. */}
+        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isLoan}
+            onChange={e => {
+              setIsLoan(e.target.checked);
+              if (!e.target.checked) {
+                setInterestRate('');
+                setTermMonths('');
+              }
+            }}
+            className="mt-1 shrink-0"
+            aria-label="Mark this debt as a loan with interest"
+          />
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-semibold text-ink leading-tight">
+              Is this a loan with interest?
+            </div>
+            <div className="text-[12px] text-muted mt-1 leading-relaxed">
+              Each payment will be split into interest and principal based on the rate below.
+            </div>
+          </div>
+        </label>
+        {isLoan && (
+          <div className="flex flex-col gap-4 pl-6 border-l-2 border-border">
+            <Field
+              label="Annual interest rate (%)"
+              hint="APR as a percentage, e.g. 12 for 12%."
+              error={rateInvalid ? 'Enter a rate greater than zero.' : undefined}
+            >
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                max="100"
+                value={interestRate}
+                onChange={e => setInterestRate(e.target.value)}
+                aria-invalid={rateInvalid || undefined}
+                className={rateErrorClass}
+              />
+            </Field>
+            <Field
+              label="Term in months (optional)"
+              hint="If set, the Pay button will pre-fill with the standard EMI."
+            >
+              <Input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                value={termMonths}
+                onChange={e => setTermMonths(e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+
         <div className="flex gap-2">
-          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()} success={saved}>Save changes</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={totalInvalid || !name.trim() || rateInvalid}
+            success={saved}
+          >
+            Save changes
+          </Button>
           <Button variant="ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>
@@ -305,6 +451,23 @@ export function DebtEditScreen() {
                     <div className="text-[11.5px] text-muted mt-1 truncate tabular">
                       {fmtDate(t.date)}{acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}
                     </div>
+                    {/* V1.1 (L4.1): loan split line — only for loan-kind
+                        debts, only on rows that actually contributed
+                        (so cross-direction tagging mistakes don't add
+                        noise). */}
+                    {debt.kind === 'loan' && (() => {
+                      const split = splitByTxId.get(t.id);
+                      if (!split) return null;
+                      const meaningful = split.interest > 0 || split.principal > 0;
+                      if (!meaningful) return null;
+                      return (
+                        <div className="text-[11.5px] text-muted mt-0.5 tabular">
+                          <span className="text-danger">{fmtBDT(split.interest)}</span> interest
+                          {' · '}
+                          <span className="text-primary">{fmtBDT(split.principal)}</span> principal
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

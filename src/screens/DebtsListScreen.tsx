@@ -21,9 +21,13 @@
  * lift — record-only).
  */
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
+import { loanPaymentSplit } from '../domain/math';
 import { ArrowUp, ArrowDown, Check } from '../components/icons/Icons';
+import { Button } from '../components/Button';
+import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT, fmtDate } from '../lib/format';
 
 const MIDDOT = '\u00B7';
@@ -36,16 +40,22 @@ export function DebtsListScreen() {
   const active = ds.filter(d => d.status === 'active');
   const completed = ds.filter(d => d.status === 'completed');
 
-  // Per-direction remaining totals for the Summary card.
+  // Per-direction remaining totals for the Summary card. For loan-kind
+  // debts we use `outstandingFor()` so the totals reflect the
+  // interest-aware split, not just gross paid-off.
   let oweRemaining = 0;
   let receivableRemaining = 0;
   for (const d of active) {
-    const left = Math.max(0, (Number(d.total) || 0) - (Number(d.paidSoFar) || 0));
+    const left = d.kind === 'loan'
+      ? debts.outstandingFor(d, state.transactions)
+      : Math.max(0, (Number(d.total) || 0) - (Number(d.paidSoFar) || 0));
     if (d.direction === 'i_owe') oweRemaining += left;
     else receivableRemaining += left;
   }
   const showReceivable = receivableRemaining > 0;
   const showOwe = oweRemaining > 0;
+  // V1.1: drives the extra sentence in the "How it works" copy.
+  const hasAnyLoan = active.some(d => d.kind === 'loan');
 
   return (
     <div className="flex flex-col gap-6">
@@ -110,6 +120,12 @@ export function DebtsListScreen() {
               </div>
               <div className="text-xs text-muted mt-5 leading-relaxed">
                 <strong className="text-ink">How it works:</strong> <em>Remaining</em> is what's still owed on each active debt — total minus payments recorded against it. When you pay toward an <em>i_owe</em> debt, record it as an Expense tagged with the debt; when someone pays back an <em>owed_to_me</em> debt, record it as Income tagged the same way.
+                {hasAnyLoan && (
+                  <>
+                    {' '}
+                    For loans with interest, each payment is split into <em>interest</em> (calculated on the outstanding principal) and <em>principal</em> — only the principal portion reduces what you still owe.
+                  </>
+                )}
               </div>
             </section>
           )}
@@ -120,20 +136,66 @@ export function DebtsListScreen() {
 }
 
 function DebtCard({ debt: d }: { debt: any }) {
+  const state = useStore(s => s.state);
   const pct = d.total > 0 ? Math.min(100, Math.round(((d.paidSoFar || 0) / d.total) * 100)) : 0;
-  const left = Math.max(0, d.total - (d.paidSoFar || 0));
   const isIOwe = d.direction === 'i_owe';
+  const isLoan = d.kind === 'loan';
   // Tone pair follows the existing palette: i_owe is danger (you're
   // paying it down), owed_to_me is primary (you'd receive it back).
   const iconBg = isIOwe ? 'bg-danger-soft text-danger' : 'bg-primary-soft text-primary';
   const barFill = isIOwe ? 'bg-gradient-to-r from-danger to-warn' : 'bg-gradient-to-r from-primary to-accent';
   const amtColor = isIOwe ? 'text-danger' : 'text-primary';
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
+
+  // Right-zone figure: flat = total − paidSoFar (today's behaviour);
+  // loan = outstandingFor() (walks transactions, applies split).
+  const outstanding = isLoan
+    ? debts.outstandingFor(d, state.transactions)
+    : Math.max(0, d.total - (d.paidSoFar || 0));
+  const headlineLabel = isLoan ? 'Outstanding' : 'Remaining';
+
+  // For loan-kind debts with at least one payment: derive running
+  // totals and the last payment's split so the card can show both.
+  // Doing it once here avoids recomputing per-row in JSX.
+  const linkedTx = isLoan
+    ? state.transactions
+        .filter(t => t.linkedDebtId === d.id)
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date))
+    : [];
+  let totalInterest = 0;
+  let totalPrincipal = 0;
+  if (isLoan && linkedTx.length > 0) {
+    const rate = Number(d.interestRate) || 0;
+    let out = Number(d.total) || 0;
+    for (const t of linkedTx) {
+      const matches =
+        (d.direction === 'i_owe' && t.type === 'expense') ||
+        (d.direction === 'owed_to_me' && t.type === 'income');
+      if (!matches) continue;
+      const split = loanPaymentSplit(out, Number(t.amount) || 0, rate);
+      totalInterest += split.interest;
+      totalPrincipal += split.principal;
+      out = Math.max(0, out - split.principal);
+    }
+  }
+  const hasPayments = linkedTx.length > 0;
+
+  // Loan payment modal — opened from the Pay button on loan cards.
+  const [payOpen, setPayOpen] = useState(false);
+  function openPay(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setPayOpen(true);
+  }
+
   return (
-    <Link
-      to={`/debts/${d.id}/edit`}
-      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
-    >
+    <div className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative">
+      <Link
+        to={`/debts/${d.id}/edit`}
+        className="absolute inset-0 z-0"
+        aria-label={`Edit debt "${d.name}"`}
+      />
       {/* Left-edge direction band — 4px colored stripe that runs the
           full height of the card. Direction-encoded: danger for
           i_owe, primary for owed_to_me. 0.7 opacity so the band
@@ -144,17 +206,14 @@ function DebtCard({ debt: d }: { debt: any }) {
           so the band reads as baked into the surface. */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 h-full w-1 pointer-events-none"
+        className="absolute left-0 top-0 h-full w-1 pointer-events-none z-[1]"
         style={{
           background: isIOwe ? 'var(--danger)' : 'var(--primary)',
           opacity: 0.7,
         }}
       />
-      {/* Top row — horizontal split: identity (left) + remaining (right),
-          separated by a 1px divider. Mirrors the investment card.
-          Padding trimmed from pt-5 pb-4 → pt-4 pb-3 so the top block
-          lands at the same height as the investment card; the progress
-          strip below provides the card's breathing room. */}
+      {/* Top row — horizontal split: identity (left) + remaining/outstanding
+          (right), separated by a 1px divider. Mirrors the investment card. */}
       <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-4 pb-3">
         {/* Left zone — direction tag, icon, name, meta. */}
         <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
@@ -166,6 +225,14 @@ function DebtCard({ debt: d }: { debt: any }) {
             title={isIOwe ? 'You owe this person' : 'This person owes you'}
           >
             {directionLabel}
+            {isLoan && (
+              <span
+                className="ml-2 inline-flex items-center px-1.5 py-px rounded-pill text-[9.5px] font-bold uppercase tracking-wider align-middle"
+                style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}
+              >
+                Loan
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${iconBg}`}>
@@ -180,10 +247,23 @@ function DebtCard({ debt: d }: { debt: any }) {
               {d.name}
             </div>
           </div>
+          {/* V1.1 (L3.3): for loan-kind debts with payments, show
+              Paid · interest · principal on one row. Flat debts keep
+              the original "Paid X of Y total" wording. */}
           <div className="text-[12px] text-muted tabular truncate">
-            Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
+            {isLoan && hasPayments ? (
+              <>
+                Paid {fmtBDT(d.paidSoFar || 0)}
+                {' · '}
+                <span className="text-danger">{fmtBDT(totalInterest)}</span> interest
+                {' · '}
+                <span className="text-primary">{fmtBDT(totalPrincipal)}</span> principal
+              </>
+            ) : (
+              <>Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total</>
+            )}
           </div>
-          {(d.dueDate || d.person) && (
+          {(d.dueDate && d.person) && (
             <div className="text-[12px] text-muted flex items-center gap-2 flex-wrap">
               {d.dueDate ? <span>Due {fmtDate(d.dueDate)}</span> : null}
               {d.dueDate && d.person ? <span className="opacity-50" aria-hidden>{MIDDOT}</span> : null}
@@ -199,16 +279,17 @@ function DebtCard({ debt: d }: { debt: any }) {
           style={{ background: 'var(--divider)' }}
         />
 
-        {/* Right zone — Remaining, right-aligned. flex flex-col +
+        {/* Right zone — Outstanding/Remaining, right-aligned. flex flex-col +
             items-end keeps the figures right-aligned; shrink-0 prevents
             the right zone from being squeezed when the left zone gets
-            long names. */}
-        <div className="flex flex-col gap-1.5 items-end justify-center shrink-0 sm:min-w-[200px]">
+            long names. z-[1] so any button in this zone stays clickable
+            above the full-card <Link>. */}
+        <div className="relative z-[1] flex flex-col gap-1.5 items-end justify-center shrink-0">
           <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-            Remaining
+            {headlineLabel}
           </span>
-          <span className={`font-bold tabular text-[24px] tracking-tight ${amtColor}`}>
-            {isIOwe ? '\u2212' : '+'} {fmtBDT(left)}
+          <span className={`font-bold tabular text-[24px] tracking-tight leading-none ${amtColor}`}>
+            {isIOwe ? '\u2212' : '+'} {fmtBDT(outstanding)}
           </span>
           <span className="text-[10.5px] text-muted tabular">
             of {fmtBDT(d.total)} total
@@ -216,20 +297,73 @@ function DebtCard({ debt: d }: { debt: any }) {
         </div>
       </div>
 
-      {/* Progress strip — full card width, sits below the divider row.
-          Thin (h-1.5) so it doesn't compete with the headline amounts.
-          Bottom padding trimmed from pb-5 → pb-4 to keep the card
-          compact once the top row is shorter. */}
-      <div className="px-6 pb-4">
-        <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
-          <div
-            className={`h-full rounded-pill ${barFill} transition-all duration-200`}
-            style={{ width: `${pct}%` }}
-          />
+      {/* Progress strip + Pay-now action row. Bar + "X% paid" on the
+          left (flex-1); Pay-now chip on the right when this is a
+          loan-kind active debt. z-[1] on the button keeps it clickable
+          above the full-card <Link>. */}
+      <div className="px-6 pb-4 flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="h-1.5 bg-surface-2 rounded-pill overflow-hidden">
+            <div
+              className={`h-full rounded-pill ${barFill} transition-all duration-200`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="text-[10.5px] text-muted tabular mt-1.5">{pct}% paid</div>
         </div>
-        <div className="text-[10.5px] text-muted tabular mt-1.5">{pct}% paid</div>
+        {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.
+            Bottom-right of the card, opposite the figures up top.
+            Sharp 4px corners + raised surface (surface-3) make it
+            read as a separate control rather than a chip that
+            belongs to the card's rounded-12px surface — the visual
+            treatment is theme-consistent (uses the same surface-3
+            token in dark and light mode). Variant tracks the card's
+            polarity on the label edge: danger stripe for i_owe,
+            primary stripe for owed_to_me. z-[1] so it stays
+            clickable above the full-card <Link>. */}
+        {isLoan && d.status === 'active' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openPay}
+            title={`Record a payment toward "${d.name}"`}
+            className={[
+              'shrink-0 z-[1]',
+              // Pill shape + low-contrast fill + dot glyph + thin
+              // 1px border — geometrically and tonally distinct
+              // from the card's rounded-12px surface so it reads
+              // as a separate control. The soft-tint tokens
+              // (*-soft) are theme-aware, so the chip renders the
+              // same in dark and light mode.
+              '!rounded-full !px-3.5',
+              isIOwe
+                ? '!bg-danger-soft !text-danger !border !border-danger'
+                : '!bg-primary-soft !text-primary !border !border-primary',
+              'hover:!opacity-90',
+            ].join(' ')}
+          >
+            {/* Polarity dot — a tiny solid pill that color-matches
+                the card's direction band, so the chip's accent
+                reinforces which way this debt flows. */}
+            <span
+              aria-hidden
+              className={`inline-block w-1.5 h-1.5 rounded-full ${
+                isIOwe ? 'bg-danger' : 'bg-primary'
+              }`}
+            />
+            Pay now
+          </Button>
+        )}
       </div>
-    </Link>
+
+      {payOpen && (
+        <LoanPaymentModal
+          debt={d}
+          outstandingAtOpen={outstanding}
+          onClose={() => setPayOpen(false)}
+        />
+      )}
+    </div>
   );
 }
 

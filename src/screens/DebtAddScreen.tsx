@@ -5,7 +5,7 @@ import * as debts from '../domain/debts';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
-import type { DebtDirection } from '../domain/types';
+import type { DebtDirection, DebtKind } from '../domain/types';
 
 export function DebtAddScreen() {
   const navigate = useNavigate();
@@ -16,12 +16,32 @@ export function DebtAddScreen() {
   const [total, setTotal] = useState('');
   const [person, setPerson] = useState('');
   const [dueDate, setDueDate] = useState('');
+  // V1.1 (Loan-kind Debt): collapsed by default. Flipping the toggle
+  // on exposes the rate + term fields and sets kind to 'loan'.
+  const [isLoan, setIsLoan] = useState(false);
+  const [interestRate, setInterestRate] = useState('');
+  const [termMonths, setTermMonths] = useState('');
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
   const totalInvalid = !isPositiveMoney(total);
   const totalErrorClass = totalInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
+  // Rate is required when isLoan is true; must be a positive number.
+  const rateInvalid = isLoan && !(Number(interestRate) > 0);
+  const rateErrorClass = rateInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
+
+  function onToggleLoan(on: boolean) {
+    setIsLoan(on);
+    if (!on) {
+      // Clearing the toggle wipes the rate so a flat debt never has
+      // a stale rate hanging around in form state.
+      setInterestRate('');
+      setTermMonths('');
+    }
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,11 +53,22 @@ export function DebtAddScreen() {
       showBanner({ what: 'Total must be greater than zero', why: 'Zero or negative totals make the debt meaningless.', fix: 'Enter a positive number.' });
       return;
     }
+    if (isLoan && !(Number(interestRate) > 0)) {
+      showBanner({
+        what: 'Enter the annual interest rate',
+        why: 'A loan-kind debt needs a rate so each payment can be split into interest and principal.',
+        fix: 'Enter the rate as a percentage, e.g. 12 for 12% APR.',
+      });
+      return;
+    }
     try {
       update(s => debts.add(s, {
         name, direction, total: Number(total),
         person: person.trim() || undefined,
         dueDate: dueDate || undefined,
+        kind: isLoan ? 'loan' as DebtKind : undefined,
+        interestRate: isLoan ? Number(interestRate) : undefined,
+        termMonths: isLoan && termMonths ? Number(termMonths) : undefined,
       }));
       navigate('/debts');
     } catch (err) {
@@ -78,8 +109,71 @@ export function DebtAddScreen() {
         <Field label="Due date (optional)">
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
+
+        {/* V1.1: optional loan toggle. When off, the debt is treated as
+            a flat personal IOU (today's behaviour). When on, each
+            recorded payment is split into interest + principal. */}
+        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isLoan}
+            onChange={e => onToggleLoan(e.target.checked)}
+            className="mt-1 shrink-0"
+            aria-label="Mark this debt as a loan with interest"
+          />
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-semibold text-ink leading-tight">
+              Is this a loan with interest?
+            </div>
+            <div className="text-[12px] text-muted mt-1 leading-relaxed">
+              If the loan charges interest, enter the annual rate. We'll split each payment into interest and principal.
+            </div>
+          </div>
+        </label>
+        {isLoan && (
+          <div className="flex flex-col gap-4 pl-6 border-l-2 border-border">
+            <Field
+              label="Annual interest rate (%)"
+              hint="APR as a percentage, e.g. 12 for 12%."
+              error={rateInvalid ? 'Enter a rate greater than zero.' : undefined}
+            >
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                max="100"
+                value={interestRate}
+                onChange={e => setInterestRate(e.target.value)}
+                placeholder="12"
+                aria-invalid={rateInvalid || undefined}
+                className={rateErrorClass}
+              />
+            </Field>
+            <Field
+              label="Term in months (optional)"
+              hint="If set, the Pay button will pre-fill with the standard EMI."
+            >
+              <Input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                value={termMonths}
+                onChange={e => setTermMonths(e.target.value)}
+                placeholder="36"
+              />
+            </Field>
+          </div>
+        )}
+
         <div className="flex gap-2">
-          <Button variant="primary" type="submit" disabled={totalInvalid || !name.trim()}>Save debt</Button>
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={totalInvalid || !name.trim() || rateInvalid}
+          >
+            Save debt
+          </Button>
           <Button variant="ghost" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>

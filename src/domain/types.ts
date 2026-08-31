@@ -16,6 +16,18 @@ export type DebtDirection = 'i_owe' | 'owed_to_me';
 
 export type DebtStatus = 'active' | 'completed' | 'archived';
 
+/**
+ * V1.1 (Loan-kind Debt): how payments on a debt are accounted.
+ *  - 'flat'  → every payment reduces principal 1-for-1 (today's behaviour).
+ *  - 'loan'  → each payment is split into interest + principal based on
+ *             outstanding × rate / 12. Requires `interestRate > 0`.
+ *
+ * Stored as optional; `debts.list()` / `get()` default missing values
+ * to `'flat'` so older JSON in localStorage continues to deserialize
+ * without a migration.
+ */
+export type DebtKind = 'flat' | 'loan';
+
 export type InvestmentType = 'dps' | 'fdr' | 'savings';
 
 export type InvestmentStatus = 'active' | 'matured' | 'closed' | 'rolled_over';
@@ -79,6 +91,16 @@ export interface Debt {
   dueDate?: ISODate;
   person?: string;
   status: DebtStatus;
+  /** V1.1: how payments are accounted. Defaults to 'flat' on read. */
+  kind?: DebtKind;
+  /** Annual interest rate %, required when kind === 'loan'. Same
+   *  0–100 cap as Investment.rate. Ignored when kind === 'flat'. */
+  interestRate?: number;
+  /** V1.1: term in whole months. Optional even on loan-kind debts —
+   *  if set, the Pay modal pre-fills with the standard EMI from
+   *  `loanEMI(principal, rate, termMonths)`. Otherwise the modal
+   *  leaves the amount field empty for the user to enter. */
+  termMonths?: number;
   createdAt: ISODate;
 }
 
