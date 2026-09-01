@@ -260,18 +260,21 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
   const incomeLine = bars.map((b, i) => xy(i, b.income).join(',')).join(' ');
   const expenseLine = bars.map((b, i) => xy(i, b.expense).join(',')).join(' ');
 
-  // Draw-in: each polyline "draws" left-to-right over 3500ms. The
-  // dasharray is set to a generous fixed length so the line is
-  // initially hidden, then animated to zero via the cashflow-draw
-  // keyframe. Per-month dots fade in along the same window using
-  // a per-index stagger. The `dataKey` is included on every
-  // animatable element so React remounts the polylines/dots when
-  // the period filter changes — without it, the animation only
-  // fires once because the DOM nodes are reused.
+  // Two-phase draw-in: dots appear first (fast) and *then* the line
+  // traces over them (slow). The dots set the pace — they fire on
+  // a `dotPhase` timeline; the polyline starts once the last dot
+  // has landed, then draws across the full chart width over
+  // `lineDraw`. The ratio (lineDraw ≫ dotPhase) makes the line the
+  // dominant motion of the chart — the dots are a quick setup, the
+  // line is the long, deliberate reveal. The `dataKey` is included
+  // on every animatable element so React remounts the polylines /
+  // dots when the period filter changes — without it, the animation
+  // only fires once because the DOM nodes are reused.
   const prefersReduced =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const drawDuration = 5000;
+  const dotPhase = 1200;
+  const lineDraw = 5500;
   const dashLen = 2000;
   const dataKey = bars[0] ? `${bars[0].year}-${bars[0].month}` : 'empty';
 
@@ -344,7 +347,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               opacity={hover === null ? 1 : 0.55}
               strokeDasharray={prefersReduced ? undefined : dashLen}
               strokeDashoffset={prefersReduced ? undefined : dashLen}
-              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${drawDuration}ms cubic-bezier(.22,.61,.36,1) 0ms both`, '--line-len': dashLen } as React.CSSProperties)}
+              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${lineDraw}ms cubic-bezier(.22,.61,.36,1) ${dotPhase}ms both`, '--line-len': dashLen } as React.CSSProperties)}
               data-cashflow-line
             />
             {/* Expense line */}
@@ -359,7 +362,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               opacity={hover === null ? 1 : 0.55}
               strokeDasharray={prefersReduced ? undefined : dashLen}
               strokeDashoffset={prefersReduced ? undefined : dashLen}
-              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${drawDuration}ms cubic-bezier(.22,.61,.36,1) 400ms both`, '--line-len': dashLen } as React.CSSProperties)}
+              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${lineDraw}ms cubic-bezier(.22,.61,.36,1) ${dotPhase + 200}ms both`, '--line-len': dashLen } as React.CSSProperties)}
               data-cashflow-line
             />
             {/* Hit areas + dots */}
@@ -367,19 +370,37 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               const [incX, incY] = xy(i, b.income);
               const [expX, expY] = xy(i, b.expense);
               const isHover = hover === i;
-              // Stagger dots so they appear along the line as it draws.
-              // Each dot is delayed by ~85% of drawDuration × its share
-              // of the timeline. Cap at drawDuration - 300ms so the
-              // last dot lands before the line finishes.
+              // Two-phase draw-in (continuation of the header comment).
+              //
+              // Phase 1 — dots: every dot pops in left-to-right across
+              // `dotPhase` (1200ms — fast). The dot's own pop takes
+              // `popMs`, so we stagger each dot's start time so they
+              // finish in sequence without overlap:
+              //
+              //   start_i = i × (dotPhase − popMs) / (n − 1)
+              //
+              // That way dot 0 begins at 0ms, the last dot begins at
+              // (dotPhase − popMs), and the last dot finishes exactly
+              // at dotPhase — which is also the moment the income
+              // line begins drawing.
+              //
+              // Phase 2 — line: the polylines animate `cashflow-draw`
+              // starting at dotPhase (income) and dotPhase + 200
+              // (expense), each running for `lineDraw` (5500ms —
+              // slow, deliberate). The expense dots trail the income
+              // dots by the same 200ms offset the expense line has on
+              // the income line, so every dot/line pair moves together.
+              const popMs = 250;
+              const lastDotStart = dotPhase - popMs;
               const dotDelay = prefersReduced
                 ? 0
-                : Math.min(drawDuration - 500, Math.round((i / Math.max(1, bars.length - 1)) * drawDuration * 0.85));
+                : Math.round((i / Math.max(1, bars.length - 1)) * lastDotStart);
               const dotStyle = prefersReduced
                 ? undefined
-                : { animation: `cashflow-dot-pop 450ms cubic-bezier(.22,.61,.36,1) ${dotDelay}ms both`, transformOrigin: `${incX}px ${incY}px` };
+                : { animation: `cashflow-dot-pop ${popMs}ms cubic-bezier(.22,.61,.36,1) ${dotDelay}ms both` };
               const expDotStyle = prefersReduced
                 ? undefined
-                : { animation: `cashflow-dot-pop 450ms cubic-bezier(.22,.61,.36,1) ${dotDelay + 500}ms both`, transformOrigin: `${expX}px ${expY}px` };
+                : { animation: `cashflow-dot-pop ${popMs}ms cubic-bezier(.22,.61,.36,1) ${dotDelay + 200}ms both` };
               return (
                 <g key={`${b.year}-${b.month}`}>
                   {/* Wide invisible hit strip for hover */}
