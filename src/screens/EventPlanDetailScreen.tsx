@@ -97,9 +97,22 @@ export function EventPlanDetailScreen() {
   //     as the small secondary label below the name.
   //   - `fill` — category palette colour (blue/green/red) used for the
   //     dot so the timeline mirrors the category card.
+  //
+  // Sort order is shared with the right-column category cards: dated
+  // ASC by dueDate, undated categories grouped last. Without this
+  // shared order, the timeline rail and the cards column would diverge
+  // whenever categories were added out of date order, and the rail's
+  // dots would no longer line up with their corresponding cards.
+  const sortedCategories = useMemo(() => {
+    const dated = plan.categories.filter(c => c.dueDate);
+    const undated = plan.categories.filter(c => !c.dueDate);
+    dated.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''));
+    return [...dated, ...undated];
+  }, [plan.categories]);
+
   const marks = useMemo<Mark[]>(() => {
     const items: Mark[] = [];
-    for (const cat of plan.categories) {
+    for (const cat of sortedCategories) {
       const spent = categorySpent(cat);
       const budget = Number(cat.budget) || 0;
       const pct = pctOf(spent, budget);
@@ -136,12 +149,8 @@ export function EventPlanDetailScreen() {
       kind: 'event',
       fill: allPaid ? 'green' : 'empty',
     };
-    const categories = items.filter(m => m.kind !== 'event');
-    const dated = categories.filter(m => m.date);
-    const undated = categories.filter(m => !m.date);
-    dated.sort((a, b) => a.date.localeCompare(b.date));
-    return [eventMark, ...dated, ...undated];
-  }, [plan.categories, plan.eventDate, plan.name, plan.emoji, todayISO]);
+    return [eventMark, ...items];
+  }, [sortedCategories, plan.eventDate, plan.name, plan.emoji, todayISO]);
 
   function startNewCategory() {
     setNewCatDraft({ emoji: '🏨', name: '', dueDate: '' });
@@ -428,7 +437,7 @@ export function EventPlanDetailScreen() {
               date so the timeline populates immediately. */}
           <PresetEventCategories plan={plan} />
 
-          {plan.categories.map(c => (
+          {sortedCategories.map(c => (
             <CategoryCard
               key={c.id}
               cat={c}
