@@ -446,7 +446,7 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {rows.map(r => (
+          {rows.map((r, index) => (
             <div key={r.categoryId ?? 'other'}>
               <div className="flex justify-between items-baseline gap-3">
                 <div className="text-[14px] truncate">{r.name}</div>
@@ -455,7 +455,7 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
                 </div>
               </div>
               <div className="mt-1">
-                <ProgressBar value={(r.amount / max) * 100} height={6} />
+                <ProgressBar value={(r.amount / max) * 100} height={6} animateOnMount animationDelay={index * 180} />
               </div>
             </div>
           ))}
@@ -653,14 +653,14 @@ function GoalsCard({ goals }: { goals: ReturnType<typeof goalsForInsights> }) {
         <EmptyState message="No active goals." cta={{ to: '/goals/add', label: 'Set a goal' }} />
       ) : (
         <div className="flex flex-col gap-1">
-          {goals.slice(0, 5).map(g => <GoalRow key={g.id} goal={g} />)}
+          {goals.slice(0, 5).map((g, i) => <GoalRow key={g.id} goal={g} animDelay={i * 180} />)}
         </div>
       )}
     </div>
   );
 }
 
-function GoalRow({ goal }: { goal: ReturnType<typeof goalsForInsights>[number] }) {
+function GoalRow({ goal, animDelay = 0 }: { goal: ReturnType<typeof goalsForInsights>[number]; animDelay?: number }) {
   return (
     <Link
       to={`/goals/${goal.id}`}
@@ -679,7 +679,7 @@ function GoalRow({ goal }: { goal: ReturnType<typeof goalsForInsights>[number] }
           </div>
         </div>
         <div className="mt-2">
-          <ProgressBar value={goal.pct} height={8} />
+          <ProgressBar value={goal.pct} height={8} animateOnMount animationDelay={animDelay} />
         </div>
         <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
           <span>{goal.pct}% {MIDDOT} {fmtBDT(goal.saved)} / {fmtBDT(goal.target)}</span>
@@ -709,14 +709,14 @@ function DebtsCard({ debts }: { debts: ReturnType<typeof debtsForInsights> }) {
         <EmptyState message="No active debts." />
       ) : (
         <div className="flex flex-col gap-1">
-          {debts.slice(0, 5).map(d => <DebtRow key={d.id} debt={d} />)}
+          {debts.slice(0, 5).map((d, i) => <DebtRow key={d.id} debt={d} animDelay={i * 180} />)}
         </div>
       )}
     </div>
   );
 }
 
-function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }) {
+function DebtRow({ debt, animDelay = 0 }: { debt: ReturnType<typeof debtsForInsights>[number]; animDelay?: number }) {
   const isOwed = debt.direction === 'owed_to_me';
   // Gradient matches the goal-card treatment: progress-positive uses
   // primary → accent; debt-reduction (i_owe) uses danger → warn. The
@@ -748,7 +748,7 @@ function DebtRow({ debt }: { debt: ReturnType<typeof debtsForInsights>[number] }
           </div>
         </div>
         <div className="mt-2">
-          <ProgressBar value={debt.pct} height={4} />
+          <ProgressBar value={debt.pct} height={4} animateOnMount animationDelay={animDelay} />
         </div>
         <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
           <span>{debt.pct}% paid {MIDDOT} {fmtBDT(debt.paid)} of {fmtBDT(debt.total)}</span>

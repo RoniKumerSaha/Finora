@@ -14,7 +14,7 @@
  * Delete action stays a sibling button with `relative z-10` + click
  * stopPropagation so it doesn't trigger navigation.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as plans from '../domain/plans';
@@ -27,6 +27,48 @@ import { fillStatus, FILL, formatPct, pctOf, frostedPillStyle, eventPlanCardTone
 import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
 import { ProgressBar } from '../components/ProgressBar';
+
+/**
+ * Tween an integer from 0 → `target` over `duration` ms, starting
+ * after `delay` ms. Uses requestAnimationFrame with the same
+ * `cubic-bezier(.22,.61,.36,1)` easing as `progressbar-grow-in`
+ * so the number and the bar land on the target in lockstep.
+ * Returns the live rounded integer; resets to 0 if `target`
+ * changes (re-runs on every change of the target prop).
+ * Reduced-motion users get the final value immediately.
+ */
+function useCountUp(target: number, delay: number, duration: number): number {
+  const prefersReduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [value, setValue] = useState(prefersReduced ? target : 0);
+  useEffect(() => {
+    if (prefersReduced) {
+      setValue(target);
+      return;
+    }
+    let raf = 0;
+    let start = 0;
+    const t = setTimeout(() => {
+      const tick = (now: number) => {
+        if (!start) start = now;
+        const elapsed = now - start;
+        const t01 = Math.min(1, elapsed / duration);
+        // easeOut cubic — matches the keyframe's cubic-bezier(.22,.61,.36,1)
+        const eased = 1 - Math.pow(1 - t01, 3);
+        setValue(Math.round(target * eased));
+        if (t01 < 1) raf = requestAnimationFrame(tick);
+        else setValue(target);
+      };
+      raf = requestAnimationFrame(tick);
+    }, delay);
+    return () => {
+      clearTimeout(t);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [target, delay, duration, prefersReduced]);
+  return value;
+}
 
 export function EventPlanScreen() {
   const state = useStore(s => s.state);
@@ -142,7 +184,7 @@ export function EventPlanScreen() {
 
       {sorted.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {sorted.map(ev => {
+          {sorted.map((ev, index) => {
             const summary = plans.summariseEventPlan(ev);
             const days = daysBetween(todayISO, ev.eventDate);
             const pct = pctOf(summary.planned, summary.budget);
@@ -151,6 +193,16 @@ export function EventPlanScreen() {
             const fill = FILL[status];
             const { verb, number } = formatPct(pct, overflow);
             const cardTone = eventPlanCardTone(summary.planned, summary.budget);
+            // Always count up to the raw percent (0 → pct) when a budget is
+            // set, including overflow rows. The bar fill stays capped at
+            // 100% width visually, but the number animates to whatever the
+            // data says — e.g. "150% overflowing" tweens from 0 → 150.
+            // The `9×` multiplier shortcut is kept for extreme overflow
+            // (≥1000%) so the label stays compact instead of reading "1200%".
+            const livePct = useCountUp(summary.budget > 0 ? pct : 0, index * 180, 3000);
+            const displayedNumber = summary.budget > 0
+              ? (overflow && pct >= 1000 ? number : `${livePct}%`)
+              : number;
             return (
               <Link
                 key={ev.id}
@@ -192,7 +244,7 @@ export function EventPlanScreen() {
                     Delete
                   </button>
                 </div>
-                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} />
+                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} animateOnMount animationDelay={index * 180} />
                 <div className="flex justify-between items-center text-xs tabular gap-2">
                   <span
                     className="px-2 py-0.5 rounded-pill text-ink"
@@ -209,7 +261,7 @@ export function EventPlanScreen() {
                     {summary.budget > 0 ? (
                       <>
                         <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: fill.color }} />
-                        <span className="tabular">{number} <span className="text-muted">{verb}</span></span>
+                        <span className="tabular">{displayedNumber} <span className="text-muted">{verb}</span></span>
                       </>
                     ) : (
                       <span className="text-muted">No budget</span>

@@ -136,7 +136,7 @@ export function GoalsListScreen() {
         </section>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {gs.map(g => {
+          {gs.map((g, index) => {
             const saved = goalSaved(g);
             const target = Number(g.target) || 0;
             const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
@@ -167,7 +167,7 @@ export function GoalsListScreen() {
                     {pct}%
                   </Pill>
                 </div>
-                <ProgressBar value={pct} height={10} />
+                <ProgressBar value={pct} height={10} animateOnMount animationDelay={index * 180} />
 
                 {/* Two-line meta:
                        line 1 — saved / target + deadline

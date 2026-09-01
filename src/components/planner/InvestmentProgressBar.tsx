@@ -19,10 +19,13 @@ export function InvestmentProgressBar({
   startDate,
   termMonths,
   now,
+  animDelay = 0,
 }: {
   startDate: string;
   termMonths: number;
   now?: string | Date;
+  /** Per-row stagger so a planner grid fills in a wave. */
+  animDelay?: number;
 }) {
   const months = Math.max(0, Math.floor(Number(termMonths) || 0));
   if (!startDate || months <= 0) return null;
@@ -41,7 +44,7 @@ export function InvestmentProgressBar({
   if (elapsedDays <= 0) {
     return (
       <div className="flex flex-col gap-1">
-        <ProgressBar value={0} height={4} />
+        <ProgressBar value={0} height={4} animateOnMount animationDelay={animDelay} />
         <div className="text-[10.5px] text-muted">
           starts in <b className="text-ink font-semibold">{Math.max(1, Math.abs(elapsedDays))}</b> days
         </div>
@@ -52,7 +55,7 @@ export function InvestmentProgressBar({
   if (elapsedDays >= totalDays) {
     return (
       <div className="flex flex-col gap-1">
-        <ProgressBar value={100} height={4} />
+        <ProgressBar value={100} height={4} animateOnMount animationDelay={animDelay} />
         <div className="text-[10.5px] text-muted">
           <b className="text-ink font-semibold">matured</b>
         </div>
@@ -64,7 +67,7 @@ export function InvestmentProgressBar({
   const elapsedMonths = Math.min(months, Math.floor(elapsedDays / 30));
   return (
     <div className="flex flex-col gap-1">
-      <ProgressBar value={pct} height={4} />
+      <ProgressBar value={pct} height={4} animateOnMount animationDelay={animDelay} />
       <div className="text-[10.5px] text-muted">
         month <b className="text-ink font-semibold">{elapsedMonths}</b> of <b className="text-ink font-semibold">{months}</b> · {pct}%
       </div>

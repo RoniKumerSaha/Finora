@@ -203,6 +203,18 @@ main > * {
   100% { opacity: 0;   transform: scale(1.08); }
 }
 
+/* ProgressBar grow-in — runs once on mount, fills from 0 → target
+   width over 700ms. The fill div's existing `width: X%` style is
+   preserved; this animation only overrides the *visual* width via
+   transform: scaleX so the bar always lands exactly on its target.
+   Apply with `style={{ animation: 'progressbar-grow-in 700ms ... both' }}`
+   and optionally `animationDelay` to stagger bars across a grid.
+   Reduced-motion users get an instant fill. */
+@keyframes progressbar-grow-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 /* Theme cross-fade — when [data-theme] flips on <html>, App.tsx adds
    `.theme-fade` to <html> for 250ms. While present, every themed
    surface cross-fades background-color, color, and border-color

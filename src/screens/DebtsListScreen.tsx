@@ -86,7 +86,7 @@ export function DebtsListScreen() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
           <div className="flex flex-col gap-4">
-            {active.map(d => <DebtCard key={d.id} debt={d} />)}
+            {active.map((d, i) => <DebtCard key={d.id} debt={d} animDelay={i * 180} />)}
             {completed.length > 0 && (
               <CompletedSection rows={completed} />
             )}
@@ -135,7 +135,7 @@ export function DebtsListScreen() {
   );
 }
 
-function DebtCard({ debt: d }: { debt: any }) {
+function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number }) {
   const state = useStore(s => s.state);
   const pct = d.total > 0 ? Math.min(100, Math.round(((d.paidSoFar || 0) / d.total) * 100)) : 0;
   const isIOwe = d.direction === 'i_owe';
@@ -295,7 +295,7 @@ function DebtCard({ debt: d }: { debt: any }) {
           above the full-card <Link>. */}
       <div className="px-6 pb-2.5 flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          <ProgressBar value={pct} height={4} />
+          <ProgressBar value={pct} height={4} animateOnMount animationDelay={animDelay} />
           <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
         </div>
         {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.
