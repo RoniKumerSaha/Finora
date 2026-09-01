@@ -109,28 +109,33 @@ export function LoanCalculatorDetailScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-3xl">
+      {/* Top-row back link — same arrow text-link used by every
+          "planner" / "goal" surface across the app. Goes back to the
+          immediate parent (the calculator list, not the Plan hub) so
+          the two-step navigation reads as "← Loan Calculator" here
+          and "← Plans" on the list screen itself. Backing out of a
+          never-saved projection drops it silently — the user has no
+          idea they're about to leave a shell behind, and forcing a
+          confirm modal on every Back tap is annoying. A previously-
+          saved projection is kept (the user might come back). */}
+      <div>
+        <button
+          type="button"
+          onClick={async () => {
+            if (plan && !plan.savedAt) {
+              removeLoanPlan(plan.id);
+            }
+            navigate('/plan/loan');
+          }}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Loan Calculator</button>
+      </div>
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Loan projection</h1>
           <div className="text-muted text-[13px] mt-1.5 max-w-prose">
             Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              // Backing out of a never-saved projection drops it
-              // silently — the user has no idea they're about to
-              // leave a shell behind, and forcing a confirm modal on
-              // every Back tap is annoying. A previously-saved
-              // projection is kept (the user might come back).
-              if (plan && !plan.savedAt) {
-                removeLoanPlan(plan.id);
-              }
-              navigate('/plan/loan');
-            }}
-          >Back</Button>
         </div>
       </header>
 

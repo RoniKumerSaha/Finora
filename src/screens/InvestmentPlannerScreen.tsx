@@ -56,6 +56,17 @@ export function InvestmentPlannerScreen() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Top-row back link — same arrow text-link used by GoalDetail
+          and EventPlanDetail so every "planner" / "goal" surface
+          across the app shares one back affordance. Muted by default,
+          brightens to ink on hover. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/plan')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Plans</button>
+      </div>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Investment Planner</h1>
@@ -63,12 +74,14 @@ export function InvestmentPlannerScreen() {
             Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
           </div>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => navigate('/plan/invest/new')}
-        >
-          + New plan
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="primary"
+            onClick={() => navigate('/plan/invest/new')}
+          >
+            + New plan
+          </Button>
+        </div>
       </header>
 
       {/* Empty state — leads with the user's actual question

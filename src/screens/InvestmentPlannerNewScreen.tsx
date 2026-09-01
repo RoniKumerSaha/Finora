@@ -44,10 +44,24 @@ export function InvestmentPlannerNewScreen() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <header>
-        <h1 className="heading h1-screen">New plan</h1>
-        <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-          Pick a starter kit to fill in sensible defaults, or start from a blank form.
+      {/* Top-row back link — same arrow text-link used by every
+          "planner" / "goal" surface across the app. Goes back to the
+          immediate parent (the planner list, not the Plan hub) so
+          the two-step navigation reads as "← Investment Planner"
+          here and "← Plans" on the list screen itself. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/plan/invest')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Investment Planner</button>
+      </div>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="heading h1-screen">New plan</h1>
+          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+            Pick a starter kit to fill in sensible defaults, or start from a blank form.
+          </div>
         </div>
       </header>
 

@@ -74,6 +74,16 @@ export function LoanCalculatorListScreen() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Top-row back link — same arrow text-link used by GoalDetail
+          and EventPlanDetail so every "planner" / "goal" surface
+          across the app shares one back affordance. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/plan')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Plans</button>
+      </div>
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Loan Calculator</h1>
@@ -81,7 +91,9 @@ export function LoanCalculatorListScreen() {
             Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
           </div>
         </div>
-        <Button variant="primary" onClick={startNew}>+ New projection</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="primary" onClick={startNew}>+ New projection</Button>
+        </div>
       </header>
 
       {plans.length === 0 ? (

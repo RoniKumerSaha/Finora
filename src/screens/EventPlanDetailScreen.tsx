@@ -182,13 +182,17 @@ export function EventPlanDetailScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-6xl w-full">
-      <div className="flex flex-wrap items-center gap-4">
+      {/* Top-row back link — same arrow text-link used by GoalDetail
+          so every "planner" / "goal" surface across the app shares
+          one back affordance. */}
+      <div>
         <button
           type="button"
           onClick={() => navigate('/plan/event')}
-          className="text-muted text-sm hover:text-ink"
-        >← Events</button>
-        <div className="h-5 w-px bg-border" aria-hidden />
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Events</button>
+      </div>
+      <div className="flex flex-wrap items-center gap-4">
         <span
           aria-hidden
           className="w-12 h-12 rounded-full inline-flex items-center justify-center text-2xl shrink-0 border-2"

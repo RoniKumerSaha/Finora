@@ -139,28 +139,33 @@ export function InvestmentPlannerDetailScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-2xl">
+      {/* Top-row back link — same arrow text-link used by every
+          "planner" / "goal" surface across the app. Goes back to the
+          immediate parent (the planner list, not the Plan hub) so
+          the two-step navigation reads as "← Investment Planner"
+          here and "← Plans" on the list screen itself. Backing out
+          of a never-saved plan drops it silently — the user has no
+          idea they're about to leave a shell behind, and forcing a
+          confirm modal on every Back tap is annoying. A previously-
+          saved plan is kept (the user might come back to it). */}
+      <div>
+        <button
+          type="button"
+          onClick={async () => {
+            if (plan && !plan.savedAt) {
+              removeInvestmentPlan(plan.id);
+            }
+            navigate('/plan/invest');
+          }}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Investment Planner</button>
+      </div>
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Plan</h1>
           <div className="text-muted text-[13px] mt-1.5 max-w-prose">
             Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              // Backing out of a never-saved plan drops it silently —
-              // the user has no idea they're about to leave a shell
-              // behind, and forcing a confirm modal on every Back tap
-              // is annoying. A previously-saved plan is kept (the
-              // user might come back to it).
-              if (plan && !plan.savedAt) {
-                removeInvestmentPlan(plan.id);
-              }
-              navigate('/plan/invest');
-            }}
-          >Back</Button>
         </div>
       </header>
 

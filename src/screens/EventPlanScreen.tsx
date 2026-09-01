@@ -128,6 +128,16 @@ export function EventPlanScreen() {
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
+      {/* Top-row back link — same arrow text-link used by GoalDetail
+          and EventPlanDetail so every "planner" / "goal" surface
+          across the app shares one back affordance. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/plan')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Plans</button>
+      </div>
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="heading h1-screen">Plan an event</h1>
@@ -135,12 +145,14 @@ export function EventPlanScreen() {
             Weddings, trips, Eid, anything with a date and a budget. Each event is its own scratchpad.
           </div>
         </div>
-        {!creating && (
-          <Button variant="primary" onClick={startCreate}>
-            <span className="text-base leading-none">+</span>
-            <span>New event</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {!creating && (
+            <Button variant="primary" onClick={startCreate}>
+              <span className="text-base leading-none">+</span>
+              <span>New event</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {creating && (

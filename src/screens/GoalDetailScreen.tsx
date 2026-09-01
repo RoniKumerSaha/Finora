@@ -20,7 +20,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
 import {
@@ -178,8 +178,15 @@ export function GoalDetailScreen() {
 
   return (
     <div className="flex flex-col gap-[18px] max-w-[640px]">
-      <div className="flex items-center gap-3">
-        <Link to="/goals" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Goals</Link>
+      {/* Top-row back link — same arrow text-link used by every
+          "planner" surface so goals and planners share one back
+          affordance. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/goals')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Goals</button>
       </div>
 
       {/* Header */}

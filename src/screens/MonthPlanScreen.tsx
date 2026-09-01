@@ -15,6 +15,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as plans from '../domain/plans';
 import { fmtBDT, clampNonNegative } from '../lib/format';
@@ -33,6 +34,7 @@ import type { PlanCategory } from '../domain/types';
 import { CardTotalChecker } from './plan/CardTotalChecker';
 
 export function MonthPlanScreen() {
+  const navigate = useNavigate();
   const state = useStore(s => s.state);
   const addCategory = useStore(s => s.addMonthCategory);
   const updateCategory = useStore(s => s.updateMonthCategory);
@@ -80,6 +82,16 @@ export function MonthPlanScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl w-full">
+      {/* Top-row back link — same arrow text-link used by GoalDetail
+          and EventPlanDetail so every "planner" / "goal" surface
+          across the app shares one back affordance. */}
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/plan')}
+          className="text-muted text-sm hover:text-ink transition"
+        >{'\u2190'} Plans</button>
+      </div>
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="heading h1-screen">Plan my month</h1>
@@ -87,19 +99,21 @@ export function MonthPlanScreen() {
             Fill the items with budgets for what you intend to spend. Changes save as you go.
           </div>
         </div>
-        {plan.categories.length > 0 && (
-          <div className="flex items-center gap-2 text-[12px] text-muted">
-            <span
-              aria-hidden
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: 'var(--primary)' }}
-            />
-            <span>
-              <b className="text-ink font-bold text-[15px]">{plan.categories.length}</b>
-              <span className="ml-1">card{plan.categories.length === 1 ? '' : 's'} in plan</span>
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          {plan.categories.length > 0 && (
+            <div className="flex items-center gap-2 text-[12px] text-muted">
+              <span
+                aria-hidden
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: 'var(--primary)' }}
+              />
+              <span>
+                <b className="text-ink font-bold text-[15px]">{plan.categories.length}</b>
+                <span className="ml-1">card{plan.categories.length === 1 ? '' : 's'} in plan</span>
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Deficit warning removed: income is no longer a per-plan surface,
