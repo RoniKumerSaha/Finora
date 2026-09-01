@@ -80,7 +80,7 @@ export function EventPlanScreen() {
   const [emoji, setEmoji] = useState('🏖️');
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [budget, setBudget] = useState('');
+  const [unallocated, setUnallocated] = useState('');
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
 
@@ -89,7 +89,7 @@ export function EventPlanScreen() {
     setEmoji('🏖️');
     setName('');
     setDate('');
-    setBudget('');
+    setUnallocated('');
   }
 
   function onCreate(e: React.FormEvent) {
@@ -106,7 +106,7 @@ export function EventPlanScreen() {
       name: name.trim(),
       emoji,
       eventDate: date,
-      budget: clampNonNegative(budget),
+      unallocatedBudget: clampNonNegative(unallocated),
     });
     setCreating(false);
     navigate(`/plan/event/${id}`);
@@ -153,13 +153,16 @@ export function EventPlanScreen() {
             <Field label="Event date">
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </Field>
-            <Field label="Budget (optional)">
+            <Field
+              label="Unallocated (optional)"
+              hint="Top-down ballpark. Add categories below to split it; the event's total budget is the sum of categories."
+            >
               <Input
                 type="number"
                 inputMode="decimal"
                 min={0}
-                value={budget}
-                onChange={e => setBudget(e.target.value)}
+                value={unallocated}
+                onChange={e => setUnallocated(e.target.value)}
                 placeholder="80000"
               />
             </Field>
@@ -176,7 +179,7 @@ export function EventPlanScreen() {
           <div className="py-10 text-center text-muted">
             <div className="text-3xl opacity-60 mb-2.5">📅</div>
             <div className="text-[15px] font-semibold text-ink">Plan your first event</div>
-            <p className="mt-2 text-sm">Set a date and a budget. Add categories, what's due when, and what you've paid.</p>
+            <p className="mt-2 text-sm">Set a date. Add categories with their own budgets — the event's total is the sum of category budgets.</p>
             <Button variant="primary" onClick={startCreate} className="mt-4">+ New event</Button>
           </div>
         </section>
@@ -184,106 +187,137 @@ export function EventPlanScreen() {
 
       {sorted.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {sorted.map((ev, index) => {
-            const summary = plans.summariseEventPlan(ev);
-            const days = daysBetween(todayISO, ev.eventDate);
-            const pct = pctOf(summary.planned, summary.budget);
-            const overflow = summary.budget > 0 && summary.planned > summary.budget;
-            const status = fillStatus(pct, overflow, summary.budget);
-            const fill = FILL[status];
-            const { verb, number } = formatPct(pct, overflow);
-            const cardTone = eventPlanCardTone(summary.planned, summary.budget);
-            // Always count up to the raw percent (0 → pct) when a budget is
-            // set, including overflow rows. The bar fill stays capped at
-            // 100% width visually, but the number animates to whatever the
-            // data says — e.g. "150% overflowing" tweens from 0 → 150.
-            // The `9×` multiplier shortcut is kept for extreme overflow
-            // (≥1000%) so the label stays compact instead of reading "1200%".
-            const livePct = useCountUp(summary.budget > 0 ? pct : 0, index * 180, 3000);
-            const displayedNumber = summary.budget > 0
-              ? (overflow && pct >= 1000 ? number : `${livePct}%`)
-              : number;
-            return (
-              <Link
-                key={ev.id}
-                to={`/plan/event/${ev.id}`}
-                className={`card card-link relative overflow-hidden flex flex-col gap-3 pr-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group ${cardTone ? 'pl-7' : 'pl-5'}`}
-                style={cardTone ? cardSurfaceStyle(cardTone) : undefined}
-              >
-                {/* 3px left accent strip — same colour as the wash.
-                    Mirrors the account-card treatment. */}
-                {cardTone && (
-                  <span
-                    aria-hidden
-                    className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full ${leftBarClass(cardTone)}`}
-                  />
-                )}
-                <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        aria-hidden
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ background: fill.color }}
-                      />
-                      <span className="text-2xl">{ev.emoji ?? '📅'}</span>
-                      <div className="font-semibold text-[15px] tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
-                    </div>
-                    <div className="text-xs text-muted mt-1.5 tabular ml-[26px]">
-                      {fmtDate(ev.eventDate)} · {days >= 0 ? `${days} days to go` : `${Math.abs(days)} days ago`}
-                    </div>
-                  </div>
-                  {/* z-10 keeps the click above the link so it doesn't
-                      trigger navigation. */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(ev.id); }}
-                    className="relative z-10 text-xs text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
-                    aria-label={`Delete ${ev.name}`}
-                  >
-                    Delete
-                  </button>
-                </div>
-                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} animateOnMount animationDelay={index * 180} />
-                <div className="flex justify-between items-center text-xs tabular gap-2">
-                  <span
-                    className="px-2 py-0.5 rounded-pill text-ink"
-                    style={frostedPillStyle()}
-                  >
-                    <span className="font-semibold tabular">{fmtBDT(summary.planned)}</span>
-                    <span className="text-muted"> / {fmtBDT(summary.budget)}</span>
-                  </span>
-                  <span
-                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-pill text-ink"
-                    style={frostedPillStyle()}
-                    title={fill.label}
-                  >
-                    {summary.budget > 0 ? (
-                      <>
-                        <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: fill.color }} />
-                        <span className="tabular">{displayedNumber} <span className="text-muted">{verb}</span></span>
-                      </>
-                    ) : (
-                      <span className="text-muted">No budget</span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs text-muted tabular">
-                  <span>
-                    {summary.overdueCount > 0
-                      ? <span className="text-danger">{summary.overdueCount} overdue</span>
-                      : summary.dueSoonCount > 0
-                        ? <span className="text-warn">{summary.dueSoonCount} due soon</span>
-                        : `${summary.count} ${summary.count === 1 ? 'category' : 'categories'}`}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+          {sorted.map((ev, index) => (
+            <EventPlanCard
+              key={ev.id}
+              ev={ev}
+              animDelay={index * 180}
+              todayISO={todayISO}
+              onDelete={onDelete}
+            />
+          ))}
         </div>
       )}
 
       {dialog}
     </div>
+  );
+}
+
+/**
+ * Single event-plan card on the list screen.
+ *
+ * Extracted from `EventPlanScreen` so `useCountUp` runs at the top of
+ * a stable component invocation rather than inside the parent's
+ * `.map(...)` callback. Calling hooks inside a map is a rules-of-hooks
+ * violation — React requires hooks to be called in the same order on
+ * every render, but the number of `.map` iterations shrinks when an
+ * event is deleted, so the hook count diverged between renders and
+ * React unmounted the entire tree (the blank screen). Each card now
+ * owns its own hook calls.
+ */
+function EventPlanCard({
+  ev,
+  animDelay,
+  todayISO,
+  onDelete,
+}: {
+  ev: ReturnType<typeof plans.listEventPlans>[number];
+  animDelay: number;
+  todayISO: string;
+  onDelete: (id: string) => void | Promise<void>;
+}) {
+  const summary = plans.summariseEventPlan(ev);
+  const days = daysBetween(todayISO, ev.eventDate);
+  const pct = pctOf(summary.planned, summary.budget);
+  const overflow = summary.budget > 0 && summary.planned > summary.budget;
+  const status = fillStatus(pct, overflow, summary.budget);
+  const fill = FILL[status];
+  const { verb, number } = formatPct(pct, overflow);
+  const cardTone = eventPlanCardTone(summary.planned, summary.budget);
+  // Always count up to the raw percent (0 → pct) when a budget is
+  // set, including overflow rows. The bar fill stays capped at
+  // 100% width visually, but the number animates to whatever the
+  // data says — e.g. "150% overflowing" tweens from 0 → 150.
+  // The `9×` multiplier shortcut is kept for extreme overflow
+  // (≥1000%) so the label stays compact instead of reading "1200%".
+  const livePct = useCountUp(summary.budget > 0 ? pct : 0, animDelay, 3000);
+  const displayedNumber = summary.budget > 0
+    ? (overflow && pct >= 1000 ? number : `${livePct}%`)
+    : number;
+  return (
+    <Link
+      to={`/plan/event/${ev.id}`}
+      className={`card card-link relative overflow-hidden flex flex-col gap-3 pr-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group ${cardTone ? 'pl-7' : 'pl-5'}`}
+      style={cardTone ? cardSurfaceStyle(cardTone) : undefined}
+    >
+      {/* 3px left accent strip — same colour as the wash.
+          Mirrors the account-card treatment. */}
+      {cardTone && (
+        <span
+          aria-hidden
+          className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full ${leftBarClass(cardTone)}`}
+        />
+      )}
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ background: fill.color }}
+            />
+            <span className="text-2xl">{ev.emoji ?? '📅'}</span>
+            <div className="font-semibold text-[15px] tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
+          </div>
+          <div className="text-xs text-muted mt-1.5 tabular ml-[26px]">
+            {fmtDate(ev.eventDate)} · {days >= 0 ? `${days} days to go` : `${Math.abs(days)} days ago`}
+          </div>
+        </div>
+        {/* z-10 keeps the click above the link so it doesn't
+            trigger navigation. */}
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(ev.id); }}
+          className="relative z-10 text-xs text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
+          aria-label={`Delete ${ev.name}`}
+        >
+          Delete
+        </button>
+      </div>
+      <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} animateOnMount animationDelay={animDelay} />
+      <div className="flex justify-between items-center text-xs tabular gap-2">
+        <span
+          className="px-2 py-0.5 rounded-pill text-ink"
+          style={frostedPillStyle()}
+        >
+          <span className="font-semibold tabular">{fmtBDT(summary.planned)}</span>
+          <span className="text-muted"> / {fmtBDT(summary.budget)}</span>
+        </span>
+        <span
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-pill text-ink"
+          style={frostedPillStyle()}
+          title={fill.label}
+        >
+          {summary.budget > 0 ? (
+            <>
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: fill.color }} />
+              <span className="tabular">{displayedNumber} <span className="text-muted">{verb}</span></span>
+            </>
+          ) : (
+            <span className="text-muted">No budget</span>
+          )}
+        </span>
+      </div>
+      <div className="flex justify-between text-xs text-muted tabular">
+        <span>
+          {summary.overdueCount > 0
+            ? <span className="text-danger">{summary.overdueCount} overdue</span>
+            : summary.dueSoonCount > 0
+              ? <span className="text-warn">{summary.dueSoonCount} due soon</span>
+              : `${summary.count} ${summary.count === 1 ? 'category' : 'categories'}`}
+        </span>
+      </div>
+    </Link>
   );
 }

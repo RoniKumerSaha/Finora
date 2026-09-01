@@ -266,7 +266,7 @@ export function getEventPlan(state: State, id: string): EventPlan | undefined {
 
 export function addEventPlan(
   state: State,
-  input: { name: string; emoji?: string; eventDate: ISODate; budget?: number },
+  input: { name: string; emoji?: string; eventDate: ISODate; unallocatedBudget?: number },
 ): { state: State; id: string } {
   const id = uid();
   // No savedSnapshot at creation time — Reset shouldn't revert to the
@@ -275,24 +275,49 @@ export function addEventPlan(
   // clear the working draft (planned + categories) but keep the
   // event shell (name/date/budget/emoji) so the user's typed values
   // stay intact.
+  //
+  // The event's overall budget is no longer a free-form input — it
+  // derives from `Σ category.budget` (see `summariseEventPlan`). The
+  // create form instead offers an optional "Unallocated" field that,
+  // if > 0, seeds a single catch-all category so the user can enter a
+  // top-down ballpark without having to split it across categories
+  // upfront. We store `budget: 0` on the event itself and let the
+  // derived sum pick up the category's budget on the very first read.
+  const unallocated = Math.max(0, Number(input.unallocatedBudget) || 0);
+  const categories: EventPlan['categories'] = unallocated > 0
+    ? [{
+        id: uid(),
+        emoji: '🪙',
+        name: 'Unallocated',
+        budget: unallocated,
+        planned: 0,
+        items: [],
+      }]
+    : [];
   const plan: EventPlan = {
     id,
     name: input.name.trim(),
     emoji: input.emoji,
     eventDate: input.eventDate,
-    budget: input.budget ?? 0,
+    budget: 0,
     planned: 0,
-    categories: [],
+    categories,
     savedAt: null,
     dirty: true,
   };
   return { state: { ...state, eventPlans: [...state.eventPlans, plan] }, id };
 }
 
-export function updateEventPlan(state: State, id: string, patch: Partial<Omit<EventPlan, 'id' | 'dirty' | 'savedAt'>>): State {
+export function updateEventPlan(state: State, id: string, patch: Partial<Omit<EventPlan, 'id' | 'dirty' | 'savedAt' | 'budget'>>): State {
   const existing = getEventPlan(state, id);
   if (!existing) return state;
-  const next: EventPlan = { ...existing, ...patch, dirty: true };
+  // `budget` is intentionally NOT in the patch type — the event's
+  // overall budget is auto-derived from `Σ category.budget` (see
+  // `summariseEventPlan`). Strip any stray `budget` field that older
+  // callers might still try to pass so the stored event never carries
+  // a stale, divergent number.
+  const { budget: _ignored, ...safePatch } = patch as Partial<EventPlan>;
+  const next: EventPlan = { ...existing, ...safePatch, dirty: true };
   return {
     ...state,
     eventPlans: state.eventPlans.map(p => p.id === id ? next : p),
@@ -545,12 +570,13 @@ export function summariseEventPlan(plan: EventPlan, today: Date = new Date()): E
   let paid = 0;
   let overdue = 0;
   let dueSoon = 0;
+  let categoryBudgetSum = 0;
   const todayISO = today.toISOString().slice(0, 10);
-  const budget = Number(plan.budget) || 0;
   for (const c of plan.categories) {
     // "Spent" = sum of line items when any exist (the granular truth),
     // otherwise the manually entered planned amount (whole-category estimate).
     planned += categorySpent(c);
+    categoryBudgetSum += Number(c.budget) || 0;
     for (const it of c.items) {
       if (it.done) paid += Number(it.amount) || 0;
     }
@@ -560,6 +586,19 @@ export function summariseEventPlan(plan: EventPlan, today: Date = new Date()): E
       else if (days <= 7) dueSoon++;
     }
   }
+  // The event's overall budget derives from `Σ category.budget` —
+  // categories are the single source of truth. For legacy events that
+  // were created before this rule shipped (older localStorage still
+  // carries `plan.budget > 0` but no categories summing to it),
+  // surface the legacy value so the user sees their previously-typed
+  // number instead of a surprise zero. Newly-created events always
+  // have `budget: 0` on the event and store any unallocated amount as
+  // a category, so the legacy fallback only fires for pre-existing
+  // plans.
+  const legacy = Number(plan.budget) || 0;
+  const budget = categoryBudgetSum > 0
+    ? categoryBudgetSum
+    : (legacy > 0 ? legacy : 0);
   return {
     budget,
     planned,

@@ -203,9 +203,9 @@ export function EventPlanDetailScreen() {
           <h1 className="heading h1-screen truncate">{plan.name}</h1>
           <div className="text-muted text-[12.5px] mt-1">
             {fmtDate(plan.eventDate)} ·{' '}
-            {plan.budget > 0
-              ? <><span className="text-ink font-semibold">{fmtBDT(plan.budget)}</span> budget</>
-              : <>No budget yet</>}
+            {summary.budget > 0
+              ? <><span className="text-ink font-semibold">{fmtBDT(summary.budget)}</span> total (sum of categories)</>
+              : <>No budget yet — add categories to set one</>}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -277,7 +277,7 @@ export function EventPlanDetailScreen() {
                 }}>
                   <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Allocated</span>
                   <span className="font-bold text-[15px] tabular" style={{ color: spentColor }}>{fmtBDT(summary.planned)}</span>
-                  <span className="text-[12px] text-muted">/ {fmtBDT(plan.budget)}</span>
+                  <span className="text-[12px] text-muted">/ {fmtBDT(summary.budget)}</span>
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
                   background: 'var(--summary-pill-bg)',
@@ -369,10 +369,10 @@ export function EventPlanDetailScreen() {
         if (!allocatedOver && !paidOver) return null;
         const headline = paidOver
           ? 'Paid past the budget'
-          : 'Allocated past the budget';
+          : 'Categories sum past the budget';
         const message = paidOver
-          ? `You've already paid ${fmtBDT(summary.paidSoFar)} — ${fmtBDT(summary.paidSoFar - summary.budget)} over the ${fmtBDT(summary.budget)} budget. Either raise the budget or accept the overrun.`
-          : `Your categories add up to ${fmtBDT(summary.planned)} — ${fmtBDT(summary.planned - summary.budget)} over the ${fmtBDT(summary.budget)} budget. Trim an amount, drop a line item, or raise the budget.`;
+          ? `You've already paid ${fmtBDT(summary.paidSoFar)} — ${fmtBDT(summary.paidSoFar - summary.budget)} over the ${fmtBDT(summary.budget)} total. Either raise a category budget or accept the overrun.`
+          : `Your categories add up to ${fmtBDT(summary.planned)} — ${fmtBDT(summary.planned - summary.budget)} over the ${fmtBDT(summary.budget)} total. Trim an amount, drop a line item, or raise a category budget.`;
         const overflow = summary.budget > 0 && summary.planned > summary.budget ? summary.planned - summary.budget : summary.paidSoFar - summary.budget;
         return (
           <div
@@ -532,10 +532,8 @@ export function EventPlanDetailScreen() {
 
       {editingEvent && (
         <EditEventModal
-          initialBudget={plan.budget}
           initialDate={plan.eventDate}
-          onCommit={({ budget, eventDate }) => {
-            if (budget !== plan.budget) updateEvent(plan.id, { budget });
+          onCommit={({ eventDate }) => {
             if (eventDate !== plan.eventDate) updateEvent(plan.id, { eventDate });
             setEditingEvent(false);
           }}
@@ -1234,31 +1232,28 @@ function LineItemAmount({
 
 /**
  * Pencil-icon pop-up for the event title's "Edit event details".
- * Lets the user change the budget and/or date; commits both on Save.
+ * Lets the user change the date; commits on Save.
+ *
+ * The event-level budget used to live here too, but it's no longer a
+ * free-form input — the budget derives from `Σ category.budget` (see
+ * `summariseEventPlan`). To bump the total, the user edits a category's
+ * budget inline. This modal is now date-only.
+ *
  * Pure presentational — the parent owns the store.
  */
 function EditEventModal({
-  initialBudget,
   initialDate,
   onCommit,
   onCancel,
 }: {
-  initialBudget: number;
   initialDate: string;
-  onCommit: (next: { budget: number; eventDate: string }) => void;
+  onCommit: (next: { eventDate: string }) => void;
   onCancel: () => void;
 }) {
-  // A zero initial budget renders as an empty draft (placeholder takes
-  // over) — pre-placing "0" makes the field look filled when the user
-  // actually means "no budget set". Empty still commits as 0 via
-  // clampNonNegative below.
-  const [budgetDraft, setBudgetDraft] = useState(initialBudget > 0 ? String(initialBudget) : '');
   const [dateDraft, setDateDraft] = useState(initialDate);
 
-  const parsedBudget = clampNonNegative(budgetDraft);
-  const budgetDirty = parsedBudget !== initialBudget;
   const dateDirty = dateDraft !== initialDate;
-  const dirty = budgetDirty || dateDirty;
+  const dirty = dateDirty;
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -1269,7 +1264,7 @@ function EditEventModal({
   }, [onCancel]);
 
   function commit() {
-    onCommit({ budget: parsedBudget, eventDate: dateDraft });
+    onCommit({ eventDate: dateDraft });
   }
 
   return createPortal(
@@ -1313,33 +1308,14 @@ function EditEventModal({
 
         <div className="mb-5 pr-8">
           <h3 id="edit-event-title" className="heading h3-modal m-0">
-            Edit event
+            Edit event date
           </h3>
           <div className="text-muted text-[12.5px] mt-1">
-            Update the budget and date. Save commits both.
+            The event's total budget is the sum of category budgets — edit a category to adjust the total.
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          <Field label="Budget">
-            <Input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              value={budgetDraft}
-              onChange={e => setBudgetDraft(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && dirty) { e.preventDefault(); commit(); } }}
-              placeholder="0"
-              aria-label="Event budget"
-              className="!text-[20px] !font-bold tabular"
-            />
-            {budgetDirty && (
-              <div className="text-[10.5px] text-warn uppercase tracking-[0.08em] font-semibold mt-1.5">
-                changed
-              </div>
-            )}
-          </Field>
-
           <Field label="Event date" hint={dateDraft ? fmtDateShort(dateDraft) : undefined}>
             <Input
               type="date"
