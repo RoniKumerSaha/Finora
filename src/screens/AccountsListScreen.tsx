@@ -56,7 +56,7 @@ function accountCardSurfaceStyle(tone: CardTone): React.CSSProperties {
                          'var(--muted)';
   return {
     backgroundColor: 'color-mix(in srgb, var(--bg) 14%, transparent)',
-    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 10%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 8%, transparent) 35%, transparent 80%)`,
+    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 20%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 16%, transparent) 35%, transparent 80%)`,
   };
 }
 

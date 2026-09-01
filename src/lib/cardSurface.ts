@@ -16,7 +16,7 @@
 import type { CSSProperties } from 'react';
 import type { DebtDirection, DebtKind, InvestmentType } from '../domain/types';
 
-export type CardTone = 'primary' | 'danger' | 'accent' | 'warn' | 'success' | 'info' | 'muted';
+export type CardTone = 'primary' | 'danger' | 'accent' | 'warn' | 'success' | 'info' | 'muted' | 'cyan';
 
 const TONE_VAR: Record<CardTone, string> = {
   primary: 'var(--primary)',
@@ -26,6 +26,7 @@ const TONE_VAR: Record<CardTone, string> = {
   success: 'var(--success)',
   info:    'var(--info)',
   muted:   'var(--muted)',
+  cyan:    'var(--cyan)',
 };
 
 const BAR_CLASS: Record<CardTone, string> = {
@@ -36,6 +37,7 @@ const BAR_CLASS: Record<CardTone, string> = {
   success: 'bg-success',
   info:    'bg-info',
   muted:   'bg-muted',
+  cyan:    'bg-cyan',
 };
 
 /**
@@ -60,7 +62,7 @@ export function cardSurfaceStyle(tone: CardTone): CSSProperties {
   const toneVar = TONE_VAR[tone];
   return {
     backgroundColor: 'color-mix(in srgb, var(--bg) 14%, transparent)',
-    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 10%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 8%, transparent) 35%, transparent 80%)`,
+    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 20%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 16%, transparent) 35%, transparent 80%)`,
   };
 }
 
@@ -124,6 +126,7 @@ const TONE_SOFT_BG: Record<CardTone, string> = {
   success: 'bg-success-soft text-success',
   info:    'bg-info-soft text-info',
   muted:   'bg-surface-2 text-muted',
+  cyan:    'bg-cyan-soft text-cyan',
 };
 
 const TONE_TEXT: Record<CardTone, string> = {
@@ -134,6 +137,7 @@ const TONE_TEXT: Record<CardTone, string> = {
   success: 'text-success',
   info:    'text-info',
   muted:   'text-muted',
+  cyan:    'text-cyan',
 };
 
 const TONE_FILL: Record<CardTone, string> = {
@@ -144,6 +148,7 @@ const TONE_FILL: Record<CardTone, string> = {
   success: 'bg-success',
   info:    'bg-info',
   muted:   'bg-muted',
+  cyan:    'bg-cyan',
 };
 
 /** `bg-*-soft text-*` classes — for icon tiles and pill backgrounds. */

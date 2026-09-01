@@ -7,7 +7,7 @@
  *   - outline — meta / state (Planned, Draft)
  */
 export type PillVariant = 'solid' | 'soft' | 'outline';
-export type PillTone = 'primary' | 'accent' | 'info' | 'danger' | 'warn' | 'success' | 'muted';
+export type PillTone = 'primary' | 'accent' | 'info' | 'danger' | 'warn' | 'success' | 'muted' | 'cyan';
 
 const SOLID: Record<PillTone, string> = {
   primary: 'bg-primary text-primary-on',
@@ -17,6 +17,7 @@ const SOLID: Record<PillTone, string> = {
   warn:    'bg-warn text-warn-on',
   success: 'bg-success text-success-on',
   muted:   'bg-surface-2 text-ink',
+  cyan:    'bg-cyan text-cyan-on',
 };
 
 const SOFT: Record<PillTone, string> = {
@@ -27,6 +28,7 @@ const SOFT: Record<PillTone, string> = {
   warn:    'bg-warn-soft text-warn',
   success: 'bg-success-soft text-success',
   muted:   'bg-surface-2 text-muted',
+  cyan:    'bg-cyan-soft text-cyan',
 };
 
 const OUTLINE: Record<PillTone, string> = {
@@ -37,6 +39,7 @@ const OUTLINE: Record<PillTone, string> = {
   warn:    'bg-transparent text-warn border border-warn',
   success: 'bg-transparent text-success border border-success',
   muted:   'bg-transparent text-muted border border-border',
+  cyan:    'bg-transparent text-cyan border border-cyan',
 };
 
 export function Pill({

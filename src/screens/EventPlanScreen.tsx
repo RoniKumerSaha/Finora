@@ -23,7 +23,8 @@ import { daysBetween, today } from '../domain/math';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
-import { fillStatus, FILL, formatPct, pctOf, frostedPillStyle } from '../components/planner/jarVisuals';
+import { fillStatus, FILL, formatPct, pctOf, frostedPillStyle, eventPlanCardTone } from '../components/planner/jarVisuals';
+import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
 import { EmojiPicker } from '../components/planner/EmojiPicker';
 import { ProgressBar } from '../components/ProgressBar';
 
@@ -149,12 +150,22 @@ export function EventPlanScreen() {
             const status = fillStatus(pct, overflow, summary.budget);
             const fill = FILL[status];
             const { verb, number } = formatPct(pct, overflow);
+            const cardTone = eventPlanCardTone(summary.planned, summary.budget);
             return (
               <Link
                 key={ev.id}
                 to={`/plan/event/${ev.id}`}
-                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group"
+                className={`card card-link relative overflow-hidden flex flex-col gap-3 pr-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 group ${cardTone ? 'pl-7' : 'pl-5'}`}
+                style={cardTone ? cardSurfaceStyle(cardTone) : undefined}
               >
+                {/* 3px left accent strip — same colour as the wash.
+                    Mirrors the account-card treatment. */}
+                {cardTone && (
+                  <span
+                    aria-hidden
+                    className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full ${leftBarClass(cardTone)}`}
+                  />
+                )}
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5">

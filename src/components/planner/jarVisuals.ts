@@ -17,6 +17,7 @@
  * health.
  */
 import type { CSSProperties } from 'react';
+import type { CardTone } from '../../lib/cardSurface';
 
 export type FillStatus = 'empty' | 'green' | 'yellow' | 'orange' | 'red';
 
@@ -136,6 +137,30 @@ export function frostedPillStyle(): CSSProperties {
     border: '1px solid var(--frost-pill-border)',
     boxShadow: 'var(--frost-pill-shadow)',
   };
+}
+
+/** Tone for a planned-event summary card on EventPlanScreen,
+ *  matching the Account card wash pattern (warm tone gradient +
+ *  14%-bg tint + 3px left bar). 5-step ramp:
+ *     <50%    → cyan   (low usage, lots of headroom)
+ *     50–89%  → info   (on track, filling up — blue)
+ *     90–99%  → warn   (close to budget, watch it)
+ *     ==100%  → success (exactly at budget — green)
+ *     >100%   → danger (overflow)
+ *    budget<=0 → null  (no budget set — leave default surface)
+ *  Returns a `CardTone` so callers can apply the same wash/bar
+ *  treatment as the rest of the list-card surfaces via
+ *  `cardSurfaceStyle(tone)` + `leftBarClass(tone)` from
+ *  src/lib/cardSurface.ts.
+ *  2026-09-01 added. */
+export function eventPlanCardTone(allocated: number, budget: number): CardTone | null {
+  if (budget <= 0) return null;
+  if (allocated > budget) return 'danger';
+  if (allocated === budget) return 'success';
+  const pct = (allocated / budget) * 100;
+  if (pct >= 90) return 'warn';
+  if (pct >= 50) return 'info';
+  return 'cyan';
 }
 
 /** Liquid fill opacity for planner cards. Higher in light mode (0.55)
