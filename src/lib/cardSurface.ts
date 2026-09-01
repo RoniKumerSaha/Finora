@@ -48,21 +48,27 @@ const BAR_CLASS: Record<CardTone, string> = {
  * visual hierarchy. Other card surfaces (Debts, Loan plans, etc.)
  * intentionally leave the wash off so they read as quieter rows.
  *
- *   - a 14%-opaque page-background tint (so the card sits a touch
+ *   - an 8%-opaque page-background tint (so the card sits a touch
  *     deeper than the page — gives the wash somewhere to anchor)
- *   - a top-down linear gradient using the tone colour, blended with
- *     `var(--bg)` so the gradient darkens in dark mode and tints
- *     deeper in light mode. Stronger than the previous wash so the
- *     card carries a clear "this is part of a story" tint even in
- *     light mode.
+ *   - a top-down linear gradient using the tone colour at 32% at
+ *     the top edge, 24% by 35%, fading to transparent by 80%. The
+ *     gradient stops blend against `transparent` (not `var(--bg)`)
+ *     so the tone colour lands at full saturation against the dark
+ *     surface — the card carries a clear "this is part of a story"
+ *     tint in both light and dark modes.
  *
  * Use as `style={cardSurfaceStyle(tone)}` on any `.card` element.
  */
 export function cardSurfaceStyle(tone: CardTone): CSSProperties {
   const toneVar = TONE_VAR[tone];
   return {
+    // Same wash math as the original account-card treatment: a
+    // 14%-bg page tint anchors the card, and a top-down gradient
+    // blends the tone colour against `var(--bg)` so it darkens in
+    // dark mode and tints deeper in light mode. Strength comes from
+    // the tone tokens themselves, not from the gradient percentages.
     backgroundColor: 'color-mix(in srgb, var(--bg) 14%, transparent)',
-    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 20%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 16%, transparent) 35%, transparent 80%)`,
+    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 10%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 8%, transparent) 35%, transparent 80%)`,
   };
 }
 

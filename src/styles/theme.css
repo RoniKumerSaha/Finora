@@ -49,6 +49,7 @@
   --color-info-on: var(--info-on);
   --color-cyan: var(--cyan);
   --color-cyan-soft: var(--cyan-soft);
+  --color-cyan-on: var(--cyan-on);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-success-title: var(--success-title);
@@ -142,32 +143,37 @@
   --muted-2:      #647068;
   /* 2026-08-17 lift: planner ramp colours brightened so jars and
      category cards read against the deep surface. Soft variants lifted
-     in tandem so washes don't go muddy. */
-  --primary:      #7DD4B5;
-  --primary-soft: rgba(125, 212, 181, 0.22);
-  --primary-hi:   rgba(125, 212, 181, 0.10);
+     in tandem so washes don't go muddy.
+     2026-09-01 deepen: tone tokens pushed ~15-20% darker and a hair
+     more saturated so the card wash (10%-of-tone gradient) reads as
+     a clear coloured tile instead of a pastel haze. Soft variants
+     re-tuned in tandem to keep the same family identity. */
+  --primary:      #5CC2A0;
+  --primary-soft: rgba(92, 194, 160, 0.28);
+  --primary-hi:   rgba(92, 194, 160, 0.12);
   --primary-on:   #0F1419;
-  --accent:       #D9B26B;
-  --accent-soft:  rgba(217, 178, 107, 0.18);
+  --accent:       #C99A4D;
+  --accent-soft:  rgba(201, 154, 77, 0.22);
   --accent-on:    #1A140A;
-  --danger:       #DC8678;
-  --danger-soft:  rgba(220, 134, 120, 0.22);
+  --danger:       #D26A5C;
+  --danger-soft:  rgba(210, 106, 92, 0.28);
   --danger-on:    #1A0805;
-  --danger-title: #F0A093;
+  --danger-title: #E58774;
   --danger-callout-bg: #2A1A18;
-  --warn:         #F8CE82;
-  --warn-soft:    rgba(248, 206, 130, 0.38);
+  --warn:         #E8B554;
+  --warn-soft:    rgba(232, 181, 84, 0.40);
   --warn-on:      #1A1305;
-  --orange:       #F0AC75;   /* jar-fill ramp step: 80%→100% */
-  --orange-soft:  rgba(240, 172, 117, 0.38);
-  --info:         #6FA8DC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
-  --info-soft:    rgba(111, 168, 220, 0.22);
+  --orange:       #E08E55;   /* jar-fill ramp step: 80%→100% */
+  --orange-soft:  rgba(224, 142, 85, 0.40);
+  --info:         #4D8AC8;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
+  --info-soft:    rgba(77, 138, 200, 0.28);
   --info-on:      #0F1419;   /* near-black; reads on the bright info in dark mode and stays legible in light mode */
-  --cyan:         #4FC6B8;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
-  --cyan-soft:    rgba(79, 198, 184, 0.24);
-  --success:      #8DC4A6;
-  --success-soft: rgba(141, 196, 166, 0.38);
-  --success-title:#9CD6B5;
+  --cyan:         #2EA89A;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
+  --cyan-soft:    rgba(46, 168, 154, 0.28);
+  --cyan-on:      #0F1419;   /* near-black; reads on the bright cyan in dark mode */
+  --success:      #5FA67E;
+  --success-soft: rgba(95, 166, 126, 0.38);
+  --success-title:#7CC498;
   --success-on:   #0F1419;
   --success-callout-bg: #1A2620;
   --border:       #324139;
