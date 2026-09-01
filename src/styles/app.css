@@ -162,6 +162,9 @@ main > * {
      behavior unchanged; only the visual easing is removed. */
   .toast-pop-in { animation: none; }
   .card-link, .card-link:hover { transition: background-color 120ms ease; transform: none; }
+  /* Strip Insights chart animations — polylines and bars render in
+     their final state. */
+  [data-cashflow-line], [data-networth-bar] { animation: none !important; }
 }
 
 /* Banner slide-in keyframe — paired with RoleAlertBanner's transition.
@@ -213,6 +216,40 @@ main > * {
 @keyframes progressbar-grow-in {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
+}
+
+/* Cash-flow polyline draw-in — uses stroke-dasharray + dashoffset
+   to "draw" the line left-to-right. Caller sets `stroke-dasharray`
+   and `stroke-dashoffset` on the polyline so the dash equals the
+   polyline length; the keyframe just animates the offset to zero.
+   Pair with per-line `animationDelay` so the two lines don't draw
+   in lockstep (income first, expense a beat after). */
+@keyframes cashflow-draw {
+  from { stroke-dashoffset: var(--line-len, 1000); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Cash-flow dot fade-in — the per-month markers fade + scale in
+   once the line is mostly drawn. Caller passes an `animationDelay`
+   so dots appear after their line segment has passed. */
+@keyframes cashflow-dot-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Net-worth bar grow — scales each `<rect>` from 0 → full height
+   along its local Y axis. The caller sets `transform-origin` to
+   `0 var(--zero-y)` (top of the zero line) via `transform-box:
+   view-box` so the bars anchor at the zero line — positive bars
+   grow upward, negative bars grow downward, regardless of where
+   zero sits in the chart. */
+@keyframes networth-bar-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+[data-networth-bar] {
+  transform-box: view-box;
+  transform-origin: 0 var(--zero-y);
 }
 
 /* Theme cross-fade — when [data-theme] flips on <html>, App.tsx adds

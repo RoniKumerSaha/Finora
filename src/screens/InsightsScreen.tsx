@@ -260,6 +260,21 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
   const incomeLine = bars.map((b, i) => xy(i, b.income).join(',')).join(' ');
   const expenseLine = bars.map((b, i) => xy(i, b.expense).join(',')).join(' ');
 
+  // Draw-in: each polyline "draws" left-to-right over 3500ms. The
+  // dasharray is set to a generous fixed length so the line is
+  // initially hidden, then animated to zero via the cashflow-draw
+  // keyframe. Per-month dots fade in along the same window using
+  // a per-index stagger. The `dataKey` is included on every
+  // animatable element so React remounts the polylines/dots when
+  // the period filter changes — without it, the animation only
+  // fires once because the DOM nodes are reused.
+  const prefersReduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const drawDuration = 5000;
+  const dashLen = 2000;
+  const dataKey = bars[0] ? `${bars[0].year}-${bars[0].month}` : 'empty';
+
   const totalIncome = bars.reduce((s, b) => s + b.income, 0);
 
   const hoverBar = hover !== null ? bars[hover] : null;
@@ -319,6 +334,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
             })}
             {/* Income line */}
             <polyline
+              key={`income-${dataKey}`}
               points={incomeLine}
               fill="none"
               stroke="var(--primary)"
@@ -326,9 +342,14 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               strokeLinejoin="round"
               strokeLinecap="round"
               opacity={hover === null ? 1 : 0.55}
+              strokeDasharray={prefersReduced ? undefined : dashLen}
+              strokeDashoffset={prefersReduced ? undefined : dashLen}
+              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${drawDuration}ms cubic-bezier(.22,.61,.36,1) 0ms both`, '--line-len': dashLen } as React.CSSProperties)}
+              data-cashflow-line
             />
             {/* Expense line */}
             <polyline
+              key={`expense-${dataKey}`}
               points={expenseLine}
               fill="none"
               stroke="var(--danger)"
@@ -336,12 +357,29 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               strokeLinejoin="round"
               strokeLinecap="round"
               opacity={hover === null ? 1 : 0.55}
+              strokeDasharray={prefersReduced ? undefined : dashLen}
+              strokeDashoffset={prefersReduced ? undefined : dashLen}
+              style={prefersReduced ? undefined : ({ animation: `cashflow-draw ${drawDuration}ms cubic-bezier(.22,.61,.36,1) 400ms both`, '--line-len': dashLen } as React.CSSProperties)}
+              data-cashflow-line
             />
             {/* Hit areas + dots */}
             {bars.map((b, i) => {
               const [incX, incY] = xy(i, b.income);
               const [expX, expY] = xy(i, b.expense);
               const isHover = hover === i;
+              // Stagger dots so they appear along the line as it draws.
+              // Each dot is delayed by ~85% of drawDuration × its share
+              // of the timeline. Cap at drawDuration - 300ms so the
+              // last dot lands before the line finishes.
+              const dotDelay = prefersReduced
+                ? 0
+                : Math.min(drawDuration - 500, Math.round((i / Math.max(1, bars.length - 1)) * drawDuration * 0.85));
+              const dotStyle = prefersReduced
+                ? undefined
+                : { animation: `cashflow-dot-pop 450ms cubic-bezier(.22,.61,.36,1) ${dotDelay}ms both`, transformOrigin: `${incX}px ${incY}px` };
+              const expDotStyle = prefersReduced
+                ? undefined
+                : { animation: `cashflow-dot-pop 450ms cubic-bezier(.22,.61,.36,1) ${dotDelay + 500}ms both`, transformOrigin: `${expX}px ${expY}px` };
               return (
                 <g key={`${b.year}-${b.month}`}>
                   {/* Wide invisible hit strip for hover */}
@@ -359,12 +397,16 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
                     fill="var(--primary)"
                     stroke="var(--primary-on)"
                     strokeWidth={isHover ? 2 : 0}
+                    style={dotStyle}
+                    data-cashflow-line
                   />
                   <circle
                     cx={expX} cy={expY} r={isHover ? 5 : 3}
                     fill="var(--danger)"
                     stroke="var(--primary-on)"
                     strokeWidth={isHover ? 2 : 0}
+                    style={expDotStyle}
+                    data-cashflow-line
                   />
                   {/* X labels — every other for dense ranges */}
                   {(bars.length <= 6 || i % 2 === 0) && (
@@ -488,6 +530,15 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
   const monthWidth = innerW / Math.max(1, points.length);
   const barWidth = Math.max(2, Math.min(28, (monthWidth - 8) * 0.6));
 
+  // Bar grow-in: each <rect> scales from 0 → 1 along its local Y axis,
+  // anchored at the zero line so positive bars grow upward and negative
+  // bars grow downward. Same easing / per-index cadence as the progress
+  // bar so the Insights page feels unified.
+  const prefersReducedNw =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const barGrowDuration = 1800;
+
   const lastPoint = points[points.length - 1];
   const hoverPoint = hover !== null ? points[hover] : null;
 
@@ -516,6 +567,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
             role="img"
             aria-label="Net worth by month"
             onMouseLeave={() => setHover(null)}
+            style={{ '--zero-y': `${zeroY}px` } as React.CSSProperties}
           >
             <title>Net worth bar chart.</title>
             {/* Y ticks */}
@@ -584,6 +636,8 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
                     fill={fill}
                     opacity={opacity}
                     rx={2}
+                    style={prefersReducedNw ? undefined : { animation: `networth-bar-grow ${barGrowDuration}ms cubic-bezier(.22,.61,.36,1) ${i * 90}ms both` }}
+                    data-networth-bar
                   />
                   {/* Hover label */}
                   {isHover && (() => {
