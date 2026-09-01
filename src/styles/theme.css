@@ -148,32 +148,32 @@
      more saturated so the card wash (10%-of-tone gradient) reads as
      a clear coloured tile instead of a pastel haze. Soft variants
      re-tuned in tandem to keep the same family identity. */
-  --primary:      #5CC2A0;
-  --primary-soft: rgba(92, 194, 160, 0.28);
-  --primary-hi:   rgba(92, 194, 160, 0.12);
+  --primary:      #3FB592;
+  --primary-soft: rgba(63, 181, 146, 0.30);
+  --primary-hi:   rgba(63, 181, 146, 0.14);
   --primary-on:   #0F1419;
-  --accent:       #C99A4D;
-  --accent-soft:  rgba(201, 154, 77, 0.22);
+  --accent:       #B98438;
+  --accent-soft:  rgba(185, 132, 56, 0.24);
   --accent-on:    #1A140A;
   --danger:       #D26A5C;
-  --danger-soft:  rgba(210, 106, 92, 0.28);
+  --danger-soft:  rgba(210, 106, 92, 0.30);
   --danger-on:    #1A0805;
   --danger-title: #E58774;
   --danger-callout-bg: #2A1A18;
-  --warn:         #E8B554;
-  --warn-soft:    rgba(232, 181, 84, 0.40);
+  --warn:         #D9A234;
+  --warn-soft:    rgba(217, 162, 52, 0.42);
   --warn-on:      #1A1305;
-  --orange:       #E08E55;   /* jar-fill ramp step: 80%→100% */
-  --orange-soft:  rgba(224, 142, 85, 0.40);
-  --info:         #4D8AC8;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
-  --info-soft:    rgba(77, 138, 200, 0.28);
+  --orange:       #CC7535;   /* jar-fill ramp step: 80%→100% */
+  --orange-soft:  rgba(204, 117, 53, 0.42);
+  --info:         #2F75BC;   /* cool steel-blue, used for digital account tiles (mobile_wallet) */
+  --info-soft:    rgba(47, 117, 188, 0.30);
   --info-on:      #0F1419;   /* near-black; reads on the bright info in dark mode and stays legible in light mode */
-  --cyan:         #2EA89A;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
-  --cyan-soft:    rgba(46, 168, 154, 0.28);
+  --cyan:         #149382;   /* planner ramp step: 30-60% — teal, sits between blue (60-30%) and green (>=60%) */
+  --cyan-soft:    rgba(20, 147, 130, 0.30);
   --cyan-on:      #0F1419;   /* near-black; reads on the bright cyan in dark mode */
-  --success:      #5FA67E;
-  --success-soft: rgba(95, 166, 126, 0.38);
-  --success-title:#7CC498;
+  --success:      #3F8E5E;
+  --success-soft: rgba(63, 142, 94, 0.40);
+  --success-title:#5DBC83;
   --success-on:   #0F1419;
   --success-callout-bg: #1A2620;
   --border:       #324139;
