@@ -77,6 +77,7 @@ const DEFAULT_EXPENSE_CATEGORIES: ReadonlyArray<{ name: string }> = [
   { name: 'Gifts & Family' },
   { name: 'Charity' },
   { name: 'Puja' },
+  { name: 'Investment' },
 
   // ── Fun & occasions ────────────────────────────────────────────────
   { name: 'Entertainment' },

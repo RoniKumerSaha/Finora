@@ -79,7 +79,7 @@ export const CATEGORY_EMOJI_LIBRARY: ReadonlyArray<{ emoji: string; label: strin
   { emoji: '🕌', label: 'Charity',     aliases: ['charity', 'donation', 'zakat', 'sadaqah'] },
   { emoji: '🪔', label: 'Puja',        aliases: ['puja', 'pooja', 'puja expense', 'mandir', 'temple', 'offerings'] },
   { emoji: '🐷', label: 'Savings',     aliases: ['savings', 'save', 'emergency fund'] },
-  { emoji: '💰', label: 'Investment',  aliases: ['investment', 'investing'] },
+  { emoji: '💰', label: 'Investment',  aliases: ['investment', 'investing', 'invest', 'stock', 'mutual fund', 'dps', 'fdr', 'bond', 'sip'] },
   { emoji: '🎯', label: 'Goals',       aliases: ['goals', 'targets', 'sinking fund'] },
 
   // ── Tech & bills ───────────────────────────────────────────────────
@@ -333,7 +333,7 @@ export const CATEGORY_GROUPS: ReadonlyArray<{
   { key: 'bills',   label: 'Utilities & bills', names: ['utilities', 'lpg', 'wifi', 'phone', 'subscriptions', 'insurance'] },
   { key: 'daily',   label: 'Daily life',        names: ['food', 'café', 'cafe', 'transport', 'fuel', 'shopping', 'personal', 'maid'] },
   { key: 'family',  label: 'Family & health',   names: ['health', 'hospital', 'emi', 'education', 'coaching', 'books', 'kids', 'pets'] },
-  { key: 'giving',  label: 'Giving & saving',   names: ['gifts', 'charity', 'puja'] },
+  { key: 'giving',  label: 'Giving & saving',   names: ['gifts', 'charity', 'puja', 'invest'] },
   { key: 'fun',     label: 'Fun & occasions',   names: ['entertainment', 'travel', 'stay', 'party', 'birthday', 'hobbies'] },
 ];
 

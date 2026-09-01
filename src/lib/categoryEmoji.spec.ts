@@ -188,7 +188,7 @@ describe('CATEGORY_GROUPS — picker bucketing', () => {
       'Utilities', 'LPG', 'WiFi', 'Phone & Internet', 'Subscriptions', 'Insurance',
       'Food & Dining', 'Café', 'Transport', 'Fuel', 'Shopping', 'Personal Care', 'Maid',
       'Health', 'Hospital', 'EMI', 'Education', 'Coaching', 'Books', 'Kids', 'Pets',
-      'Gifts & Family', 'Charity', 'Puja',
+      'Gifts & Family', 'Charity', 'Puja', 'Investment',
       'Entertainment', 'Travel', 'Stay', 'Party', 'Birthday', 'Hobbies',
     ];
     for (const name of defaultNames) {
