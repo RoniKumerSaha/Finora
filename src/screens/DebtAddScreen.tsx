@@ -168,13 +168,13 @@ export function DebtAddScreen() {
 
         <div className="flex gap-2">
           <Button
-            variant="primary"
+            variant="outlined-primary"
             type="submit"
             disabled={totalInvalid || !name.trim() || rateInvalid}
           >
             Save debt
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/debts')}>Cancel</Button>
+          <Button variant="outlined-ghost" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>
     </form>

@@ -209,7 +209,7 @@ export function InvestmentEditScreen() {
         </Field>
         <div className="flex gap-2">
           <Button
-            variant="primary"
+            variant="outlined-primary"
             type="submit"
             disabled={
               !name.trim()
@@ -221,7 +221,7 @@ export function InvestmentEditScreen() {
           >
             Save changes
           </Button>
-          <Button variant="ghost" onClick={() => navigate(`/investments/${inv!.id}`)}>Cancel</Button>
+          <Button variant="outlined-ghost" onClick={() => navigate(`/investments/${inv!.id}`)}>Cancel</Button>
         </div>
       </section>
     </form>

@@ -41,8 +41,7 @@ export function addLoanPlan(
 }
 
 /**
- * Patch a loan plan. Always flips `dirty` (unless the patch is a
- * no-op).
+ * Patch a loan plan. Always flips `dirty`.
  */
 export function updateLoanPlan(
   state: State,
@@ -73,27 +72,9 @@ export function saveLoanPlan(state: State, id: string): State {
   };
 }
 
-/**
- * Reset the loan plan to its last-saved state. If the plan was never
- * saved, the plan is removed entirely (no snapshot to restore).
- */
-export function resetLoanPlan(state: State, id: string): State {
-  const existing = getLoanPlan(state, id);
-  if (!existing) return state;
-  if (!existing.savedAt) {
-    return {
-      ...state,
-      loanPlans: state.loanPlans.filter(p => p.id !== id),
-    };
-  }
-  const next: LoanPlan = { ...existing, dirty: false };
-  return {
-    ...state,
-    loanPlans: state.loanPlans.map(p => p.id === id ? next : p),
-  };
-}
-
-/** Hard-delete the plan (with confirmation at the UI layer). */
+/** Hard-delete the plan (with confirmation at the UI layer). The
+ *  detail screen's Back button also drops never-saved shells via
+ *  this helper so the user doesn't leave a draft behind. */
 export function removeLoanPlan(state: State, id: string): State {
   return {
     ...state,

@@ -73,8 +73,8 @@ export function AccountEditScreen() {
           />
         </Field>
         <div className="flex gap-2">
-          <Button variant="primary" type="submit" disabled={openingInvalid || !name.trim()}>Save changes</Button>
-          <Button variant="ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={openingInvalid || !name.trim()}>Save changes</Button>
+          <Button variant="outlined-ghost" onClick={() => navigate('/accounts')}>Cancel</Button>
         </div>
       </section>
     </form>

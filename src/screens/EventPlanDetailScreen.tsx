@@ -55,8 +55,6 @@ export function EventPlanDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const state = useStore(s => s.state);
-  const saveEvent = useStore(s => s.saveEventPlan);
-  const resetEvent = useStore(s => s.resetEventPlan);
   const addCategory = useStore(s => s.addEventCategory);
   const updateEvent = useStore(s => s.updateEventPlan);
   const updateCategory = useStore(s => s.updateEventCategory);
@@ -233,27 +231,11 @@ export function EventPlanDetailScreen() {
         </div>
       </div>
 
-      {/* Status + summary strip. The Reset + Save buttons used to live
-          here on the right; they moved to a sticky bottom bar so the
-          user can save without scrolling back up after editing a
-          category. The status dot + summary pills (allocated / paid /
-          days to go) are *information* the user scans, so they stay at
-          the top where they're always visible. */}
+      {/* Summary strip — Allocated / Paid / Days to go. The previous
+          "Unsaved changes / Saved" status dot was removed because every
+          mutation auto-persists (see `runPlan` in store.ts), so there
+          is no dirty state to surface. */}
       <div className="card flex flex-wrap items-center gap-3 sm:gap-5 px-4 py-3">
-        <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
-          <span
-            aria-hidden
-            className="w-2 h-2 rounded-full"
-            style={{
-              background: plan.dirty ? 'var(--warn)' : 'var(--success)',
-              boxShadow: `0 0 0 3px color-mix(in srgb, ${plan.dirty ? 'var(--warn)' : 'var(--success)'} 25%, transparent)`,
-            }}
-          />
-          <span>
-            {plan.dirty ? <>Unsaved changes</> : <>Saved</>}
-          </span>
-        </div>
-        <div className="hidden sm:block h-5 w-px bg-border" aria-hidden />
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
           {(() => {
             const pct = pctOf(summary.planned, summary.budget);
@@ -465,40 +447,8 @@ export function EventPlanDetailScreen() {
         </div>
       </div>
 
-      {/* Sticky-bottom Save/Reset bar. Lives at the bottom of the
-          viewport so the user can save without scrolling back to the
-          top of the page after editing a category — the timeline +
-          categories panel is taller than most viewports on phones. */}
-      <div className="sticky bottom-3 z-20 mt-2 flex justify-end gap-2 px-1">
-        <Button
-          variant="ghost"
-          className="bg-surface/95 backdrop-blur-sm"
-          onClick={async () => {
-            // Reset drops every working-draft edit on the event —
-            // confirm before discarding, since the user may have
-            // typed per-category amounts they don't want to lose.
-            const ok = await confirm({
-              title: `Reset ${plan.name}?`,
-              body: 'The event will be blanked back to a clean slate — budget set to 0, date moved to today, every category removed.',
-              dangerText: 'Everything you\u2019ve planned on this event is wiped — this can\u2019t be undone.',
-              confirmLabel: 'Reset',
-              danger: true,
-            });
-            if (!ok) return;
-            resetEvent(plan.id);
-            setSelectedCatId(null);
-            setNewCatDraft(null);
-          }}
-        >Reset</Button>
-        <Button
-          variant="primary"
-          className="shadow-md"
-          onClick={() => saveEvent(plan.id)}
-        >Save plan</Button>
-      </div>
-
       <div className="text-xs text-muted text-center">
-        ⓘ Tap a category card to edit it in a pop-up. Use <b className="text-ink">Browse presets</b> above to drop in starter categories. Save the whole event plan from <b className="text-ink">Save plan</b>.
+        ⓘ Tap a category card to edit it in a pop-up. Use <b className="text-ink">Browse presets</b> above to drop in starter categories. Every edit saves automatically.
       </div>
 
       {selectedCat && (
@@ -791,8 +741,8 @@ function NewCategoryCard({ draft, onChange, onSave, onCancel }: {
         <Input type="date" value={draft.dueDate} onChange={e => onChange({ ...draft, dueDate: e.target.value })} />
       </Field>
       <div className="flex gap-2 justify-end">
-        <Button variant="primary" onClick={onSave}>Save category</Button>
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="outlined-primary" onClick={onSave}>Save category</Button>
+        <Button variant="outlined-ghost" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
   );

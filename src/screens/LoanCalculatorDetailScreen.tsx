@@ -6,11 +6,10 @@
  * then read the full month-by-month amortisation table below.
  *
  * Layout (top to bottom):
- *   1. Save/Reset toolbar
+ *   1. Save / Delete toolbar
  *   2. Form card (name, principal, rate, term, start date)
  *   3. Summary card (EMI / Total paid / Total interest)
  *   4. Amortisation table (period, due, payment, interest, principal, balance)
- *   5. Delete affordance
  *
  * The amortisation table is auto-generated on every input change —
  * the same scratchpad pattern as the rest of the Plan module. Up to
@@ -37,7 +36,6 @@ export function LoanCalculatorDetailScreen() {
   const state = useStore(s => s.state);
   const updateLoanPlan = useStore(s => s.updateLoanPlan);
   const saveLoanPlan = useStore(s => s.saveLoanPlan);
-  const resetLoanPlan = useStore(s => s.resetLoanPlan);
   const removeLoanPlan = useStore(s => s.removeLoanPlan);
   const { confirm, dialog } = useConfirm();
 
@@ -58,13 +56,10 @@ export function LoanCalculatorDetailScreen() {
   }
 
   // Live edits flow into the store on every keystroke. The store is
-  // the source of truth so the dirty flag, save/reset bar, and the
-  // amortisation table all react automatically.
-  const summary = summariseLoanPlan({
-    ...plan,
-    // The summary reads the live store values; here we just trigger
-    // a recompute by re-using the existing object.
-  });
+  // the source of truth so the amortisation table reacts automatically.
+  // The Save / Delete bar uses `plan.dirty` to decide whether the
+  // caps-lock-style "Unsaved changes" pill is showing.
+  const summary = summariseLoanPlan(plan);
   const rows = loanAmortization(plan);
   const visibleRows = rows.slice(0, MAX_INLINE_ROWS);
   const hiddenCount = Math.max(0, rows.length - visibleRows.length);
@@ -79,43 +74,22 @@ export function LoanCalculatorDetailScreen() {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={async () => {
-              const ok = await confirm({
-                title: 'Delete this projection?',
-                body: 'The plan is removed. This cannot be undone.',
-                confirmLabel: 'Delete',
-                danger: true,
-              });
-              if (ok) {
+              // Backing out of a never-saved projection drops it
+              // silently — the user has no idea they're about to
+              // leave a shell behind, and forcing a confirm modal on
+              // every Back tap is annoying. A previously-saved
+              // projection is kept (the user might come back).
+              if (plan && !plan.savedAt) {
                 removeLoanPlan(plan.id);
-                navigate('/plan/loan');
               }
+              navigate('/plan/loan');
             }}
-            className="text-[12.5px] font-semibold px-2.5 py-1.5 rounded-btn text-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition"
-            aria-label="Delete this projection"
-          >
-            Delete
-          </button>
-          <Button variant="ghost" onClick={() => navigate('/plan/loan')}>Back</Button>
+          >Back</Button>
         </div>
       </header>
-
-      <SaveResetBar
-        dirty={plan.dirty}
-        onReset={() => {
-          resetLoanPlan(plan.id);
-          navigate('/plan/loan');
-        }}
-        onSave={() => {
-          // 2026-08-30: auto-close after save. The user has confirmed
-          // the values; the next thing they want to do is see this
-          // alongside their other projections on the list.
-          saveLoanPlan(plan.id);
-          navigate('/plan/loan');
-        }}
-      />
 
       {/* Live summary card. Composition donut on the left
           (principal vs interest) so the user can see the cost of the
@@ -235,6 +209,37 @@ export function LoanCalculatorDetailScreen() {
           </>
         )}
       </section>
+
+      {/* Save / Delete toolbar. Sticky-bottom on small screens so
+         the user can save without scrolling back up — the form is
+         taller than one screen on most devices. Identical
+         placement to the Investment Planner detail so the two
+         "planner" surfaces share one shape. After Save, the user
+         is taken back to the list. Delete is the destructive
+         action that removes the plan regardless of save state. */}
+      <div className="sticky bottom-2 z-10">
+        <SaveResetBar
+          dirty={plan.dirty}
+          onSave={() => {
+            saveLoanPlan(plan.id);
+            // After Save, take the user back to the list.
+            navigate('/plan/loan');
+          }}
+          onDelete={async () => {
+            const ok = await confirm({
+              title: 'Delete this projection?',
+              body: 'The plan is removed. This cannot be undone.',
+              confirmLabel: 'Delete',
+              danger: true,
+            });
+            if (ok) {
+              removeLoanPlan(plan.id);
+              navigate('/plan/loan');
+            }
+          }}
+          deleteLabel="Delete"
+        />
+      </div>
 
       <section className="text-[11px] text-muted text-center">
         Projections never touch your ledger.

@@ -10,7 +10,7 @@ import {
   loanEMI, loanTotalPaid, loanTotalInterest, loanAmortization, addMonthsISO,
 } from './math';
 import {
-  addLoanPlan, updateLoanPlan, saveLoanPlan, resetLoanPlan,
+  addLoanPlan, updateLoanPlan, saveLoanPlan,
   removeLoanPlan, summariseLoanPlan, listLoanPlans, getLoanPlan,
 } from './loanPlans';
 import { DEFAULT_STATE } from './persistence';
@@ -147,7 +147,7 @@ describe('summariseLoanPlan', () => {
   });
 });
 
-describe('addLoanPlan / saveLoanPlan / resetLoanPlan / removeLoanPlan', () => {
+describe('addLoanPlan / saveLoanPlan / removeLoanPlan', () => {
   it('adds a new plan and returns its id', () => {
     const s0 = makeState();
     const { state: s1, id } = addLoanPlan(s0, {
@@ -190,30 +190,5 @@ describe('addLoanPlan / saveLoanPlan / resetLoanPlan / removeLoanPlan', () => {
     const planId = s1.loanPlans[0].id;
     const s2 = removeLoanPlan(s1, planId);
     expect(s2.loanPlans).toHaveLength(0);
-  });
-
-  it('resetLoanPlan on an unsaved plan removes it (no snapshot to restore)', () => {
-    const { state: s1 } = addLoanPlan(makeState(), {
-      name: 'New', principal: 0, rate: 0, termMonths: 12,
-      startDate: '2026-01-01',
-    });
-    const planId = s1.loanPlans[0].id;
-    const s2 = resetLoanPlan(s1, planId);
-    expect(s2.loanPlans).toHaveLength(0);
-  });
-
-  it('resetLoanPlan on a saved plan just clears dirty', () => {
-    const { state: s1 } = addLoanPlan(makeState(), {
-      name: 'New', principal: 1_000, rate: 5, termMonths: 6,
-      startDate: '2026-01-01',
-    });
-    const planId = s1.loanPlans[0].id;
-    const s2 = saveLoanPlan(s1, planId);
-    const s3 = updateLoanPlan(s2, planId, { principal: 9_999 });
-    expect(s3.loanPlans[0].dirty).toBe(true);
-    const s4 = resetLoanPlan(s3, planId);
-    expect(s4.loanPlans).toHaveLength(1);
-    expect(s4.loanPlans[0].dirty).toBe(false);
-    expect(s4.loanPlans[0].principal).toBe(9_999); // reset only clears dirty, not values
   });
 });

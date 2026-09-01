@@ -49,8 +49,6 @@ interface Store {
 
   // ── Plan: Month Planner (PRD §9.14) ──────────────────────────────
   patchMonthPlan: (key: string, patch: Parameters<typeof plans.patchMonthPlan>[2]) => void;
-  saveMonthPlan: (key: string) => void;
-  resetMonthPlan: (key: string) => void;
   addMonthCategory: (key: string, cat: Parameters<typeof plans.addMonthCategory>[2]) => void;
   addMonthCategories: (key: string, cats: Parameters<typeof plans.addMonthCategories>[2]) => void;
   updateMonthCategory: (key: string, id: string, patch: Parameters<typeof plans.updateMonthCategory>[3]) => void;
@@ -61,8 +59,6 @@ interface Store {
   // ── Plan: Event Planner (PRD §9.15) ──────────────────────────────
   addEventPlan: (input: Parameters<typeof plans.addEventPlan>[1]) => string;
   updateEventPlan: (id: string, patch: Parameters<typeof plans.updateEventPlan>[2]) => void;
-  saveEventPlan: (id: string) => void;
-  resetEventPlan: (id: string) => void;
   removeEventPlan: (id: string) => void;
   addEventCategory: (id: string, cat: Parameters<typeof plans.addEventCategory>[2], initialItems?: Parameters<typeof plans.addEventCategory>[3]) => void;
   addEventCategories: (id: string, cats: Parameters<typeof plans.addEventCategories>[2]) => void;
@@ -76,14 +72,12 @@ interface Store {
   addInvestmentPlan: (input: Parameters<typeof investmentPlans.addInvestmentPlan>[1]) => string;
   updateInvestmentPlan: (id: string, patch: Parameters<typeof investmentPlans.updateInvestmentPlan>[2]) => void;
   saveInvestmentPlan: (id: string) => void;
-  resetInvestmentPlan: (id: string) => void;
   removeInvestmentPlan: (id: string) => void;
 
   // ── Plan: Loan Calculator (PRD §9.17) ────────────────────────────
   addLoanPlan: (input: Parameters<typeof loanPlans.addLoanPlan>[1]) => string;
   updateLoanPlan: (id: string, patch: Parameters<typeof loanPlans.updateLoanPlan>[2]) => void;
   saveLoanPlan: (id: string) => void;
-  resetLoanPlan: (id: string) => void;
   removeLoanPlan: (id: string) => void;
 
   // Mutation bridge: takes a (state) → state mutator and persists the result.
@@ -162,8 +156,6 @@ export const useStore = create<Store>((set, get) => ({
 
   // ── Month Planner ───────────────────────────────────────────────
   patchMonthPlan: (key, patch) => runPlan(get, s => plans.patchMonthPlan(s, key, patch)),
-  saveMonthPlan: (key) => runPlan(get, s => plans.saveMonthPlan(s, key)),
-  resetMonthPlan: (key) => runPlan(get, s => plans.resetMonthPlan(s, key)),
   addMonthCategory: (key, cat) => runPlan(get, s => plans.addMonthCategory(s, key, cat)),
   addMonthCategories: (key, cats) => runPlan(get, s => plans.addMonthCategories(s, key, cats)),
   updateMonthCategory: (key, id, patch) => runPlan(get, s => plans.updateMonthCategory(s, key, id, patch)),
@@ -179,8 +171,6 @@ export const useStore = create<Store>((set, get) => ({
     return id;
   },
   updateEventPlan: (id, patch) => runPlan(get, s => plans.updateEventPlan(s, id, patch)),
-  saveEventPlan: (id) => runPlan(get, s => plans.saveEventPlan(s, id)),
-  resetEventPlan: (id) => runPlan(get, s => plans.resetEventPlan(s, id)),
   removeEventPlan: (id) => runPlan(get, s => plans.removeEventPlan(s, id)),
   addEventCategory: (id, cat, initialItems) => runPlan(get, s => plans.addEventCategory(s, id, cat, initialItems)),
   addEventCategories: (id, cats) => runPlan(get, s => plans.addEventCategories(s, id, cats)),
@@ -199,7 +189,6 @@ export const useStore = create<Store>((set, get) => ({
   },
   updateInvestmentPlan: (id, patch) => runPlan(get, s => investmentPlans.updateInvestmentPlan(s, id, patch)),
   saveInvestmentPlan: (id) => runPlan(get, s => investmentPlans.saveInvestmentPlan(s, id)),
-  resetInvestmentPlan: (id) => runPlan(get, s => investmentPlans.resetInvestmentPlan(s, id)),
   removeInvestmentPlan: (id) => runPlan(get, s => investmentPlans.removeInvestmentPlan(s, id)),
 
   // ── Loan Calculator (PRD §9.17) ──────────────────────────────────
@@ -211,7 +200,6 @@ export const useStore = create<Store>((set, get) => ({
   },
   updateLoanPlan: (id, patch) => runPlan(get, s => loanPlans.updateLoanPlan(s, id, patch)),
   saveLoanPlan: (id) => runPlan(get, s => loanPlans.saveLoanPlan(s, id)),
-  resetLoanPlan: (id) => runPlan(get, s => loanPlans.resetLoanPlan(s, id)),
   removeLoanPlan: (id) => runPlan(get, s => loanPlans.removeLoanPlan(s, id)),
 
   update: (mutator) => run(get, mutator),

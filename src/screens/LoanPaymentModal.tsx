@@ -274,14 +274,8 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
         </div>
 
         <div className="flex gap-2.5 justify-end mt-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center px-[18px] py-2.5 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            Cancel
-          </button>
-          <Button variant="primary" type="submit" disabled={!canSave}>
+          <Button variant="outlined-ghost" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={!canSave}>
             Record payment
           </Button>
         </div>

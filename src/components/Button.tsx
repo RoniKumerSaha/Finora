@@ -13,17 +13,35 @@
  * save. Pair with a 600ms delay before navigation so the pulse lands
  * before the screen unmounts.
  *
+ * 2026-09-01 polish: introduced an outlined family (outlined-primary /
+ * outlined-danger / outlined-ghost). These render as thin outlined
+ * pills with a transparent background, matching the SaveResetBar
+ * toolbar shape used by the Investment Planner and Loan Calculator
+ * detail screens. Use these for "Save" / "Delete" / "Cancel" actions
+ * on form pages so the same visual language carries through the whole
+ * app. Filled variants stay for hero CTAs and confirm dialogs.
+ *
  * Variants:
- *   - primary:   filled bg-primary, ink-on color
- *   - secondary: surface bg, surface-2 hover, border
- *   - danger:    danger bg, white text
- *   - ghost:     transparent bg, hover surface-2
- *   - icon:      36×36 square with surface bg + border (IconButton)
+ *   - primary:          filled bg-primary, ink-on color
+ *   - secondary:        surface bg, surface-2 hover, border
+ *   - danger:           danger bg, white text
+ *   - ghost:            transparent bg, hover surface-2
+ *   - outlined-primary: outlined pill, primary border + text (Save)
+ *   - outlined-danger:  outlined pill, danger border + text (Delete)
+ *   - outlined-ghost:   outlined pill, border + muted text (Cancel)
+ *   - icon:             36×36 square with surface bg + border (IconButton)
  */
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'danger'
+    | 'ghost'
+    | 'outlined-primary'
+    | 'outlined-danger'
+    | 'outlined-ghost';
   size?: 'sm' | 'md';
   /**
    * Fires the one-shot sage pulse + ✓ glyph. Used for the moment
@@ -57,24 +75,89 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   },
   ref,
 ) {
+  const isOutlined = variant.startsWith('outlined-');
   const base =
     'relative overflow-visible inline-flex items-center justify-center gap-2 rounded-btn font-bold tracking-tight ' +
     'transition disabled:opacity-50 disabled:cursor-not-allowed ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-0 ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ' +
     'active:translate-y-px';
-  const sizeCls = size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-[18px] py-2.5 text-sm';
-  const variantClass = {
-    primary:   'bg-primary text-primary-on hover:opacity-95',
-    secondary: 'bg-surface text-ink border border-border hover:bg-surface-2',
-    danger:    'bg-danger text-white border border-danger hover:opacity-95',
-    ghost:     'text-muted hover:text-ink hover:bg-surface-2',
-  }[variant];
+  const sizeCls = size === 'sm'
+    ? (isOutlined ? 'px-2.5 py-1.5 text-[13px]' : 'px-3 py-1.5 text-[13px]')
+    : (isOutlined ? 'px-2.5 py-1.5 text-[12.5px]' : 'px-[18px] py-2.5 text-sm');
+
+  // Filled variants. Outlined ones branch below.
+  let variantClass: string;
+  switch (variant) {
+    case 'primary':
+      variantClass = 'bg-primary text-primary-on hover:opacity-95 focus-visible:ring-primary/40';
+      break;
+    case 'secondary':
+      variantClass = 'bg-surface text-ink border border-border hover:bg-surface-2 focus-visible:ring-primary/40';
+      break;
+    case 'danger':
+      variantClass = 'bg-danger text-white border border-danger hover:opacity-95 focus-visible:ring-danger/40';
+      break;
+    case 'ghost':
+      variantClass = 'text-muted hover:text-ink hover:bg-surface-2 focus-visible:ring-primary/40';
+      break;
+    case 'outlined-primary':
+      // Hover fills with the soft primary tint so the user sees a
+      // clear colour cue when the cursor lands on the Save button.
+      variantClass = 'bg-transparent border font-semibold hover:bg-[var(--btn-hover-bg)] focus-visible:ring-primary/40 transition-colors';
+      break;
+    case 'outlined-danger':
+      variantClass = 'bg-transparent border font-semibold hover:bg-[var(--btn-hover-bg)] focus-visible:ring-danger/40 transition-colors';
+      break;
+    case 'outlined-ghost':
+      variantClass = 'bg-transparent border font-semibold hover:bg-[var(--btn-hover-bg)] focus-visible:ring-primary/40 transition-colors';
+      break;
+    default:
+      variantClass = 'bg-surface text-ink border border-border hover:bg-surface-2 focus-visible:ring-primary/40';
+  }
+
+  // Outlined variants: explicit color/border from CSS vars, and a
+  // --btn-hover-bg custom property so the hover fill is a soft tint
+  // of the border colour (the same recipe the rest of the app uses
+  // for "primary-soft" / "danger-soft" surfaces). Reads cleanly
+  // against any background and gives the user a clear hover cue
+  // without the pill feeling filled.
+  let outlinedStyle: CSSProperties | undefined;
+  if (variant === 'outlined-primary') {
+    outlinedStyle = {
+      color: 'var(--primary)',
+      borderColor: 'var(--primary)',
+      // CSS variables used: see src/styles/theme.css — primary-soft
+      // is already 30% opacity, exactly what the hover fill needs.
+      '--btn-hover-bg': 'var(--primary-soft)',
+    } as CSSProperties;
+  } else if (variant === 'outlined-danger') {
+    outlinedStyle = {
+      color: 'var(--danger)',
+      borderColor: 'var(--danger)',
+      '--btn-hover-bg': 'var(--danger-soft)',
+    } as CSSProperties;
+  } else if (variant === 'outlined-ghost') {
+    outlinedStyle = {
+      color: 'var(--muted)',
+      borderColor: 'var(--border)',
+      // Cancel reads as a quiet neutral action — hover with the
+      // muted surface so it doesn't shout.
+      '--btn-hover-bg': 'var(--surface-2)',
+    } as CSSProperties;
+  }
+
+  // Compose the className. Outlined variants get an inline style
+  // (for color/border + hover-bg var) and a non-bold font weight
+  // so the outlined pair feels visually lighter than the filled CTAs.
+  const composed: string[] = [base, sizeCls, variantClass, className || ''];
+
   return (
     <button
       ref={ref}
       type="button"
       {...rest}
-      className={[base, sizeCls, variantClass, className || ''].join(' ')}
+      style={outlinedStyle}
+      className={composed.join(' ')}
     >
       {success && (
         <span

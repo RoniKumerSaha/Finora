@@ -408,14 +408,14 @@ export function DebtEditScreen() {
 
         <div className="flex gap-2">
           <Button
-            variant="primary"
+            variant="outlined-primary"
             type="submit"
             disabled={totalInvalid || !name.trim() || rateInvalid}
             success={saved}
           >
             Save changes
           </Button>
-          <Button variant="ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
+          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/debts')}>Cancel</Button>
         </div>
       </section>
 
@@ -433,7 +433,7 @@ export function DebtEditScreen() {
             ? `Removes the debt record only. The ${linkedTxCount} linked transaction(s) stay in your records.`
             : 'Removes the debt record. No transactions are linked.'}
         </p>
-        <Button variant="danger" onClick={onDelete}>Delete debt</Button>
+        <Button variant="outlined-danger" onClick={onDelete}>Delete debt</Button>
       </section>
 
         {dialog}

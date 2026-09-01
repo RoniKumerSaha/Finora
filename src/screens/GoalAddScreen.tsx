@@ -111,13 +111,13 @@ export function GoalAddScreen() {
         </Field>
         <div className="flex gap-2">
           <Button
-            variant="primary"
+            variant="outlined-primary"
             type="submit"
             disabled={targetInvalid || savedInvalid || !name.trim() || !targetDate}
           >
             Save goal
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/goals')}>Cancel</Button>
+          <Button variant="outlined-ghost" onClick={() => navigate('/goals')}>Cancel</Button>
         </div>
       </section>
     </form>

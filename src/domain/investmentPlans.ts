@@ -7,9 +7,11 @@
  * I opened a DPS at 8% for 12 months" without committing real money
  * to the ledger.
  *
- * Pattern mirrors `plans.ts`: explicit Save / Reset, `dirty` flag,
- * `savedSnapshot` so Reset can roll back to the last user-acknowledged
- * state.
+ * Pattern mirrors the Loan Planner: explicit Save / Delete UX, a
+ * `dirty` flag flipped by every edit, and `savedAt` to record the
+ * last user-acknowledged state. The detail screen's Back button
+ * drops never-saved shells via `removeInvestmentPlan` so the user
+ * doesn't leave an unwanted draft behind.
  */
 import type { InvestmentPlan, State } from './types';
 import { uid } from './ids';
@@ -48,7 +50,7 @@ export function addInvestmentPlan(
 
 /**
  * Patch a mock investment plan. Always flips `dirty` so the user is
- * prompted to re-save (unless the patch is a no-op).
+ * prompted to re-save.
  */
 export function updateInvestmentPlan(
   state: State,
@@ -66,7 +68,7 @@ export function updateInvestmentPlan(
 
 /**
  * Mark the plan as saved NOW. Clears dirty. Used by the explicit
- * "Save plan" button on the Investment Planner screens.
+ * "Save plan" button on the Investment Planner detail screen.
  */
 export function saveInvestmentPlan(state: State, id: string): State {
   const existing = getInvestmentPlan(state, id);
@@ -83,28 +85,10 @@ export function saveInvestmentPlan(state: State, id: string): State {
 }
 
 /**
- * Reset the plan to its last-saved state. If the plan was never
- * saved, the plan is removed entirely (no savedSnapshot to restore
- * means nothing to revert to — the shell was never confirmed by the
- * user). Mirrors the EventPlanner `resetEventPlan` philosophy.
+ * Hard-delete the plan (with confirmation at the UI layer).
+ * The Back button on the detail screen also drops never-saved
+ * shells via this helper so the user doesn't leave a draft behind.
  */
-export function resetInvestmentPlan(state: State, id: string): State {
-  const existing = getInvestmentPlan(state, id);
-  if (!existing) return state;
-  if (!existing.savedAt) {
-    return {
-      ...state,
-      investmentPlans: state.investmentPlans.filter(p => p.id !== id),
-    };
-  }
-  const next: InvestmentPlan = { ...existing, dirty: false };
-  return {
-    ...state,
-    investmentPlans: state.investmentPlans.map(p => p.id === id ? next : p),
-  };
-}
-
-/** Hard-delete the plan (with confirmation at the UI layer). */
 export function removeInvestmentPlan(state: State, id: string): State {
   return {
     ...state,

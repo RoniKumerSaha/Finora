@@ -397,8 +397,8 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
         )}
 
         <div className="flex justify-end gap-2.5 mt-6">
-          <Button variant="secondary" type="button" onClick={() => navigate('/transactions/new')}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={amountInvalid} success={saved}>Save</Button>
+          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/transactions/new')}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={amountInvalid} success={saved}>Save</Button>
         </div>
       </section>
     </form>

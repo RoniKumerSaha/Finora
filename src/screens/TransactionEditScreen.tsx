@@ -277,12 +277,12 @@ export function TransactionEditScreen() {
         )}
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-2.5 mt-6">
-          <Button variant="danger" type="button" onClick={onDelete} className="w-full sm:w-auto">
+          <Button variant="outlined-danger" type="button" onClick={onDelete} className="w-full sm:w-auto">
             {'\u{1F5D1}'} Delete
           </Button>
           <div className="flex gap-2.5">
-            <Button variant="secondary" type="button" onClick={() => navigate('/transactions')} className="flex-1 sm:flex-none">Cancel</Button>
-            <Button variant="primary" type="submit" disabled={amountInvalid} className="flex-1 sm:flex-none" success={saved}>Save</Button>
+            <Button variant="outlined-ghost" type="button" onClick={() => navigate('/transactions')} className="flex-1 sm:flex-none">Cancel</Button>
+            <Button variant="outlined-primary" type="submit" disabled={amountInvalid} className="flex-1 sm:flex-none" success={saved}>Save</Button>
           </div>
         </div>
       </section>

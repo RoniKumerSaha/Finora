@@ -15,10 +15,11 @@
  *   1. Header (title + Delete + Back)
  *   2. Hero projection card (sparkline + chip row)
  *   3. Form card (name, type, principal / installment, rate, term, dates)
- *   4. Save/Reset toolbar (sticky-bottom so the user can save without
- *      scrolling back up — the form is taller than one screen on most
- *      devices and "scroll-up to save" was the main UX papercut).
- *   5. Delete affordance (with confirmation)
+ *   4. Save / Delete toolbar (sticky-bottom so the user can
+ *      commit without scrolling back up — the form is taller than one
+ *      screen on most devices and "scroll-up to save" was the main UX
+ *      papercut).
+ *   5. Delete affordance lives inside the toolbar (with confirmation)
  */
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -44,7 +45,6 @@ export function InvestmentPlannerDetailScreen() {
   const state = useStore(s => s.state);
   const updateInvestmentPlan = useStore(s => s.updateInvestmentPlan);
   const saveInvestmentPlan = useStore(s => s.saveInvestmentPlan);
-  const resetInvestmentPlan = useStore(s => s.resetInvestmentPlan);
   const removeInvestmentPlan = useStore(s => s.removeInvestmentPlan);
   const { confirm, dialog } = useConfirm();
 
@@ -120,26 +120,20 @@ export function InvestmentPlannerDetailScreen() {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={async () => {
-              const ok = await confirm({
-                title: 'Delete this plan?',
-                body: 'The plan is removed. This cannot be undone.',
-                confirmLabel: 'Delete',
-                danger: true,
-              });
-              if (ok) {
+              // Backing out of a never-saved plan drops it silently —
+              // the user has no idea they're about to leave a shell
+              // behind, and forcing a confirm modal on every Back tap
+              // is annoying. A previously-saved plan is kept (the
+              // user might come back to it).
+              if (plan && !plan.savedAt) {
                 removeInvestmentPlan(plan.id);
-                navigate('/plan/invest');
               }
+              navigate('/plan/invest');
             }}
-            className="text-[12.5px] font-semibold px-2.5 py-1.5 rounded-btn text-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition"
-            aria-label="Delete this plan"
-          >
-            Delete
-          </button>
-          <Button variant="ghost" onClick={() => navigate('/plan/invest')}>Back</Button>
+          >Back</Button>
         </div>
       </header>
 
@@ -306,20 +300,34 @@ export function InvestmentPlannerDetailScreen() {
         </div>
       </section>
 
-      {/* Save/reset lives at the bottom of the form so the user can
-         commit without scrolling back up. Sticky to the bottom of the
-         viewport on small screens (where the form is taller than
-         one screen); inline-stacked on wider screens. */}
+      {/* Save / Delete toolbar. Sticky-bottom on small screens so the
+         user can save without scrolling back up — the form is taller
+         than one screen on most devices and "scroll-up to save" was
+         the main UX papercut. After Save, the user is taken back to
+         the list — they confirmed the values, the next action is
+         "see what else I have". Delete is the destructive action
+         that removes the plan regardless of save state. */}
       <div className="sticky bottom-2 z-10">
         <SaveResetBar
           dirty={plan.dirty}
-          onReset={() => {
-            resetInvestmentPlan(plan.id);
-            navigate('/plan/invest');
-          }}
           onSave={() => {
             saveInvestmentPlan(plan.id);
+            // After Save, take the user back to the list — they
+            // confirmed the values, the next action is "see what
+            // else I have".
             navigate('/plan/invest');
+          }}
+          onDelete={async () => {
+            const ok = await confirm({
+              title: 'Delete this plan?',
+              body: 'The plan is removed. This cannot be undone.',
+              confirmLabel: 'Delete',
+              danger: true,
+            });
+            if (ok) {
+              removeInvestmentPlan(plan.id);
+              navigate('/plan/invest');
+            }
           }}
         />
       </div>

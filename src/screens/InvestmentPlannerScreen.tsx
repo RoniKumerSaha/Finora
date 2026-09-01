@@ -314,8 +314,9 @@ function InvestmentPlanCard({
           </div>
         </div>
 
-        {/* Row 2: optional Draft pill (only when the plan has
-            unsaved edits). The PLANNED pill moved to row 1. */}
+        {/* Row 2: optional Draft pill — only when the plan has
+            unsaved edits. Sits on its own row so it doesn't crowd
+            the title row's pills. */}
         {plan.dirty && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <Pill tone="warn" variant="solid">Draft</Pill>

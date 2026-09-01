@@ -42,9 +42,6 @@ function makePlanState(): State {
             ],
           },
         ],
-        dirty: false,
-        savedAt: '2026-08-17',
-        savedSnapshot: undefined,
       },
     ],
   };
@@ -71,12 +68,6 @@ describe('updateEventItem', () => {
     expect(items[0].amount).toBe(9999);
     expect(items[1].id).toBe(dinnerId);
     expect(items[1].amount).toBe(1500);
-  });
-
-  it('marks the plan dirty after update', () => {
-    const state = makePlanState();
-    const next = updateEventItem(state, 'evt-1', 'cat-1', 'item-1', { amount: 100 });
-    expect(next.eventPlans[0].dirty).toBe(true);
   });
 
   it('no-op when category does not exist', () => {
@@ -130,8 +121,6 @@ function makeMonthStateWithCats(): State {
           { id: 'b', emoji: '🛒', name: 'Groceries', budget: 5000, planned: 0 },
           { id: 'c', emoji: '🚗', name: 'Transport', budget: 2000, planned: 0 },
         ],
-        savedAt: '2026-08-17',
-        dirty: false,
       },
     ],
   };
@@ -192,8 +181,8 @@ describe('batchUpdateMonthCategoryBudget', () => {
     expect(cats[1].budget).toBe(7000);
     // The unselected row is untouched.
     expect(cats[2].budget).toBe(2000);
-    // The dirty flag flips once — caller can save / reset in one step.
-    expect(ensureMonthPlan(next, '2026-08').dirty).toBe(true);
+    // The plan is updated in a single write — caller can carry on editing.
+    expect(ensureMonthPlan(next, '2026-08').categories[0].budget).toBe(7000);
   });
 
   it('ignores unknown ids without throwing', () => {
@@ -262,8 +251,6 @@ function makeEventStateWithCats(): State {
             items: [],
           },
         ],
-        dirty: false,
-        savedAt: '2026-08-17',
       },
     ],
   };
@@ -283,8 +270,6 @@ describe('addEventCategories', () => {
       budget: 0,
       planned: 0,
       categories: [],
-      dirty: false,
-      savedAt: null,
     }],
   };
 
@@ -354,17 +339,6 @@ describe('addEventCategories', () => {
       { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
     ]);
     expect(next).toBe(state);
-  });
-
-  it('marks the plan dirty after a successful add', () => {
-    const state = { ...DEFAULT_STATE, eventPlans: [{
-      ...makeEventStateWithCats().eventPlans[0],
-      dirty: false,
-    }] };
-    const next = addEventCategories(state, 'evt-1', [
-      { emoji: '🍛', name: 'Catering', dueDate: '2026-08-17' },
-    ]);
-    expect(next.eventPlans[0].dirty).toBe(true);
   });
 
   /* ── Puja kit coverage ───────────────────────────────────────────

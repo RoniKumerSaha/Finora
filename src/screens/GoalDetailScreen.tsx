@@ -290,13 +290,13 @@ export function GoalDetailScreen() {
           </Field>
           <div className="flex flex-wrap gap-2">
             <Button
-              variant="primary"
+              variant="outlined-primary"
               type="submit"
               disabled={targetInvalid || !name.trim() || !targetDate}
             >
               Save changes
             </Button>
-            <Button variant="ghost" onClick={() => setMode('view')}>Cancel</Button>
+            <Button variant="outlined-ghost" onClick={() => setMode('view')}>Cancel</Button>
           </div>
         </form>
       )}
@@ -346,7 +346,7 @@ export function GoalDetailScreen() {
         <p className="text-[13px] text-muted mb-4">
           Removes the goal and its {contributions.length} contribution {contributions.length === 1 ? 'entry' : 'entries'}. Your accounts and transactions are not touched.
         </p>
-        <Button variant="danger" onClick={onDelete}>Delete goal</Button>
+        <Button variant="outlined-danger" onClick={onDelete}>Delete goal</Button>
       </section>
 
       {dialog}
@@ -466,14 +466,8 @@ function ContributeModal({
           />
         </Field>
         <div className="flex gap-2.5 justify-end mt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center px-[18px] py-3 rounded-btn font-bold text-sm bg-surface text-ink border border-border hover:bg-surface-2 transition"
-          >
-            Cancel
-          </button>
-          <Button variant="primary" type="submit" disabled={amountInvalid}>Add contribution</Button>
+          <Button variant="outlined-ghost" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={amountInvalid}>Add contribution</Button>
         </div>
       </form>
     </div>,

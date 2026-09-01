@@ -34,8 +34,6 @@ import { CardTotalChecker } from './plan/CardTotalChecker';
 
 export function MonthPlanScreen() {
   const state = useStore(s => s.state);
-  const savePlan = useStore(s => s.saveMonthPlan);
-  const resetPlan = useStore(s => s.resetMonthPlan);
   const addCategory = useStore(s => s.addMonthCategory);
   const updateCategory = useStore(s => s.updateMonthCategory);
   const removeCategory = useStore(s => s.removeMonthCategory);
@@ -82,30 +80,11 @@ export function MonthPlanScreen() {
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl w-full">
-      {/* Status row — saved/dirty indicator only, shown at the top so
-          the user can see at a glance whether they have unsaved changes.
-          The actual Reset + Save actions live in a sticky bottom bar
-          below — they're the things the user needs to *reach*, while
-          the indicator is something they just need to *see*. */}
-      <div className="flex items-center gap-2 text-[12.5px] text-muted shrink-0">
-        <span
-          aria-hidden
-          className="w-2 h-2 rounded-full"
-          style={{
-            background: plan.dirty ? 'var(--warn)' : 'var(--success)',
-            boxShadow: `0 0 0 3px color-mix(in srgb, ${plan.dirty ? 'var(--warn)' : 'var(--success)'} 25%, transparent)`,
-          }}
-        />
-        <span>
-          {plan.dirty ? <>Unsaved changes</> : <>Saved</>}
-        </span>
-      </div>
-
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="heading h1-screen">Plan my month</h1>
           <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-            Fill the items with budgets for what you intend to spend. Tap <b className="text-ink">Save plan</b> when it looks right — or <b className="text-ink">Reset</b> to start over.
+            Fill the items with budgets for what you intend to spend. Changes save as you go.
           </div>
         </div>
         {plan.categories.length > 0 && (
@@ -287,44 +266,8 @@ export function MonthPlanScreen() {
         onOpenEditor={() => setBatchEditorOpen(true)}
       />
 
-      {/* Sticky-bottom Save/Reset bar. Lives at the bottom of the
-          viewport so the user can save without scrolling back to the
-          top of the page — the items grid is taller than most viewports
-          on phones. Hidden when the BatchFloatingBar (selection mode)
-          is active so the two bottom bars don't fight for the same
-          32px of screen real estate. */}
-      {!selectionMode && (
-        <div className="sticky bottom-3 z-20 mt-2 flex justify-end gap-2 px-1">
-          <Button
-            variant="ghost"
-            className="bg-surface/95 backdrop-blur-sm"
-            onClick={async () => {
-              // Reset wipes income + every item back to the plan's saved
-              // state — confirm before discarding the working draft.
-              const ok = await confirm({
-                title: 'Reset month plan?',
-                body: 'Your working draft will be discarded and the plan will snap back to the last saved state.',
-                dangerText: 'Income and every item value are reverted — this can\u2019t be undone.',
-                confirmLabel: 'Reset',
-                danger: true,
-              });
-              if (!ok) return;
-              resetPlan(activeKey);
-              setSelectedCatId(null);
-              setNewItemOpen(false);
-            }}
-          >Reset</Button>
-          <Button
-            variant="primary"
-            className="shadow-md"
-            onClick={() => savePlan(activeKey)}
-          >Save plan</Button>
-        </div>
-      )}
-
       {/* Editor modal — same Custom / Same amount / Adjust % / Clear
-          modes as before. Single store write per apply so the dirty
-          flag flips once. */}
+          modes as before. Single store write per apply. */}
       <BatchEditorControls
         open={batchEditorOpen}
         categories={plan.categories}
@@ -355,7 +298,7 @@ export function MonthPlanScreen() {
       )}
 
       <div className="text-xs text-muted text-center">
-        ⓘ Tap an item to edit it in a pop-up. Changes are only saved when you tap <b className="text-ink">Save plan</b>.
+        ⓘ Tap an item to edit it in a pop-up. Changes save automatically.
       </div>
       {confirmDialog}
     </div>
@@ -654,8 +597,8 @@ function NewItemModal({ onSave, onClose }: {
           </Field>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" type="submit">Save item</Button>
+            <Button variant="outlined-ghost" onClick={onClose}>Cancel</Button>
+            <Button variant="outlined-primary" type="submit">Save item</Button>
           </div>
         </form>
       </div>
@@ -822,8 +765,8 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 
         {/* Primary action row — only the safe actions. */}
         <div className="flex justify-end gap-2 mt-5">
-          <Button variant="ghost" onClick={onEmpty}>Clear budget</Button>
-          <Button variant="primary" onClick={onClose}>Save</Button>
+          <Button variant="outlined-ghost" onClick={onEmpty}>Clear budget</Button>
+          <Button variant="outlined-primary" onClick={onClose}>Save</Button>
         </div>
 
         {/* Danger zone — visually separated so users don't hit Remove by accident. */}

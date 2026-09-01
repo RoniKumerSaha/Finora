@@ -462,7 +462,7 @@ export function InvestmentDetailScreen() {
         <p className="text-[13px] text-muted mb-4">
           Removes the investment record only. The {contribs.length} linked contribution transactions stay in your records.
         </p>
-        <Button variant="danger" onClick={onDelete}>Delete investment</Button>
+        <Button variant="outlined-danger" onClick={onDelete}>Delete investment</Button>
       </section>
 
       {dialog}
@@ -648,8 +648,8 @@ function ContributeModal({
           />
         </Field>
         <div className="flex gap-2.5 justify-end mt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" disabled={amountInvalid}>Record contribution</Button>
+          <Button variant="outlined-ghost" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={amountInvalid}>Record contribution</Button>
         </div>
       </form>
     </div>,

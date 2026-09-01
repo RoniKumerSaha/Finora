@@ -4,8 +4,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-  addInvestmentPlan, updateInvestmentPlan, saveInvestmentPlan,
-  resetInvestmentPlan, removeInvestmentPlan, listInvestmentPlans,
+  addInvestmentPlan, updateInvestmentPlan,
+  saveInvestmentPlan,
+  removeInvestmentPlan, listInvestmentPlans,
   getInvestmentPlan,
   investmentPlanMaturityValue, investmentPlanMaturityDate,
   investmentPlanInterest, investmentPlanTotalContributed,
@@ -33,7 +34,7 @@ describe('addInvestmentPlan / saveInvestmentPlan / updateInvestmentPlan / remove
     expect(listInvestmentPlans(s1)).toHaveLength(1);
   });
 
-  it('saveInvestmentPlan clears dirty and stamps savedAt', () => {
+  it('saveInvestmentPlan clears dirty + stamps savedAt', () => {
     const { state: s1 } = addInvestmentPlan(makeState(), {
       name: 'Test', type: 'fdr', principal: 0, rate: 0,
       startDate: '2026-01-01', termMonths: 12,
@@ -51,8 +52,8 @@ describe('addInvestmentPlan / saveInvestmentPlan / updateInvestmentPlan / remove
     });
     const planId = s1.investmentPlans[0].id;
     const s2 = updateInvestmentPlan(s1, planId, { rate: 9 });
-    expect(s2.investmentPlans[0].dirty).toBe(true);
     expect(s2.investmentPlans[0].rate).toBe(9);
+    expect(s2.investmentPlans[0].dirty).toBe(true);
   });
 
   it('removeInvestmentPlan drops the plan', () => {
@@ -62,16 +63,6 @@ describe('addInvestmentPlan / saveInvestmentPlan / updateInvestmentPlan / remove
     });
     const planId = s1.investmentPlans[0].id;
     const s2 = removeInvestmentPlan(s1, planId);
-    expect(s2.investmentPlans).toHaveLength(0);
-  });
-
-  it('resetInvestmentPlan on an unsaved plan removes it', () => {
-    const { state: s1 } = addInvestmentPlan(makeState(), {
-      name: 'Test', type: 'fdr', principal: 0, rate: 0,
-      startDate: '2026-01-01', termMonths: 12,
-    });
-    const planId = s1.investmentPlans[0].id;
-    const s2 = resetInvestmentPlan(s1, planId);
     expect(s2.investmentPlans).toHaveLength(0);
   });
 });

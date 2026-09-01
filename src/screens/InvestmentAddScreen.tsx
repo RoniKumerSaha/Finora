@@ -246,7 +246,7 @@ export function InvestmentAddScreen() {
         )}
         <div className="flex gap-2">
           <Button
-            variant="primary"
+            variant="outlined-primary"
             type="submit"
             disabled={
               !name.trim()
@@ -257,7 +257,7 @@ export function InvestmentAddScreen() {
           >
             Save investment
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/investments')}>Cancel</Button>
+          <Button variant="outlined-ghost" onClick={() => navigate('/investments')}>Cancel</Button>
         </div>
       </section>
     </form>

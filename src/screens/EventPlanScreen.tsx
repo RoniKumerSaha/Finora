@@ -168,8 +168,8 @@ export function EventPlanScreen() {
             </Field>
           </div>
           <div className="flex gap-2">
-            <Button variant="primary" type="submit">Create event</Button>
-            <Button variant="ghost" onClick={() => setCreating(false)}>Cancel</Button>
+            <Button variant="outlined-primary" type="submit">Create event</Button>
+            <Button variant="outlined-ghost" onClick={() => setCreating(false)}>Cancel</Button>
           </div>
         </form>
       )}

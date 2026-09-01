@@ -181,10 +181,6 @@ export interface MonthPlan {
   plannedIncome: number;
   /** Categories as ordered at save time. Order is purely cosmetic. */
   categories: PlanCategory[];
-  /** Optional last-saved ISO timestamp. Null if the plan was never saved. */
-  savedAt?: ISODate | null;
-  /** Ture means the draft has changes since the last `savedAt`. */
-  dirty: boolean;
 }
 
 /** Event Planner: each event is its own plan with a date and a list. */
@@ -195,22 +191,17 @@ export interface EventPlan {
   eventDate: ISODate;
   /** Optional short label like "wedding" / "trip" — purely cosmetic. */
   emoji?: string;
-  /** Total spend budget for the event. */
+  /** Total spend budget for the event. Auto-derived from
+   *  `Σ category.budget` (see `summariseEventPlan`) and kept on the
+   *  stored plan only for backwards compatibility with older
+   *  localStorage state. New mutations always write `0` here and let
+   *  the derived value pick up the category budgets on read. */
   budget: number;
   /** What the user actually plans to spend. */
   planned: number;
   /** Itemised categories — mirrors MonthPlanner. Categories know their
    *  own internal line items via `PlanItem[]`. */
   categories: Array<PlanCategory & { items: PlanItem[]; dueDate?: ISODate }>;
-  /** Optional last-saved ISO timestamp. */
-  savedAt?: ISODate | null;
-  dirty: boolean;
-  /** Frozen copy of the plan at the last successful save. Reset copies
-   *  this back into the live plan so users can revert their working
-   *  draft — including event-level fields like budget and date, which
-   *  the user can edit. Optional because `saveEventPlan` may run on a
-   *  plan that hasn't been saved before. */
-  savedSnapshot?: Omit<EventPlan, 'savedSnapshot'>;
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -247,9 +238,14 @@ export interface InvestmentPlan {
   notes?: string;
   /** "Monthly deposit scheme" / "Fixed deposit receipt" / "Other". */
   kit?: 'dps' | 'fdr' | 'other';
-  /** Last user-saved ISO timestamp. Null until first save. */
-  savedAt?: ISODate | null;
+  /** True when the plan has been edited since the last Save. The user
+   *  must tap Save to clear this flag — explicit Save / Delete UX
+   *  (see `SaveResetBar`) so that backing out of a fresh kit never
+   *  leaves an unwanted projection behind in the store. */
   dirty: boolean;
+  /** ISO date (YYYY-MM-DD) of the last Save. Null until the user has
+   *  confirmed the plan at least once. */
+  savedAt: ISODate | null;
 }
 
 /** A single row in the loan amortization table. Mirrors standard
@@ -289,9 +285,14 @@ export interface LoanPlan {
   /** Optional EMI override. When null the EMI is derived from the
    *  standard formula. */
   emiOverride?: number;
-  /** Last user-saved ISO timestamp. */
-  savedAt?: ISODate | null;
+  /** True when the plan has been edited since the last Save. The user
+   *  must tap Save to clear this flag — explicit Save / Delete UX
+   *  so that backing out of a fresh "+ New projection" never leaves
+   *  an unwanted empty projection behind in the store. */
   dirty: boolean;
+  /** ISO date (YYYY-MM-DD) of the last Save. Null until the user has
+   *  confirmed the plan at least once. */
+  savedAt: ISODate | null;
 }
 
 export interface State {

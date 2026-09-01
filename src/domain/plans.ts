@@ -7,9 +7,8 @@
  * month / for a given event, separately from what they actually record.
  *
  * The Month Planner is keyed by calendar month (`YYYY-MM`). The Event
- * Planner is keyed by event id. Both carry a `dirty` flag so the UI can
- * surface "unsaved changes" without diffing — explicit Save / Reset
- * actions flip it.
+ * Planner is keyed by event id. Both auto-persist on every mutation
+ * (see `runPlan` in store.ts) — no Save / Reset UI is needed.
  */
 import type {
   EventPlan,
@@ -20,7 +19,7 @@ import type {
   State,
 } from './types';
 import { uid } from './ids';
-import { daysBetween, today } from './math';
+import { daysBetween } from './math';
 
 /** Day in milliseconds. Single source for the "days to go" arithmetic. */
 export const MS_PER_DAY = 86_400_000;
@@ -69,62 +68,30 @@ export function ensureMonthPlan(state: State, key: string): MonthPlan {
     key,
     plannedIncome: 0,
     categories: [],
-    savedAt: null,
-    dirty: true,
   };
 }
 
 /**
  * Patch a field on a MonthPlan. The plan is created on demand if it
  * doesn't exist (typical: user lands on /plan and we want to start
- * editing without a separate "create" step). Always marks dirty=true
- * unless explicitly cleared via `saveMonthPlan`.
+ * editing without a separate "create" step). Every mutation auto-
+ * persists via `runPlan` in store.ts — no dirty/savedAt fields
+ * needed.
  */
 export function patchMonthPlan(
   state: State,
   key: string,
-  patch: Partial<Omit<MonthPlan, 'key' | 'dirty' | 'savedAt'>>,
+  patch: Partial<Omit<MonthPlan, 'key'>>,
 ): State {
   const existing = getMonthPlan(state, key);
   // Build the merged plan: defaults first, then any existing draft, then
-  // the patch. dirty is forced true at the end via destructure-spread.
-  const { dirty: _ignored, ...rest } = { ...existing, ...patch };
+  // the patch.
   const next: MonthPlan = {
     key,
     plannedIncome: 0,
     categories: [],
-    savedAt: null,
-    dirty: true,
-    ...rest,
-  };
-  const list = state.monthPlans.filter(p => p.key !== key);
-  list.push(next);
-  return { ...state, monthPlans: list };
-}
-
-/** Mark the plan as saved NOW. Clears dirty. */
-export function saveMonthPlan(state: State, key: string): State {
-  const existing = getMonthPlan(state, key);
-  if (!existing) return state;
-  const next: MonthPlan = {
     ...existing,
-    dirty: false,
-    savedAt: new Date().toISOString().slice(0, 10),
-  };
-  return {
-    ...state,
-    monthPlans: state.monthPlans.map(p => p.key === key ? next : p),
-  };
-}
-
-/** Reset the plan to a fresh empty state. */
-export function resetMonthPlan(state: State, key: string): State {
-  const next: MonthPlan = {
-    key,
-    plannedIncome: 0,
-    categories: [],
-    savedAt: getMonthPlan(state, key)?.savedAt ?? null,
-    dirty: true,
+    ...patch,
   };
   const list = state.monthPlans.filter(p => p.key !== key);
   list.push(next);
@@ -156,8 +123,7 @@ export function removeMonthCategory(state: State, key: string, id: string): Stat
  * Batch-set the budget on every PlanCategory whose id appears in `ids`.
  * Categories not in the list are left untouched. Used by the
  * "batch update budget" affordance on /plan/month — a single store
- * write replaces N per-card edits so the dirty flag only flips once
- * and the user can save / undo in one step.
+ * write replaces N per-card edits so the UI doesn't re-render N times.
  *
  * Silently no-ops on unknown ids so a stale selection (e.g. a card
  * removed while the picker was open) doesn't throw.
@@ -185,8 +151,7 @@ export function batchUpdateMonthCategoryBudget(
 /**
  * Batch-set the budget on every PlanCategory using a per-id map.
  * Used by the percent-mode batch editor where each card's bump is
- * based on its own current value. Single store write — dirty flag
- * flips once. Unknown ids are silently skipped.
+ * based on its own current value. Single store write. Unknown ids are silently skipped.
  */
 export function batchUpdateMonthCategoryBudgetMap(
   state: State,
@@ -269,13 +234,6 @@ export function addEventPlan(
   input: { name: string; emoji?: string; eventDate: ISODate; unallocatedBudget?: number },
 ): { state: State; id: string } {
   const id = uid();
-  // No savedSnapshot at creation time — Reset shouldn't revert to the
-  // pre-creation shell, only to the user's last explicit Save. If the
-  // user never saves, the legacy fallback in resetEventPlan fires:
-  // clear the working draft (planned + categories) but keep the
-  // event shell (name/date/budget/emoji) so the user's typed values
-  // stay intact.
-  //
   // The event's overall budget is no longer a free-form input — it
   // derives from `Σ category.budget` (see `summariseEventPlan`). The
   // create form instead offers an optional "Unallocated" field that,
@@ -283,6 +241,9 @@ export function addEventPlan(
   // top-down ballpark without having to split it across categories
   // upfront. We store `budget: 0` on the event itself and let the
   // derived sum pick up the category's budget on the very first read.
+  //
+  // Every event is auto-persisted on the next mutation (see
+  // `runPlan` in store.ts); no dirty/savedAt fields needed.
   const unallocated = Math.max(0, Number(input.unallocatedBudget) || 0);
   const categories: EventPlan['categories'] = unallocated > 0
     ? [{
@@ -302,13 +263,11 @@ export function addEventPlan(
     budget: 0,
     planned: 0,
     categories,
-    savedAt: null,
-    dirty: true,
   };
   return { state: { ...state, eventPlans: [...state.eventPlans, plan] }, id };
 }
 
-export function updateEventPlan(state: State, id: string, patch: Partial<Omit<EventPlan, 'id' | 'dirty' | 'savedAt' | 'budget'>>): State {
+export function updateEventPlan(state: State, id: string, patch: Partial<Omit<EventPlan, 'id' | 'budget'>>): State {
   const existing = getEventPlan(state, id);
   if (!existing) return state;
   // `budget` is intentionally NOT in the patch type — the event's
@@ -317,58 +276,7 @@ export function updateEventPlan(state: State, id: string, patch: Partial<Omit<Ev
   // callers might still try to pass so the stored event never carries
   // a stale, divergent number.
   const { budget: _ignored, ...safePatch } = patch as Partial<EventPlan>;
-  const next: EventPlan = { ...existing, ...safePatch, dirty: true };
-  return {
-    ...state,
-    eventPlans: state.eventPlans.map(p => p.id === id ? next : p),
-  };
-}
-
-export function saveEventPlan(state: State, id: string): State {
-  const existing = getEventPlan(state, id);
-  if (!existing) return state;
-  // Capture a deep snapshot of the live plan so a later Reset can
-  // restore it verbatim — including event-level fields like budget
-  // and date that the user can edit. The snapshot deliberately omits
-  // itself so we don't recurse forever.
-  const { savedSnapshot: _ignored, ...live } = existing;
-  const next: EventPlan = {
-    ...existing,
-    savedSnapshot: live,
-    dirty: false,
-    savedAt: new Date().toISOString().slice(0, 10),
-  };
-  return {
-    ...state,
-    eventPlans: state.eventPlans.map(p => p.id === id ? next : p),
-  };
-}
-
-export function resetEventPlan(state: State, id: string): State {
-  const existing = getEventPlan(state, id);
-  if (!existing) return state;
-  // Reset blanks all planning data on the event: budget → 0, date →
-  // today (so "days ago" / "days to go" both read 0), planned → 0,
-  // categories wiped. The event shell (id, name, emoji) is kept so
-  // the user doesn't lose the event itself. The savedSnapshot is
-  // also preserved so subsequent Saves still work and the user can
-  // hit Reset again later.
-  //
-  // Why blank today rather than restore the snapshot: the user
-  // expectation is "Reset = wipe the planning state." Restoring to a
-  // previously-saved snapshot would re-introduce the very budget and
-  // date the user is trying to clear. Today's date is used so the
-  // page no longer reads "5 days ago" — the user just reset, so the
-  // event is back to a clean slate.
-  const todayISO = today().toISOString().slice(0, 10);
-  const next: EventPlan = {
-    ...existing,
-    budget: 0,
-    eventDate: todayISO,
-    planned: 0,
-    categories: [],
-    dirty: true,
-  };
+  const next: EventPlan = { ...existing, ...safePatch };
   return {
     ...state,
     eventPlans: state.eventPlans.map(p => p.id === id ? next : p),

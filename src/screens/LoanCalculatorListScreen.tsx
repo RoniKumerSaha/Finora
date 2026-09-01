@@ -13,6 +13,11 @@
  * a sibling of the planned-investment and real-debt cards — all three
  * list surfaces carry the same wash; only the tone differs.
  *
+ * 2026-09-01: drafts are now rendered inline in the same card list
+ * with a Draft pill, instead of being hidden in a footer section. The
+ * user should always see what they've started — drafts are part of
+ * "what I have", not a separate hidden pile.
+ *
  * Tap through to edit inputs or inspect the full amortization table.
  */
 import { useNavigate } from 'react-router-dom';
@@ -32,14 +37,14 @@ export function LoanCalculatorListScreen() {
   const removeLoanPlan = useStore(s => s.removeLoanPlan);
   const plans = listLoanPlans(state);
 
-  // Treat empty projections (no principal, no rate, no name) as
-  // placeholders — most likely an unsaved draft the user abandoned.
-  // Filter them out so the screen doesn't look like it's filled with
-  // four "Untitled loan ₹0" cards.
-  const isEmpty = (p: typeof plans[number]) =>
-    !p.name.trim() && !(Number(p.principal) > 0) && !(Number(p.rate) > 0);
-  const usable = plans.filter(p => !isEmpty(p));
-  const drafts = plans.filter(isEmpty);
+  // Saved plans (have a `savedAt`) come first; drafts (never saved
+  // or edited since the last Save) come second. Both render as the
+  // same card — drafts just carry the warn-toned Draft pill so the
+  // user can tell them apart at a glance. No more hiding drafts in
+  // a footer section.
+  const saved = plans.filter(p => !p.dirty);
+  const drafts = plans.filter(p => p.dirty);
+  const ordered = [...saved, ...drafts];
 
   function startNew() {
     const today = new Date().toISOString().slice(0, 10);
@@ -58,14 +63,14 @@ export function LoanCalculatorListScreen() {
   let totalPaid = 0;
   let totalPrincipal = 0;
   let totalInterest = 0;
-  for (const plan of usable) {
+  for (const plan of saved) {
     const s = summariseLoanPlan(plan);
     totalMonthly += s.emi;
     totalPaid += s.totalPaid;
     totalPrincipal += Math.max(0, Number(plan.principal) || 0);
     totalInterest += Math.max(0, s.totalInterest);
   }
-  const count = usable.length;
+  const count = saved.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,31 +92,15 @@ export function LoanCalculatorListScreen() {
           </p>
           <Button variant="primary" onClick={startNew}>Start a projection</Button>
         </div>
-      ) : usable.length === 0 ? (
-        // Every existing plan is an empty draft — offer to clean up
-        // so the user doesn't accumulate a wall of placeholder cards.
-        <div className="card flex flex-col gap-3 items-start">
-          <div className="text-[15px] font-semibold text-ink">
-            You have {drafts.length} unsaved draft{drafts.length === 1 ? '' : 's'}
-          </div>
-          <p className="text-sm text-muted leading-relaxed max-w-prose">
-            Empty projections don't show anything useful. Start a fresh one, or clear the drafts to start over.
-          </p>
-          <div className="flex gap-2">
-            <Button variant="primary" onClick={startNew}>Start a projection</Button>
-            <Button variant="ghost" onClick={() => { drafts.forEach(d => removeLoanPlan(d.id)); }}>
-              Clear drafts
-            </Button>
-          </div>
-        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-            {/* Left column — full-width loan cards stacked. The 2fr
-                width matches InvestmentsListScreen and InvestmentPlannerScreen
-                so the three surfaces share one shape. */}
+            {/* Left column — full-width loan cards stacked. Saved
+                plans render first, drafts render after, each draft
+                carries the Draft pill on the second row so the user
+                can tell saved from in-flight at a glance. */}
             <div className="flex flex-col gap-3">
-              {usable.map(plan => {
+              {ordered.map(plan => {
                 const s = summariseLoanPlan(plan);
                 const principal = Math.max(0, Number(plan.principal) || 0);
                 const interest = Math.max(0, s.totalInterest);
@@ -159,9 +148,11 @@ export function LoanCalculatorListScreen() {
                       </div>
                     </div>
 
-                    {/* Row 2: optional Draft pill (only when the
-                        plan has unsaved edits). The PLANNED pill
-                        moved to row 1. */}
+                    {/* Row 2: optional Draft pill — only when the
+                        plan has unsaved edits. Sits on its own row
+                        so it doesn't crowd the title row's pills.
+                        Now actually reachable since drafts render
+                        inline in the main list. */}
                     {plan.dirty && (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Pill tone="warn" variant="solid">Draft</Pill>
@@ -292,21 +283,19 @@ export function LoanCalculatorListScreen() {
             </section>
           </div>
 
-          {/* If there are also drafts tucked away, surface them in a
-              quieter footer row so the user can resume or discard. */}
+          {/* Drafts footer. Drafts already show inline above with
+              the Draft pill, but a quiet footer lets the user mass-
+              clean drafts they don't want anymore in a single tap. */}
           {drafts.length > 0 && (
             <section className="card">
               <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3">
-                Empty drafts ({drafts.length})
+                Unsaved drafts ({drafts.length})
               </h2>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <p className="text-[12.5px] text-muted leading-relaxed m-0">
-                  Saved projections don't show drafts. Open a draft to continue, or clear them.
+                  Drafts are shown above with a Draft pill. Clear them here if you don't want to keep them.
                 </p>
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => navigate(`/plan/loan/${drafts[0].id}`)}>
-                    Open latest draft
-                  </Button>
                   <Button variant="ghost" onClick={() => { drafts.forEach(d => removeLoanPlan(d.id)); }}>
                     Clear drafts
                   </Button>
