@@ -66,12 +66,39 @@ export function InvestmentPlannerDetailScreen() {
 
   const [name, setName] = useState(plan.name);
   const [type, setType] = useState<InvestmentType>(plan.type);
-  const [principal, setPrincipal] = useState(String(plan.principal ?? ''));
-  const [monthlyContribution, setMonthlyContribution] = useState(String(plan.monthlyContribution ?? ''));
-  const [rate, setRate] = useState(String(plan.rate));
+  // Numbers default to empty strings so the user sees a blank form
+  // (instead of "0" pre-filled in every box). The Save button stays
+  // disabled until the user types both a name AND a non-zero amount.
+  const [principal, setPrincipal] = useState(
+    plan.principal && plan.principal > 0 ? String(plan.principal) : '',
+  );
+  const [monthlyContribution, setMonthlyContribution] = useState(
+    plan.monthlyContribution && plan.monthlyContribution > 0 ? String(plan.monthlyContribution) : '',
+  );
+  const [rate, setRate] = useState(
+    plan.rate && plan.rate > 0 ? String(plan.rate) : '',
+  );
   const [startDate, setStartDate] = useState(plan.startDate);
-  const [termMonths, setTermMonths] = useState(String(plan.termMonths));
+  const [termMonths, setTermMonths] = useState(
+    plan.termMonths && plan.termMonths > 0 ? String(plan.termMonths) : '',
+  );
   const [institution, setInstitution] = useState(plan.institution ?? '');
+
+  // Save is gated on name + amount. "Amount" depends on the plan
+  // type — DPS uses monthly contribution, FDR / savings use principal.
+  // The Save button stays disabled until both are non-empty.
+  const trimmedName = name.trim();
+  const amountValue = type === 'dps'
+    ? Number(monthlyContribution)
+    : Number(principal);
+  const isNameValid = trimmedName.length > 0;
+  const isAmountValid = amountValue > 0;
+  const canSave = isNameValid && isAmountValid;
+  const saveDisabledReason = !isNameValid && !isAmountValid
+    ? 'Add a name and an amount to save.'
+    : !isNameValid
+      ? 'Add a name to save.'
+      : 'Enter a positive amount to save.';
 
   function patch(p: Partial<Omit<typeof plan, 'id' | 'dirty' | 'savedAt'>>) {
     updateInvestmentPlan(plan!.id, p as Parameters<typeof updateInvestmentPlan>[1]);
@@ -303,13 +330,15 @@ export function InvestmentPlannerDetailScreen() {
       {/* Save / Delete toolbar. Sticky-bottom on small screens so the
          user can save without scrolling back up — the form is taller
          than one screen on most devices and "scroll-up to save" was
-         the main UX papercut. After Save, the user is taken back to
-         the list — they confirmed the values, the next action is
-         "see what else I have". Delete is the destructive action
-         that removes the plan regardless of save state. */}
+         the main UX papercut. Save is gated on name + amount being
+         present (see `canSave` above); Delete is the destructive
+         action that removes the plan regardless of save state. After
+         Save, the user is taken back to the list. */}
       <div className="sticky bottom-2 z-10">
         <SaveResetBar
           dirty={plan.dirty}
+          canSave={canSave}
+          saveDisabledReason={saveDisabledReason}
           onSave={() => {
             saveInvestmentPlan(plan.id);
             // After Save, take the user back to the list — they

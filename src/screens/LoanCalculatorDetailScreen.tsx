@@ -16,7 +16,7 @@
  * 60 rows are shown inline; longer terms get a "showing first 60 of N"
  * cap with a note.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import { loanAmortization, summariseLoanPlan } from '../domain/loanPlans';
@@ -59,8 +59,51 @@ export function LoanCalculatorDetailScreen() {
   // the source of truth so the amortisation table reacts automatically.
   // The Save / Delete bar uses `plan.dirty` to decide whether the
   // caps-lock-style "Unsaved changes" pill is showing.
-  const summary = summariseLoanPlan(plan);
-  const rows = loanAmortization(plan);
+  //
+  // We mirror the four numeric fields in local state so the user sees
+  // an empty input (not "0") when the underlying value is 0 — the
+  // save is gated on a non-zero principal being typed in.
+  const [name, setName] = useState(plan.name);
+  const [principal, setPrincipal] = useState(
+    plan.principal > 0 ? String(plan.principal) : '',
+  );
+  const [rate, setRate] = useState(
+    plan.rate > 0 ? String(plan.rate) : '',
+  );
+  const [termMonths, setTermMonths] = useState(
+    plan.termMonths > 0 ? String(plan.termMonths) : '',
+  );
+
+  // Save is gated on name + principal being non-empty. Other fields
+  // are required for the projection to make sense (rate / term /
+  // date), but we only block on the two the user is most likely to
+  // forget to fill in.
+  const trimmedName = name.trim();
+  const principalValue = Number(principal);
+  const isNameValid = trimmedName.length > 0;
+  const isPrincipalValid = principalValue > 0;
+  const canSave = isNameValid && isPrincipalValid;
+  const saveDisabledReason = !isNameValid && !isPrincipalValid
+    ? 'Add a name and a principal to save.'
+    : !isNameValid
+      ? 'Add a name to save.'
+      : 'Enter a positive principal to save.';
+
+  const summary = summariseLoanPlan({
+    ...plan,
+    name,
+    principal: principalValue,
+    rate: Number(rate) || 0,
+    termMonths: Math.max(0, Math.floor(Number(termMonths) || 0)),
+  });
+  const rows = loanAmortization({
+    ...plan,
+    name,
+    principal: principalValue,
+    rate: Number(rate) || 0,
+    termMonths: Math.max(0, Math.floor(Number(termMonths) || 0)),
+    startDate: plan.startDate,
+  });
   const visibleRows = rows.slice(0, MAX_INLINE_ROWS);
   const hiddenCount = Math.max(0, rows.length - visibleRows.length);
 
@@ -123,8 +166,8 @@ export function LoanCalculatorDetailScreen() {
       <section className="card flex flex-col gap-5">
         <Field label="Name" hint={'Free text. Try "Car loan" or "Personal loan 2026".'}>
           <Input
-            value={plan.name}
-            onChange={e => updateLoanPlan(plan.id, { name: e.target.value })}
+            value={name}
+            onChange={e => { setName(e.target.value); updateLoanPlan(plan.id, { name: e.target.value }); }}
             placeholder="Personal loan"
             autoFocus
           />
@@ -134,16 +177,16 @@ export function LoanCalculatorDetailScreen() {
           <Field label="Principal" hint="Total amount borrowed.">
             <Input
               type="number" inputMode="decimal"
-              value={String(plan.principal)}
-              onChange={e => updateLoanPlan(plan.id, { principal: Number(e.target.value) || 0 })}
+              value={principal}
+              onChange={e => { setPrincipal(e.target.value); updateLoanPlan(plan.id, { principal: Number(e.target.value) || 0 }); }}
               placeholder="100000"
             />
           </Field>
           <Field label="Annual rate (%)" hint="Annual interest rate. Capped at 0–100%.">
             <Input
               type="number" inputMode="decimal"
-              value={String(plan.rate)}
-              onChange={e => updateLoanPlan(plan.id, { rate: Number(e.target.value) || 0 })}
+              value={rate}
+              onChange={e => { setRate(e.target.value); updateLoanPlan(plan.id, { rate: Number(e.target.value) || 0 }); }}
               placeholder="9"
             />
           </Field>
@@ -153,8 +196,8 @@ export function LoanCalculatorDetailScreen() {
           <Field label="Term (months)" hint="Total number of monthly payments.">
             <Input
               type="number" inputMode="numeric"
-              value={String(plan.termMonths)}
-              onChange={e => updateLoanPlan(plan.id, { termMonths: Number(e.target.value) || 0 })}
+              value={termMonths}
+              onChange={e => { setTermMonths(e.target.value); updateLoanPlan(plan.id, { termMonths: Number(e.target.value) || 0 }); }}
               placeholder="12"
             />
           </Field>
@@ -220,6 +263,8 @@ export function LoanCalculatorDetailScreen() {
       <div className="sticky bottom-2 z-10">
         <SaveResetBar
           dirty={plan.dirty}
+          canSave={canSave}
+          saveDisabledReason={saveDisabledReason}
           onSave={() => {
             saveLoanPlan(plan.id);
             // After Save, take the user back to the list.

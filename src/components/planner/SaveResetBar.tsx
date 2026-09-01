@@ -17,15 +17,27 @@ import { Button } from '../Button';
 
 export function SaveResetBar({
   dirty,
+  canSave,
+  saveDisabledReason,
   onSave,
   onDelete,
   deleteLabel,
 }: {
   dirty: boolean;
+  /**
+   * Whether the form has the minimum required values to be saved.
+   * When false the Save button is disabled and the tooltip explains
+   * what's still missing.
+   */
+  canSave?: boolean;
+  /** Tooltip text shown when the Save button is disabled. */
+  saveDisabledReason?: string;
   onSave: () => void;
   onDelete?: () => void;
   deleteLabel?: string;
 }) {
+  const isSaveDisabled = canSave === false;
+
   const dotColor = dirty ? 'var(--warn)' : 'var(--success)';
   return (
     <div className="card-flat flex justify-between items-center border border-border rounded-card bg-surface px-4 py-2.5 gap-3 flex-wrap">
@@ -52,7 +64,14 @@ export function SaveResetBar({
           share the hover-fill behaviour of every other form in the
           app. */}
       <div className="flex gap-2 shrink-0">
-        <Button variant="outlined-primary" onClick={onSave}>Save plan</Button>
+        <Button
+          variant="outlined-primary"
+          onClick={onSave}
+          disabled={isSaveDisabled}
+          title={isSaveDisabled ? saveDisabledReason : undefined}
+        >
+          Save plan
+        </Button>
         {onDelete && (
           <Button
             variant="outlined-danger"

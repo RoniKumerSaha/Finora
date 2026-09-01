@@ -42,14 +42,16 @@ export function PlanScreen() {
 
   // ── Loans ───────────────────────────────────────────────────────
   const loanPlans = listLoanPlans(state);
-  const usableLoans = loanPlans.filter(
-    p => p.name.trim() || Number(p.principal) > 0 || Number(p.rate) > 0,
-  );
+  // Count every saved loan (whether named or still "Untitled loan") —
+  // a saved shell is a real plan on disk and should reflect in the
+  // sidebar tally. Only drafts are excluded.
+  const savedLoans = loanPlans.filter(p => !p.dirty);
   let loanEmi = 0;
-  for (const plan of usableLoans) {
+  for (const plan of savedLoans) {
     loanEmi += summariseLoanPlan(plan).emi;
   }
-  const loanHasPlans = usableLoans.length > 0;
+  const loanHasPlans = savedLoans.length > 0;
+  const loanCount = savedLoans.length;
 
   // ── Month ───────────────────────────────────────────────────────
   const thisMonth = plans.monthKey();
@@ -96,7 +98,7 @@ export function PlanScreen() {
           icon={<NavDebts className="w-5 h-5" />}
           iconTone="danger"
           title="Loans"
-          sub={`${usableLoans.length} ${usableLoans.length === 1 ? 'projection' : 'projections'}`}
+          sub={`${loanCount} ${loanCount === 1 ? 'projection' : 'projections'}`}
           number={loanHasPlans ? fmtBDT(loanEmi) : '—'}
           numberTone="danger"
           numberSuffix="/mo EMI"
