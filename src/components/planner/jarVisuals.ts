@@ -139,28 +139,22 @@ export function frostedPillStyle(): CSSProperties {
   };
 }
 
-/** Tone for a planned-event summary card on EventPlanScreen,
- *  matching the Account card wash pattern (warm tone gradient +
- *  14%-bg tint + 3px left bar). 5-step ramp:
- *     <50%    → cyan   (low usage, lots of headroom)
- *     50–89%  → info   (on track, filling up — blue)
- *     90–99%  → warn   (close to budget, watch it)
- *     ==100%  → success (exactly at budget — green)
- *     >100%   → danger (overflow)
- *    budget<=0 → null  (no budget set — leave default surface)
+/** Tone for a planned-event summary card on EventPlanScreen.
+ *  3-color traffic-light system that matches the user's mental model:
+ *     budget <  allocated → danger (over-spent — red)
+ *     budget == allocated → success (exactly at budget — green)
+ *     budget >  allocated → info    (under-spent, room left — blue)
+ *    budget <= 0         → null    (no budget set — leave default surface)
  *  Returns a `CardTone` so callers can apply the same wash/bar
  *  treatment as the rest of the list-card surfaces via
  *  `cardSurfaceStyle(tone)` + `leftBarClass(tone)` from
  *  src/lib/cardSurface.ts.
- *  2026-09-01 added. */
+ *  2026-09-01 added. 2026-09-01 simplified from 5-step to 3-step. */
 export function eventPlanCardTone(allocated: number, budget: number): CardTone | null {
   if (budget <= 0) return null;
   if (allocated > budget) return 'danger';
   if (allocated === budget) return 'success';
-  const pct = (allocated / budget) * 100;
-  if (pct >= 90) return 'warn';
-  if (pct >= 50) return 'info';
-  return 'cyan';
+  return 'info';
 }
 
 /** Liquid fill opacity for planner cards. Higher in light mode (0.55)

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ProgressBar gradient options</title>
+  <style>
+    :root {
+      --bg:        #1E2A26;
+      --surface:   #253229;
+      --surface-2: #2E3C34;
+      /* Current Finora dark tokens (after the +25% saturation tune) */
+      --primary:   #3FB592;
+      --accent:    #B98438;
+      --cyan:      #149382;
+      --info:      #2F75BC;
+      --success:   #3F8E5E;
+      --warn:      #D9A234;
+      --orange:    #CC7535;
+      --danger:    #D26A5C;
+    }
+    body {
+      background: var(--bg);
+      color: #F1F3EF;
+      font: 14px/1.45 -apple-system, "Segoe UI", Inter, sans-serif;
+      padding: 32px;
+      max-width: 720px;
+      margin: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    .sub { color: #94A59C; margin-bottom: 28px; }
+    .row { margin-bottom: 22px; }
+    .label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .name { font-weight: 600; }
+    .meta { color: #94A59C; font-size: 12px; }
+    .bar { height: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+    .fill { height: 100%; border-radius: 999px; width: 72%; }
+    .stop { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#94A59C; margin-right:10px; }
+    .chip { width:12px; height:12px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.1); }
+    code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 12px; color:#94A59C; }
+  </style>
+</head>
+<body>
+  <h1>ProgressBar gradient — 5 options at 72%</h1>
+  <div class="sub">Current code: <code>linear-gradient(90deg, var(--primary), var(--accent))</code></div>
+
+  <!-- 1. CURRENT (kept) -->
+  <div class="row">
+    <div class="label"><span class="name">1. Current — sage → honey</span><span class="meta">no change</span></div>
+    <div class="bar"><div class="fill" style="background: linear-gradient(90deg, var(--primary), var(--accent))"></div></div>
+    <div class="meta" style="margin-top:6px">
+      <span class="stop"><span class="chip" style="background:#3FB592"></span>primary #3FB592</span>
+      <span class="stop"><span class="chip" style="background:#B98438"></span>accent #B98438</span>
+    </div>
+  </div>
+
+  <!-- 2. Primary → success (clean money-growing) -->
+  <div class="row">
+    <div class="label"><span class="name">2. Primary → success (green-to-deeper-green)</span><span class="meta">cooler, all-green</span></div>
+    <div class="bar"><div class="fill" style="background: linear-gradient(90deg, var(--primary), var(--success))"></div></div>
+    <div class="meta" style="margin-top:6px">
+      <span class="stop"><span class="chip" style="background:#3FB592"></span>primary #3FB592</span>
+      <span class="stop"><span class="chip" style="background:#3F8E5E"></span>success #3F8E5E</span>
+    </div>
+  </div>
+
+  <!-- 3. Cyan → primary → accent (3-stop full ramp) -->
+  <div class="row">
+    <div class="label"><span class="name">3. Cyan → primary → accent (3-stop)</span><span class="meta">full planner ramp</span></div>
+    <div class="bar"><div class="fill" style="background: linear-gradient(90deg, var(--cyan), var(--primary) 50%, var(--accent))"></div></div>
+    <div class="meta" style="margin-top:6px">
+      <span class="stop"><span class="chip" style="background:#149382"></span>cyan #149382</span>
+      <span class="stop"><span class="chip" style="background:#3FB592"></span>primary #3FB592</span>
+      <span class="stop"><span class="chip" style="background:#B98438"></span>accent #B98438</span>
+    </div>
+  </div>
+
+  <!-- 4. Info → primary (cool monochrome blue-green) -->
+  <div class="row">
+    <div class="label"><span class="name">4. Info → primary (cool blue-to-green)</span><span class="meta">monochrome, calm</span></div>
+    <div class="bar"><div class="fill" style="background: linear-gradient(90deg, var(--info), var(--primary))"></div></div>
+    <div class="meta" style="margin-top:6px">
+      <span class="stop"><span class="chip" style="background:#2F75BC"></span>info #2F75BC</span>
+      <span class="stop"><span class="chip" style="background:#3FB592"></span>primary #3FB592</span>
+    </div>
+  </div>
+
+  <!-- 5. Primary → warn → orange (progress → caution) -->
+  <div class="row">
+    <div class="label"><span class="name">5. Primary → warn → orange (traffic-light ramp)</span><span class="meta">reads as "filling up"</span></div>
+    <div class="bar"><div class="fill" style="background: linear-gradient(90deg, var(--primary), var(--warn) 65%, var(--orange))"></div></div>
+    <div class="meta" style="margin-top:6px">
+      <span class="stop"><span class="chip" style="background:#3FB592"></span>primary #3FB592</span>
+      <span class="stop"><span class="chip" style="background:#D9A234"></span>warn #D9A234</span>
+      <span class="stop"><span class="chip" style="background:#CC7535"></span>orange #CC7535</span>
+    </div>
+  </div>
+</body>
+</html>

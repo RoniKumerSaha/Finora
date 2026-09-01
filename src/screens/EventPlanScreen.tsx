@@ -192,7 +192,7 @@ export function EventPlanScreen() {
                     Delete
                   </button>
                 </div>
-                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} />
+                <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} />
                 <div className="flex justify-between items-center text-xs tabular gap-2">
                   <span
                     className="px-2 py-0.5 rounded-pill text-ink"

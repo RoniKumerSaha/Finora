@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ProgressBar overflow tone options</title>
+  <style>
+    :root {
+      --bg:        #1E2A26;
+      --surface:   #253229;
+      --surface-2: #2E3C34;
+      /* Finora dark tokens (post +25% saturation tune) */
+      --primary:   #3FB592;
+      --accent:    #B98438;
+      --cyan:      #149382;
+      --danger:    #D26A5C;
+      /* Candidate overflow tones for "dark but glossy" red */
+      --danger-deep-1: #B23A2D;   /* ~25% darker, full chroma */
+      --danger-deep-2: #9C2A1E;   /* deeper, still saturated */
+      --danger-deep-3: #C4453A;   /* slight deepen, lighter end */
+      --danger-deep-4: #A33025;   /* darkest, brick gloss */
+    }
+    body {
+      background: var(--bg);
+      color: #F1F3EF;
+      font: 14px/1.45 -apple-system, "Segoe UI", Inter, sans-serif;
+      padding: 32px;
+      max-width: 760px;
+      margin: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    h2 { font-size: 14px; margin: 28px 0 8px; color: #94A59C; font-weight: 600; }
+    .sub { color: #94A59C; margin-bottom: 12px; font-size: 12px; }
+    .row { margin-bottom: 18px; }
+    .label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .name { font-weight: 600; }
+    .meta { color: #94A59C; font-size: 12px; }
+    .bar { height: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+    .bar4 { height: 4px; }
+    .fill { height: 100%; border-radius: 999px; }
+    .stop { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#94A59C; margin-right:10px; }
+    .chip { width:12px; height:12px; border-radius:3px; display:inline-block; border:1px solid rgba(255,255,255,.1); }
+    code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 12px; color:#94A59C; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .pair { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: center; }
+  </style>
+</head>
+<body>
+  <h1>ProgressBar — overflow tone options</h1>
+  <div class="sub">
+    New prop <code>tone?: 'normal' | 'overflow'</code>. When <code>overflow</code>, gradient swaps to an
+    <code>--info</code> → deep-brick sweep so the bar agrees with the red card wash while keeping the
+    blue start in common with the normal bar. Each candidate below renders at 100% width (since overflow
+    caps the fill) on two bar heights (10px and 4px) so you can see the gloss at each context.
+  </div>
+
+  <h2>At 10px (cards / detail)</h2>
+  <div class="grid">
+
+    <div class="pair">
+      <div class="name">A. cyan → #B23A2D<br/><span class="meta">deep brick gloss</span></div>
+      <div class="bar"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #B23A2D)"></div></div>
+    </div>
+
+    <div class="pair">
+      <div class="name">B. cyan → #9C2A1E<br/><span class="meta">deepest, brick</span></div>
+      <div class="bar"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #9C2A1E)"></div></div>
+    </div>
+
+    <div class="pair">
+      <div class="name">C. cyan → #C4453A<br/><span class="meta">slight deepen, lighter end</span></div>
+      <div class="bar"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #C4453A)"></div></div>
+    </div>
+
+    <div class="pair">
+      <div class="name">D. info → #A33025 (SHIPPED)<br/><span class="meta">darkest gloss, blue start</span></div>
+      <div class="bar"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--info), #A33025)"></div></div>
+    </div>
+
+    <div class="pair">
+      <div class="name">E. info → #B23A2D<br/><span class="meta">blue start, brick end</span></div>
+      <div class="bar"><div class="fill" style="width:100%; background: linear-gradient(90deg, #2F75BC, #B23A2D)"></div></div>
+    </div>
+
+  </div>
+
+  <h2>At 4px (planner preview rows)</h2>
+  <div class="grid">
+    <div class="pair">
+      <div class="name">A. cyan → #B23A2D</div>
+      <div class="bar bar4"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #B23A2D)"></div></div>
+    </div>
+    <div class="pair">
+      <div class="name">B. cyan → #9C2A1E</div>
+      <div class="bar bar4"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #9C2A1E)"></div></div>
+    </div>
+    <div class="pair">
+      <div class="name">C. cyan → #C4453A</div>
+      <div class="bar bar4"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--cyan), #C4453A)"></div></div>
+    </div>
+    <div class="pair">
+      <div class="name">D. info → #A33025 (SHIPPED)</div>
+      <div class="bar bar4"><div class="fill" style="width:100%; background: linear-gradient(90deg, var(--info), #A33025)"></div></div>
+    </div>
+    <div class="pair">
+      <div class="name">E. info → #B23A2D</div>
+      <div class="bar bar4"><div class="fill" style="width:100%; background: linear-gradient(90deg, #2F75BC, #B23A2D)"></div></div>
+    </div>
+  </div>
+
+  <h2>Normal (no change) — for comparison</h2>
+  <div class="grid">
+    <div class="pair">
+      <div class="name">normal: cyan → primary → accent</div>
+      <div class="bar"><div class="fill" style="width:72%; background: linear-gradient(90deg, var(--cyan), var(--primary) 50%, var(--accent))"></div></div>
+    </div>
+  </div>
+
+  <div class="sub" style="margin-top:24px">
+    <strong>My pick: A (cyan → #B23A2D)</strong> — cyan start ties to the new event-card cyan band (under-50%
+    spending) so the start of the bar still reads as "the planning palette", then fades into a deeper brick
+    than the original <code>--danger</code>. Same hue family as the danger wash, just ~25% darker / more
+    chroma, so it stays glossy rather than chalky.
+  </div>
+</body>
+</html>
