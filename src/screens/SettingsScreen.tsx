@@ -2,6 +2,9 @@ import { useRef } from 'react';
 import { useStore } from '../domain/store';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
+import { SecuritySection } from '../security';
+import { clearPin } from '../security/pin';
+import { resetRateLimit } from '../security/rateLimit';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
 
 /**
@@ -36,6 +39,10 @@ export function SettingsScreen() {
       investmentPlans: [], loanPlans: [],
       settings: { ...s.settings, onboardingComplete: true },
     }));
+    // PIN lock survives a wipe: drop the salt + hash too so the next
+    // cold launch doesn't ask for a forgotten PIN.
+    clearPin();
+    resetRateLimit();
     showBanner({
       kind: 'success',
       what: 'All data wiped',
@@ -108,6 +115,7 @@ export function SettingsScreen() {
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Left column — existing controls */}
         <div className="flex flex-col gap-6">
+          <SecuritySection />
           <section className="card">
             <h2 className="heading h3-modal mb-4">Backup</h2>
             <div className="flex gap-2 flex-wrap">

@@ -272,3 +272,19 @@ circle[data-cashflow-line] {
 .theme-fade *::after {
   transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease, fill 250ms ease, stroke 250ms ease !important;
 }
+
+/* PIN shake — fired by `<PinCells>` when the entered PIN is wrong.
+   The element is keyed off so React replays the animation each time
+   the parent bumps the key. Translate a few px on the X axis with an
+   iPhone-style easing curve, settling back to centre in ~320ms. */
+@keyframes pin-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes pin-shake {
+    from, to { transform: none; }
+  }
+}
