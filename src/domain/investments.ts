@@ -15,10 +15,23 @@
  *   - Maturity value uses annuity-due (math.dpsMaturityValue).
  *   - Current value uses future value of contributions made so far
  *     (math.dpsCurrentValue).
+ *
+ * FDR/Savings specifics (R12 / bug fix 2026-09-02):
+ *   - At creation, the principal is deducted from the chosen account
+ *     when the caller opts in via `add(input, { recordPrincipal: true })`.
+ *     The deduction is a normal `expense` transaction with
+ *     `linkedInvestmentId` set and tagged with the Investment expense
+ *     category (when one exists), so it shows up in the transactions
+ *     list and feeds `accountBalance`.
+ *   - DPS contributions are tagged the same way (Investment category).
+ *   - At maturity, the user records the payout via the existing
+ *     `addContribution()` flow (with a positive note for the Income
+ *     counterpart created on the detail screen).
  */
-import type { Investment, InvestmentType, State } from './types';
+import type { Investment, InvestmentType, State, Transaction } from './types';
 import { uid } from './ids';
 import { deriveInvestmentStatus, investmentMaturityDate } from './math';
+import { findInvestmentCategoryId } from './categories';
 
 export class InvestmentError extends Error {}
 
@@ -53,7 +66,20 @@ export interface AddInvestmentInput {
   institution?: string;
 }
 
-export function add(state: State, input: AddInvestmentInput): State {
+export interface AddOptions {
+  /**
+   * FDR/savings only: when true, also create an `expense` transaction
+   * that deducts the principal from `payoutAccountId`, tagged with
+   * `linkedInvestmentId = <new investment id>` and the user's
+   * Investment category (if any). Without this, the account balance
+   * wouldn't reflect the parked money — exactly the bug that prompted
+   * this addition. Default: false (no behavioural change for callers
+   * that already manage their own deduction transactions).
+   */
+  recordPrincipal?: boolean;
+}
+
+export function add(state: State, input: AddInvestmentInput, options: AddOptions = {}): State {
   const principal = Number(input.principal) || 0;
   if (input.type !== 'dps' && !(principal > 0)) {
     throw new InvestmentError('Principal must be positive for FDR and savings.');
@@ -77,6 +103,17 @@ export function add(state: State, input: AddInvestmentInput): State {
       && !(Number(input.monthlyContribution) > 0)) {
     throw new InvestmentError('Monthly contribution must be positive.');
   }
+
+  // Defense-in-depth: recordPrincipal only makes sense for FDR/savings
+  // where there's a lump-sum principal. DPS has no principal at
+  // creation; the first contribution arrives later via addContribution.
+  if (options.recordPrincipal && input.type === 'dps') {
+    throw new InvestmentError('recordPrincipal is not valid for DPS — use addContribution instead.');
+  }
+  if (options.recordPrincipal && !input.payoutAccountId) {
+    throw new InvestmentError('recordPrincipal requires payoutAccountId.');
+  }
+
   const inv: Investment = {
     id: uid(),
     name: input.name.trim(),
@@ -94,7 +131,25 @@ export function add(state: State, input: AddInvestmentInput): State {
     status: 'active',
     createdAt: new Date().toISOString().slice(0, 10),
   };
-  return { ...state, investments: [...state.investments, inv] };
+  const withInv: State = { ...state, investments: [...state.investments, inv] };
+
+  if (!options.recordPrincipal) return withInv;
+
+  // Build the principal-deduction transaction. Auto-tag with the
+  // user's Investment expense category if they have one — falls back
+  // to uncategorised rather than guessing wrong.
+  const categoryId = findInvestmentCategoryId(withInv);
+  const tx: Transaction = {
+    id: uid(),
+    type: 'expense',
+    amount: principal,
+    date: input.startDate,
+    accountId: input.payoutAccountId!,
+    categoryId,
+    linkedInvestmentId: inv.id,
+    note: `Principal parked in ${inv.name}`,
+  };
+  return { ...withInv, transactions: [...withInv.transactions, tx] };
 }
 
 export function update(state: State, id: string, patch: Partial<AddInvestmentInput>): State {
@@ -131,6 +186,12 @@ export interface ContributeInput {
  *
  * The investment itself is NOT mutated — totals are derived from the
  * transactions list (R6).
+ *
+ * Auto-tagging: if the caller didn't pass `categoryId`, we try to
+ * default to the user's "Investment" expense category so contributions
+ * show up alongside the rest of their investment activity in reports.
+ * Falls back to `undefined` (uncategorised) when no Investment
+ * category exists — we don't auto-create one.
  */
 export function addContribution(state: State, investmentId: string, input: ContributeInput): State {
   const inv = state.investments.find(i => i.id === investmentId);
@@ -140,13 +201,14 @@ export function addContribution(state: State, investmentId: string, input: Contr
   if (!state.accounts.some(a => a.id === input.accountId)) {
     throw new InvestmentError(`Account not found: ${input.accountId}`);
   }
+  const categoryId = input.categoryId ?? findInvestmentCategoryId(state);
   const tx = {
     id: uid(),
     type: 'expense' as const,
     amount: Number(input.amount),
     date: input.date,
     accountId: input.accountId,
-    categoryId: input.categoryId,
+    categoryId,
     linkedInvestmentId: investmentId,
     note: input.note?.trim() || undefined,
   };

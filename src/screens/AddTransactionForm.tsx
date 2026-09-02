@@ -34,6 +34,7 @@ import { CategoryGrid, PresetChips } from '../components/TypePicker';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import { ArrowLeftRight } from '../components/icons/Icons';
 import type { TxType } from '../domain/types';
+import { mergeDefaults } from '../domain/persistence';
 
 interface AddTransactionFormProps {
   type: TxType;
@@ -219,22 +220,32 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
           )}
         </Field>
 
-        {type !== 'transfer' && cats.length > 0 && (
+        {type !== 'transfer' && (
           <div className="mt-5">
             <Field
               label="Category (optional)"
               hint="Pick a category, or skip — transactions can be uncategorised."
             >
-              <CategoryGrid
-                categories={cats}
-                selectedId={categoryId}
-                onPick={setCategoryId}
-                // Expenses ship 31+ categories — grouped sections make
-                // the list scannable. Income has 5 categories and stays
-                // flat. The emoji picker affordance was dropped from
-                // Add Transaction; chips are pure name tags now.
-                variant={type === 'expense' ? 'grouped' : 'flat'}
-              />
+              {cats.length > 0 ? (
+                <CategoryGrid
+                  categories={cats}
+                  selectedId={categoryId}
+                  onPick={setCategoryId}
+                  // Expenses ship 31+ categories — grouped sections make
+                  // the list scannable. Income has 5 categories and stays
+                  // flat. The emoji picker affordance was dropped from
+                  // Add Transaction; chips are pure name tags now.
+                  variant={type === 'expense' ? 'grouped' : 'flat'}
+                />
+              ) : (
+                /* Self-heal: state.categories had zero entries of this
+                   type (or was empty entirely — a known regression
+                   from the v1 localStorage→IndexedDB window). Run the
+                   same mergeDefaults pipeline the persistence layer
+                   uses, persist, and re-render so chips appear. The
+                   hint explains why the section is appearing empty. */
+                <EmptyCategoryState type={type} />
+              )}
             </Field>
           </div>
         )}
@@ -411,6 +422,50 @@ import * as debts from '../domain/debts';
 import { accountBalance, debtPaidSoFar, dpsCurrentValue, dpsPaidOutSoFar, investmentMaturityValue } from '../domain/math';
 import { fmtBDT } from '../lib/format';
 import type { State } from '../domain/types';
+
+/**
+ * Self-heal component for the case where `state.categories` is empty
+ * (or has zero entries of the current transaction type). Renders an
+ * explanation + a single "Restore default categories" button that runs
+ * the same mergeDefaults pipeline the persistence layer uses, persists
+ * the result, and re-renders the picker.
+ *
+ * Why this exists: a 2026-09-02 bug introduced a window where a stale
+ * `useStore` snapshot could be persisted over the user's data on reload
+ * if the cache wasn't primed yet. That window is closed (see main.tsx
+ * boot order) but some users had already been bitten — their IndexedDB
+ * has the default-state category list (which has all 36 categories), so
+ * they should NOT see this. Users who somehow see it (e.g. a partial
+ * migration from a malformed localStorage blob) get a one-click recovery
+ * instead of a permanently broken form.
+ */
+function EmptyCategoryState({ type }: { type: 'income' | 'expense' }) {
+  const update = useStore(s => s.update);
+  const showToast = useStore(s => s.showToast);
+
+  function restore() {
+    update(s => mergeDefaults(s));
+    showToast({
+      kind: 'success',
+      what: 'Default categories restored',
+      why: `Add ${type === 'income' ? 'income' : 'expense'} categories are ready again — any of your custom categories are kept.`,
+    });
+  }
+
+  return (
+    <div className="rounded-card border border-warn/40 bg-warn-soft px-4 py-3 flex flex-col gap-2">
+      <div className="text-[13px] text-ink">
+        No <span className="font-semibold">{type === 'income' ? 'income' : 'expense'}</span> categories available.
+        Your saved data is safe — only the category list needs restoring.
+      </div>
+      <div>
+        <Button variant="outlined-primary" type="button" onClick={restore}>
+          Restore default categories
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function debtsForCurrentType(state: State, _type: TxType) {
   return debts.list(state).filter(d => d.status === 'active');

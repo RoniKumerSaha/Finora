@@ -67,9 +67,17 @@ included rewrite doesn't hurt.
 
 ## Data ownership
 
-All data lives in your browser's `localStorage` under the key `finora:v1`. To
-back up or move devices, use **Settings → Backup → Export backup**. To
-restore, drop the resulting JSON file into **Settings → Backup → Import backup**.
+All data lives in your browser's **IndexedDB** under the database `finora`,
+in a single-blob row keyed `state`. IndexedDB is more durable than
+`localStorage` (much larger quota, less prone to eviction) but is still
+cleared by "Clear site data", browser uninstall, or profile reset — so
+back up regularly. To back up or move devices, use **Settings → Backup →
+Export backup**. To restore, drop the resulting JSON file into **Settings →
+Backup → Import backup**.
+
+Users upgrading from a pre-2026-09-02 build will have their existing
+`localStorage['finora:v1']` data automatically migrated into IndexedDB on
+first load; the legacy key is then removed.
 
 ## Vanilla v1 (archived)
 

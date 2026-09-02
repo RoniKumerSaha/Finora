@@ -118,7 +118,21 @@ export function InvestmentAddScreen() {
       showBanner({ what: 'Term must be a positive number of months', why: 'A zero-month term has no maturity date.', fix: 'Enter the term in months, e.g. 12 for 1 year.' });
       return;
     }
+    // FDR/Savings: an account is required because the principal is
+    // deducted from it on creation (the principal can't otherwise
+    // "leave" the account — that's the bug we're fixing). DPS
+    // contributions are recorded one-at-a-time on the detail screen
+    // where the account is chosen per contribution.
+    if (!isDps && !payoutAccountId) {
+      showBanner({
+        what: 'Account is required for FDR and savings',
+        why: 'The principal is deducted from this account on creation — without one, the money would silently appear in both the account and the investment.',
+        fix: 'Pick the account you\'re parking the money in.',
+      });
+      return;
+    }
     try {
+      const isFdrOrSavings = type === 'fdr' || type === 'savings';
       update(s => investments.add(s, {
         name,
         type,
@@ -130,6 +144,14 @@ export function InvestmentAddScreen() {
         termDays: termInDays ? Number(termDays) : undefined,
         payoutAccountId: payoutAccountId || undefined,
         institution: institution.trim() || undefined,
+      }, {
+        // FDR/Savings: deduct the principal from the chosen account
+        // right now so the balance reflects the parked money. DPS has
+        // no lump-sum, so we skip the deduction — the first payment
+        // arrives later via addContribution on the detail screen.
+        // Falls back silently to no-deduction if the user didn't pick
+        // an account; the banner below will surface that.
+        recordPrincipal: isFdrOrSavings && !!payoutAccountId,
       }));
       navigate('/investments');
     } catch (err) {
@@ -206,7 +228,7 @@ export function InvestmentAddScreen() {
             <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
           </Field>
         )}
-        <Field label="Payout account (optional)" hint="Where the matured value lands.">
+        <Field label="Account" hint={isDps ? 'Where each monthly contribution comes from. (You\'ll pick it again on each contribution.)' : 'Required for FDR and savings — the principal is deducted from this account on creation and the maturity value returns here.'}>
           <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
             <option value="">— None —</option>
             {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -214,6 +236,11 @@ export function InvestmentAddScreen() {
           {payoutAccountId && (
             <div className="text-xs text-muted mt-1.5 tabular">
               Balance: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions))}
+              {!isDps && Number(principal) > 0 && (
+                <span className="text-ink/70">
+                  {' '}→ after parking: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions) - Number(principal))}
+                </span>
+              )}
             </div>
           )}
         </Field>

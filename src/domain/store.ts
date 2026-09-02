@@ -1,10 +1,10 @@
 /**
- * store.ts — Zustand store for Finora V1 (AD-16).
+ * store.ts — Zustand store for Finora V1 (AD-16, persistence AD-29).
  *
  * Single source of truth for the React tree. Holds the State blob plus a
  * transient banner slice. Persistence + recompute happen automatically:
  *   - `importAndReplace` runs `recomputeDerived` after loading JSON
- *   - `reset` clears localStorage and reloads DEFAULT_STATE
+ *   - `reset` clears IndexedDB and reloads DEFAULT_STATE
  *   - The store does NOT auto-save on every mutation; instead, forms call
  *     `run` with a mutator and we save once. Saves are O(30ms) at 10K rows.
  *
@@ -131,7 +131,7 @@ export const useStore = create<Store>((set, get) => ({
     const recomputed = recomputeDerived(normalised);
     set({ state: recomputed });
     // Persist immediately. Without this, the imported data only lives in
-    // memory and is lost on reload — the in-memory store and localStorage
+    // memory and is lost on reload — the in-memory store and IndexedDB
     // would diverge until the next mutation re-saved (regression 2026-08-30).
     save(recomputed);
   },
