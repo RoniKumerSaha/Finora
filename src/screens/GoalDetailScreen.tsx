@@ -192,8 +192,7 @@ export function GoalDetailScreen() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
-          <div className="text-[13px] text-muted">Goal</div>
-          <h1 className="heading h1-screen mt-1">{goal.name}</h1>
+          <h1 className="heading h1-screen">{goal.name}</h1>
         </div>
         {mode === 'view' && (
           <div className="flex flex-wrap gap-2">

@@ -69,13 +69,10 @@ export function InvestmentPlannerScreen() {
         >{'\u2190'} Plans</button>
       </div>
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <InvestTile />
-          <div>
-            <h1 className="heading h1-screen">Investment Planner</h1>
-            <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-              Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
-            </div>
+        <div>
+          <h1 className="heading h1-screen">Investment Planner</h1>
+          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+            Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">

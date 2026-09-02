@@ -27,7 +27,6 @@ import { SaveResetBar } from '../components/planner/SaveResetBar';
 import { InvestmentDonut } from '../components/planner/InvestmentDonut';
 import { Stat } from '../components/Stat';
 import { fmtBDT } from '../lib/format';
-import { LoanTile } from '../components/InvestLoanTile';
 
 const MAX_INLINE_ROWS = 60;
 
@@ -132,13 +131,10 @@ export function LoanCalculatorDetailScreen() {
         >{'\u2190'} Loan Calculator</button>
       </div>
       <header className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <LoanTile />
-          <div>
-            <h1 className="heading h1-screen">Loan projection</h1>
-            <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-              Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.</div>
-          </div>
+        <div>
+          <h1 className="heading h1-screen">Loan projection</h1>
+          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+            Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.</div>
         </div>
       </header>
 

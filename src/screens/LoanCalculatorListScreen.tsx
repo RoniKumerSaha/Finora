@@ -86,13 +86,10 @@ export function LoanCalculatorListScreen() {
         >{'\u2190'} Plans</button>
       </div>
       <header className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <LoanTile />
-          <div>
-            <h1 className="heading h1-screen">Loan Calculator</h1>
-            <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-              Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
-            </div>
+        <div>
+          <h1 className="heading h1-screen">Loan Calculator</h1>
+          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+            Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
