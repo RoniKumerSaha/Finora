@@ -46,6 +46,7 @@ import { fmtBDT, fmtDate } from '../lib/format';
 import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
 import { ProgressBar } from '../components/ProgressBar';
+import { GoalTile } from '../components/InvestLoanTile';
 
 /**
  * Classify the user's pace toward a goal as ahead / on-track / behind.
@@ -161,9 +162,10 @@ export function GoalsListScreen() {
                   aria-hidden
                   className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass('info')}`}
                 />
-                <div className="flex justify-between items-start gap-2">
-                  <div className="font-semibold text-[15px] tracking-tight leading-tight line-clamp-2 min-h-[2.6em]">{g.name}</div>
-                  <Pill tone={paceTone} variant="solid" title={`${pct}% saved vs target pace`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <GoalTile />
+                  <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0 flex-1">{g.name}</div>
+                  <Pill tone={paceTone} variant="solid" className="shrink-0" title={`${pct}% saved vs target pace`}>
                     {pct}%
                   </Pill>
                 </div>

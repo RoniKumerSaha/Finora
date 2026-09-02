@@ -285,14 +285,15 @@ export function projectionBreakdown(plan: InvestmentPlan): { invested: number[];
 export const INVESTMENT_PLAN_KITS: ReadonlyArray<{
   id: 'dps' | 'fdr' | 'savings';
   name: string;
-  emoji: string;
+  /** Glyph key — see `<CategoryGlyph>` in `categoryGlyphs.tsx`. */
+  key: string;
   description: string;
   defaults: Omit<InvestmentPlan, 'id' | 'name' | 'dirty' | 'savedAt'>;
 }> = [
   {
     id: 'dps',
     name: 'Monthly deposit scheme (DPS)',
-    emoji: '🗓️',
+    key: 'dps',
     description: 'Small monthly installments. Banks compound the balance monthly until the term ends.',
     defaults: {
       type: 'dps',
@@ -309,7 +310,7 @@ export const INVESTMENT_PLAN_KITS: ReadonlyArray<{
   {
     id: 'fdr',
     name: 'Fixed deposit receipt (FDR)',
-    emoji: '🏦',
+    key: 'fdr',
     description: 'Lump sum locked for a fixed term. Simple interest, paid out at maturity.',
     defaults: {
       type: 'fdr',
@@ -325,7 +326,7 @@ export const INVESTMENT_PLAN_KITS: ReadonlyArray<{
   {
     id: 'savings',
     name: 'Savings certificate / term deposit',
-    emoji: '💼',
+    key: 'savings',
     description: 'Catch-all for non-DPS, non-FDR interest-bearing instruments.',
     defaults: {
       type: 'savings',

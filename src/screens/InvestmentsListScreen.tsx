@@ -30,6 +30,7 @@ import {
 import { fmtBDT } from '../lib/format';
 import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
+import { InvestTile } from '../components/InvestLoanTile';
 
 const MIDDOT = '\u00B7';
 
@@ -97,8 +98,9 @@ export function InvestmentsListScreen() {
                         className="group relative block py-2.5 border-t border-border first:border-0 opacity-70 hover:opacity-100 transition"
                       >
                         <div className="flex justify-between items-center mb-1">
-                          <div className="font-semibold text-[14px] tracking-tight">
-                            {invEmoji(inv.type)} {inv.name}
+                          <div className="font-semibold text-[14px] tracking-tight flex items-center gap-1.5">
+                            <InvestTile size={16} type={inv.type} />
+                            {inv.name}
                           </div>
                           <Pill tone="muted" variant="solid">{inv.status}</Pill>
                         </div>
@@ -145,12 +147,6 @@ export function InvestmentsListScreen() {
   );
 }
 
-function invEmoji(type: string): string {
-  if (type === 'dps') return '\u{1F4C5}'; // 📅
-  if (type === 'fdr') return '\u{1F3E6}'; // 🏦
-  return '\u{1F4DC}';                       // 📜
-}
-
 function InvCard({ inv, current, projected }: { inv: any; current: number; projected: number }) {
   const days = daysToMaturity(inv);
   const isDps = inv.type === 'dps';
@@ -191,7 +187,7 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
             flex-1 on the title), so it hugs the title text on the
             left instead of being pushed to the far right. */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-2xl shrink-0 leading-none" aria-hidden>{invEmoji(inv.type)}</span>
+          <InvestTile type={inv.type} />
           <div className="flex items-center gap-2 min-w-0">
             <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
               {inv.name}

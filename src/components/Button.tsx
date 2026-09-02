@@ -32,6 +32,7 @@
  *   - icon:             36×36 square with surface bg + border (IconButton)
  */
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
+import { Check } from './icons/Icons';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:
@@ -171,7 +172,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       )}
       {success ? (
         <>
-          <span aria-hidden className="text-success">{'✓'}</span>
+          <span aria-hidden className="text-success inline-flex"><Check className="w-4 h-4" /></span>
           <span>{successLabel ?? children}</span>
         </>
       ) : (

@@ -23,6 +23,7 @@ import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { LoanTile } from '../components/InvestLoanTile';
 import type { DebtDirection, DebtKind } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -278,11 +279,16 @@ export function DebtEditScreen() {
         <div className="flex items-center gap-3 mb-2">
           <Link to="/debts" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Debts</Link>
         </div>
-        <h1 className="heading h1-screen">Edit debt</h1>
-        <div className="text-muted text-[13px] mt-1.5">
-          {debt.status === 'completed'
-            ? 'This debt is fully paid. Editing the total keeps the record accurate.'
-            : 'Change the debt details. Linked transactions stay as they are.'}
+        <div className="flex items-center gap-3">
+          <LoanTile />
+          <div>
+            <h1 className="heading h1-screen">Edit debt</h1>
+            <div className="text-muted text-[13px] mt-1.5">
+              {debt.status === 'completed'
+                ? 'This debt is fully paid. Editing the total keeps the record accurate.'
+                : 'Change the debt details. Linked transactions stay as they are.'}
+            </div>
+          </div>
         </div>
       </header>
 

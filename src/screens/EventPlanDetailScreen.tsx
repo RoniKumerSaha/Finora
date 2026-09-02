@@ -33,6 +33,7 @@ import { PresetEventCategories } from '../components/planner/PresetEventCategori
 import { formatPct, pctOf, categoryFillStatus, CATEGORY_FILL } from '../components/planner/jarVisuals';
 import { categorySpent } from '../domain/plans';
 import { ProgressBar } from '../components/ProgressBar';
+import { Warn } from '../components/icons/Icons';
 import { uid } from '../domain/ids';
 import type { PlanCategory, PlanItem } from '../domain/types';
 
@@ -143,7 +144,7 @@ export function EventPlanDetailScreen() {
       id: '__event',
       date: plan.eventDate,
       label: plan.name,
-      emoji: plan.emoji ?? '📅',
+      emoji: plan.emoji || '📅',
       kind: 'event',
       fill: allPaid ? 'green' : 'empty',
     };
@@ -195,12 +196,8 @@ export function EventPlanDetailScreen() {
       <div className="flex flex-wrap items-center gap-4">
         <span
           aria-hidden
-          className="w-12 h-12 rounded-full inline-flex items-center justify-center text-2xl shrink-0 border-2"
-          style={{
-            background: 'var(--primary-soft)',
-            borderColor: 'var(--primary)',
-          }}
-        >{plan.emoji ?? '📅'}</span>
+          className="w-10 h-10 rounded-input inline-flex items-center justify-center shrink-0 bg-surface-2 text-muted"
+        ><span className="text-2xl leading-none">{plan.emoji || '📅'}</span></span>
         <div className="flex-1 min-w-0">
           <h1 className="heading h1-screen truncate">{plan.name}</h1>
           <div className="text-muted text-[12.5px] mt-1">
@@ -309,12 +306,8 @@ export function EventPlanDetailScreen() {
             <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="w-9 h-9 rounded-full inline-flex items-center justify-center text-lg shrink-0"
-                style={{
-                  background: 'color-mix(in srgb, var(--success) 18%, transparent)',
-                  color: 'var(--success-title)',
-                }}
-              >🎉</span>
+                className="w-10 h-10 rounded-input inline-flex items-center justify-center shrink-0 bg-surface-2 text-muted"
+              ><span aria-hidden>🎉</span></span>
               <div>
                 <div className="font-bold text-[15px] text-ink leading-tight">Event completed</div>
                 <div className="text-[12.5px] text-muted mt-0.5">
@@ -377,7 +370,7 @@ export function EventPlanDetailScreen() {
                   background: 'color-mix(in srgb, var(--danger) 18%, transparent)',
                   color: 'var(--danger-title)',
                 }}
-              >⚠</span>
+              ><Warn className="w-5 h-5" /></span>
               <div>
                 <div className="font-bold text-[15px] text-ink leading-tight">{headline}</div>
                 <div className="text-[12.5px] text-muted mt-0.5 max-w-[60ch]">
@@ -541,7 +534,7 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
                     }}
                     title={m.fill === 'green' ? 'Event completed' : 'Event date'}
                   >
-                    <span style={{ fontSize: '10px', lineHeight: 1 }}>{m.emoji}</span>
+                    <span className="text-[10px] leading-none" aria-hidden>{m.emoji || '📅'}</span>
                   </span>
                 </span>
                 <div className="flex flex-col">
@@ -580,7 +573,10 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
                 <div className="text-[11px] text-muted uppercase tracking-[0.04em] font-semibold">
                   {m.kind === 'undated' ? 'No due date' : `${relativeDay(m.date, todayISO)} · ${fmtDateShort(m.date)}`}
                 </div>
-                <div className="text-[13px] font-semibold text-ink">{m.emoji} {m.label}</div>
+                <div className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                  <span className="text-base leading-none" aria-hidden>{m.emoji || '📅'}</span>
+                  {m.label}
+                </div>
               </div>
             </div>
           );
@@ -678,7 +674,9 @@ function CategoryCard({ cat, todayISO, onSelect }: {
         {/* Title row — emoji + name left, status chip right */}
         <div className="flex justify-between items-center gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-[22px] shrink-0">{cat.emoji}</span>
+            <span className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2 text-xl leading-none" aria-hidden>
+              {cat.emoji}
+            </span>
             <span className="font-semibold text-[18px] tracking-tight text-ink truncate">{cat.name}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">{chip}</div>
@@ -855,8 +853,9 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
 
         <div className="flex items-start justify-between gap-3 mb-2 pr-8">
           <div>
-            <h3 id="cat-editor-title" className="heading h3-modal m-0">
-              {cat.emoji} {cat.name}
+            <h3 id="cat-editor-title" className="heading h3-modal m-0 flex items-center gap-2">
+              <span className="text-xl leading-none" aria-hidden>{cat.emoji}</span>
+              {cat.name}
             </h3>
             <div className="text-muted text-[12.5px] mt-1">
               Budget · spent (sum of line items) · due date.

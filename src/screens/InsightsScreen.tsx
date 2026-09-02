@@ -42,12 +42,12 @@ import { fmtBDT, fmtDate } from '../lib/format';
 import {
   investmentValue,
 } from '../domain/math';
-import { ArrowUp, ArrowDown, ChevronRight } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, ChevronRight, ICON_TILE_CLASS } from '../components/icons/Icons';
+import { InvestTile, GoalTile } from '../components/InvestLoanTile';
 import { Stat, type StatTone } from '../components/Stat';
 import { ProgressBar } from '../components/ProgressBar';
 import { Pill } from '../components/Pill';
 import { investmentTone } from '../lib/cardSurface';
-import type { Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -760,6 +760,7 @@ function GoalRow({ goal, animDelay = 0 }: { goal: ReturnType<typeof goalsForInsi
         className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
         style={{ background: 'var(--primary)' }}
       />
+      <GoalTile />
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center gap-3">
           <div className="font-semibold text-[14px] tracking-tight truncate">{goal.name}</div>
@@ -814,7 +815,7 @@ function DebtRow({ debt, animDelay = 0 }: { debt: ReturnType<typeof debtsForInsi
 // direction (owe vs owed-to-me) is already carried by the icon,
 // the arrow chip, the dollar colour, and the meta line; the bar
 // fill unifies the visual language across the app.
-  const chipBg = isOwed ? 'bg-primary-soft text-primary' : 'bg-danger-soft text-danger';
+  const chipColor = isOwed ? 'text-primary' : 'text-danger';
   const remainingColor = isOwed ? 'text-primary' : 'text-danger';
   return (
     <Link
@@ -826,8 +827,10 @@ function DebtRow({ debt, animDelay = 0 }: { debt: ReturnType<typeof debtsForInsi
         className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
         style={{ background: 'var(--primary)' }}
       />
-      <div className={`w-8 h-8 rounded-[10px] grid place-items-center shrink-0 ${chipBg}`}>
-        {isOwed ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+      <div className={ICON_TILE_CLASS}>
+        <span className={chipColor}>
+          {isOwed ? <ArrowUp className="w-5 h-5" /> : <ArrowDown className="w-5 h-5" />}
+        </span>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center gap-3">
@@ -946,9 +949,13 @@ function InvestmentRow({
         style={{ background: 'var(--primary)' }}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Icon tile — matches the Investments list card so the
+              Insights row reads as a sibling of the same row on the
+              list. Wrapped in an extra flex gap so the icon and the
+              title baseline line up. */}
+          <InvestTile type={inv.type} />
           <div className="font-semibold text-[14px] tracking-tight truncate min-w-0">
-            <span aria-hidden className="mr-1">{investmentEmoji(inv.type as Investment['type'])}</span>
             {inv.name}
           </div>
           {/* DPS / FDR / Savings category stamp — same `<Pill>` every
@@ -974,12 +981,6 @@ function InvestmentRow({
       </div>
     </Link>
   );
-}
-
-function investmentEmoji(type: Investment['type']): string {
-  if (type === 'dps') return '\u{1F4C5}';
-  if (type === 'fdr') return '\u{1F3E6}';
-  return '\u{1F4DC}';
 }
 
 // ---------- Empty state ----------

@@ -290,7 +290,7 @@ describe('INVESTMENT_PLAN_KITS', () => {
     for (const kit of INVESTMENT_PLAN_KITS) {
       expect(kit.id).toMatch(/^(dps|fdr|savings)$/);
       expect(kit.name).toBeTruthy();
-      expect(kit.emoji).toBeTruthy();
+      expect(kit.key).toBeTruthy();
       expect(kit.description).toBeTruthy();
       // Every kit's defaults include a start date and a positive term.
       expect(kit.defaults.startDate).toMatch(/^\d{4}-\d{2}-\d{2}/);

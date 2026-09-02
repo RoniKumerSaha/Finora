@@ -1,47 +1,33 @@
 /**
- * AccountTypeIcon — inline SVG icons keyed to account.type.
+ * AccountTypeIcon — solid pictograms keyed to account.type.
  *
  * Why SVG, not Unicode/emoji:
  *   - Inherits color via `currentColor` (theme-aware).
- *   - Renders identically on macOS / Windows / Linux (no OS emoji font
- *     variance).
+ *   - Renders identically on macOS / Windows / Linux.
  *   - Scales crisply at any size.
- *   - Can carry actual visual detail (a bank has columns, a card has
- *     a stripe, a wallet has a phone).
  *
- * The earlier placeholder set (৳ ⌂ ◉ ▭ ◇) was generic and read as
- * "math symbols". This set is rich enough that you can tell two
- * accounts apart at a glance.
+ * Design system (Direction C — Solid pictograms):
+ *   - 24×24 viewBox, single fill (currentColor), no strokes.
+ *   - Soft rounded shapes — Material Symbols vibe, friendly at any
+ *     size.
  *
- * Visual language:
- *   - 1.5px stroke weight at 24×24 viewBox — keeps lines crisp at the
- *     18px tile size used in list rows without going to mush.
- *   - `stroke-linecap="round" stroke-linejoin="round"` — soft edges
- *     match the rest of the app's pillowy aesthetic.
- *   - Single fill or stroke color, no gradients — reads cleanly at small
- *     sizes and never fights the surface-2 background.
+ * Tile styling per account type — the wrapper tile picks up the tone
+ * color, the pictogram stays in primary ink (uses `currentColor`):
  *
- * The wrapper tile (rounded square, surface-2 background, primary
- * text color) lives with the consumer — the icon itself is just the
- * SVG so it can be embedded anywhere.
+ *   cash          → accent (gold)
+ *   bank          → primary (sage)
+ *   mobile_wallet → info (cool blue)
+ *   card          → danger (red, "spending")
+ *   other         → muted (neutral)
+ *
+ * Each tone helper returns Tailwind classes for the 40×40 tile that
+ * wraps the icon. The icon itself uses `currentColor`, so it
+ * inherits the tile's text color automatically.
  */
 import type { AccountType } from '../domain/types';
 
-/**
- * Tile styling per account type. Mirrors the transaction-direction
- * tone system so an "Accounts" row reads with the same visual
- * vocabulary as a "Transactions" row:
- *
- *   income → primary (green)        cash          → accent (gold)
- *   expense → danger (red)          bank          → primary (green)
- *   transfer → accent (gold)        mobile_wallet → info (cool blue)
- *                                    card          → danger (red, "spending")
- *                                    other         → muted (neutral)
- *
- * Each entry returns `{ bg, fg }` classes for the 36px rounded tile
- * that wraps the icon. The icon itself uses `currentColor`, so it
- * inherits `fg` automatically.
- */
+/* ---------------- Tone helpers ---------------- */
+
 export type AccountTone = 'accent' | 'primary' | 'info' | 'danger' | 'muted';
 
 const TONES: Record<AccountType, AccountTone> = {
@@ -57,12 +43,8 @@ export function accountTone(type: AccountType | string): AccountTone {
 }
 
 /**
- * Tailwind classes for the small rounded tile that wraps the icon.
+ * Tailwind classes for the 40×40 rounded tile that wraps the icon.
  * Returns a single string so consumers can pass it directly.
- */
-/**
- * Tile chrome: `bg-*-soft text-*-*` classes only. Use `accountTileStyle`
- * to also overlay a radial highlight that makes the icon square glow.
  */
 export function accountTileClass(tone: AccountTone): string {
   switch (tone) {
@@ -87,19 +69,13 @@ export function accountTileStyle(tone: AccountTone): React.CSSProperties {
     tone === 'info'    ? 'var(--info)' :
     tone === 'danger'  ? 'var(--danger)' :
                          'var(--muted)';
-  // backgroundImage layers on top of backgroundColor set via className,
-  // so the soft-tone fill shows through the radial highlight.
   return {
     backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 12%, var(--bg)), transparent 70%)`,
   };
 }
 
 /**
- * Text-color class for the balance number on an account row. Mirrors
- * `accountTileClass` so the balance picks up the same color family as
- * its icon tile — cash balances read gold, mobile wallets read blue,
- * card balances read red, and so on. Centralized here so the home
- * preview and the accounts list stay in sync.
+ * Text-color class for the balance number on an account row.
  */
 export function accountBalanceColor(tone: AccountTone): string {
   switch (tone) {
@@ -111,92 +87,81 @@ export function accountBalanceColor(tone: AccountTone): string {
   }
 }
 
+/* ---------------- Solid pictogram helper (Direction C) ---------------- */
+
+const SOLID_COMMON = {
+  viewBox: '0 0 24 24',
+  fill: 'currentColor',
+  'aria-hidden': true as const,
+};
+
+function Solid({ children, className }: { children: React.ReactNode } & React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...SOLID_COMMON} className={className}>
+      {children}
+    </svg>
+  );
+}
+
+/* ---------------- Account type icons ---------------- */
+
 interface Props {
   type: AccountType | string;
   className?: string;
 }
 
-/**
- * Shared SVG attributes. viewBox 24×24 is the de-facto icon-grid
- * standard; the consumer sizes with `width` / `height` utilities.
- */
-const COMMON = {
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.5,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-  'aria-hidden': true as const,
-};
-
-export function AccountTypeIcon({ type, className = 'w-[18px] h-[18px]' }: Props) {
+export function AccountTypeIcon({ type, className = 'w-[24px] h-[24px]' }: Props) {
   switch (type) {
     case 'cash':
-      // Wallet with a bill peeking out + a ৳ corner mark.
-      // Reads instantly as "physical money".
+      // Wallet body + a clasp dot. Reads instantly as "physical money".
       return (
-        <svg {...COMMON} className={className}>
-          <rect x="2.5" y="6" width="19" height="13" rx="2.5" />
-          <path d="M2.5 10h19" />
-          <circle cx="17" cy="14.5" r="1.4" fill="currentColor" stroke="none" />
-          <path d="M5.5 6V4.5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1V6" />
-        </svg>
+        <Solid className={className}>
+          <path d="M5 6h13a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3zm-.5 4.5h14a.5.5 0 0 0 0-1h-14a.5.5 0 0 0 0 1zM14 12.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM7 6V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1H7z" />
+        </Solid>
       );
 
     case 'bank':
-      // Classical bank: pediment + 4 columns + base. The strongest
-      // "this is a bank" silhouette in 24×24.
+      // Classical bank: pediment + 4 columns + base.
       return (
-        <svg {...COMMON} className={className}>
-          <path d="M3 9.5 12 4l9 5.5" />
-          <path d="M4.5 10.5h15" />
-          <path d="M5 10.5v8M9.5 10.5v8M14.5 10.5v8M19 10.5v8" />
-          <path d="M3.5 19h17" />
-          <path d="M3 21h18" />
-        </svg>
+        <Solid className={className}>
+          <path d="M11.2 2.4a1 1 0 0 1 1.6 0l8.5 6.4a1 1 0 0 1-.6 1.7H3.3a1 1 0 0 1-.6-1.7l8.5-6.4zM4.5 12a1 1 0 1 1 2 0v6h-2v-6zm4.5 0a1 1 0 1 1 2 0v6H9v-6zm4.5 0a1 1 0 1 1 2 0v6h-2v-6zm4.5 0a1 1 0 1 1 2 0v6h-2v-6zM3 19a1 1 0 1 0 0 2h18a1 1 0 1 0 0-2H3zm-1 3a1 1 0 1 0 0 2h20a1 1 0 1 0 0-2H2z" />
+        </Solid>
       );
 
     case 'mobile_wallet':
       // A phone (rounded rect) with a small card tucked on top-right.
-      // Reads as "digital wallet on a phone".
       return (
-        <svg {...COMMON} className={className}>
-          <rect x="6" y="2.5" width="11" height="19" rx="2.2" />
-          <path d="M9.5 5.5h4" />
-          <rect x="11" y="11" width="10.5" height="6.5" rx="1.3" />
-          <path d="M14.5 14.3h1.6" />
-        </svg>
+        <Solid className={className}>
+          <path d="M8 3a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8zm0 2h6v.5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5V5zm0 5h6a.5.5 0 0 1 .5.5V13a3 3 0 0 1-3 3H8a.5.5 0 0 1-.5-.5V10.5a.5.5 0 0 1 .5-.5z" />
+          <path d="M14 11.5a1.5 1.5 0 0 0 0 3h5a1.5 1.5 0 0 0 0-3h-5zm1 1.5a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z" />
+        </Solid>
       );
 
     case 'card':
-      // Credit-card front: rounded rect, magnetic stripe, and the chip
-      // + number-row. Universally recognizable.
+      // Credit-card front: rounded rect, magnetic stripe, chip, number row.
       return (
-        <svg {...COMMON} className={className}>
-          <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
-          <path d="M2.5 9.5h19" />
-          <path d="M6 13.5h4" />
-          <rect x="14" y="12.5" width="3.5" height="2.6" rx="0.5" fill="currentColor" stroke="none" opacity="0.85" />
-        </svg>
+        <Solid className={className}>
+          <path d="M4 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7zm0 2.5h18v-1.5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v1.5z" />
+          <path d="M7 13.5a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1zm6 0a1 1 0 0 1 1-1h3a1 1 0 1 1 0 2h-3a1 1 0 0 1-1-1zM6.5 17a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm5 0a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z" />
+        </Solid>
       );
 
     default:
-      // "other" — a small dotted grid in a rounded square. Reads as
-      // "uncategorized / fallback". Distinct from the card icon.
+      // "other" — a 3×3 dot grid in a rounded square. Reads as
+      // "uncategorized / fallback".
       return (
-        <svg {...COMMON} className={className}>
-          <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
-          <circle cx="8" cy="8" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="16" cy="8" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="8" cy="12" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="12" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="16" cy="12" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="8" cy="16" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="16" r="0.9" fill="currentColor" stroke="none" />
-          <circle cx="16" cy="16" r="0.9" fill="currentColor" stroke="none" />
-        </svg>
+        <Solid className={className}>
+          <path d="M5 4a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H5z" />
+          <circle cx="8" cy="8" r="1.4" fill="#fff" />
+          <circle cx="12" cy="8" r="1.4" fill="#fff" />
+          <circle cx="16" cy="8" r="1.4" fill="#fff" />
+          <circle cx="8" cy="12" r="1.4" fill="#fff" />
+          <circle cx="12" cy="12" r="1.4" fill="#fff" />
+          <circle cx="16" cy="12" r="1.4" fill="#fff" />
+          <circle cx="8" cy="16" r="1.4" fill="#fff" />
+          <circle cx="12" cy="16" r="1.4" fill="#fff" />
+          <circle cx="16" cy="16" r="1.4" fill="#fff" />
+        </Solid>
       );
   }
 }

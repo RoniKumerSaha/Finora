@@ -39,6 +39,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 import { Stat } from '../components/Stat';
 import { Pill } from '../components/Pill';
+import { InvestTile } from '../components/InvestLoanTile';
 import type { Account, Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -222,7 +223,7 @@ export function InvestmentDetailScreen() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <div className="text-[13px] text-muted flex items-center gap-2">
-            <span>{invEmoji(inv.type)}</span>
+            <InvestTile type={inv.type} />
             <span className="uppercase tracking-wider">{inv.type}</span>
             {isDps && inv.monthlyContribution ? (
               <Pill tone="primary" variant="solid">
@@ -553,12 +554,6 @@ function StatusChip({ status }: { status: string }) {
   return (
     <Pill tone={tone} variant="soft">{status}</Pill>
   );
-}
-
-function invEmoji(type: string): string {
-  if (type === 'dps') return '\u{1F4C5}';
-  if (type === 'fdr') return '\u{1F3E6}';
-  return '\u{1F4DC}';
 }
 
 /**

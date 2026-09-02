@@ -278,7 +278,9 @@ export function PresetBudgetCards({ activeKey, existing }: {
                       : 'bg-surface border-border hover:border-primary hover:-translate-y-0.5',
                   ].join(' ')}
                 >
-                  <span className="text-[20px] shrink-0" aria-hidden>{card.emoji}</span>
+                  <span className="shrink-0 text-lg leading-none" aria-hidden>
+                    {card.emoji}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[13px] font-semibold text-ink truncate">
                       {card.name}

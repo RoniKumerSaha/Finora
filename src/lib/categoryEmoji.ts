@@ -1,109 +1,102 @@
 /**
- * categoryEmoji.ts — emoji tile for the category picker on add screens
- * and for the pre-defined budget cards on the Month Planner.
+ * categoryEmoji.ts — single source of truth for category emoji. Used
+ * by the EmojiPicker (which renders tiles with these glyphs) and by
+ * the pre-defined budget cards on the Month Planner. Kept here so
+ * screens don't need to know the glyph vocabulary.
  *
- * v1 mockup renders categories as a 5-col grid of emoji tiles
- * (🍔 Food, 🛍 Shopping, 🚗 Transport, …). We don't store emoji on the
- * Category record yet, so we look up by category name (case-insensitive,
- * trimmed) and fall back to ➕ "Other" for anything not in the table.
- *
- * Kept here as a single small map so screens don't need to know the
- * emoji vocabulary. Add to it as new default categories appear.
+ * 2026-09 revert: back to unicode emoji as the data field. The picker
+ * writes the emoji string into `category.emoji`, and consumers render
+ * it directly. The Direction-C solid glyph migration that introduced
+ * `keyForCategory()` was reverted at the user's request.
  */
 
-/**
- * Master emoji vocabulary used by the picker AND the preset
- * budget cards. Grouped into spending categories that mirror how
- * Bangladesh households actually budget (rent first, then food,
- * transport, etc.) so the pre-defined cards on the Month Planner
- * feel like a real starter kit — not a random emoji dump.
- *
- * Adding new entries here automatically makes them available to:
- *   1. The EmojiPicker grid (uses the same array)
- *   2. The PRESET_BUDGET_CARDS list on /plan/month
- *   3. The emojiForCategory() lookup for legacy categories
- */
-export const CATEGORY_EMOJI_LIBRARY: ReadonlyArray<{ emoji: string; label: string; aliases: string[] }> = [
+export interface CategoryEmojiEntry {
+  emoji: string;
+  label: string;
+  aliases: string[];
+}
+
+export const CATEGORY_EMOJI_LIBRARY: ReadonlyArray<CategoryEmojiEntry> = [
   // ── Essentials (the big three: rent, food, utilities) ─────────────
-  { emoji: '🏠', label: 'Rent',        aliases: ['rent', 'house rent', 'housing', 'home rent'] },
-  { emoji: '🏢', label: 'Service Charge', aliases: ['service charge', 'apartment service', 'building service', 'maintenance charge'] },
-  { emoji: '🛒', label: 'Groceries',   aliases: ['groceries', 'grocery', 'market', 'bazaar'] },
-  { emoji: '💡', label: 'Utilities',   aliases: ['utilities', 'bills', 'electricity', 'gas', 'water', 'internet'] },
-  { emoji: '🛢️', label: 'LPG',         aliases: ['lpg', 'cooking gas', 'cylinder', 'gas cylinder', 'lpg refill'] },
-  { emoji: '📡', label: 'WiFi',        aliases: ['wifi', 'broadband', 'internet bill', 'isp', 'wifi bill'] },
+  { emoji: '🏠', label: 'Rent',             aliases: ['rent', 'house rent', 'housing', 'home rent'] },
+  { emoji: '🏢', label: 'Service Charge',   aliases: ['service charge', 'apartment service', 'building service', 'maintenance charge'] },
+  { emoji: '🛒', label: 'Groceries',        aliases: ['groceries', 'grocery', 'market', 'bazaar'] },
+  { emoji: '💡', label: 'Utilities',        aliases: ['utilities', 'bills', 'electricity', 'gas', 'water', 'internet'] },
+  { emoji: '🛢️', label: 'LPG',              aliases: ['lpg', 'cooking gas', 'cylinder', 'gas cylinder', 'lpg refill'] },
+  { emoji: '📡', label: 'WiFi',             aliases: ['wifi', 'broadband', 'internet bill', 'isp', 'wifi bill'] },
 
   // ── Food & dining ──────────────────────────────────────────────────
-  { emoji: '🍔', label: 'Food',        aliases: ['food', 'food & dining', 'food & drinks', 'eating out', 'meals'] },
-  { emoji: '☕', label: 'Café',        aliases: ['cafe', 'coffee', 'tea', 'snacks'] },
-  { emoji: '🥦', label: 'Vegetables',  aliases: ['vegetables', 'veggies', 'produce'] },
-  { emoji: '🍞', label: 'Bakery',      aliases: ['bakery', 'bread', 'breakfast'] },
-  { emoji: '🥩', label: 'Meat & fish', aliases: ['meat', 'fish', 'chicken', 'protein'] },
-  { emoji: '👶', label: 'Fruits',      aliases: ['fruits', 'fruit'] },
-  { emoji: '🥛', label: 'Dairy',       aliases: ['dairy', 'milk', 'yogurt'] },
-  { emoji: '🍱', label: 'Lunch',       aliases: ['lunch', 'tiffin'] },
-  { emoji: '👶', label: 'Healthy',     aliases: ['healthy', 'salad', 'diet'] },
-  { emoji: '🍕', label: 'Dining out',  aliases: ['dining out', 'restaurant', 'pizza'] },
+  { emoji: '🍔', label: 'Food',             aliases: ['food', 'food & dining', 'food & drinks', 'eating out', 'meals'] },
+  { emoji: '☕', label: 'Café',             aliases: ['cafe', 'coffee', 'tea', 'snacks'] },
+  { emoji: '🥦', label: 'Vegetables',       aliases: ['vegetables', 'veggies', 'produce'] },
+  { emoji: '🍞', label: 'Bakery',           aliases: ['bakery', 'bread', 'breakfast'] },
+  { emoji: '🥩', label: 'Meat & fish',      aliases: ['meat', 'fish', 'chicken', 'protein'] },
+  { emoji: '🍎', label: 'Fruits',           aliases: ['fruits', 'fruit'] },
+  { emoji: '🥛', label: 'Dairy',            aliases: ['dairy', 'milk', 'yogurt'] },
+  { emoji: '🍱', label: 'Lunch',            aliases: ['lunch', 'tiffin'] },
+  { emoji: '🥗', label: 'Healthy',          aliases: ['healthy', 'salad', 'diet'] },
+  { emoji: '🍕', label: 'Dining out',       aliases: ['dining out', 'restaurant', 'pizza'] },
 
   // ── Transport ──────────────────────────────────────────────────────
-  { emoji: '🚗', label: 'Transport',   aliases: ['transport', 'transportation', 'car'] },
-  { emoji: '🚌', label: 'Bus',         aliases: ['bus', 'public transport'] },
-  { emoji: '⛽', label: 'Fuel',        aliases: ['fuel', 'petrol', 'gas station', 'cng'] },
-  { emoji: '🚕', label: 'Taxi',        aliases: ['taxi', 'uber', 'ride share'] },
-  { emoji: '🛵', label: 'Bike',        aliases: ['bike', 'scooter', 'motorbike'] },
-  { emoji: '✈️', label: 'Travel',      aliases: ['travel', 'flight', 'airfare'] },
+  { emoji: '🚗', label: 'Transport',        aliases: ['transport', 'transportation', 'car'] },
+  { emoji: '🚌', label: 'Bus',              aliases: ['bus', 'public transport'] },
+  { emoji: '⛽', label: 'Fuel',             aliases: ['fuel', 'petrol', 'gas station', 'cng'] },
+  { emoji: '🚕', label: 'Taxi',             aliases: ['taxi', 'uber', 'ride share'] },
+  { emoji: '🛵', label: 'Bike',             aliases: ['bike', 'scooter', 'motorbike'] },
+  { emoji: '✈️', label: 'Travel',           aliases: ['travel', 'flight', 'airfare'] },
 
   // ── Lifestyle ──────────────────────────────────────────────────────
-  { emoji: '👶️', label: 'Shopping',    aliases: ['shopping', 'clothes', 'apparel'] },
-  { emoji: '💄', label: 'Personal',    aliases: ['personal care', 'cosmetics', 'grooming'] },
-  { emoji: '🧹', label: 'Maid',        aliases: ['maid', 'domestic help', 'house help', 'cook', 'cleaner', 'driver', 'housekeeper'] },
-  { emoji: '🏋️', label: 'Gym',         aliases: ['gym', 'fitness', 'workout'] },
-  { emoji: '🎬', label: 'Entertainment', aliases: ['entertainment', 'fun', 'movies', 'streaming'] },
-  { emoji: '🎮', label: 'Gaming',      aliases: ['gaming', 'games', 'video games'] },
-  { emoji: '🎵', label: 'Music',       aliases: ['music', 'subscription'] },
-  { emoji: '📱', label: 'Phone',       aliases: ['phone', 'mobile', 'recharge', 'data plan'] },
-  { emoji: '🏨', label: 'Stay',        aliases: ['hotel', 'lodging', 'stay'] },
+  { emoji: '🛍️', label: 'Shopping',         aliases: ['shopping', 'clothes', 'apparel'] },
+  { emoji: '💄', label: 'Personal',         aliases: ['personal care', 'cosmetics', 'grooming'] },
+  { emoji: '🧹', label: 'Maid',             aliases: ['maid', 'domestic help', 'house help', 'cook', 'cleaner', 'driver', 'housekeeper'] },
+  { emoji: '🏋️', label: 'Gym',              aliases: ['gym', 'fitness', 'workout'] },
+  { emoji: '🎬', label: 'Entertainment',    aliases: ['entertainment', 'fun', 'movies', 'streaming'] },
+  { emoji: '🎮', label: 'Gaming',           aliases: ['gaming', 'games', 'video games'] },
+  { emoji: '🎵', label: 'Music',            aliases: ['music', 'subscription'] },
+  { emoji: '📱', label: 'Phone',            aliases: ['phone', 'mobile', 'recharge', 'data plan'] },
+  { emoji: '🏨', label: 'Stay',             aliases: ['hotel', 'lodging', 'stay'] },
 
   // ── Family & health ────────────────────────────────────────────────
-  { emoji: '💊', label: 'Health',      aliases: ['health', 'healthcare', 'medical', 'medicine', 'pharmacy'] },
-  { emoji: '🏥', label: 'Hospital',    aliases: ['hospital', 'doctor', 'clinic'] },
-  { emoji: '💳', label: 'EMI',         aliases: ['emi', 'loan', 'installment', 'installments', 'monthly installment'] },
-  { emoji: '🎓', label: 'Education',   aliases: ['education', 'school', 'college', 'university', 'books'] },
-  { emoji: '👨‍🏫', label: 'Coaching',   aliases: ['coaching', 'tutor', 'tuition fee', 'batch', 'mentor'] },
-  { emoji: '📚', label: 'Books',       aliases: ['books', 'supplies', 'stationery'] },
-  { emoji: '👶', label: 'Kids',        aliases: ['kids', 'children', 'baby', 'daycare'] },
-  { emoji: '🐾', label: 'Pets',        aliases: ['pets', 'pet care', 'vet'] },
+  { emoji: '💊', label: 'Health',           aliases: ['health', 'healthcare', 'medical', 'medicine', 'pharmacy'] },
+  { emoji: '🏥', label: 'Hospital',         aliases: ['hospital', 'doctor', 'clinic'] },
+  { emoji: '💳', label: 'EMI',              aliases: ['emi', 'loan', 'installment', 'installments', 'monthly installment'] },
+  { emoji: '🎓', label: 'Education',        aliases: ['education', 'school', 'college', 'university', 'books'] },
+  { emoji: '🧑‍🏫', label: 'Coaching',        aliases: ['coaching', 'tutor', 'tuition fee', 'batch', 'mentor'] },
+  { emoji: '📚', label: 'Books',            aliases: ['books', 'supplies', 'stationery'] },
+  { emoji: '🧒', label: 'Kids',             aliases: ['kids', 'children', 'baby', 'daycare'] },
+  { emoji: '🐾', label: 'Pets',             aliases: ['pets', 'pet care', 'vet'] },
 
   // ── Giving & saving ────────────────────────────────────────────────
-  { emoji: '🎁', label: 'Gifts',       aliases: ['gifts', 'gift', 'presents'] },
-  { emoji: '👨‍👩‍👧', label: 'Family',   aliases: ['family', 'gifts & family'] },
-  { emoji: '🕌', label: 'Charity',     aliases: ['charity', 'donation', 'zakat', 'sadaqah'] },
-  { emoji: '🪔', label: 'Puja',        aliases: ['puja', 'pooja', 'puja expense', 'mandir', 'temple', 'offerings'] },
-  { emoji: '🐷', label: 'Savings',     aliases: ['savings', 'save', 'emergency fund'] },
-  { emoji: '💰', label: 'Investment',  aliases: ['investment', 'investing', 'invest', 'stock', 'mutual fund', 'dps', 'fdr', 'bond', 'sip'] },
-  { emoji: '🎯', label: 'Goals',       aliases: ['goals', 'targets', 'sinking fund'] },
+  { emoji: '🎁', label: 'Gifts',            aliases: ['gifts', 'gift', 'presents'] },
+  { emoji: '👨‍👩‍👧', label: 'Family',         aliases: ['family', 'gifts & family'] },
+  { emoji: '🕌', label: 'Charity',          aliases: ['charity', 'donation', 'zakat', 'sadaqah'] },
+  { emoji: '🪔', label: 'Puja',             aliases: ['puja', 'pooja', 'puja expense', 'mandir', 'temple', 'offerings'] },
+  { emoji: '🐷', label: 'Savings',          aliases: ['savings', 'save', 'emergency fund'] },
+  { emoji: '💰', label: 'Investment',       aliases: ['investment', 'investing', 'invest', 'stock', 'mutual fund', 'dps', 'fdr', 'bond', 'sip'] },
+  { emoji: '🎯', label: 'Goals',            aliases: ['goals', 'targets', 'sinking fund'] },
 
   // ── Tech & bills ───────────────────────────────────────────────────
-  { emoji: '📺', label: 'Subscriptions', aliases: ['subscriptions', 'streaming services'] },
-  { emoji: '🛡️', label: 'Insurance',   aliases: ['insurance', 'premium', 'health insurance', 'life insurance', 'asset insurance'] },
+  { emoji: '📺', label: 'Subscriptions',    aliases: ['subscriptions', 'streaming services'] },
+  { emoji: '🛡️', label: 'Insurance',        aliases: ['insurance', 'premium', 'health insurance', 'life insurance', 'asset insurance'] },
 
   // ── Fun & occasions ────────────────────────────────────────────────
-  { emoji: '🎉', label: 'Party',       aliases: ['party', 'celebration'] },
-  { emoji: '🎂', label: 'Birthday',    aliases: ['birthday'] },
-  { emoji: '🏖️', label: 'Vacation',    aliases: ['vacation', 'holiday', 'outing'] },
-  { emoji: '📸', label: 'Hobbies',     aliases: ['hobbies', 'photography'] },
-  { emoji: '🛋️', label: 'Home',        aliases: ['home', 'furniture', 'appliances'] },
-  { emoji: '🌴', label: 'Outing',      aliases: ['outing', 'outing & events'] },
-  { emoji: '🍽️', label: 'Dining',      aliases: ['dining', 'eating'] },
+  { emoji: '🎉', label: 'Party',            aliases: ['party', 'celebration'] },
+  { emoji: '🎂', label: 'Birthday',         aliases: ['birthday'] },
+  { emoji: '🏖️', label: 'Vacation',         aliases: ['vacation', 'holiday', 'outing'] },
+  { emoji: '📸', label: 'Hobbies',          aliases: ['hobbies', 'photography'] },
+  { emoji: '🛋️', label: 'Home',             aliases: ['home', 'furniture', 'appliances'] },
+  { emoji: '🌴', label: 'Outing',           aliases: ['outing', 'outing & events'] },
+  { emoji: '🍽️', label: 'Dining',           aliases: ['dining', 'eating'] },
 
   // ── Income sources ─────────────────────────────────────────────────
-  { emoji: '💼', label: 'Salary',      aliases: ['salary', 'wages'] },
-  { emoji: '💻', label: 'Freelance',   aliases: ['freelance', 'remote work'] },
-  { emoji: '🏪', label: 'Business',    aliases: ['business', 'shop', 'trade'] },
-  { emoji: '📈', label: 'Interest',    aliases: ['interest', 'dividend'] },
-  { emoji: '💍', label: 'Wedding',     aliases: ['wedding', 'marriage'] },
+  { emoji: '💼', label: 'Salary',           aliases: ['salary', 'wages'] },
+  { emoji: '💻', label: 'Freelance',        aliases: ['freelance', 'remote work'] },
+  { emoji: '🏪', label: 'Business',         aliases: ['business', 'shop', 'trade'] },
+  { emoji: '📈', label: 'Interest',         aliases: ['interest', 'dividend'] },
+  { emoji: '💍', label: 'Wedding',          aliases: ['wedding', 'marriage'] },
 
   // ── Misc ───────────────────────────────────────────────────────────
-  { emoji: '＋', label: 'Other',       aliases: ['other', 'misc', 'miscellaneous'] },
+  { emoji: '＋', label: 'Other',            aliases: ['other', 'misc', 'miscellaneous'] },
 ];
 
 /** Lookup map: any alias → emoji. Built once from CATEGORY_EMOJI_LIBRARY. */
@@ -126,7 +119,6 @@ const ALIAS_TO_EMOJI: Record<string, string> = (() => {
 export interface PresetBudgetCard {
   emoji: string;
   name: string;
-  /** Short helper text shown under the card name on the picker. */
   hint: string;
 }
 
@@ -143,18 +135,18 @@ export const PRESET_BUDGET_CARDS: ReadonlyArray<PresetBudgetCard> = [
   { emoji: '📱', name: 'Phone',          hint: 'Recharge, mobile data' },
   { emoji: '💊', name: 'Health',         hint: 'Medicine, doctor visits' },
   { emoji: '🎓', name: 'Education',      hint: 'School / college fees' },
-  { emoji: '👨‍🏫', name: 'Coaching',      hint: 'Tutor, batch, mentor fees' },
-  { emoji: '👶', name: 'Kids',        hint: 'Daycare, school fees, toys' },
+  { emoji: '🧑‍🏫', name: 'Coaching',       hint: 'Tutor, batch, mentor fees' },
+  { emoji: '🧒', name: 'Kids',           hint: 'Daycare, school fees, toys' },
   { emoji: '🛡️', name: 'Insurance',      hint: 'Health / life / asset premium' },
   { emoji: '🧹', name: 'Maid',           hint: 'Cook / cleaner / driver salary' },
-  { emoji: '🐾', name: 'Pets',        hint: 'Food, vet, grooming' },
-  { emoji: '🏋️', name: 'Gym',         hint: 'Membership, classes' },
+  { emoji: '🐾', name: 'Pets',           hint: 'Food, vet, grooming' },
+  { emoji: '🏋️', name: 'Gym',            hint: 'Membership, classes' },
   { emoji: '🎬', name: 'Entertainment', hint: 'Movies, streaming, outings' },
-  { emoji: '🛍️', name: 'Shopping',    hint: 'Clothes, household items' },
-  { emoji: '💄', name: 'Personal',    hint: 'Cosmetics, grooming' },
-  { emoji: '🎁', name: 'Gifts',       hint: 'Birthdays, occasions' },
-  { emoji: '🕌', name: 'Charity',     hint: 'Zakat, sadaqah, donations' },
-  { emoji: '🪔', name: 'Puja',        hint: 'Mandir, temple, offerings' },
+  { emoji: '🛍️', name: 'Shopping',       hint: 'Clothes, household items' },
+  { emoji: '💄', name: 'Personal',       hint: 'Cosmetics, grooming' },
+  { emoji: '🎁', name: 'Gifts',          hint: 'Birthdays, occasions' },
+  { emoji: '🕌', name: 'Charity',        hint: 'Zakat, sadaqah, donations' },
+  { emoji: '🪔', name: 'Puja',           hint: 'Mandir, temple, offerings' },
   { emoji: '🐷', name: 'Savings',        hint: 'Set aside this month' },
   { emoji: '💰', name: 'Investment',     hint: 'DPS, FDR, stocks' },
   { emoji: '🎯', name: 'Goals',          hint: 'Sinking funds & targets' },
@@ -189,20 +181,12 @@ export interface PresetEventCategory {
   name: string;
   hint: string;
   kit: EventKit;
-  /** Days relative to the event date. Negative = before, positive = after. 0 = on the day. */
   suggestedOffsetDays: number;
-  /** First-line-item label seeded for the category. Empty = no seed (user adds their own). */
   defaultItemLabel: string;
 }
 
 export const PRESET_EVENT_CATEGORIES: ReadonlyArray<PresetEventCategory> = [
   // ── Wedding (Bangladesh / India cultural chain)
-  //    Tuned for South Asian weddings: holud day, mehndi night,
-  //    main wedding + walima/reception. "Outfit" is split into
-  //    bride/groom + holud outfits because they're usually separate
-  //    purchases. "Pan" covers the paan stall at the venue.
-  //    Generic enough that neither community feels it was written
-  //    only for the other — drops religious-clergy items.
   { emoji: '🏛️', name: 'Venue',           hint: 'Hall / community centre / farm',   kit: 'wedding', suggestedOffsetDays: 0,   defaultItemLabel: 'Hall booking' },
   { emoji: '🍛', name: 'Catering',        hint: 'Per-plate menu + service',         kit: 'wedding', suggestedOffsetDays: -3,  defaultItemLabel: 'Per-plate cost' },
   { emoji: '📸', name: 'Photography',     hint: 'Photographer + album',             kit: 'wedding', suggestedOffsetDays: -7,  defaultItemLabel: 'Photographer fee' },
@@ -218,29 +202,24 @@ export const PRESET_EVENT_CATEGORIES: ReadonlyArray<PresetEventCategory> = [
   { emoji: '🌼', name: 'Mehndi / Haldi',  hint: 'Pre-wedding mehndi + haldi',       kit: 'wedding', suggestedOffsetDays: -2,  defaultItemLabel: 'Mehndi artist' },
   { emoji: '🎉', name: 'Reception',       hint: 'Post-wedding reception',           kit: 'wedding', suggestedOffsetDays: 7,   defaultItemLabel: 'Reception venue' },
   { emoji: '🎊', name: 'Return Gifts',    hint: 'Takeaways for guests',             kit: 'wedding', suggestedOffsetDays: -7,  defaultItemLabel: 'Per-gift cost' },
-  { emoji: '🏝️', name: 'Honeymoon',      hint: 'Trip + stay + food',               kit: 'wedding', suggestedOffsetDays: 14,  defaultItemLabel: 'Tickets' },
+  { emoji: '🏝️', name: 'Honeymoon',       hint: 'Trip + stay + food',               kit: 'wedding', suggestedOffsetDays: 14,  defaultItemLabel: 'Tickets' },
 
   // ── Trip ────────────────────────────────────────────────────────────
   { emoji: '✈️', name: 'Transport',      hint: 'Flights / bus / train',        kit: 'trip', suggestedOffsetDays: -7,  defaultItemLabel: 'Tickets' },
   { emoji: '🏨', name: 'Stay',           hint: 'Hotel / homestay',             kit: 'trip', suggestedOffsetDays: -3,  defaultItemLabel: 'Hotel / night' },
   { emoji: '🍔', name: 'Food',           hint: 'Meals + snacks',               kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Daily food' },
   { emoji: '🎢', name: 'Activities',     hint: 'Tours + entry fees',           kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Entry tickets' },
-  { emoji: '🛍️', name: 'Shopping',      hint: 'Souvenirs + gifts',            kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Souvenirs' },
+  { emoji: '🛍️', name: 'Shopping',       hint: 'Souvenirs + gifts',            kit: 'trip', suggestedOffsetDays: 0,   defaultItemLabel: 'Souvenirs' },
   { emoji: '📱', name: 'SIM / Data',     hint: 'Local SIM + roaming',          kit: 'trip', suggestedOffsetDays: -2,  defaultItemLabel: 'SIM card' },
-  { emoji: '🛡️', name: 'Insurance',     hint: 'Travel insurance',             kit: 'trip', suggestedOffsetDays: -3,  defaultItemLabel: 'Premium' },
+  { emoji: '🛡️', name: 'Insurance',      hint: 'Travel insurance',             kit: 'trip', suggestedOffsetDays: -3,  defaultItemLabel: 'Premium' },
   { emoji: '🎒', name: 'Gear',           hint: 'Backpack / clothes',           kit: 'trip', suggestedOffsetDays: -7,  defaultItemLabel: 'Backpack' },
   { emoji: '🛂', name: 'Visa',           hint: 'Visa fees + processing',       kit: 'trip', suggestedOffsetDays: -21, defaultItemLabel: 'Visa fee' },
 
-  // ── Religious (faith-based occasions — Eid, Puja, Christmas,
-  //    Buddha Purnima, etc.). Intentionally generic so a single kit
-  //    covers all faiths: no per-clergy presets (imam, pandit, pastor)
-  //    because the user can add their own. The common cost shape is:
-  //    new clothes, charity / donation, special food, flowers / decor,
-  //    ritual supplies, music.
+  // ── Religious ───────────────────────────────────────────────────────
   { emoji: '👕', name: 'Outfit',          hint: 'New clothes for the occasion', kit: 'religious', suggestedOffsetDays: -3, defaultItemLabel: 'Outfit' },
   { emoji: '🌺', name: 'Flowers',         hint: 'Garlands + loose petals',      kit: 'religious', suggestedOffsetDays: -1, defaultItemLabel: 'Garland' },
   { emoji: '🍎', name: 'Prasad / Offering', hint: 'Fruit + sweets offering',    kit: 'religious', suggestedOffsetDays: 0,  defaultItemLabel: 'Offering' },
-  { emoji: '🍽️', name: 'Special Food',   hint: 'Festival dishes + distribution', kit: 'religious', suggestedOffsetDays: 0, defaultItemLabel: 'Ingredients' },
+  { emoji: '🍽️', name: 'Special Food',    hint: 'Festival dishes + distribution', kit: 'religious', suggestedOffsetDays: 0,  defaultItemLabel: 'Ingredients' },
   { emoji: '🕯️', name: 'Ritual Supplies', hint: 'Incense + ghee + ceremony items', kit: 'religious', suggestedOffsetDays: -1, defaultItemLabel: 'Samagri' },
   { emoji: '🎵', name: 'Music',           hint: 'Devotional music + speakers',  kit: 'religious', suggestedOffsetDays: -1, defaultItemLabel: 'Music' },
   { emoji: '🕌', name: 'Charity',         hint: 'Zakat + sadaqah + donation',   kit: 'religious', suggestedOffsetDays: -2, defaultItemLabel: 'Charity' },
@@ -259,7 +238,7 @@ export const PRESET_EVENT_CATEGORIES: ReadonlyArray<PresetEventCategory> = [
   { emoji: '🎁', name: 'Gifts',          hint: 'For the host / guests',        kit: 'party', suggestedOffsetDays: 0,   defaultItemLabel: 'Gifts' },
   { emoji: '🎊', name: 'Return Gifts',   hint: 'Takeaways for guests',         kit: 'party', suggestedOffsetDays: -3,  defaultItemLabel: 'Per-gift cost' },
 
-  // ── Generic (always available, no archetype required) ───────────────
+  // ── Generic ─────────────────────────────────────────────────────────
   { emoji: '🏛️', name: 'Venue',          hint: 'Place + booking',              kit: 'generic', suggestedOffsetDays: -3,  defaultItemLabel: 'Booking' },
   { emoji: '🍔', name: 'Food',           hint: 'Meals + catering',             kit: 'generic', suggestedOffsetDays: 0,   defaultItemLabel: 'Per-plate' },
   { emoji: '🚗', name: 'Transport',      hint: 'Tickets + rides',              kit: 'generic', suggestedOffsetDays: -1,  defaultItemLabel: 'Tickets' },

@@ -25,12 +25,13 @@ import { useState } from 'react';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { loanPaymentSplit } from '../domain/math';
-import { ArrowUp, ArrowDown, Check, User } from '../components/icons/Icons';
+import { Check, User } from '../components/icons/Icons';
 import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass, toneTileClass } from '../lib/cardSurface';
+import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
 import { ProgressBar } from '../components/ProgressBar';
+import { LoanTile } from '../components/InvestLoanTile';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -60,10 +61,13 @@ export function DebtsListScreen() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap justify-between items-end gap-2">
-        <div>
-          <h1 className="heading h1-screen">Debts</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">
-            {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
+        <div className="flex items-center gap-3">
+          <LoanTile />
+          <div>
+            <h1 className="heading h1-screen">Debts</h1>
+            <div className="text-muted text-[13px] mt-1.5 tabular">
+              {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
+            </div>
           </div>
         </div>
         <Link
@@ -144,7 +148,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   // card (wash, bar, icon tile, bold figure, pill, progress bar).
   // Loan-kind debts override direction and use warn (amber).
   const cardTone = debtTone(d.direction, d.kind);
-  const iconBg = toneTileClass(cardTone);
   const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
 
@@ -227,18 +230,22 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             )}
           </div>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${iconBg}`}>
-              {/* Icon distinguishes flat vs loan:
-                  - loan-kind → directional ArrowUp/ArrowDown (money flow)
-                  - flat-kind → User silhouette (personal IOU between people) */}
-              {isLoan ? (
-                isIOwe
-                  ? <ArrowDown className="w-[18px] h-[18px]" strokeWidth={2} />
-                  : <ArrowUp className="w-[18px] h-[18px]" strokeWidth={2} />
-              ) : (
-                <User className="w-[18px] h-[18px]" strokeWidth={2} />
-              )}
-            </div>
+            {/* Loan-kind debts use the Bank pictogram (LoanTile); flat
+                debts use the User silhouette. The two silhouettes are
+                intentionally distinct so the user can tell loan from
+                personal IOU at a glance without reading the badge.
+                The wrapper is uniformly neutral; the icon itself is
+                tinted by direction: red for i_owe, green for
+                owed_to_me. */}
+            {isLoan ? (
+              <LoanTile />
+            ) : (
+              <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
+                <span className={isIOwe ? 'text-danger' : 'text-primary'}>
+                  <User className="w-[18px] h-[18px]" strokeWidth={2} />
+                </span>
+              </div>
+            )}
             {/* Single-line name. Matches the investment / loan card
                 so short names don't reserve a phantom second line of
                 vertical space. Long names still truncate with ellipsis. */}
@@ -384,8 +391,10 @@ function CompletedSection({ rows }: { rows: any[] }) {
               />
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-[10px] grid place-items-center bg-success-soft text-success">
-                    <Check className="w-[18px] h-[18px]" strokeWidth={2} />
+                  <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
+                    <span className="text-primary">
+                      <Check className="w-[18px] h-[18px]" />
+                    </span>
                   </div>
                   <div className="min-w-0">
                     <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>

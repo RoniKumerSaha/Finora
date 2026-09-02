@@ -29,6 +29,7 @@ import {
   BatchFloatingBar,
   SelectionModeToggle,
 } from '../components/planner/BatchBudgetEditor';
+import { CategoryGlyph } from '../components/icons/categoryGlyphs';
 import { suggestEmojiForName } from '../lib/categoryEmoji';
 import type { PlanCategory } from '../domain/types';
 import { CardTotalChecker } from './plan/CardTotalChecker';
@@ -420,9 +421,9 @@ function JarTile({
         }}
       >
         {/* Progress ring. Two layered circles: an outer ring and an
-            inner solid disc with the emoji. Always fills 100% with
-            a stable random colour — there's no planned-vs-budget
-            math driving it. */}
+            inner solid disc with the Direction-C pictogram. Always
+            fills 100% with a stable random colour — there's no
+            planned-vs-budget math driving it. */}
         <span
           aria-hidden
           className={`${ringOuter} rounded-full shrink-0 relative`}
@@ -431,10 +432,10 @@ function JarTile({
           }}
         >
           <span
-            className={`${ringInner} rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-[24px] leading-none`}
+            className={`${ringInner} rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-primary`}
             style={{ background: 'var(--surface-2)' }}
           >
-            {cat.emoji}
+            <CategoryGlyph name={cat.emoji} className="w-[24px] h-[24px]" />
           </span>
         </span>
 
@@ -511,8 +512,8 @@ function NewItemModal({ onSave, onClose }: {
   const [budgetText, setBudgetText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
-  // Auto-suggest an icon as the user types — typing "rent" swaps
-  // the default 🛒 for 🏠, "groceries" for 🛒, etc. The user can
+  // Auto-suggest an emoji as the user types — typing "rent" swaps
+  // the default emoji to 🏠, "groceries" to 🛒, etc. The user can
   // still pick anything from the picker; this is just a hint.
   const userPickedEmojiRef = useRef(false);
   useEffect(() => {
@@ -691,8 +692,9 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 
         <div className="flex items-start justify-between gap-3 mb-2 pr-8">
           <div>
-            <h3 id="item-editor-title" className="heading h3-modal m-0">
-              {cat.emoji} {cat.name}
+            <h3 id="item-editor-title" className="heading h3-modal m-0 flex items-center gap-2">
+              <CategoryGlyph name={cat.emoji} className="w-6 h-6 text-primary" />
+              {cat.name}
             </h3>
             <div className="text-muted text-[12.5px] mt-1">Set the budget.</div>
           </div>
@@ -730,10 +732,10 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               }}
             >
               <span
-                className="w-[56px] h-[56px] rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-[24px] leading-none"
+                className="w-[56px] h-[56px] rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-primary"
                 style={{ background: 'var(--surface-2)' }}
               >
-                {cat.emoji}
+                <CategoryGlyph name={cat.emoji} className="w-7 h-7" />
               </span>
             </span>
             <div className="flex flex-col gap-1 min-w-0 flex-1">

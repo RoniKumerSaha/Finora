@@ -28,7 +28,8 @@ import * as accounts from '../domain/accounts';
 import { accountBalance, lastAccountActivity } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import { RowMenu } from '../components/RowMenu';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountTileStyle, accountBalanceColor } from '../components/AccountTypeIcon';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountBalanceColor } from '../components/AccountTypeIcon';
+import { ICON_TILE_CLASS } from '../components/icons/Icons';
 import { EmptyState, AccountsIllustration } from '../components/EmptyState';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
@@ -164,11 +165,12 @@ export function AccountsListScreen() {
                 />
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-10 h-10 rounded-[10px] grid place-items-center shrink-0 ${accountTileClass(tone)}`}
-                      style={accountTileStyle(tone)}
-                    >
-                      <AccountTypeIcon type={a.type} />
+                    {/* Wrapper is uniformly neutral; the icon itself
+                        picks up the account's tone via `currentColor`. */}
+                    <div className={ICON_TILE_CLASS}>
+                      <span className={accountBalanceColor(tone)}>
+                        <AccountTypeIcon type={a.type} />
+                      </span>
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-[15px] tracking-tight leading-tight line-clamp-2">{a.name}</div>

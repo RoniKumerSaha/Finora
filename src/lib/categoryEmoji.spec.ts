@@ -97,10 +97,10 @@ describe('PRESET_EVENT_CATEGORIES — kit coverage', () => {
   });
 
   it('no two presets in the same kit share an emoji', () => {
-    // The picker renders one kit at a time. If two tiles in the same
-    // kit use the same emoji, the user can't tell them apart at a
-    // glance. Cross-kit emoji reuse is fine (e.g. "Venue" uses 🏛️ in
-    // wedding/party/generic — they never appear together).
+    // If two tiles in the same kit use the same emoji, the user can't
+    // tell them apart at a glance. Cross-kit reuse is fine (e.g.
+    // "Venue" uses 🏛️ in wedding/party/generic — they never appear
+    // together).
     const byKit = new Map<string, Map<string, string[]>>();
     for (const p of PRESET_EVENT_CATEGORIES) {
       let m = byKit.get(p.kit);
@@ -116,8 +116,8 @@ describe('PRESET_EVENT_CATEGORIES — kit coverage', () => {
       names.push(p.name);
     }
     for (const [kit, emap] of byKit.entries()) {
-      for (const [emoji, names] of emap.entries()) {
-        expect(names.length, `${kit} kit has duplicate emoji "${emoji}" on tiles ${JSON.stringify(names)}`).toBe(1);
+      for (const [e, names] of emap.entries()) {
+        expect(names.length, `${kit} kit has duplicate emoji "${e}" on tiles ${JSON.stringify(names)}`).toBe(1);
       }
     }
   });
@@ -137,6 +137,12 @@ describe('CATEGORY_EMOJI_LIBRARY', () => {
   it('every entry has at least one alias for fuzzy lookup', () => {
     for (const e of CATEGORY_EMOJI_LIBRARY) {
       expect(e.aliases.length, `library entry "${e.label}" has no aliases`).toBeGreaterThan(0);
+    }
+  });
+
+  it('every entry has a non-empty emoji', () => {
+    for (const e of CATEGORY_EMOJI_LIBRARY) {
+      expect(e.emoji.length, `library entry "${e.label}" has no emoji`).toBeGreaterThan(0);
     }
   });
 });
@@ -173,6 +179,12 @@ describe('PRESET_BUDGET_CARDS', () => {
     // than-name hints are a UX bug.
     for (const c of PRESET_BUDGET_CARDS) {
       expect(c.hint.length, `${c.name} has no hint`).toBeGreaterThan(0);
+    }
+  });
+
+  it('every card has a non-empty emoji', () => {
+    for (const c of PRESET_BUDGET_CARDS) {
+      expect(c.emoji.length, `${c.name} has no emoji`).toBeGreaterThan(0);
     }
   });
 });
@@ -230,4 +242,5 @@ describe('CATEGORY_GROUPS — picker bucketing', () => {
     expect(groupKeyForCategory('Gifts & Family')).toBe('giving');
   });
 });
+
 

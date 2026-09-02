@@ -189,7 +189,9 @@ export function EventPlanScreen() {
       {sorted.length === 0 && !creating && (
         <section className="card">
           <div className="py-10 text-center text-muted">
-            <div className="text-3xl opacity-60 mb-2.5">📅</div>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-surface-2 text-primary mb-2.5">
+              <span className="text-3xl leading-none" aria-hidden>📅</span>
+            </div>
             <div className="text-[15px] font-semibold text-ink">Plan your first event</div>
             <p className="mt-2 text-sm">Set a date. Add categories with their own budgets — the event's total is the sum of category budgets.</p>
             <Button variant="primary" onClick={startCreate} className="mt-4">+ New event</Button>
@@ -279,7 +281,7 @@ function EventPlanCard({
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: fill.color }}
             />
-            <span className="text-2xl">{ev.emoji ?? '📅'}</span>
+            <span className="shrink-0 text-primary text-xl leading-none" aria-hidden>{ev.emoji || '📅'}</span>
             <div className="font-semibold text-[15px] tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
           </div>
           <div className="text-xs text-muted mt-1.5 tabular ml-[26px]">

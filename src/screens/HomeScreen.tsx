@@ -43,7 +43,8 @@ import {
   computeNetWorth,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountTileClass, accountBalanceColor } from '../components/AccountTypeIcon';
+import { AccountTypeIcon, accountTypeLabel, accountTone, accountBalanceColor } from '../components/AccountTypeIcon';
+import { ICON_TILE_CLASS } from '../components/icons/Icons';
 import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
 import { EmptyState, AccountsIllustration, TransactionsIllustration } from '../components/EmptyState';
@@ -303,14 +304,17 @@ function Tile({
 }
 
 function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; name: string; type: string; balance: number; tone?: import('../components/AccountTypeIcon').AccountTone }) {
-  // The balance number picks up the same tone as the icon tile so
+  // The balance number picks up the same tone as the icon so
   // mobile_wallet balances (info/blue) read as the same color family
-  // as the avatar. `muted` falls back to the default ink color.
+  // as the avatar. The wrapper stays neutral; the icon itself is
+  // tinted with the account tone via `currentColor`.
   return (
     <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accountTileClass(tone ?? 'muted')}`}>
-          {icon}
+        <div className={ICON_TILE_CLASS}>
+          <span className={accountBalanceColor(tone ?? 'muted')}>
+            {icon}
+          </span>
         </div>
         <div>
           <div className="font-semibold text-[14px] leading-tight tracking-tight">{name}</div>
@@ -327,12 +331,16 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   const cat = state.categories.find((c: any) => c.id === tx.categoryId);
   const direction: 'in' | 'out' | 'xfr' =
     tx.type === 'income' ? 'in' : tx.type === 'expense' ? 'out' : 'xfr';
-  const accent =
-    direction === 'in'
-      ? 'text-primary bg-primary-soft'
-      : direction === 'out'
-        ? 'text-danger bg-danger-soft'
-        : 'text-accent bg-accent-soft';
+  // Wrapper is uniformly neutral; the icon itself picks up a
+  // direction-based color so income/expense/transfer rows remain
+  // scannable at a glance without tinting the wrapper chrome.
+  // For transfers, mobile_wallet accounts color info-blue (matching
+  // their avatar family); otherwise transfer stays muted.
+  const dirIconColor =
+    direction === 'in'   ? 'text-primary'  // income → green
+    : direction === 'out' ? 'text-danger'   // expense → red
+    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
+    :                       'text-muted';    // transfer → muted
   // On the home preview, transfer amounts color info-blue when the
   // source account is a mobile wallet — so a bKash → Cash movement
   // reads with the same blue family as the avatar tile instead of
@@ -345,10 +353,12 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   return (
     <div className="flex justify-between items-center py-3.5 border-b border-border last:border-0">
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accent}`}>
-          {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
-          {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
-          {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
+        <div className={ICON_TILE_CLASS}>
+          <span className={dirIconColor}>
+            {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
+            {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
+            {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
+          </span>
         </div>
         <div>
           <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">

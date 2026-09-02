@@ -27,6 +27,7 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../../domain/store';
 import type { PlanCategory } from '../../domain/types';
 import { fmtBDT, clampNonNegative } from '../../lib/format';
+import { CategoryGlyph } from '../icons/categoryGlyphs';
 
 /* ── Selection-mode toggle ───────────────────────────────────────── */
 
@@ -635,7 +636,9 @@ function CustomAmountInputs({
                 className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 items-center text-[12.5px] px-3 py-2 border-b border-border last:border-b-0"
               >
                 <span className="truncate flex items-center gap-1.5 min-w-0">
-                  <span aria-hidden>{r.emoji}</span>
+                  <span aria-hidden className="shrink-0">
+                    <CategoryGlyph name={r.emoji} className="w-4 h-4 text-muted" />
+                  </span>
                   <span className="text-ink font-semibold truncate">{r.name}</span>
                 </span>
                 <span className="text-muted tabular text-right whitespace-nowrap">{fmtBDT(r.current)}</span>

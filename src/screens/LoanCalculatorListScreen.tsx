@@ -27,6 +27,7 @@ import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
+import { LoanTile } from '../components/InvestLoanTile';
 
 const MIDDOT = '\u00B7';
 
@@ -85,10 +86,13 @@ export function LoanCalculatorListScreen() {
         >{'\u2190'} Plans</button>
       </div>
       <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="heading h1-screen">Loan Calculator</h1>
-          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-            Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
+        <div className="flex items-center gap-3">
+          <LoanTile />
+          <div>
+            <h1 className="heading h1-screen">Loan Calculator</h1>
+            <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+              Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -145,7 +149,7 @@ export function LoanCalculatorListScreen() {
                         is truncated to 1 line so the pills
                         always sit against the title baseline. */}
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-2xl shrink-0 leading-none" aria-hidden>{'\u{1F4B0}'}</span>
+                      <LoanTile size={20} />
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
                           {plan.name || 'Untitled loan'}

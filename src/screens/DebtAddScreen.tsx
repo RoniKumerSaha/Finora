@@ -5,6 +5,7 @@ import * as debts from '../domain/debts';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { LoanTile } from '../components/InvestLoanTile';
 import type { DebtDirection, DebtKind } from '../domain/types';
 
 export function DebtAddScreen() {
@@ -78,9 +79,12 @@ export function DebtAddScreen() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <header>
-        <h1 className="heading h1-screen">Add debt</h1>
-        <div className="text-muted text-[13px] mt-1.5">Track what you owe or what others owe you.</div>
+      <header className="flex items-center gap-3">
+        <LoanTile />
+        <div>
+          <h1 className="heading h1-screen">Add debt</h1>
+          <div className="text-muted text-[13px] mt-1.5">Track what you owe or what others owe you.</div>
+        </div>
       </header>
       <section className="card flex flex-col gap-5">
         <Field label="Direction" hint="Pick 'I owe' for loans you took. 'Owed to me' for money you lent.">

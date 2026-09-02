@@ -11,6 +11,7 @@ import { INVESTMENT_PLAN_KITS, investmentPlanMaturityValue } from '../domain/inv
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { InvestmentTypeBadge, investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
+import { InvestTile } from '../components/InvestLoanTile';
 import type { InvestmentPlan } from '../domain/types';
 
 export function InvestmentPlannerNewScreen() {
@@ -94,7 +95,9 @@ export function InvestmentPlannerNewScreen() {
                 style={{ background: investmentTypeColor(kit.id) }}
               />
               <div className="flex items-start justify-between w-full">
-                <span className="text-[28px] leading-none">{kit.emoji}</span>
+                <span className="text-[28px] leading-none">
+                  <InvestTile size={28} type={kit.id} />
+                </span>
                 <InvestmentTypeBadge type={kit.id} />
               </div>
               <div className="text-[13.5px] font-semibold text-ink">{kit.name}</div>

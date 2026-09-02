@@ -129,7 +129,9 @@ export function CardTotalChecker() {
                       </svg>
                     )}
                   </span>
-                  <span className="text-[15px] shrink-0" aria-hidden>{cat.emoji ?? '•'}</span>
+                  <span className="shrink-0 text-base leading-none" aria-hidden>
+                    {cat.emoji}
+                  </span>
                   <span className="text-[13px] font-semibold truncate max-w-[160px]">{cat.name}</span>
                   <span className="text-[12.5px] text-muted tabular shrink-0">
                     {fmtBDT(budget)}

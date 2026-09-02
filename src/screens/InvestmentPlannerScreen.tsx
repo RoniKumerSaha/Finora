@@ -26,6 +26,7 @@ import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
 import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
+import { InvestTile } from '../components/InvestLoanTile';
 
 export function InvestmentPlannerScreen() {
   const navigate = useNavigate();
@@ -68,10 +69,13 @@ export function InvestmentPlannerScreen() {
         >{'\u2190'} Plans</button>
       </div>
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="heading h1-screen">Investment Planner</h1>
-          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-            Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
+        <div className="flex items-center gap-3">
+          <InvestTile />
+          <div>
+            <h1 className="heading h1-screen">Investment Planner</h1>
+            <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+              Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -124,7 +128,9 @@ export function InvestmentPlannerScreen() {
                     aria-hidden
                     className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
                   />
-                  <span className="text-[28px] leading-none">{kit.emoji}</span>
+                  <span className="text-[28px] leading-none">
+                    <InvestTile size={28} type={kit.id} />
+                  </span>
                   <div className="text-[13.5px] font-semibold text-ink">{kit.name}</div>
                   <div
                     className={`text-[12.5px] font-bold tabular leading-tight ${toneTextClass(cardTone)}`}
@@ -241,14 +247,8 @@ function PlannerSummary({
   );
 }
 
-/** Per-type emoji — mirrors `invEmoji` in InvestmentsListScreen so the
+/** Per-type glyph key — mirrors `invKey` in InvestmentsListScreen so the
  *  planner card reads as a sibling of the real investment card. */
-function planEmoji(type: 'dps' | 'fdr' | 'savings'): string {
-  if (type === 'dps') return '\u{1F4C5}'; // 📅
-  if (type === 'fdr') return '\u{1F3E6}'; // �
-  return '\u{1F4DC}';                       // 📜
-}
-
 const MIDDOT = '\u00B7';
 
 function InvestmentPlanCard({
@@ -309,7 +309,7 @@ function InvestmentPlanCard({
             a different category. Title is truncated to 1 line so
             the pills always sit against the title baseline. */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-2xl shrink-0 leading-none" aria-hidden>{planEmoji(plan.type)}</span>
+          <InvestTile type={plan.type} />
           <div className="flex items-center gap-2 min-w-0">
             <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
               {plan.name}

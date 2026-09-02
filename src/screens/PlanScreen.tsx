@@ -26,7 +26,7 @@ import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
 import {
-  NavInvestments, NavDebts, NavPlan, Clock,
+  NavInvestments, NavPlan, Clock, Bank,
 } from '../components/icons/Icons';
 
 export function PlanScreen() {
@@ -95,7 +95,7 @@ export function PlanScreen() {
         />
         <PlanRow
           to="/plan/loan"
-          icon={<NavDebts className="w-5 h-5" />}
+          icon={<Bank className="w-5 h-5" />}
           iconTone="danger"
           title="Loans"
           sub={`${loanCount} ${loanCount === 1 ? 'projection' : 'projections'}`}
@@ -180,10 +180,14 @@ function PlanRow({
         className={[
           'w-10 h-10 rounded-input flex items-center justify-center shrink-0',
           'bg-surface-2',
-          ICON_TONE[iconTone],
         ].join(' ')}
       >
-        {icon}
+        {/* Wrapper stays neutral; the icon itself picks up the type
+            tone via `currentColor` (we set it on a child span so the
+            wrapper chrome stays uniform across rows). */}
+        <span className={ICON_TONE[iconTone]}>
+          {icon}
+        </span>
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-bold tracking-tight">{title}</div>

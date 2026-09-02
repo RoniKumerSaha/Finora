@@ -31,7 +31,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as transactions from '../domain/transactions';
-import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight, ICON_TILE_CLASS } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
 import { EmptyState, TransactionsIllustration } from '../components/EmptyState';
 import { fmtBDTSigned, fmtDate } from '../lib/format';
@@ -202,12 +202,13 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   const direction: 'in' | 'out' | 'xfr' =
     tx.type === 'income' ? 'in' : tx.type === 'expense' ? 'out' : 'xfr';
 
-  const accent =
-    direction === 'in'
-      ? 'text-primary bg-primary-soft'
-      : direction === 'out'
-        ? 'text-danger bg-danger-soft'
-        : 'text-accent bg-accent-soft';
+  // Wrapper stays uniformly neutral; the icon itself picks up a
+  // direction-based colour so income/expense/transfer rows stay
+  // scannable at a glance without tinting the wrapper chrome.
+  const dirIconColor =
+    direction === 'in'   ? 'text-primary'  // income → green
+    : direction === 'out' ? 'text-danger'   // expense → red
+    :                       'text-muted';   // transfer → muted
   const amtColor =
     direction === 'in'   ? 'text-primary'  // income → green
     : direction === 'out' ? 'text-danger'   // expense → red
@@ -245,10 +246,12 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
         style={{ background: 'var(--primary)' }}
       />
       <div className="flex items-center gap-3 min-w-0">
-        <div className={`w-9 h-9 rounded-[10px] grid place-items-center ${accent}`}>
-          {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
-          {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
-          {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
+        <div className={ICON_TILE_CLASS}>
+          <span className={dirIconColor}>
+            {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
+            {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
+            {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
+          </span>
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
