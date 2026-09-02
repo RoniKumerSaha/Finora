@@ -33,6 +33,7 @@ import {
 import { fmtBDT, fmtDate, fmtDateShort } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
+import { ProgressBar } from '../components/ProgressBar';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 
@@ -223,9 +224,7 @@ export function GoalDetailScreen() {
             <div className="text-3xl font-extrabold text-ink tabular mt-1">{fmtBDT(goal.target)}</div>
           </div>
         </div>
-        <div className="h-2.5 bg-surface-2 rounded-pill overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-accent rounded-pill transition-all" style={{ width: `${pct}%` }} />
-        </div>
+        <ProgressBar value={pct} height={10} animateOnMount animationDelay={120} />
         <div className="flex justify-between text-xs text-muted mt-2">
           <span>{pct}% complete</span>
           <span>{fmtBDT(Math.max(0, goal.target - saved))} remaining</span>

@@ -416,11 +416,12 @@ export function EventPlanDetailScreen() {
               date so the timeline populates immediately. */}
           <PresetEventCategories plan={plan} />
 
-          {sortedCategories.map(c => (
+          {sortedCategories.map((c, idx) => (
             <CategoryCard
               key={c.id}
               cat={c}
               todayISO={todayISO}
+              animationDelay={120 + idx * 90}
               onSelect={() => { setSelectedCatId(c.id); setNewCatDraft(null); }}
             />
           ))}
@@ -595,9 +596,10 @@ function relativeDay(target: string, todayISO: string): string {
   return fmtDateShort(target);
 }
 
-function CategoryCard({ cat, todayISO, onSelect }: {
+function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
   cat: EventCategory;
   todayISO: string;
+  animationDelay?: number;
   onSelect: () => void;
 }) {
   // Spent = sum of line items. The 4-step category palette
@@ -690,6 +692,8 @@ function CategoryCard({ cat, todayISO, onSelect }: {
           <ProgressBar
             value={budget > 0 ? Math.min(100, overflow ? 100 : pct) : 0}
             height={6}
+            animateOnMount
+            animationDelay={animationDelay}
           />
         </div>
 

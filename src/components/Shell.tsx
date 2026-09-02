@@ -131,8 +131,8 @@ export function Shell({ children }: { children: ReactNode }) {
         </button>
         <div className="flex-1 flex items-center justify-center gap-2.5">
           <img src={logoUrl} alt="Finora" className="w-7 h-7 rounded-[8px]" />
-          <div className="text-[17px] font-extrabold tracking-tight leading-none">
-            fin<span className="text-primary">ora</span>
+          <div className="text-[17px] font-extrabold tracking-[0.04em] leading-none">
+            FIN<span className="text-primary">ORA</span>
           </div>
         </div>
         {/* Spacer balances the hamburger so the brand stays centered. */}
@@ -178,8 +178,8 @@ export function Shell({ children }: { children: ReactNode }) {
              Hidden on desktop where the sidebar is always visible. */}
           <div className="flex items-center gap-3 px-2 pb-4 mb-2" style={{ borderBottom: '1px solid var(--border-2)' }}>
             <img src={logoUrl} alt="Finora" className="w-9 h-9 rounded-[10px]" />
-            <div className="text-[20px] font-extrabold tracking-tight leading-none grow">
-              fin<span className="text-primary">ora</span>
+            <div className="text-[20px] font-extrabold tracking-[0.04em] leading-none grow">
+              FIN<span className="text-primary">ORA</span>
             </div>
             <button
               type="button"
