@@ -288,3 +288,37 @@ circle[data-cashflow-line] {
     from, to { transform: none; }
   }
 }
+
+/* FINORA brand wordmark — full-spectrum hue rotate. All characters
+   share one gradient (linear info → primary); the hue-rotate filter
+   cycles the whole spectrum over 8s so the wordmark shimmers through
+   cool blue → warm green → back. Subtle on a dark surface; reads as
+   a polished metal logo. The user picked variant #4 from the
+   gradient preview: "all characters same color, animated". */
+@keyframes finora-hue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* FINORA brand logo — equalizer bars that grow and shrink in a wave.
+   The tile itself uses var(--bg) so it dissolves into the Shell
+   surface; only the three colored bars (primary / info / accent)
+   are visible. Each bar scales on its own delay so the motion rolls
+   left-to-right like an audio meter. Pairs with the wordmark's
+   hue-rotate — the bar motion is rhythmic, the wordmark motion is
+   spectral; together they read as a single living mark. */
+@keyframes finora-bar-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  25%      { transform: scaleY(1.15); }
+  50%      { transform: scaleY(0.55); }
+  75%      { transform: scaleY(1.0); }
+}
+@keyframes finora-bg-sway {
+  0%   { filter: hue-rotate(-25deg); }
+  50%  { filter: hue-rotate(25deg); }
+  100% { filter: hue-rotate(-25deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finora-brand, .finora-logo { animation: none !important; }
+}

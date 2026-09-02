@@ -9,6 +9,16 @@
  * on the left edge, a brand-row divider that doesn't run the full
  * width, and a refined primary CTA pinned to the bottom.
  *
+ * 2026-09-02 brand mark: the static logo SVG is replaced with an
+ * animated equalizer mark — three colored bars (primary/info/accent)
+ * on a var(--bg) tile that dissolves into the Shell surface. Bars
+ * scale in a wave (1.2s, each offset 0.4s); the tile itself sways
+ * ±25° hue (10s, off by default). The wordmark beside it carries a
+ * full hue-rotate gradient sweep. Together they read as a single
+ * living brand mark. Reduced-motion users see both animations
+ * disabled. Bar wave runs at 2.4s (half-speed of the original 1.2s)
+ * so the motion reads as calm breathing rather than a busy equalizer.
+ *
  * 2026-08-14 responsive: below `md` (768px) the sidebar becomes an
  * off-canvas drawer. A mobile topbar with a hamburger button sits
  * above <main>; tapping it slides the drawer in from the left with a
@@ -45,13 +55,86 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logoUrl from '../assets/finora-logo.svg';
 import {
   NavHome, NavInsights, NavTransactions, NavAccounts,
   NavGoals, NavInvestments, NavDebts, NavPlan, NavSettings,
   Menu, Close,
 } from './icons/Icons';
 import { Toast } from './Toast';
+
+/**
+ * FinoraLogo — animated equalizer mark that pairs with the FINORA
+ * wordmark. Three bars (primary / info / accent) sit on a tile whose
+ * background matches `var(--bg)`, so the tile itself dissolves into
+ * the Shell surface and only the colored bars are visible. Each bar
+ * scales on its own delay (1.2s loop, 0.4s offset) so the motion
+ * rolls left-to-right like an audio meter. Sizing matches the
+ * wordmark cap height per surface (mobile 22×22, desktop 26×26).
+ *
+ * The optional `sway` flag adds a subtle ±25° hue sway on the tile
+ * (off by default — used to be on when the tile was bg-colored; now
+ * that the tile matches the surrounding surface, sway is unnecessary
+ * and can pull focus). The bar wave itself keeps the mark alive.
+ */
+function FinoraLogo({
+  size,
+  sway = false,
+}: {
+  size: number;
+  sway?: boolean;
+}) {
+  // Bar widths and gaps scale with `size` so the proportions stay
+  // identical at 22px and 26px. 18% bar / 12% gap → at 22px that's
+  // ~4px bar / ~2.6px gap; at 26px ~4.7px / ~3.1px. Heights are
+  // baked into CSS as percentages of the tile so the bars always
+  // reach the same relative top edge regardless of size.
+  const barWidth = Math.round(size * 0.18);
+  const gap = Math.round(size * 0.12);
+  return (
+    <span
+      aria-hidden
+      className={['finora-logo inline-flex items-center justify-center shrink-0 rounded-md overflow-hidden', sway ? '' : ''].join(' ')}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        gap: `${gap}px`,
+        background: 'var(--surface)',
+        animation: sway ? 'finora-bg-sway 10s linear infinite' : undefined,
+      }}
+    >
+      <i
+        className="block rounded-sm"
+        style={{
+          width: `${barWidth}px`,
+          height: '45%',
+          background: 'var(--primary)',
+          transformOrigin: 'bottom center',
+          animation: 'finora-bar-wave 2.4s ease-in-out infinite',
+        }}
+      />
+      <i
+        className="block rounded-sm"
+        style={{
+          width: `${barWidth}px`,
+          height: '75%',
+          background: 'var(--info)',
+          transformOrigin: 'bottom center',
+          animation: 'finora-bar-wave 2.4s ease-in-out -0.8s infinite',
+        }}
+      />
+      <i
+        className="block rounded-sm"
+        style={{
+          width: `${barWidth}px`,
+          height: '35%',
+          background: 'var(--accent)',
+          transformOrigin: 'bottom center',
+          animation: 'finora-bar-wave 2.4s ease-in-out -1.6s infinite',
+        }}
+      />
+    </span>
+  );
+}
 
 interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element }
 
@@ -130,9 +213,18 @@ export function Shell({ children }: { children: ReactNode }) {
           <Menu className="w-6 h-6" />
         </button>
         <div className="flex-1 flex items-center justify-center gap-2.5">
-          <img src={logoUrl} alt="Finora" className="w-7 h-7 rounded-[8px]" />
-          <div className="text-[17px] font-extrabold tracking-[0.04em] leading-none">
-            FIN<span className="text-primary">ORA</span>
+          <FinoraLogo size={22} />
+          <div
+            className="finora-brand text-[17px] font-extrabold tracking-tight leading-none"
+            style={{
+              background: 'linear-gradient(90deg, var(--info), var(--primary))',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              animation: 'finora-hue 8s linear infinite',
+            }}
+          >
+            Finora
           </div>
         </div>
         {/* Spacer balances the hamburger so the brand stays centered. */}
@@ -177,9 +269,18 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* Mobile-only close button — sits to the right of the brand.
              Hidden on desktop where the sidebar is always visible. */}
           <div className="flex items-center gap-3 px-2 pb-4 mb-2" style={{ borderBottom: '1px solid var(--border-2)' }}>
-            <img src={logoUrl} alt="Finora" className="w-9 h-9 rounded-[10px]" />
-            <div className="text-[20px] font-extrabold tracking-[0.04em] leading-none grow">
-              FIN<span className="text-primary">ORA</span>
+            <FinoraLogo size={26} />
+            <div
+              className="finora-brand text-[20px] font-extrabold tracking-tight leading-none grow"
+              style={{
+                background: 'linear-gradient(90deg, var(--info), var(--primary))',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+                animation: 'finora-hue 8s linear infinite',
+              }}
+            >
+              Finora
             </div>
             <button
               type="button"

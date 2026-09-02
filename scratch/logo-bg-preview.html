@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Finora logo background — animated variants</title>
+<style>
+  :root {
+    /* Matches Finora app dark theme tokens exactly */
+    --bg:        #1E2A26;   /* Shell / page background */
+    --surface:   #253229;   /* card surface */
+    --surface-2: #2E3C34;   /* hover / tile */
+    --surface-3: #3A4A42;
+    --ink:       #f4f5f7;
+    --muted:     #8a90a0;
+    --border:    #262a33;
+    --primary:   #2dcb76;
+    --info:      #5eb3ff;
+    --accent:    #e7b53d;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 56px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; letter-spacing: 0.02em; max-width: 1180px; margin: 0 auto 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 13px; max-width: 1180px; margin: 0 auto 28px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .demo {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 28px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 130px;
+    overflow: hidden;
+    border: 1px solid #20241f;
+  }
+  .desc { color: var(--muted); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  .desc b { color: var(--ink); }
+  code { background: #0c0d11; padding: 1px 5px; border-radius: 4px; font-size: 11.5px; color: var(--accent); }
+
+  /* shared logo glyph — uses the same emoji-style bar chart shape from your image */
+  .logo {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-shrink: 0;
+    /* base — overridden per variant */
+    background: #000;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo::before, .logo::after {
+    content: '';
+    width: 8px;
+    border-radius: 3px;
+    background: var(--primary);
+    align-self: flex-end;
+    height: 50%;
+    transform-origin: bottom center;
+  }
+  .logo::before { height: 70%; }
+  .logo::after  { height: 40%; background: var(--accent); }
+
+  /* For variants that animate the bars, wrap them in a 3-bar set so
+     the equalizer pattern reads clearly (3 bars → small · big · small). */
+  .logo.bars {
+    gap: 5px;
+  }
+  .logo.bars::before,
+  .logo.bars::after { display: none; }
+  .logo.bars > i {
+    display: block;
+    width: 8px;
+    border-radius: 3px;
+    align-self: flex-end;
+    transform-origin: bottom center;
+  }
+  .logo.bars > i:nth-child(1) { height: 45%; background: var(--primary); }
+  .logo.bars > i:nth-child(2) { height: 75%; background: var(--info); }
+  .logo.bars > i:nth-child(3) { height: 35%; background: var(--accent); }
+
+  /* ── 1 · Solid app bg (no animation) ─────────────────────── */
+  .v1 .logo { background: var(--bg); }
+
+  /* ── 2 · Solid app bg + slow hue rotation ─────────────────── */
+  .v2 .logo {
+    background: var(--bg);
+    animation: bg-hue 12s linear infinite;
+  }
+
+  /* ── 3 · Animated radial glow cycling through brand colors ─ */
+  .v3 .logo {
+    background:
+      radial-gradient(circle at 50% 50%,
+        color-mix(in oklab, var(--primary) 70%, transparent) 0%,
+        color-mix(in oklab, var(--primary) 30%, transparent) 35%,
+        var(--bg) 70%);
+    animation: glow-cycle 6s ease-in-out infinite;
+  }
+
+  /* ── 4 · Animated conic gradient spinning slowly ──────────── */
+  .v4 .logo {
+    background: conic-gradient(
+      from 0deg,
+      var(--bg),
+      var(--info),
+      var(--primary),
+      var(--accent),
+      var(--bg)
+    );
+    animation: spin 8s linear infinite;
+  }
+  .v4 .logo::before, .v4 .logo::after {
+    background: rgba(255,255,255,0.9);
+  }
+
+  /* ── 5 · Animated linear sweep across the tile ────────────── */
+  .v5 .logo {
+    background: linear-gradient(110deg,
+      var(--bg) 0%,
+      var(--bg) 40%,
+      color-mix(in oklab, var(--primary) 60%, transparent) 50%,
+      var(--bg) 60%,
+      var(--bg) 100%);
+    background-size: 250% 100%;
+    animation: sweep 4s linear infinite;
+  }
+
+  /* ── 6 · Subtle hue-rotate (slow) over the solid bg ───────── */
+  .v6 .logo {
+    background: var(--bg);
+    animation: bg-hue-soft 10s linear infinite;
+  }
+
+  /* keyframes */
+  @keyframes bg-hue {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+  @keyframes bg-hue-soft {
+    0%   { filter: hue-rotate(-25deg); }
+    50%  { filter: hue-rotate(25deg); }
+    100% { filter: hue-rotate(-25deg); }
+  }
+  @keyframes glow-cycle {
+    0%, 100% { background-color: color-mix(in oklab, var(--bg) 100%, var(--primary)); }
+    33%      { background-color: color-mix(in oklab, var(--bg) 70%, var(--info)); }
+    66%      { background-color: color-mix(in oklab, var(--bg) 70%, var(--accent)); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes sweep {
+    0%   { background-position: 100% 50%; }
+    100% { background-position: -100% 50%; }
+  }
+
+  /* ── Bar equalizer animations (variants 7, 8, 9) ──────────── */
+  /* Variant 7: solid bg + bars pulse in unison (one rhythm) */
+  .v7 .logo.bars > i {
+    animation: bar-pulse 1.4s ease-in-out infinite;
+  }
+  .v7 .logo.bars > i:nth-child(2) { animation-delay: -0.45s; }
+  .v7 .logo.bars > i:nth-child(3) { animation-delay: -0.9s; }
+
+  /* Variant 8: solid bg + bars pulse in a wave (each bar offset) */
+  .v8 .logo.bars > i {
+    animation: bar-wave 1.2s ease-in-out infinite;
+  }
+  .v8 .logo.bars > i:nth-child(2) { animation-delay: -0.4s; }
+  .v8 .logo.bars > i:nth-child(3) { animation-delay: -0.8s; }
+
+  /* Variant 9: solid bg + subtle hue sway (#6) + bar wave */
+  .v9 .logo {
+    animation: bg-hue-soft 10s linear infinite;
+  }
+  .v9 .logo.bars > i {
+    animation: bar-wave 1.2s ease-in-out infinite;
+  }
+  .v9 .logo.bars > i:nth-child(2) { animation-delay: -0.4s; }
+  .v9 .logo.bars > i:nth-child(3) { animation-delay: -0.8s; }
+
+  @keyframes bar-pulse {
+    0%, 100% { transform: scaleY(0.55); }
+    50%      { transform: scaleY(1.1); }
+  }
+  @keyframes bar-wave {
+    0%, 100% { transform: scaleY(0.35); }
+    25%      { transform: scaleY(1.15); }
+    50%      { transform: scaleY(0.55); }
+    75%      { transform: scaleY(1.0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .v2 .logo, .v3 .logo, .v4 .logo, .v5 .logo, .v6 .logo {
+      animation: none !important;
+    }
+    .v7 .logo.bars > i, .v8 .logo.bars > i, .v9 .logo.bars > i {
+      animation: none !important;
+    }
+    .v4 .logo { background: var(--bg); }
+    .v4 .logo::before, .v4 .logo::after { background: var(--primary); }
+    .v4 .logo::after { background: var(--accent); }
+  }
+</style>
+</head>
+<body>
+  <h1>Finora logo tile background — animated variants</h1>
+  <p class="sub">Each card shows the 60×60 logo tile sitting on Finora's app background (<code>#1E2A26</code>). Pick which animation (if any) you want on the logo's black bg, and I'll wire it into <code>Shell.tsx</code>.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">1 · Solid app bg, no animation</div>
+      <div class="demo v1"><div class="logo"></div></div>
+      <div class="desc"><b>Reference.</b> Tile is <code>var(--bg)</code> with no animation — same color as the surrounding Shell, so it visually dissolves into the sidebar.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">2 · Solid bg + full hue rotation (8s)</div>
+      <div class="demo v2"><div class="logo"></div></div>
+      <div class="desc"><b>Lively but subtle.</b> Tile stays the same base color; hue-rotate cycles the spectrum slowly so the bg shimmers between cool blue, green, and warm gold — same trick we just used on the wordmark.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">3 · Radial glow cycling brand colors</div>
+      <div class="demo v3"><div class="logo"></div></div>
+      <div class="desc"><b>Softest.</b> A glow pulses from center outward, cycling through primary → info → accent. Reads as "the logo is glowing" without moving.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">4 · Spinning conic gradient</div>
+      <div class="demo v4"><div class="logo"></div></div>
+      <div class="desc"><b>Most energetic.</b> Full conic rainbow spins behind the bars. The bars themselves turn white so they pop against the spinning color. Might be too loud for a brand mark.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">5 · Linear sweep (highlight travels across)</div>
+      <div class="demo v5"><div class="logo"></div></div>
+      <div class="desc"><b>Premium feel.</b> A soft highlight glides diagonally across the tile every 4s — like light catching the edge of a glossy logo. Tile still reads as bg-colored most of the time.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">6 · Subtle hue sway (±25°, slower)</div>
+      <div class="demo v6"><div class="logo"></div></div>
+      <div class="desc"><b>My pick.</b> Tile bg barely shifts — a gentle ±25° hue sway over 10s. Same family as #2 but stays within "near-neutral with a hint of warmth" so it never looks like a Christmas tree.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">7 · Solid bg + bars pulse in unison (1.4s)</div>
+      <div class="demo v7"><div class="logo bars"><i></i><i></i><i></i></div></div>
+      <div class="desc">Three bars (green · blue · gold) all scale together from short to tall and back. Reads as a heartbeat — calm, rhythmic, unmistakably alive.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">8 · Solid bg + bars wave (1.2s, offset)</div>
+      <div class="demo v8"><div class="logo bars"><i></i><i></i><i></i></div></div>
+      <div class="desc">Each bar scales on its own delay, so the motion rolls left-to-right like an audio equalizer. More energetic than #7 — clearly "this thing is doing something".</div>
+    </div>
+
+    <div class="card">
+      <div class="label">9 · Subtle hue sway + bar wave (combined)</div>
+      <div class="demo v9"><div class="logo bars"><i></i><i></i><i></i></div></div>
+      <div class="desc"><b>Most polished.</b> Combines your preferred bg treatment (#6) with the equalizer bars (#8). Tile sways gently while the bars ripple — both motions stay subtle so they don't fight.</div>
+    </div>
+  </div>
+</body>
+</html>

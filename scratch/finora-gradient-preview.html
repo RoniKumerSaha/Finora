@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FINORA wordmark — gradient animation previews</title>
+<style>
+  :root {
+    --bg: #0f1116;
+    --card: #181b22;
+    --ink: #f4f5f7;
+    --muted: #8a90a0;
+    --border: #262a33;
+    --primary: #2dcb76;        /* sage green */
+    --info: #5eb3ff;           /* steel blue */
+    --accent: #e7b53d;         /* gold */
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 56px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; letter-spacing: 0.02em; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 13px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 22px;
+  }
+  .label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .demo {
+    background: #0c0d11;
+    border: 1px solid #20232c;
+    border-radius: 12px;
+    padding: 26px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px;
+    overflow: hidden;
+  }
+  .demo.light {
+    background: #f5f1ea;
+    border-color: #e6dfd2;
+  }
+  .brand {
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    font-size: 36px;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .desc { color: var(--muted); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  .desc b { color: var(--ink); }
+
+  /* shared animation keyframes */
+  @keyframes slide {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes hue {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  /* ── Variant 1: animated info → primary sweep ───────────────── */
+  .v1 .brand {
+    background: linear-gradient(
+      90deg,
+      var(--info),
+      var(--primary),
+      var(--info),
+      var(--primary)
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: slide 6s linear infinite;
+  }
+
+  /* ── Variant 2: 3-stop diagonal info → primary → accent ──────── */
+  .v2 .brand {
+    background: linear-gradient(
+      120deg,
+      var(--info) 0%,
+      var(--primary) 50%,
+      var(--accent) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: slide 5s ease-in-out infinite;
+  }
+
+  /* ── Variant 3: shimmer (the metallic travel) ──────────────── */
+  .v3 .brand {
+    background: linear-gradient(
+      90deg,
+      var(--info) 0%,
+      var(--info) 30%,
+      #ffffff 50%,
+      var(--primary) 70%,
+      var(--primary) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: shimmer 3.5s linear infinite;
+  }
+
+  /* ── Variant 4: hue-rotate (full spectrum, slowest) ────────── */
+  .v4 .brand {
+    background: linear-gradient(90deg, var(--info), var(--primary));
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: hue 8s linear infinite;
+  }
+
+  /* ── Variant 5: split color + animated sweep on ORA only ───── */
+  .v5 .brand .fin {
+    color: var(--ink);
+  }
+  .v5 .brand .ora {
+    background: linear-gradient(90deg, var(--info), var(--primary), var(--info));
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: slide 4s linear infinite;
+  }
+
+  /* ── Variant 6: shimmer on top of original FIN/ORA split ────── */
+  .v6 .brand .fin { color: var(--ink); }
+  .v6 .brand .ora {
+    background: linear-gradient(
+      90deg,
+      var(--primary) 0%,
+      var(--primary) 30%,
+      #ffffff 50%,
+      var(--primary) 70%,
+      var(--primary) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  /* toggle button */
+  .toggle {
+    position: fixed; right: 16px; top: 16px; z-index: 9;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 14px; font-size: 12px; cursor: pointer;
+  }
+  body.light { background: #f5f1ea; color: #1d1d22; }
+  body.light .card { background: #ffffff; border-color: #e6dfd2; }
+  body.light .demo { background: #fbf9f4; border-color: #ebe3d3; }
+  body.light .label, body.light .desc { color: #6a6e78; }
+  body.light .desc b { color: #1d1d22; }
+  body.light .toggle { background: #fff; color: #1d1d22; border-color: #e6dfd2; }
+</style>
+</head>
+<body>
+  <button class="toggle" onclick="document.body.classList.toggle('light')">Toggle light/dark</button>
+
+  <div style="max-width:1180px; margin:0 auto;">
+    <h1>FINORA wordmark — gradient animation variants</h1>
+    <p class="sub">Six directions. Pick one and I'll wire it into <code>Shell.tsx</code>. Each card shows the wordmark on both dark (left) and light (right) surfaces so you can judge contrast at a glance.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="label">1 · Info → primary sweep</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v1"><div class="brand">FINORA</div></div>
+          <div class="demo v1 light"><div class="brand">FINORA</div></div>
+        </div>
+        <div class="desc"><b>Calm, brand-true.</b> Cool blue slides into brand green, then back. Reads as the canonical Finora palette in motion. Slow, steady (6s loop).</div>
+      </div>
+
+      <div class="card">
+        <div class="label">2 · 3-stop diagonal (info → primary → accent)</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v2"><div class="brand">FINORA</div></div>
+          <div class="demo v2 light"><div class="brand">FINORA</div></div>
+        </div>
+        <div class="desc"><b>Warmest option.</b> Adds gold to the sweep — same diagonal as the progress bar's right-end, so the wordmark rhymes with the bar.</div>
+      </div>
+
+      <div class="card">
+        <div class="label">3 · Shimmer (white highlight travels across)</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v3"><div class="brand">FINORA</div></div>
+          <div class="demo v3 light"><div class="brand">FINORA</div></div>
+        </div>
+        <div class="desc"><b>Premium feel.</b> A white highlight glides across — like sunlight on a metal logo. Catches the eye but doesn't shout.</div>
+      </div>
+
+      <div class="card">
+        <div class="label">4 · Hue-rotate (full color spectrum)</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v4"><div class="brand">FINORA</div></div>
+          <div class="demo v4 light"><div class="brand">FINORA</div></div>
+        </div>
+        <div class="desc"><b>Most playful.</b> Cycles the entire color wheel over 8s. Likely too loud for a brand wordmark, but worth showing.</div>
+      </div>
+
+      <div class="card">
+        <div class="label">5 · Split FIN (ink) + animated ORA (info → primary)</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v5"><div class="brand"><span class="fin">FIN</span><span class="ora">ORA</span></div></div>
+          <div class="demo v5 light"><div class="brand"><span class="fin">FIN</span><span class="ora">ORA</span></div></div>
+        </div>
+        <div class="desc"><b>Brand-faithful.</b> Keeps the original FIN/ORA split — only <em>ORA</em> animates. Quietest of the bunch; brand colors only, no white shimmer.</div>
+      </div>
+
+      <div class="card">
+        <div class="label">6 · Split + white shimmer on ORA only</div>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="demo v6"><div class="brand"><span class="fin">FIN</span><span class="ora">ORA</span></div></div>
+          <div class="demo v6 light"><div class="brand"><span class="fin">FIN</span><span class="ora">ORA</span></div></div>
+        </div>
+        <div class="desc"><b>My pick.</b> Same FIN/ORA split but a quick white shimmer rides across the green ORA every 3s. Subtle but unmistakably alive.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
