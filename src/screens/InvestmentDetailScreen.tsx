@@ -121,7 +121,7 @@ export function InvestmentDetailScreen() {
       const total = contributed + Number(contribAmount);
       showBanner({
         kind: 'success',
-        what: `+ ${fmtBDT(contribAmount)} toward ${inv!.name}`,
+        what: `${fmtBDT(contribAmount)} toward ${inv!.name}`,
         why: 'Recorded as an expense transaction linked to this investment.',
         fix: `${fmtBDT(total)} contributed so far.`,
       });
@@ -296,7 +296,16 @@ export function InvestmentDetailScreen() {
           {isDps && (
             <>
               <StatCell label="Contributed so far" value={fmtBDT(contributed)} />
-              <StatCell label="Current value" value={fmtBDT(currentValue)} hint="What the bank would pay you if you cashed out today." />
+              {/* Current value carries the gain/loss cue:
+                    contributed == current → break-even (ink)
+                    current > contributed   → in the green (mint)
+                    current < contributed   → in the coral (rare; would need a partial loss) */}
+              <StatCell
+                label="Current value"
+                value={fmtBDT(currentValue)}
+                tone={currentValue > contributed ? 'primary' : currentValue < contributed ? 'danger' : 'ink'}
+                hint="What the bank would pay you if you cashed out today."
+              />
             </>
           )}
           {paidOut > 0 && (
@@ -308,7 +317,13 @@ export function InvestmentDetailScreen() {
             accent
             hint={isDps ? 'If you pay every installment on time.' : 'Simple interest.'}
           />
-          <StatCell label="Expected interest" value={fmtBDT(expectedInterest)} />
+          {/* Expected interest is the gain side of an investment — mint
+              when there's a real expected return, ink on break-even. */}
+          <StatCell
+            label="Expected interest"
+            value={fmtBDT(expectedInterest)}
+            tone={expectedInterest > 0 ? 'primary' : 'ink'}
+          />
           <StatCell label="Rate" value={`${inv.rate}% / yr`} />
         </div>
         {/* 2026-08-17 net-worth clarity: for DPS, surface both numbers
@@ -492,13 +507,30 @@ export function InvestmentDetailScreen() {
  * the canonical <Stat> (which assumes a larger card surface). Maps
  * `accent` → primary tone so the maturity-value cell stands out.
  */
-function StatCell({ label, value, accent, hint }: { label: string; value: string; accent?: boolean; hint?: string }) {
+function StatCell({
+  label,
+  value,
+  accent,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** Legacy boolean. Maps to primary tone (mint). Kept for callers that
+   *  just want to call attention to a cell — new callers should pass an
+   *  explicit `tone` instead. */
+  accent?: boolean;
+  /** Explicit tone override. Takes precedence over `accent`. */
+  tone?: 'ink' | 'primary' | 'danger' | 'accent';
+  hint?: string;
+}) {
+  const resolved = tone ?? (accent ? 'primary' : 'ink');
   return (
     <Stat
       label={label}
       value={value}
       size="md"
-      tone={accent ? 'primary' : 'ink'}
+      tone={resolved}
       hint={hint}
     />
   );

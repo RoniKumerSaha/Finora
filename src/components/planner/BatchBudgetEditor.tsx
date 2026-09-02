@@ -668,7 +668,7 @@ function CustomAmountInputs({
           <span className="text-ink tabular font-bold text-right whitespace-nowrap">
             {fmtBDT(totalNext)}{delta !== 0 && (
               <span className={['ml-1', delta > 0 ? 'text-danger' : 'text-success'].join(' ')}>
-                ({delta > 0 ? '+' : ''}{fmtBDT(delta)})
+                ({fmtBDT(Math.abs(delta))})
               </span>
             )}
           </span>

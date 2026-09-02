@@ -172,17 +172,31 @@ function formatRangeSubLine(
   return `${startLabel} \u2013 ${endLabel}`;
 }
 
+import type { ReactNode } from 'react';
+
 /**
  * Build a "vs previous period" caption. When the previous period has no
  * data, returns null (caller suppresses the caption).
+ *
+ * 2026-09-02 — dropped the `+` / `−` sign prefix in favour of an
+ * explicit arrow so the colour carries the direction (primary for
+ * up, danger for down). The arrow is also more legible at small
+ * sizes than a one-character sign.
  */
-function periodComparison(current: number, previous: number, rangeKey: DateRangeKey): string | null {
+function periodComparison(current: number, previous: number, rangeKey: DateRangeKey): ReactNode {
   if (rangeKey === 'thisMonth' || rangeKey === 'all') return null;
   if (previous === 0) return null;
   const diff = ((current - previous) / Math.abs(previous)) * 100;
-  const sign = diff >= 0 ? '+' : '\u2212';
+  const arrow = diff >= 0 ? '\u2191' : '\u2193'; // ↑ / ↓
   const abs = Math.abs(Math.round(diff));
-  return `${sign} ${abs}% vs previous ${rangeKey === 'last3' ? '3 months' : rangeKey === 'last6' ? '6 months' : '12 months'}`;
+  const period = rangeKey === 'last3' ? '3 months' : rangeKey === 'last6' ? '6 months' : '12 months';
+  const arrowClass = diff >= 0 ? 'text-primary' : 'text-danger';
+  return (
+    <>
+      <span className={`${arrowClass} mr-1`}>{arrow}</span>
+      {abs}% vs previous {period}
+    </>
+  );
 }
 
 // ---------- Pill ----------
@@ -218,7 +232,7 @@ function StatTile({
   label: string;
   value: string;
   tone: 'primary' | 'danger' | 'ink' | 'accent' | 'info';
-  caption: string | null;
+  caption: ReactNode;
 }) {
   // Tone mapping (legacy → canonical Stat tone):
   //   'info' → 'primary' (info-blue used to convey "neutral positive",
@@ -475,8 +489,8 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               }}
             >
               <div className="text-muted">{hoverBar.label}</div>
-              <div className="text-primary tabular">+ {fmtBDT(hoverBar.income)}</div>
-              <div className="text-danger tabular">{'\u2212'} {fmtBDT(hoverBar.expense)}</div>
+              <div className="text-primary tabular">{fmtBDT(hoverBar.income)}</div>
+              <div className="text-danger tabular">{fmtBDT(hoverBar.expense)}</div>
             </div>
           )}
           <div className="flex justify-between items-center text-[11px] text-muted mt-2 tabular">
@@ -570,8 +584,8 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
           <h2 className="heading h3-modal">Net worth</h2>
           <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Real money now</div>
         </div>
-        <div className="text-[22px] font-bold tabular text-info">
-          {lastPoint ? fmtBDT(lastPoint.value) : '—'}
+        <div className={`text-[22px] font-bold tabular ${lastPoint && lastPoint.value < 0 ? 'text-danger' : 'text-ink'}`}>
+          {lastPoint ? (lastPoint.value < 0 ? '\u2212' + fmtBDT(Math.abs(lastPoint.value)) : fmtBDT(lastPoint.value)) : '—'}
         </div>
       </div>
       {points.length === 0 || points.every(p => p.value === 0) ? (
@@ -699,7 +713,7 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
           {/* Bottom legend */}
           {hoverPoint && (
             <div className="text-[11px] text-muted mt-2 tabular">
-              {hoverPoint.label}: <span className="text-info font-semibold">{fmtBDT(hoverPoint.value)}</span>
+              {hoverPoint.label}: <span className={`font-semibold ${hoverPoint.value < 0 ? 'text-danger' : 'text-ink'}`}>{hoverPoint.value < 0 ? '\u2212' + fmtBDT(Math.abs(hoverPoint.value)) : fmtBDT(hoverPoint.value)}</span>
             </div>
           )}
         </>

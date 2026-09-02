@@ -3,8 +3,10 @@
  *
  * Keeps every screen aligned with the v2 mockup:
  *   - `৳ 3,500` (BDT after a space, en-IN grouping) for plain values
- *   - `+ ৳ 3,500` / `− ৳ 3,500` (sign-amount with a space after the
- *     sign and after `৳`) for income/expense rows
+ *   - `৳ 3,500` for signed amounts too — colour carries the
+ *     direction (primary = in, danger = out, ink = neutral /
+ *     transfer). No `+` / `−` glyph in front of numbers; the same
+ *     row uses an ArrowUp / ArrowDown icon for at-a-glance scanning.
  *   - "12 Aug 2026" for friendly date display (mockup uses short month)
  *   - "Aug 12" style for table rows where space is tight
  *
@@ -19,15 +21,17 @@ export function fmtBDT(n: number | string): string {
 }
 
 /**
- * Signed BDT: `+ ৳ 3,500` / `− ৳ 3,500` / `৳ 3,500` (no sign).
- * Transfer rows pass 'xfr' to render an arrow without sign color.
+ * Direction-tagged BDT (used by transaction/debt lists).
+ *
+ * Returns the absolute-value body (`৳ 3,500`). Callers are expected
+ * to set the colour from the same `direction` flag they pass here
+ * (primary = in, danger = out, ink = neutral / transfer). The
+ * `_sign` arg is kept for back-compat but is now ignored — colour
+ * and the row's ArrowUp/ArrowDown icon do the directional work,
+ * matching the design system across screens.
  */
-export function fmtBDTSigned(n: number | string, sign: 'in' | 'out' | 'xfr' = 'in'): string {
-  const abs = Math.round(Math.abs(Number(n) || 0));
-  const body = '\u09F3 ' + abs.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-  if (sign === 'xfr') return '\u21C4 ' + body;
-  if (sign === 'out') return '\u2212 ' + body;
-  return '+ ' + body;
+export function fmtBDTSigned(n: number | string, _sign?: 'in' | 'out' | 'xfr'): string {
+  return fmtBDT(Math.abs(Number(n) || 0));
 }
 
 /** "12 Aug 2026" — short month, no weekday, day-month-year. */

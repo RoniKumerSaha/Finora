@@ -12,6 +12,8 @@
  *   - Sizes: sm = 14px, md = 18px, lg = 24px, xl = 28px extrabold
  *   - Tones: ink (default), primary, danger, accent
  */
+import type { ReactNode } from 'react';
+
 export type StatSize = 'sm' | 'md' | 'lg' | 'xl';
 export type StatTone = 'ink' | 'primary' | 'danger' | 'accent';
 
@@ -41,7 +43,14 @@ export function Stat({
   value: string;
   size?: StatSize;
   tone?: StatTone;
-  hint?: string;
+  /**
+   * Optional caption beneath the value. Accepts a ReactNode so callers
+   * can colour part of it (e.g. an "↑ 5%" delta rendered with the
+   * primary tone for "improving" or danger for "worsening"). Plain
+   * string callers still work — Stat renders it inside the muted
+   * hint line.
+   */
+  hint?: ReactNode;
   className?: string;
 }) {
   return (
@@ -52,8 +61,8 @@ export function Stat({
       <div className={`tabular leading-none ${SIZE_CLASS[size]} ${TONE_CLASS[tone]}`}>
         {value}
       </div>
-      {hint && (
-        <div className="text-[11px] text-muted mt-0.5">{hint}</div>
+      {hint != null && hint !== false && (
+        <div className="text-[11px] text-muted mt-0.5 tabular">{hint}</div>
       )}
     </div>
   );

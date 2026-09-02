@@ -496,8 +496,6 @@ export function DebtEditScreen() {
                   : t.type === 'expense'
                   ? 'text-danger'
                   : 'text-ink';
-              const amountPrefix =
-                t.type === 'income' ? '+ ' : t.type === 'expense' ? '\u2212 ' : '';
               return (
                 <div key={t.id} className="py-2.5 flex flex-col gap-1">
                   <div className="flex justify-between items-center gap-3">
@@ -505,8 +503,8 @@ export function DebtEditScreen() {
                       {tag.label}
                       <span className="text-muted font-semibold"> {MIDDOT} {fmtDate(t.date)}</span>
                     </span>
-                    <span className={`text-[15px] font-bold tabular ${amountColor}`}>
-                      {amountPrefix}{fmtBDT(t.amount)}
+                    <span className={`text-[14px] font-bold tabular ${amountColor}`}>
+                      {fmtBDT(t.amount)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center gap-3 text-[11px] tabular">

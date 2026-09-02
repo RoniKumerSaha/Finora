@@ -10,7 +10,7 @@
  *
  * Card shape (one row, on the left column):
  *   ┌─ I OWE                                          ┌────────────┐
- *   │  [↓] City Bank Loan                       │     │ − ৳12,26,261│
+ *   │  [↓] City Bank Loan                       │     │ ৳12,26,261│
  *   │       Paid ৳100 of ৳12,26,361 total     │     │   Remaining │
  *   │                                                 │  of ৳Y total│
  *   ├─────────────────────────────────────────────────┴────────────┤
@@ -281,7 +281,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             {headlineLabel}
           </span>
           <span className={`font-bold tabular text-[24px] tracking-tight leading-none ${amtColor}`}>
-            {isIOwe ? '\u2212' : '+'} {fmtBDT(outstanding)}
+            {fmtBDT(outstanding)}
           </span>
           <span className="text-[10.5px] text-muted tabular">
             of {fmtBDT(d.total)} total

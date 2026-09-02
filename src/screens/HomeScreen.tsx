@@ -206,7 +206,8 @@ export function HomeScreen() {
  */
 function NetWorthTile({ current, projected }: { current: number; projected: number }) {
   const diff = projected - current;
-  const valueColor = current >= 0 ? 'text-info' : 'text-danger';
+  const isNegative = current < 0;
+  const valueColor = isNegative ? 'text-danger' : 'text-ink';
   const caption = current >= 0
     ? 'assets \u2212 liabilities'
     : 'liabilities exceed assets';
@@ -214,7 +215,7 @@ function NetWorthTile({ current, projected }: { current: number; projected: numb
     <div className="card">
       <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Net worth</div>
       <div className={`text-[24px] sm:text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${valueColor} break-words`}>
-        {fmtBDT(current)}
+        {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
       </div>
       {diff > 0 && (
         <div className="text-xs text-muted mt-2 tabular">

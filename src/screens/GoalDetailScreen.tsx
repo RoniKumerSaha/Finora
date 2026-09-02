@@ -143,7 +143,7 @@ export function GoalDetailScreen() {
       const newSaved = saved + amount;
       showBanner({
         kind: 'success',
-        what: `+ ${fmtBDT(contribAmount)} toward ${goal!.name}`,
+        what: `${fmtBDT(contribAmount)} toward ${goal!.name}`,
         why: 'Saved as a plan entry — your account balance is unchanged.',
         fix: `Saved is now ${fmtBDT(newSaved)} of ${fmtBDT(goal!.target)}.`,
       });

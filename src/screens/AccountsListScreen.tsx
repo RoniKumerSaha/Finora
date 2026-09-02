@@ -205,8 +205,8 @@ export function AccountsListScreen() {
                       {delta === 0
                         ? '— no change'
                         : delta > 0
-                          ? `↑ +${fmtBDT(delta)}`
-                          : `↓ −${fmtBDT(Math.abs(delta))}`}
+                          ? `↑ ${fmtBDT(delta)}`
+                          : `↓ ${fmtBDT(Math.abs(delta))}`}
                       {delta !== 0 && (
                         <span className="text-muted font-normal"> vs opening</span>
                       )}
