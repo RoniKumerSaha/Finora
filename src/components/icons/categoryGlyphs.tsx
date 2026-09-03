@@ -20,8 +20,14 @@
  *
  * Naming convention: each glyph is keyed by its primary label
  * (lowercase, kebab-case). Consumers call `<CategoryGlyph name="rent" />`
- * and the component looks up the right SVG. Unknown / legacy unicode
- * strings fall back to a generic tag.
+ * and the component looks up the right SVG.
+ *
+ * Unicode emoji passthrough: as of the 2026-09 revert, the data field
+ * `PlanCategory.emoji` (and `Category.emoji`) stores a literal unicode
+ * grapheme cluster (e.g. `'🏠'`), not a glyph key. When passed such a
+ * string, `<CategoryGlyph>` renders the emoji as text instead of
+ * forcing a SVG lookup — same call-site, just smarter rendering.
+ * Unknown kebab-case strings still fall back to the generic tag.
  */
 import type { SVGProps } from 'react';
 
@@ -1066,11 +1072,84 @@ export const CATEGORY_GLYPH_LIST: ReadonlyArray<{ key: string; label: string }> 
  * `<IconTile><CategoryGlyph ... /></IconTile>` or apply directly.
  */
 export interface CategoryGlyphProps extends Omit<SVGProps<SVGSVGElement>, 'viewBox' | 'fill' | 'stroke' | 'aria-hidden' | 'name'> {
-  /** Glyph key — see `CATEGORY_GLYPH_LIST` for the full vocabulary. */
+  /** Glyph key — see `CATEGORY_GLYPH_LIST` for the full vocabulary.
+   *  Unicode emoji strings (e.g. `'🏠'`) are rendered as text so the
+   *  same component works whether callers store a glyph key or a
+   *  literal emoji. */
   name?: string | null;
 }
 
+/**
+ * Detect a string that holds *only* one or more unicode grapheme
+ * clusters (anything outside the ASCII printables). Plan-category
+ * emojis are a single emoji grapheme, but be permissive — `'🌺🌿'`,
+ * `'🧑‍🏫'` (ZWJ sequence), and `'🛢️'` (VS-16) all read as a single
+ * "emoji" by users.
+ */
+function isLikelyUnicodeEmoji(value: string): boolean {
+  if (!value) return false;
+  // Anything outside 7-bit printable ASCII means it's a unicode glyph
+  // — which is exactly what a stored emoji is. ASCII-only strings are
+  // treated as kebab-case glyph keys (e.g. "rent", "service-charge").
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 126) return true;
+  }
+  return false;
+}
+
+/**
+ * Translate common Tailwind size classes (used by callers on
+ * `<CategoryGlyph>`) into a matching font-size for the emoji text
+ * path. Without this, an emoji inside `w-6 h-6` would render at the
+ * parent element's font-size and not fill its box. Anything we don't
+ * recognise falls back to a sensible 1.5em.
+ */
+function sizeClassToFontSize(className?: string): string {
+  if (!className) return '1.5em';
+  // Order matters: longer / explicit sizes must come before shorter
+  // matches (e.g. `w-[24px]` before `w-2`).
+  if (/w-\[(\d+)px\]/.test(className)) {
+    const m = className.match(/w-\[(\d+)px\]/);
+    if (m) return `${m[1]}px`;
+  }
+  if (/h-\[(\d+)px\]/.test(className)) {
+    const m = className.match(/h-\[(\d+)px\]/);
+    if (m) return `${m[1]}px`;
+  }
+  const map: Record<string, string> = {
+    'w-3': '0.75rem', 'h-3': '0.75rem',
+    'w-4': '1rem',    'h-4': '1rem',
+    'w-5': '1.25rem', 'h-5': '1.25rem',
+    'w-6': '1.5rem',  'h-6': '1.5rem',
+    'w-7': '1.75rem', 'h-7': '1.75rem',
+    'w-8': '2rem',    'h-8': '2rem',
+    'w-9': '2.25rem', 'h-9': '2.25rem',
+    'w-10': '2.5rem', 'h-10': '2.5rem',
+  };
+  for (const key of Object.keys(map)) {
+    if (className.includes(key)) return map[key];
+  }
+  return '1.5em';
+}
+
 export function CategoryGlyph({ name, className, ...rest }: CategoryGlyphProps) {
+  // Unicode emoji passthrough: the 2026-09 revert stores literal
+  // emoji strings in `category.emoji` and consumers render them
+  // directly. Detect that case (non-ASCII characters) and render as
+  // a sized span instead of forcing a glyph-key lookup that would
+  // otherwise fall back to the generic tag.
+  if (isLikelyUnicodeEmoji(name ?? '')) {
+    return (
+      <span
+        role="img"
+        aria-hidden
+        className={['inline-flex items-center justify-center leading-none', className].filter(Boolean).join(' ')}
+        style={{ fontSize: sizeClassToFontSize(className) }}
+      >
+        {name}
+      </span>
+    );
+  }
   const Comp = resolveGlyph(name);
   return <Comp className={className} {...rest} />;
 }

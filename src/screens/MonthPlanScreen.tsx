@@ -371,25 +371,16 @@ function JarTile({
 }) {
   const budget = Number(cat.budget) || 0;
   const hasBudget = budget > 0;
-  // Every card's ring fills 100% with a stable random colour drawn
-  // from the tonal palette (deterministic on the id, so reloads don't
-  // reshuffle the assignment). Planned-vs-budget no longer drives the
-  // ring — the body text shows the budget figure instead.
-  const ringColor = randomToneColor(cat.id);
-  // Inner disc is slightly smaller than the outer ring so the donut
-  // has a clear, readable band.
-  const ringOuter = 'w-[68px] h-[68px]';
-  const ringInner = 'w-[56px] h-[56px]';
 
   // Visual states:
   //   - Resting:       bordered, no extra overlay.
-  //   - Selected:      ring + tinted border to confirm "this opens the editor".
+  //   - Selected:      tinted border to confirm "this opens the editor".
   //   - Selection mode, picked:  primary-tinted bg + ring + filled checkbox.
-  //   - Selection mode, unpicked: muted checkbox hint, no ring.
+  //   - Selection mode, unpicked: muted checkbox hint, neutral border.
   // In selection mode we deliberately drop the hover-X delete button
   // — the user is in "pick a batch" mode, not "edit a card" mode.
   const showPickedOverlay = selectionMode && isSelectedForBatch;
-  const showEditorRing = !selectionMode && selected;
+  const showEditorHi = !selectionMode && selected;
   const accentBorder = showPickedOverlay
     ? 'border-primary ring-2 ring-primary'
     : selectionMode
@@ -405,7 +396,7 @@ function JarTile({
         onClick={onSelect}
         aria-pressed={selectionMode ? isSelectedForBatch : undefined}
         className={[
-          'w-full min-h-[110px] rounded-card border text-left pl-4 pr-9 py-3 flex items-center gap-3 transition',
+          'w-full min-h-[88px] rounded-card border text-left px-4 py-3 flex items-center gap-3 transition',
           selectionMode ? '' : 'hover:-translate-y-0.5',
           accentBorder,
         ].join(' ')}
@@ -413,30 +404,22 @@ function JarTile({
           background: showPickedOverlay
             ? 'color-mix(in srgb, var(--primary) 14%, var(--surface-2))'
             : 'var(--surface-2)',
-          boxShadow: showEditorRing
+          boxShadow: showEditorHi
             ? 'var(--shadow-planner-card-hi2)'
             : showPickedOverlay
               ? 'var(--shadow-planner-card-hi)'
               : 'var(--shadow-planner-card)',
         }}
       >
-        {/* Progress ring. Two layered circles: an outer ring and an
-            inner solid disc with the Direction-C pictogram. Always
-            fills 100% with a stable random colour — there's no
-            planned-vs-budget math driving it. */}
+        {/* Icon tile — plain transparent wrapper (no progress ring,
+            no filled disc). The emoji floats directly on the card so
+            it reads as a glyph, not a tile. Sits next to the name on
+            the same row. */}
         <span
           aria-hidden
-          className={`${ringOuter} rounded-full shrink-0 relative`}
-          style={{
-            background: ringColor,
-          }}
+          className="w-12 h-12 shrink-0 inline-flex items-center justify-center bg-transparent"
         >
-          <span
-            className={`${ringInner} rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-primary`}
-            style={{ background: 'var(--surface-2)' }}
-          >
-            <CategoryGlyph name={cat.emoji} className="w-[24px] h-[24px]" />
-          </span>
+          <CategoryGlyph name={cat.emoji} className="w-7 h-7 text-primary" />
         </span>
 
         {/* Body — title and budget figure. */}
@@ -646,9 +629,10 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
   }, [cat.id]);
 
   const budget = Number(cat.budget) || 0;
-  // Mini-preview mirrors the card: the ring is a solid 100% colour
-  // drawn from the same random palette, no planned-vs-budget math.
-  const ringColor = randomToneColor(cat.id);
+  // Mini-preview mirrors the card: the icon tile is a solid colour
+  // drawn from the same random palette, no ring/disc wrapping the
+  // emoji.
+  const tileColor = randomToneColor(cat.id);
 
   return createPortal(
     <div
@@ -706,18 +690,18 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               border: '1px solid var(--border)',
             }}
           >
-            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: ringColor }} />
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: tileColor }} />
             {budget > 0 ? 'Budget set' : 'No budget'}
           </span>
         </div>
 
-        {/* Mini-preview — mirrors the card in the grid. Same 68px
-            ring + body layout. Ring is a solid 100% fill in the
-            item's stable random colour so the preview matches what
-            the user sees on the grid card. */}
+        {/* Mini-preview — mirrors the card in the grid. Same flat
+            transparent icon-tile + body layout. The emoji floats
+            directly on the card so the preview matches what the user
+            sees on the grid card. */}
         <div className="my-3 flex justify-center">
           <div
-            className="w-full max-w-[300px] min-h-[110px] rounded-card border px-4 py-3 flex items-center gap-3"
+            className="w-full max-w-[300px] min-h-[88px] rounded-card border px-4 py-3 flex items-center gap-3"
             style={{
               background: 'var(--surface-2)',
               borderColor: 'var(--border)',
@@ -726,17 +710,9 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
           >
             <span
               aria-hidden
-              className="w-[68px] h-[68px] rounded-full shrink-0 relative"
-              style={{
-                background: ringColor,
-              }}
+              className="w-12 h-12 shrink-0 inline-flex items-center justify-center bg-transparent"
             >
-              <span
-                className="w-[56px] h-[56px] rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-primary"
-                style={{ background: 'var(--surface-2)' }}
-              >
-                <CategoryGlyph name={cat.emoji} className="w-7 h-7" />
-              </span>
+              <CategoryGlyph name={cat.emoji} className="w-7 h-7 text-primary" />
             </span>
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div
