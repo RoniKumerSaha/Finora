@@ -102,7 +102,7 @@ export function InvestmentsListScreen() {
                             <InvestTile size={16} type={inv.type} />
                             {inv.name}
                           </div>
-                          <Pill tone="muted" variant="solid">{inv.status}</Pill>
+                          <Pill tone="muted" variant="soft">{inv.status}</Pill>
                         </div>
                         <div className="text-[11.5px] text-muted tabular">
                           {fmtBDT(inv.principal)} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}

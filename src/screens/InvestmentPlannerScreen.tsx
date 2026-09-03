@@ -314,11 +314,11 @@ function InvestmentPlanCard({
             <Pill tone={cardTone} variant="solid">
               {isDps ? 'DPS' : plan.type === 'fdr' ? 'FDR' : 'Savings'}
             </Pill>
-            {/* PLANNED pill — solid muted tone so it reads as a state
+            {/* PLANNED pill — soft muted tone so it reads as a state
                 stamp rather than another category badge. Sits right
                 next to the type pill just like DPS does on the real
                 card. */}
-            <Pill tone="muted" variant="solid" title="This is a projection — no real money is involved.">
+            <Pill tone="muted" variant="soft" title="This is a projection — no real money is involved.">
               Planned
             </Pill>
           </div>
@@ -329,7 +329,7 @@ function InvestmentPlanCard({
             the title row's pills. */}
         {plan.dirty && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Pill tone="warn" variant="solid">Draft</Pill>
+            <Pill tone="warn" variant="soft">Draft</Pill>
           </div>
         )}
 

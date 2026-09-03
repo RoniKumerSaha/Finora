@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Home — Variant A · Hero strip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1411;
+    --surface: #161d19;
+    --surface-2: #1c2520;
+    --surface-3: #232c27;
+    --border: #243028;
+    --divider: #1f2723;
+    --ink: #e6ece8;
+    --muted: #95a39b;
+    --primary: #3ecf6c;
+    --primary-soft: #143420;
+    --primary-on: #07140b;
+    --danger: #f06b6b;
+    --danger-soft: #2a1414;
+    --accent: #f5b94d;
+    --accent-soft: #2a200f;
+    --info: #6aa6ff;
+    --info-soft: #14223b;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow: 0 4px 14px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+  .label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1.preview { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0; }
+  h1.preview strong { color: var(--ink); font-weight: 700; }
+  .preview-banner { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+  .preview-banner a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* Page heading row */
+  .heading-row { display: flex; align-items: flex-end; justify-content: space-between; }
+  .heading-row h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .heading-row .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 10px; background: var(--primary); color: var(--primary-on); font-weight: 700; font-size: 13px; border: 0; cursor: pointer; }
+
+  /* HERO — single tall card */
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(800px 200px at 0% 0%, rgba(62,207,108,0.08), transparent 60%);
+    pointer-events: none;
+  }
+  .hero-inner { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 32px; position: relative; }
+  .hero .kicker { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .info-btn { width: 16px; height: 16px; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; cursor: help; }
+  .hero .figure { font-size: 52px; font-weight: 800; letter-spacing: -0.03em; margin-top: 6px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .hero .figure .rupee { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .hero .delta { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--primary); }
+  .hero .delta .arrow { font-size: 11px; }
+  .hero .caption { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+
+  .hero-side { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .hero-side .label-sm { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .hero-side .v { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .v.up { color: var(--primary); }
+  .v.down { color: var(--danger); }
+
+  /* Stat rail — 4 columns, slim */
+  .rail {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .rail-cell { padding: 16px 20px; border-right: 1px solid var(--border); position: relative; }
+  .rail-cell:last-child { border-right: 0; }
+  .rail-cell .k { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .rail-cell .v { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; margin-top: 6px; }
+  .rail-cell .v .rupee { color: var(--muted); font-weight: 600; margin-right: 4px; }
+  .rail-cell .h { font-size: 11.5px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .rail-cell .h .info-btn { width: 14px; height: 14px; font-size: 9px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: var(--shadow-sm); }
+  .card h2 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); font-weight: 700; }
+  .card .action { float: right; color: var(--primary); font-size: 12.5px; font-weight: 600; text-decoration: none; }
+
+  /* Account row */
+  .row {
+    display: grid;
+    grid-template-columns: 44px minmax(0,1fr) auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  .row:first-of-type { border-top: 0; }
+  .tile { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 22px; line-height: 1; }
+  .tile.bank { color: var(--info); }
+  .tile.wallet { color: var(--info); background: var(--info-soft); }
+  .row .meta .name { font-weight: 700; font-size: 14px; }
+  .row .meta .sub { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .balance { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .balance.pos { color: var(--primary); }
+  .balance.neg { color: var(--danger); }
+  .balance.info { color: var(--info); }
+  .balance .rupee { color: var(--muted); font-weight: 600; margin-right: 2px; }
+  .overdraft-chip { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(240,107,107,0.35); font-weight: 700; }
+  .chev { color: var(--muted); opacity: 0; }
+  .row:hover .chev { opacity: 1; color: var(--primary); }
+
+  /* Activity row */
+  .act-row { display: grid; grid-template-columns: 44px minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--border); }
+  .act-row:first-of-type { border-top: 0; }
+  .act-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--danger); font-size: 18px; }
+  .act-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+  .act-title .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .act-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .act-sub strong { color: var(--ink); font-weight: 600; }
+  .tag { font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 800; padding: 2px 7px; border-radius: 4px; background: transparent; }
+  .tag.debt-out { color: var(--primary); border: 1px solid var(--primary); }
+  .tag.debt { color: var(--info); border: 1px solid var(--info); }
+  .tag.payout { color: var(--accent); border: 1px solid var(--accent); }
+  .act-amt { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+  .act-amt .rupee { color: var(--muted); font-weight: 600; margin-right: 2px; }
+  .act-amt .chev { display: inline-block; margin-left: 8px; font-size: 16px; vertical-align: middle; }
+
+  .insights-link { display: flex; justify-content: flex-end; padding-top: 4px; font-size: 12.5px; }
+  .insights-link a { color: var(--primary); font-weight: 600; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="preview">Preview · <strong>Home — Variant A · Hero strip</strong></h1>
+  <div class="preview-banner">
+    <span><span class="badge">VARIANT A</span> One hero card (Net worth) + slim 4-cell stat rail. Body copy collapsed to ⓘ tooltips.</span>
+    <span>Switch: <a href="./home-variant-b.html">Variant B →</a> · <a href="./home-variant-c.html">Variant C →</a></span>
+  </div>
+
+  <div class="heading-row">
+    <div>
+      <h1>Where is my money?</h1>
+      <div class="sub">Total across 5 accounts · updated just now</div>
+    </div>
+    <button class="add-btn">+ Add</button>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="kicker">Net worth <span class="info-btn" title="assets − liabilities">i</span></div>
+        <div class="figure"><span class="rupee">৳</span>7,65,288</div>
+        <div class="delta"><span class="arrow">▲</span> +৳12,520 vs last month</div>
+        <div class="caption">Money you actually have after subtracting what you owe.</div>
+      </div>
+      <div class="hero-side">
+        <div class="label-sm">Projection at maturity</div>
+        <div class="v up">+৳4,87,332</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAIL -->
+  <div class="rail">
+    <div class="rail-cell">
+      <div class="k">Cash <span class="info-btn" title="Sum of money across 5 accounts">i</span></div>
+      <div class="v"><span class="rupee">৳</span>2,15,388</div>
+      <div class="h">across 5 accts</div>
+    </div>
+    <div class="rail-cell">
+      <div class="k">Debts <span class="info-btn" title="What others owe you, net of what you owe">i</span></div>
+      <div class="v"><span class="rupee">৳</span>3,65,484</div>
+      <div class="h">owed to you</div>
+    </div>
+    <div class="rail-cell">
+      <div class="k">Investments <span class="info-btn" title="Locked in active schemes (DPS, FDR, savings)">i</span></div>
+      <div class="v"><span class="rupee">৳</span>1,30,111</div>
+      <div class="h">4 schemes</div>
+    </div>
+    <div class="rail-cell">
+      <div class="k">This month</div>
+      <div class="v"><span class="rupee">৳</span>17,932</div>
+      <div class="h">expenses · 4 entries</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h2>Accounts <a href="#" class="action">Manage →</a></h2>
+      <div style="margin-top: 8px;">
+        <div class="row">
+          <div class="tile">💼</div>
+          <div class="meta">
+            <div class="name">Cash</div>
+          </div>
+          <div><span class="overdraft-chip">Overdrawn</span></div>
+          <div class="balance neg"><span class="rupee">৳</span>26,725</div>
+          <div class="chev">›</div>
+        </div>
+        <div class="row">
+          <div class="tile bank">🏦</div>
+          <div class="meta">
+            <div class="name">Dutch-Bangla Bank</div>
+            <div class="sub">Bank account</div>
+          </div>
+          <div></div>
+          <div class="balance pos"><span class="rupee">৳</span>2,39,563</div>
+          <div class="chev">›</div>
+        </div>
+        <div class="row">
+          <div class="tile wallet">📱</div>
+          <div class="meta">
+            <div class="name">bKash</div>
+            <div class="sub">Mobile wallet</div>
+          </div>
+          <div></div>
+          <div class="balance info"><span class="rupee">৳</span>12,730</div>
+          <div class="chev">›</div>
+        </div>
+        <div class="row">
+          <div class="tile wallet">📱</div>
+          <div class="meta">
+            <div class="name">Nagad</div>
+            <div class="sub">Mobile wallet</div>
+          </div>
+          <div></div>
+          <div class="balance info"><span class="rupee">৳</span>3,500</div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent activity <a href="#" class="action">See all →</a></h2>
+      <div style="margin-top: 8px;">
+        <div class="act-row">
+          <div class="act-icon">↓</div>
+          <div class="meta">
+            <div class="act-title"><span class="name">EMI — DBBL Personal Loan</span><span class="tag debt-out">Debt payment</span></div>
+            <div class="act-sub"><strong>Today</strong> · Dutch-Bangla Bank</div>
+          </div>
+          <div class="act-amt"><span class="rupee">৳</span>16,607<span class="chev">›</span></div>
+        </div>
+        <div class="act-row">
+          <div class="act-icon">↓</div>
+          <div class="meta">
+            <div class="act-title"><span class="name">Received from Rahim</span><span class="tag debt">Debt received</span></div>
+            <div class="act-sub"><strong>Today</strong> · Cash</div>
+          </div>
+          <div class="act-amt"><span class="rupee">৳</span>107<span class="chev">›</span></div>
+        </div>
+        <div class="act-row">
+          <div class="act-icon">↓</div>
+          <div class="meta">
+            <div class="act-title"><span class="name">Groceries</span><span class="tag debt">Debt received</span></div>
+            <div class="act-sub"><strong>Today</strong> · Cash · Food</div>
+          </div>
+          <div class="act-amt"><span class="rupee">৳</span>107<span class="chev">›</span></div>
+        </div>
+        <div class="act-row">
+          <div class="act-icon">↓</div>
+          <div class="meta">
+            <div class="act-title"><span class="name">Principal parked in df</span><span class="tag payout">Payout</span></div>
+            <div class="act-sub"><strong>Yesterday</strong> · Cash</div>
+          </div>
+          <div class="act-amt"><span class="rupee">৳</span>1,111<span class="chev">›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insights-link"><a href="#">See full insights →</a></div>
+</div>
+</body>
+</html>

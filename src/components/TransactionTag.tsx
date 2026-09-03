@@ -51,9 +51,12 @@ export function deriveTag(tx: Props['tx']): TagKind | null {
 }
 
 const TAG_STYLES: Record<TagKind, { label: string; className: string }> = {
-  'payout':   { label: 'Payout',         className: 'bg-accent-soft text-accent' },
-  'debt-out': { label: 'Debt payment',   className: 'bg-primary-soft text-primary' },
-  'debt':     { label: 'Debt received',  className: 'bg-info-soft text-info' },
+  // Outline-only treatment — no soft fill, just a 1px tone border so
+  // the tag reads as a label rather than a coloured badge. The text
+  // picks up the same tone so legibility stays high in dark mode.
+  'payout':   { label: 'Payout',         className: 'border border-accent text-accent' },
+  'debt-out': { label: 'Debt payment',   className: 'border border-primary text-primary' },
+  'debt':     { label: 'Debt received',  className: 'border border-info text-info' },
 };
 
 interface FullProps extends Props {
@@ -76,7 +79,7 @@ export function TransactionTag({ tx, debtDirection }: FullProps) {
   const style = TAG_STYLES[kind];
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill text-[9.5px] font-bold uppercase tracking-[0.06em] leading-[1.5] ${style.className}`}
+      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill text-[9.5px] font-bold uppercase tracking-[0.06em] leading-[1.5] bg-transparent ${style.className}`}
       aria-label={`category: ${style.label.toLowerCase()}`}
     >
       {style.label}

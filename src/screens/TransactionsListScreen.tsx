@@ -209,6 +209,11 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
     direction === 'in'   ? 'text-primary'  // income → green
     : direction === 'out' ? 'text-danger'   // expense → red
     :                       'text-muted';   // transfer → muted
+  // Amount colour mirrors the arrow — green for income, red for
+  // expense, neutral ink for transfers. The amount is the most
+  // scanned element on the row, so colour redundancy with the
+  // arrow icon helps the eye lock onto direction at a glance,
+  // not just on hover.
   const amtColor =
     direction === 'in'   ? 'text-primary'  // income → green
     : direction === 'out' ? 'text-danger'   // expense → red

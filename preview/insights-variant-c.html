@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Insights · Investments — Variant C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1411;
+    --surface: #161d19;
+    --surface-2: #1c2520;
+    --surface-3: #232c27;
+    --border: #243028;
+    --divider: #1f2723;
+    --ink: #e6ece8;
+    --muted: #95a39b;
+    --primary: #3ecf6c;
+    --primary-soft: #143420;
+    --primary-on: #07140b;
+    --danger: #f06b6b;
+    --danger-soft: #2a1414;
+    --accent: #f5b94d;
+    --accent-soft: #2a200f;
+    --info: #6aa6ff;
+    --info-soft: #14223b;
+    --dps: #6fd4ff;
+    --dps-soft: #102a35;
+    --track: #1d2622;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow: 0 4px 14px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+
+  .label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0; }
+  h1 strong { color: var(--ink); font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge.dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--info); }
+  .preview-banner { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+  .preview-banner a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+  /* ------- CARD ------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 14px; box-shadow: var(--shadow-sm); }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 12px; }
+  .head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .tiles { display: grid; grid-template-columns: repeat(2, auto); gap: 0 28px; text-align: right; }
+  .tile-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .tile-value { font-size: 22px; font-weight: 800; margin-top: 4px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .tile-sub { font-size: 10.5px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  /* ------- ROW (Variant C) ------- */
+  .row {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    column-gap: 14px;
+    row-gap: 10px;
+    align-items: center;
+    padding: 16px 0 14px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .row:first-child { border-top: 0; }
+
+  /* Icon column spans top + progress + footer rows */
+  .icon-col { grid-row: 1 / span 3; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .tile { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 22px; line-height: 1; }
+  .tile.dps { color: var(--dps); }
+  .tile.fdr { color: var(--info); }
+  .tile.savings { color: var(--primary); }
+
+  /* Title row across cols 2 and 3 */
+  .meta { min-width: 0; grid-column: 2; grid-row: 1; }
+  .title { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+  .title .name { font-size: 14px; font-weight: 700; letter-spacing: -0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; }
+  .chip.fdr { color: var(--info); background: var(--info-soft); }
+  .chip.savings { color: var(--primary); background: var(--primary-soft); }
+  .chip.dps { color: var(--dps); background: var(--dps-soft); }
+  .chip.status { color: var(--accent); background: var(--accent-soft); }
+  .chip.status.active { color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); }
+  .chip.status.pct { color: var(--primary); background: var(--primary-soft); border: 1px solid rgba(62,207,108,0.25); }
+
+  /* "Now" value column top-right */
+  .now { grid-column: 3; grid-row: 1; text-align: right; min-width: 110px; }
+  .now .v { font-size: 18px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1; }
+  .now .k { font-size: 9.5px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; margin-top: 4px; }
+  .chev { font-size: 20px; color: var(--muted); opacity: 0; transition: opacity .15s; }
+  .row:hover .chev { opacity: 1; color: var(--primary); }
+
+  /* Progress bar row spans cols 2 and 3 */
+  .progress-col { grid-column: 2 / 4; grid-row: 2; min-width: 0; }
+  .progress {
+    position: relative;
+    height: 8px;
+    background: var(--track);
+    border-radius: 999px;
+    overflow: visible;
+  }
+  .progress .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; }
+  .progress.fdr .fill { background: linear-gradient(90deg, var(--info), #8fc1ff); }
+  .progress.savings .fill { background: linear-gradient(90deg, var(--primary), #79e69c); }
+  .progress.dps .fill { background: linear-gradient(90deg, var(--dps), #98e0ff); }
+  .progress.matured .fill { background: linear-gradient(90deg, var(--accent), #ffd28a); }
+  .progress .marker {
+    position: absolute;
+    top: -3px; bottom: -3px;
+    width: 2px;
+    background: var(--ink);
+    border-radius: 1px;
+  }
+  .progress-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; color: var(--muted);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-labels .now-tag {
+    color: var(--accent); font-weight: 700;
+  }
+  .progress-labels .mat-tag {
+    color: var(--primary); font-weight: 600;
+  }
+
+  /* Footnote row spans cols 2 and 3 */
+  .foot { grid-column: 2 / 4; grid-row: 3; display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); }
+  .foot .left strong { color: var(--ink); font-weight: 600; }
+  .foot .right { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .footer { display: flex; justify-content: flex-end; padding: 10px 0 4px; font-size: 12.5px; }
+  .footer a { color: var(--primary); font-weight: 600; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  .rupee::before { content: '৳\00a0'; color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Preview · <strong>Insights › Investments — Variant C</strong></h1>
+  <div class="preview-banner">
+    <span><span class="badge dot">VARIANT C</span> Two-line row: header + progress strip + footer. Solves the DPS "৳0 principal" legibility problem.</span>
+    <span>Switch: <a href="./insights-variant-b.html">Variant B →</a></span>
+  </div>
+
+  <section class="card">
+    <div class="head">
+      <h2>Investments</h2>
+      <div class="tiles">
+        <div>
+          <div class="tile-label">Current value</div>
+          <div class="tile-value rupee" style="color: var(--accent);">1,84,416</div>
+          <div class="tile-sub">Money tied up now</div>
+        </div>
+        <div>
+          <div class="tile-label">At maturity</div>
+          <div class="tile-value rupee" style="color: var(--primary);">6,71,748</div>
+          <div class="tile-sub">Projection</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 1 — matured FDR (100% green-to-gold) -->
+    <div class="row">
+      <div class="icon-col"><div class="tile fdr">📈</div></div>
+      <div class="meta">
+        <div class="title">
+          <span class="name">BRAC FDR</span>
+          <span class="chip fdr">FDR</span>
+          <span class="chip status">Matured</span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div class="now">
+        <div class="v rupee">54,000</div>
+        <div class="k">Now · at maturity</div>
+      </div>
+      <div class="progress-col">
+        <div class="progress matured"><div class="fill" style="width:100%;"></div></div>
+        <div class="progress-labels">
+          <span>0 principal</span>
+          <span class="now-tag">now 54k ◀</span>
+          <span class="mat-tag">matures 54k →</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span class="left"><strong>Claim it</strong> · matured</span>
+        <span class="right">Dutch-Bangla · ৳50,000 · 8% · 12 mo</span>
+      </div>
+    </div>
+
+    <!-- Row 2 — active FDR (just started, 0% filled) -->
+    <div class="row">
+      <div class="icon-col"><div class="tile fdr">📈</div></div>
+      <div class="meta">
+        <div class="title">
+          <span class="name">DBBL FDR</span>
+          <span class="chip fdr">FDR</span>
+          <span class="chip status active">Active</span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div class="now">
+        <div class="v rupee">1,00,000</div>
+        <div class="k">+৳7,500 to grow</div>
+      </div>
+      <div class="progress-col">
+        <div class="progress fdr">
+          <div class="fill" style="width:93%;"></div>
+          <div class="marker" style="left:93%;" title="today"></div>
+        </div>
+        <div class="progress-labels">
+          <span>0</span>
+          <span class="now-tag">today 1L ◀</span>
+          <span class="mat-tag">→ 1,07,500 in 12d</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span class="left"><strong>Maturing in 12 days</strong></span>
+        <span class="right">Dutch-Bangla · ৳1,00,000 · 7.5% · 12 mo</span>
+      </div>
+    </div>
+
+    <!-- Row 3 — Savings -->
+    <div class="row">
+      <div class="icon-col"><div class="tile savings">📈</div></div>
+      <div class="meta">
+        <div class="title">
+          <span class="name">df</span>
+          <span class="chip savings">Savings</span>
+          <span class="chip status active">Active</span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div class="now">
+        <div class="v rupee">1,111</div>
+        <div class="k">+৳1,111 to grow</div>
+      </div>
+      <div class="progress-col">
+        <div class="progress savings">
+          <div class="fill" style="width:50%;"></div>
+          <div class="marker" style="left:50%;" title="today"></div>
+        </div>
+        <div class="progress-labels">
+          <span>0</span>
+          <span class="now-tag">today 1,111 ◀</span>
+          <span class="mat-tag">→ 2,222 in 333d</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span class="left"><strong>Maturing in 333 days</strong></span>
+        <span class="right">Cash wallet · ৳1,111 · 11% · 11 mo</span>
+      </div>
+    </div>
+
+    <!-- Row 4 — DPS @ 28% contributed -->
+    <div class="row">
+      <div class="icon-col"><div class="tile dps">📈</div></div>
+      <div class="meta">
+        <div class="title">
+          <span class="name">BRAC Bank DPS</span>
+          <span class="chip dps">DPS</span>
+          <span class="chip status pct">28% in</span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div class="now">
+        <div class="v rupee">9,066</div>
+        <div class="k">+৳9,066 at maturity</div>
+      </div>
+      <div class="progress-col">
+        <div class="progress dps">
+          <div class="fill" style="width:28%;"></div>
+          <div class="marker" style="left:28%;" title="today"></div>
+        </div>
+        <div class="progress-labels">
+          <span>0 contributed</span>
+          <span class="now-tag">today 9,066 ◀</span>
+          <span class="mat-tag">→ ~18k at 9.5% APR</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span class="left"><strong>Maturing in 1013 days</strong></span>
+        <span class="right">Dutch-Bangla · 8.75% · 36 mo</span>
+      </div>
+    </div>
+
+    <!-- Row 5 — DPS @ 33% contributed -->
+    <div class="row">
+      <div class="icon-col"><div class="tile dps">📈</div></div>
+      <div class="meta">
+        <div class="title">
+          <span class="name">DBBL DPS</span>
+          <span class="chip dps">DPS</span>
+          <span class="chip status pct">33% in</span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+      <div class="now">
+        <div class="v rupee">20,239</div>
+        <div class="k">+৳20,239 at maturity</div>
+      </div>
+      <div class="progress-col">
+        <div class="progress dps">
+          <div class="fill" style="width:33%;"></div>
+          <div class="marker" style="left:33%;" title="today"></div>
+        </div>
+        <div class="progress-labels">
+          <span>0 contributed</span>
+          <span class="now-tag">today 20,239 ◀</span>
+          <span class="mat-tag">→ ~38k at 9.5% APR</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span class="left"><strong>Maturing in 1680 days</strong></span>
+        <span class="right">Dutch-Bangla · 9.5% · 60 mo</span>
+      </div>
+    </div>
+
+    <div class="footer"><a href="#">See all →</a></div>
+  </section>
+</div>
+</body>
+</html>

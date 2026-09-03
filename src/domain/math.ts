@@ -563,6 +563,16 @@ export function investmentValue(
 export interface NetWorth {
   currentNetWorth: number;
   projectedNetWorth: number;
+  /** Cash on hand across all accounts, evaluated at `now`. */
+  cash: number;
+  /** Sum of `investmentValue(...).currentValue` for every active investment. */
+  invCurrent: number;
+  /** Sum of `investmentValue(...).projectedValue` for every active investment. */
+  invProjected: number;
+  /** Sum of remaining principal on active `owed_to_me` debts. */
+  receivables: number;
+  /** Sum of remaining principal on active `i_owe` debts. */
+  oweRemaining: number;
 }
 
 export function computeNetWorth(
@@ -602,8 +612,13 @@ export function computeNetWorth(
   }
 
   return {
-    currentNetWorth: cash + invCurrent + receivables - oweRemaining,
+    currentNetWorth:   cash + invCurrent + receivables - oweRemaining,
     projectedNetWorth: cash + invProjected + receivables - oweRemaining,
+    cash,
+    invCurrent,
+    invProjected,
+    receivables,
+    oweRemaining,
   };
 }
 

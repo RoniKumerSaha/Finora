@@ -152,10 +152,10 @@ export function LoanCalculatorListScreen() {
                           {plan.name || 'Untitled loan'}
                         </div>
                         <Pill tone={loanPlanTone()} variant="solid">Loan</Pill>
-                        {/* PLANNED pill — solid muted tone so it reads as
+                        {/* PLANNED pill — soft muted tone so it reads as
                             a state stamp, not a category badge. Sits
                             right next to the Loan pill. */}
-                        <Pill tone="muted" variant="solid" title="This is a projection — no real loan has been taken.">
+                        <Pill tone="muted" variant="soft" title="This is a projection — no real loan has been taken.">
                           Planned
                         </Pill>
                       </div>
@@ -168,7 +168,7 @@ export function LoanCalculatorListScreen() {
                         inline in the main list. */}
                     {plan.dirty && (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <Pill tone="warn" variant="solid">Draft</Pill>
+                        <Pill tone="warn" variant="soft">Draft</Pill>
                       </div>
                     )}
 

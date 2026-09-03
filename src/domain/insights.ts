@@ -383,10 +383,22 @@ export function netWorthSeries(
     : start;
 
   const points: NetWorthPoint[] = [];
+  // For the *current* month we anchor the last point to "today" so the
+  // chart's most-recent point matches the Home hero's net worth exactly
+  // — both call `computeNetWorth` against the same unfiltered state at
+  // the same instant. Past months still use their end-of-month date so
+  // historical snapshots remain accurate.
+  const todayISO = new Date().toISOString().slice(0, 10);
   for (let i = 0; i < count; i++) {
     const d = new Date(Date.UTC(chartStart.getUTCFullYear(), chartStart.getUTCMonth() + i, 1));
     const endOfMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
-    const value = netWorthAt(state, endOfMonth);
+    const isCurrentMonth = d.getUTCFullYear() === new Date().getUTCFullYear()
+                        && d.getUTCMonth()    === new Date().getUTCMonth();
+    const value = isCurrentMonth
+      // Current month: today's snapshot on unfiltered state — matches Home.
+      ? computeNetWorth(state, todayISO).currentNetWorth
+      // Past months: end-of-month snapshot, future-dated txs filtered out.
+      : netWorthAt(state, endOfMonth);
     const y = d.getUTCFullYear();
     const m = d.getUTCMonth() + 1;
     points.push({

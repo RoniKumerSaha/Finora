@@ -45,10 +45,12 @@ import {
 import * as accounts from '../domain/accounts';
 import { AccountTypeIcon, accountTypeLabel, accountTone, accountBalanceColor } from '../components/AccountTypeIcon';
 import { ICON_TILE_CLASS } from '../components/icons/Icons';
-import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight, Close } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
 import { EmptyState, AccountsIllustration, TransactionsIllustration } from '../components/EmptyState';
-import { Stat, type StatTone } from '../components/Stat';
+// Note: the legacy Tile wrapper (Stat + StatTone) was removed along
+// with the 3+3 stat grid on 2026-09-03 — see its doc stub below.
+
 import { fmtBDT, fmtBDTSigned, fmtRelative } from '../lib/format';
 
 export function HomeScreen() {
@@ -72,7 +74,6 @@ export function HomeScreen() {
   const remainingOn = (d: typeof activeDebts[number]) => Math.max(0, (Number(d.total) || 0) - debtPaidSoFar(d, txs));
   const debtIOweRemaining      = activeDebts.filter(d => d.direction === 'i_owe').reduce((s, d) => s + remainingOn(d), 0);
   const debtOwedToMeRemaining  = activeDebts.filter(d => d.direction === 'owed_to_me').reduce((s, d) => s + remainingOn(d), 0);
-  const netDebt                = debtIOweRemaining - debtOwedToMeRemaining; // signed: + = I owe net, − = owed to me net
   const activeDebtCount = activeDebts.length;
 
   // Investments — sum of active principals. DPS-aware: dpsContributedSoFar
@@ -97,6 +98,19 @@ export function HomeScreen() {
     investments: state.investments,
   });
 
+  // Net worth delta vs last month — powers the hero's ▲ / ▼ caption.
+  // We re-run the same `computeNetWorth` against an `asOf` snapshot
+  // pinned to the last day of the previous month, so DPS contributions
+  // and any backdated txs are honoured by the same dual-value logic.
+  const lastMonthEnd = new Date(Date.UTC(y, m - 1, 0)); // day 0 of current month = last day of previous month
+  const lastMonthNetWorth = computeNetWorth({
+    accounts: state.accounts,
+    transactions: state.transactions,
+    debts: state.debts,
+    investments: state.investments,
+  }, lastMonthEnd).currentNetWorth;
+  const netWorthDelta = currentNetWorth - lastMonthNetWorth;
+
   const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
 
   return (
@@ -107,48 +121,73 @@ export function HomeScreen() {
         <div>
           <h1 className="heading h1-screen">Where is my money?</h1>
           <div className="text-muted text-[13px] mt-1.5">
-            {`Total across ${accList.length} account${accList.length === 1 ? '' : 's'} · updated just now`}
+            {`Net worth · ${accList.length === 1 ? 'across 1 account' : `across ${accList.length} accounts`} · updated just now`}
           </div>
         </div>
       </div>
 
-      {/* Row 1 — point-in-time assets: Total balance, Total debt, Total investments.
-         These are the "where my money lives right now" trio. Stacks to a
-         single column below sm (640px) so the 28px values don't overflow. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Tile label="Total balance" value={fmtBDT(totalBalance)} trend={accList.length === 0 ? 'no accounts yet' : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}.`} tone="primary" />
-        <Tile
-          label="Total debt"
-          value={fmtDebtMagnitude(netDebt)}
-          trend={
-            activeDebtCount === 0
-              ? 'no active debts'
-              : netDebt === 0
-                ? 'balanced'
-                : netDebt > 0
-                  ? `you owe net ${fmtBDT(Math.abs(netDebt))}`
-                  : `owed to you net ${fmtBDT(Math.abs(netDebt))}`
-          }
-          tone={netDebt > 0 ? 'out' : netDebt < 0 ? 'in' : 'neutral'}
+      {/* Variant B — Focus pair. The left tile is the headline answer
+          (net worth) at 2fr; the right tile is the supporting "this
+          month" summary at 1fr. Both stack to a single column below
+          sm (640px) so the 56px hero figure doesn't overflow. */}
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4">
+        <NetWorthHero
+          current={currentNetWorth}
+          projected={projectedNetWorth}
+          delta={netWorthDelta}
         />
-        <Tile
-          label="Total investments"
-          value={fmtBDT(totalInvestment)}
-          trend={investmentCount === 0 ? 'none yet' : `Money locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'} (DPS, FDR, savings).`}
-          tone="accent"
+        <ThisMonthCard
+          income={income}
+          expenses={expenses}
+          monthLabel={monthKeyLabel(y, m)}
+          entryCount={incomeCount + expenseCount}
         />
       </div>
 
-      {/* Row 2 — this-month activity + net worth: Income, Expense, Net worth.
-         The income/expense pair are the action-oriented duo; net worth
-         closes the section as the derived summary. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Tile label="Income (this month)"   value={fmtBDT(income)}    trend={`${incomeCount} ${incomeCount === 1 ? 'entry' : 'entries'}`} tone="in" />
-        <Tile label="Expenses (this month)" value={fmtBDT(expenses)} trend={`${expenseCount} entries`} tone="out" />
-        <NetWorthTile
-          current={currentNetWorth}
-          projected={projectedNetWorth}
-        />
+      {/* Variant B — Slim 4-up strip. The four pieces of the net worth
+          formula live here explicitly: Cash + Receivables + Investments
+          − Debts = currentNetWorth. Each cell carries its own tone so
+          the strip isn't a colourless rail; together they add up
+          audibly to the hero figure above. */}
+      <div className="card !p-0 overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+          <StripCell
+            label="Cash"
+            value={fmtBDT(totalBalance)}
+            hint={accList.length === 0
+              ? 'No accounts yet'
+              : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}`}
+            valueTone="primary"
+          />
+          <StripCell
+            label="Receivables"
+            value={fmtBDT(debtOwedToMeRemaining)}
+            hint={
+              activeDebtCount === 0 || debtOwedToMeRemaining === 0
+                ? 'no money owed to you'
+                : `Owed by ${activeDebts.filter(d => d.direction === 'owed_to_me').length} ${activeDebts.filter(d => d.direction === 'owed_to_me').length === 1 ? 'person' : 'people'}`
+            }
+            valueTone={debtOwedToMeRemaining > 0 ? 'primary' : 'ink'}
+          />
+          <StripCell
+            label="Debts"
+            value={fmtBDT(debtIOweRemaining)}
+            hint={
+              activeDebtCount === 0
+                ? 'no active debts'
+                : `You owe across ${activeDebts.filter(d => d.direction === 'i_owe').length} ${activeDebts.filter(d => d.direction === 'i_owe').length === 1 ? 'debt' : 'debts'}`
+            }
+            valueTone={debtIOweRemaining > 0 ? 'danger' : 'ink'}
+          />
+          <StripCell
+            label="Investments"
+            value={fmtBDT(totalInvestment)}
+            hint={investmentCount === 0
+              ? 'none yet'
+              : `Locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'}`}
+            valueTone="accent"
+          />
+        </div>
       </div>
 
       {/* Accounts + Recent activity — stacks on mobile. */}
@@ -199,45 +238,177 @@ export function HomeScreen() {
 }
 
 /**
- * Net worth tile — headline is the current value (money you have now);
- * the projected value follows as a muted sub-line when active
- * investments would grow it. The split keeps DPS users honest: a DPS
- * with one paid installment shows ৳X for current and ৳Y for projected,
- * so the headline can't pretend you already have the mature amount.
+ * NetWorthHero — the page's headline answer to "Where is my money?".
+ *
+ * 2026-09-03 redesign (Variant B): promoted from one of six equal
+ * tiles to the dominant focal card. The current figure sits at 56px
+ * (≈2× the old 28px), the +/- delta vs last month reads as a primary
+ * signal under the figure, and the projection (if any) anchors the
+ * right column as a quieter secondary number.
+ *
+ * Colour rule: positive delta in primary green, negative in danger
+ * red. Negative net worth itself is also red — same red on the
+ * figure and the delta is fine because the figure's sign already
+ * tells the story; the delta's colour carries the *trend*.
  */
-function NetWorthTile({ current, projected }: { current: number; projected: number }) {
-  const diff = projected - current;
+function NetWorthHero({ current, projected, delta }: { current: number; projected: number; delta: number }) {
   const isNegative = current < 0;
-  const valueColor = isNegative ? 'text-danger' : 'text-ink';
-  const caption = current >= 0
-    ? 'assets \u2212 liabilities'
-    : 'liabilities exceed assets';
+  const hasProjection = projected > current;
+  const deltaAbs = Math.abs(delta);
+  const deltaIsZero = Math.abs(delta) < 1;
+  const deltaUp = delta >= 0;
+  const deltaColor = deltaIsZero
+    ? 'text-muted'
+    : deltaUp
+      ? 'text-primary'
+      : 'text-danger';
   return (
-    <div className="card">
-      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Net worth</div>
-      <div className={`text-[24px] sm:text-[28px] font-bold mt-2.5 tracking-[-0.02em] tabular leading-none ${valueColor} break-words`}>
-        {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
-      </div>
-      {diff > 0 && (
-        <div className="text-xs text-muted mt-2 tabular">
-          {fmtBDT(projected)} at maturity <span className="opacity-70">(projection)</span>
+    <div className="card relative overflow-hidden">
+      {/* Soft tonal wash so the hero reads as the page's primary
+          surface without needing extra chrome. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background: 'radial-gradient(700px 200px at 0% 0%, rgba(245,185,77,0.10), transparent 60%)',
+        }}
+      />
+      <div className="relative grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-6 items-center">
+        <div className="min-w-0">
+          <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
+            Net worth
+          </div>
+          <div className={`mt-2 text-[44px] sm:text-[52px] font-extrabold tracking-[-0.03em] tabular leading-[1] ${isNegative ? 'text-danger' : 'text-accent'} break-words`}>
+            {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
+          </div>
+          {/* Delta vs last month — only show when there's a real
+              difference. Zero / undefined reads as "no change" so we
+              drop the row entirely instead of rendering "+৳0". */}
+          {!deltaIsZero && (
+            <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaColor}`}>
+              <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
+              <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
+              <span className="text-muted font-normal">vs last month</span>
+            </div>
+          )}
+          <div className="text-[12px] text-muted mt-1.5">
+            {isNegative ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
+          </div>
         </div>
-      )}
-      <div className="text-xs text-muted mt-1.5">{caption}</div>
+        {hasProjection && (
+          <div className="text-right">
+            <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+              Projection
+            </div>
+            <div className="text-[20px] sm:text-[24px] font-extrabold tabular text-primary mt-2 tracking-tight leading-none">
+              {`+${fmtBDT(projected - current)}`}
+            </div>
+            <div className="text-[11px] text-muted mt-1.5 tabular">
+              at maturity
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-/* ---------- helpers ---------- */
+/**
+ * ThisMonthCard — three-row summary of monthly cashflow that pairs
+ * with the NetWorthHero. Income / Expenses / Net saved as a clean
+ * three-row table with a footer carrying the month label and entry
+ * count, so the card stays informative when the user lands on a
+ * fresh month (Income/Expenses can both be ৳0 with "Sep 2026 · 0
+ * entries" in the footer).
+ */
+function ThisMonthCard({
+  income, expenses, monthLabel, entryCount,
+}: { income: number; expenses: number; monthLabel: string; entryCount: number }) {
+  const netSaved = income - expenses;
+  const netColor = netSaved > 0 ? 'text-primary' : netSaved < 0 ? 'text-danger' : 'text-ink';
+  return (
+    <div className="card flex flex-col gap-3">
+      <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
+        This month
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="text-[13px] text-ink font-semibold">Income</span>
+        <span className={`text-[17px] font-extrabold tabular tracking-tight ${income > 0 ? 'text-primary' : 'text-muted'}`}>
+          {fmtBDT(income)}
+        </span>
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="text-[13px] text-ink font-semibold">Expenses</span>
+        <span className={`text-[17px] font-extrabold tabular tracking-tight ${expenses > 0 ? 'text-danger' : 'text-muted'}`}>
+          {fmtBDT(expenses)}
+        </span>
+      </div>
+      <div className="flex justify-between items-baseline">
+        <span className="text-[13px] text-ink font-semibold">Net saved</span>
+        <span className={`text-[17px] font-extrabold tabular tracking-tight ${netColor}`}>
+          {netSaved === 0 ? '\u2014' : (netSaved > 0 ? '+' : '\u2212') + fmtBDT(Math.abs(netSaved))}
+        </span>
+      </div>
+      <div className="mt-auto pt-3 border-t border-border flex justify-between text-[11.5px] text-muted tabular">
+        <span>{monthLabel}</span>
+        <span>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
+      </div>
+    </div>
+  );
+}
 
 /**
- * BDT for the Total debt tile — always positive. The direction is
- * communicated by the caption ("you owe net" / "owed to you net"),
- * not by a sign prefix, so the value reads as a clean magnitude.
+ * StripCell — slim cell inside the 3-up Cash/Debts/Investments strip.
+ * Two-line cell: a small uppercase label, a 22px value, and a
+ * one-line muted hint. The value picks up a tone tied to its
+ * semantic bucket so the rail doesn't read as a colourless wall:
+ *   Cash         → primary green (positive — money you have)
+ *   Debts        → danger red when netDebt > 0 (you owe),
+ *                  primary green when netDebt < 0 (owed to you),
+ *                  neutral ink when netDebt === 0 (balanced)
+ *   Investments  → accent gold (locked, future-valued money)
+ *
+ * The `value` string carries the formatted figure; `valueTone` is an
+ * optional override — defaults to 'ink' for callers that don't pass
+ * a semantic bucket.
  */
-function fmtDebtMagnitude(n: number): string {
-  return fmtBDT(Math.abs(n));
+function StripCell({
+  label, value, hint, valueTone = 'ink',
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  valueTone?: 'primary' | 'danger' | 'accent' | 'ink';
+}) {
+  const valueColor =
+    valueTone === 'primary' ? 'text-primary' :
+    valueTone === 'danger'  ? 'text-danger'  :
+    valueTone === 'accent'  ? 'text-accent'  :
+                              'text-ink';
+  return (
+    <div className="px-5 py-4 min-w-0">
+      <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+        {label}
+      </div>
+      <div className={`mt-2 text-[20px] sm:text-[22px] font-extrabold tabular tracking-tight leading-none ${valueColor}`}>
+        {value}
+      </div>
+      {hint && (
+        <div className="text-[11.5px] text-muted mt-1.5 truncate">
+          {hint}
+        </div>
+      )}
+    </div>
+  );
 }
+
+/** "Sep 2026" — display form for the current month. */
+function monthKeyLabel(y: number, m: number): string {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[m - 1]} ${y}`;
+}
+
+/* ---------- helpers ---------- */
 
 function startsInMonth(iso: string, y: number, m: number): boolean {
   const d = new Date(iso + 'T00:00:00Z');
@@ -271,37 +442,20 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
 }
 
 /**
- * Tile — card surface around the shared <Stat>. The Home screen
- * renders every stat inside a card; centralising the chrome here
- * keeps the migration to the canonical Stat lossless.
+ * Tile — card surface around the shared <Stat>.
  *
- * Tone mapping (legacy → canonical):
+ * 2026-09-03 (Variant B): removed. The previous 3+3 stat grid was
+ * replaced by a focus pair (NetWorthHero + ThisMonthCard) and a slim
+ * 3-up StripCell rail, so the Tile wrapper has no remaining call
+ * sites. The Tone mapping it documented is preserved here for
+ * reference — other screens still rely on the same mapping when they
+ * pass a legacy `tone` prop to <Stat>.
+ *
  *   'in' / 'primary' / 'info' → primary
- *   'out'                    → danger
- *   'accent'                 → accent
- *   'neutral' / undefined    → ink
+ *   'out'                      → danger
+ *   'accent'                   → accent
+ *   'neutral' / undefined      → ink
  */
-function Tile({
-  label, value, trend, tone,
-}: {
-  label: string;
-  value: string;
-  trend?: string;
-  tone?: 'in' | 'out' | 'accent' | 'neutral' | 'primary' | 'info';
-}) {
-  const mapped: StatTone =
-    tone === 'out'    ? 'danger'  :
-    tone === 'in'     ? 'primary' :
-    tone === 'primary'? 'primary' :
-    tone === 'info'   ? 'primary' :
-    tone === 'accent' ? 'accent'  :
-                        'ink';
-  return (
-    <div className="card">
-      <Stat label={label} value={value} size="lg" tone={mapped} hint={trend} />
-    </div>
-  );
-}
 
 function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; name: string; type: string; balance: number; tone?: import('../components/AccountTypeIcon').AccountTone }) {
   // The balance number picks up the same tone as the icon so
@@ -341,18 +495,19 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
     : direction === 'out' ? 'text-danger'   // expense → red
     : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
     :                       'text-muted';    // transfer → muted
-  // On the home preview, transfer amounts color info-blue when the
-  // source account is a mobile wallet — so a bKash → Cash movement
-  // reads with the same blue family as the avatar tile instead of
-  // the default neutral ink.
+  // Amount colour mirrors the arrow direction so the most-scanned
+  // element on the row (the figure) carries direction at a glance.
+  // Transfers inherit the source-account family — info-blue for
+  // mobile_wallet (so a bKash → Cash movement reads as info, not
+  // generic ink), neutral ink otherwise.
   const amtColor =
     direction === 'in'   ? 'text-primary'  // income → green
     : direction === 'out' ? 'text-danger'   // expense → red
     : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
     :                       'text-ink';      // transfer → neutral
   return (
-    <div className="flex justify-between items-center py-3.5 border-b border-border last:border-0">
-      <div className="flex items-center gap-3">
+    <div className="group flex justify-between items-center py-3.5 border-b border-border last:border-0">
+      <div className="flex items-center gap-3 min-w-0">
         <div className={ICON_TILE_CLASS}>
           <span className={dirIconColor}>
             {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
@@ -360,7 +515,7 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
             {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
           </span>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
             <span className="min-w-0 truncate">{tx.note || cat?.name || tx.type}</span>
             <TransactionTag
@@ -368,13 +523,16 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
               debtDirection={tx.linkedDebtId ? state.debts.find((d: any) => d.id === tx.linkedDebtId)?.direction : undefined}
             />
           </div>
-          <div className="text-xs text-muted leading-tight mt-1">
+          <div className="text-xs text-muted leading-tight mt-1 truncate">
             {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''}
           </div>
         </div>
       </div>
-      <div className={`font-bold tabular text-[14px] ${amtColor}`}>
-        {fmtBDTSigned(tx.amount, direction)}
+      <div className="flex items-center gap-2 shrink-0">
+        <div className={`font-bold tabular text-[14px] ${amtColor}`}>
+          {fmtBDTSigned(tx.amount, direction)}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
       </div>
     </div>
   );

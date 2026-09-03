@@ -934,51 +934,82 @@ function InvestmentRow({
   current: number;
 }) {
   const days = inv.daysToMaturity;
-  const daysLabel = days <= 0 ? 'Matured' : `${days} ${days === 1 ? 'day' : 'days'}`;
+  const isMatured = days <= 0;
   const isDps = inv.type === 'dps';
   const typeTone = investmentTone(inv.type);
   const typeLabel = isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings';
+  // Variant B subtitle: a readable sentence in place of the old
+  // "X days · Account · ৳Y · Z% · Wmo" run. Matured rows get a
+  // "Ready to claim" callout; active rows show "Matures in N days".
+  const daysClause = isMatured
+    ? 'Ready to claim'
+    : `Matures in ${days} ${days === 1 ? 'day' : 'days'}`;
+  // The +Gain figure is what the user can still earn from this
+  // investment — surfaced explicitly so the row answers the question
+  // "what's the upside?" without forcing a hop to the detail screen.
+  const gain = Math.max(0, inv.maturityValue - current);
+  const hasGain = gain > 0;
   return (
     <Link
       to={`/investments/${inv.id}`}
-      className="group relative flex items-center gap-3 py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="group relative grid grid-cols-[44px_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-3.5 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       <span
         aria-hidden
         className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
         style={{ background: 'var(--primary)' }}
       />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {/* Icon tile — matches the Investments list card so the
-              Insights row reads as a sibling of the same row on the
-              list. Wrapped in an extra flex gap so the icon and the
-              title baseline line up. */}
-          <InvestTile type={inv.type} />
+      {/* Icon tile — same `<InvestTile>` the Investments list uses so
+          the Insights row reads as a sibling of the same row there. */}
+      <InvestTile type={inv.type} />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
           <div className="font-semibold text-[14px] tracking-tight truncate min-w-0">
             {inv.name}
           </div>
-          {/* DPS / FDR / Savings category stamp — same `<Pill>` every
-              list card uses, so the Insights investment row reads as
-              a sibling of the same row on the Investments list. */}
+          {/* Type stamp — FDR / DPS / Savings. */}
           <Pill tone={typeTone} variant="solid" className="shrink-0">
             {typeLabel}
           </Pill>
+          {/* Matured badge — replaces the old "(matured)" parenthetical
+              in the title. Only renders when the row has actually
+              matured (days ≤ 0). Accent tone for visibility so it pops
+              in the sort-by-maturity-first order. */}
+          {isMatured && (
+            <Pill tone="accent" variant="outline" className="shrink-0 px-1.5 py-[1px] text-[9.5px] tracking-[0.06em]">
+              Matured
+            </Pill>
+          )}
         </div>
         <div className="text-[11px] text-muted mt-1 tabular truncate">
-          {daysLabel}
+          <span className={isMatured ? 'text-accent font-semibold' : 'text-ink font-semibold'}>
+            {daysClause}
+          </span>
           {inv.payoutAccountName ? ` ${MIDDOT} ${inv.payoutAccountName}` : ''}
-          {' '}{MIDDOT} {fmtBDT(inv.principal)}
           {' '}{MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo
         </div>
       </div>
-      {/* Single "now" value — the Insights widget already surfaces
-          total + projection up top in the headline tiles, so the row
-          just shows what's tied up right now. No progress bar, no
-          at-maturity projection here — keep the row scannable. */}
-      <div className="text-[14px] font-bold tabular text-accent shrink-0">
-        {fmtBDT(current)}
+      {/* NOW metric — what the user has tied up right now. Accent so
+          it reads as the same figure the headline tile summarises. */}
+      <div className="text-right shrink-0 min-w-[88px]">
+        <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted font-bold">Now</div>
+        <div className="text-[15px] font-extrabold tabular text-accent leading-none mt-1 tracking-tight">
+          {fmtBDT(current)}
+        </div>
       </div>
+      {/* +GAIN metric — what the user can still earn from this row.
+          Hidden when zero (e.g. matured) so the column doesn't show a
+          useless "৳0". Primary green so it reads as upside, mirroring
+          the "At maturity" headline tile. */}
+      {hasGain && (
+        <div className="text-right shrink-0 min-w-[72px] pl-3.5 border-l border-border">
+          <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted font-bold">+Gain</div>
+          <div className="text-[15px] font-extrabold tabular text-primary leading-none mt-1 tracking-tight">
+            +{fmtBDT(gain)}
+          </div>
+        </div>
+      )}
+      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition shrink-0 ml-1" aria-hidden />
     </Link>
   );
 }
