@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Analytics — Variant B · 6-up denser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1411;
+    --surface: #161d19;
+    --surface-2: #1c2520;
+    --surface-3: #232c27;
+    --border: #243028;
+    --divider: #1f2723;
+    --ink: #e6ece8;
+    --muted: #95a39b;
+    --primary: #3ecf6c;
+    --primary-soft: #143420;
+    --primary-on: #07140b;
+    --danger: #f06b6b;
+    --danger-soft: #2a1414;
+    --accent: #f5b94d;
+    --accent-soft: #2a200f;
+    --info: #6aa6ff;
+    --info-soft: #14223b;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --track: #1d2622;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 16px; }
+  h1.preview { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0; }
+  h1.preview strong { color: var(--ink); font-weight: 700; }
+  .preview-banner { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+  .preview-banner a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--info); }
+
+  .heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .heading-row h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .heading-row .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .range-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 5px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .pill.active { background: var(--primary-soft); color: var(--primary); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(62,207,108,0.35); }
+
+  /* DENSE 3-up grid */
+  .row-3 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 768px) { .row-3 { grid-template-columns: 1fr 1fr 1fr; } }
+  .row-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 768px) { .row-2 { grid-template-columns: 2fr 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow-sm); }
+  .card-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .card-h h2 { margin: 0; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .card-h .sub { color: var(--muted); font-size: 11px; }
+  .now-pill { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .now-v { font-size: 16px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* Trajectory sparkline + KPI */
+  .traj { height: 100px; display: flex; align-items: flex-end; gap: 6px; padding: 4px 0 0; }
+  .traj .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .traj .bar { width: 100%; background: linear-gradient(180deg, var(--accent), #d49a35); border-radius: 3px 3px 0 0; }
+  .traj .lbl { font-size: 9.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* KPI grid */
+  .kpi { display: flex; flex-direction: column; gap: 4px; }
+  .kpi .k { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .kpi .v { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+  .kpi .d { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  .kpi .d.up { color: var(--primary); }
+  .kpi .d.down { color: var(--danger); }
+  .kpi .d.flat { color: var(--muted); }
+
+  /* Cash flow mini */
+  .cf { height: 110px; display: flex; align-items: flex-end; gap: 8px; padding: 4px 0 0; }
+  .cf .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .cf .bars { display: flex; gap: 2px; align-items: flex-end; height: 100%; width: 100%; justify-content: center; }
+  .cf .bar { flex: 1; border-radius: 3px 3px 0 0; min-width: 6px; }
+  .cf .bar.in { background: linear-gradient(180deg, var(--primary), #2da458); }
+  .cf .bar.out { background: linear-gradient(180deg, var(--danger), #c45151); }
+  .cf .lbl { font-size: 9.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Category bar list */
+  .cat-row { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--border); }
+  .cat-row:first-of-type { border-top: 0; }
+  .cat-row .glyph { width: 22px; height: 22px; border-radius: 6px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .cat-row .name { font-size: 12px; font-weight: 600; }
+  .cat-row .bar-track { position: relative; height: 6px; background: var(--track); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+  .cat-row .bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, var(--danger), #c45151); }
+  .cat-row .v { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); }
+
+  /* Trend lines */
+  .trend-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+  .trend-row:first-of-type { border-top: 0; }
+  .trend-row .lbl { font-size: 12px; font-weight: 600; }
+  .trend-row .hint { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+  .trend-row .v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .trend-row .v .rupee { color: var(--muted); font-weight: 600; margin-right: 2px; }
+  .delta { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 60px; text-align: right; }
+  .delta.up { color: var(--primary); }
+  .delta.down { color: var(--danger); }
+  .delta.flat { color: var(--muted); }
+
+  /* Sparkline buckets */
+  .bucket-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+  .bucket-row:first-of-type { border-top: 0; }
+  .bucket-row .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .bucket-row .lbl { font-size: 11.5px; font-weight: 600; }
+  .bucket-row .v { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bucket-row .spark { height: 22px; }
+  .bucket-row .spark svg { display: block; width: 100%; height: 100%; }
+
+  .small-note { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="preview">Preview · <strong>Analytics — Variant B · 6-up denser</strong></h1>
+  <div class="preview-banner">
+    <span><span class="badge">VARIANT B</span> 3-up dense grid (trajectory + KPIs / cashflow / categories / trends / bucket sparklines). More numbers, less whitespace.</span>
+    <span>Switch: <a href="./analytics-variant-a.html">Variant A →</a> · <a href="./analytics-variant-c.html">Variant C →</a></span>
+  </div>
+
+  <div class="heading-row">
+    <div>
+      <h1>Analytics</h1>
+      <div class="sub">Last 6 months · 5 entries this month</div>
+    </div>
+    <div class="range-pills">
+      <button class="pill">This month</button>
+      <button class="pill">Last 3 mo</button>
+      <button class="pill active">Last 6 mo</button>
+      <button class="pill">Last 12 mo</button>
+      <button class="pill">All time</button>
+    </div>
+  </div>
+
+  <!-- Row 1: Trajectory + Cash flow + Categories -->
+  <div class="row-3">
+    <!-- Trajectory -->
+    <div class="card">
+      <div class="card-h">
+        <h2>Net worth trajectory</h2>
+        <div class="sub">6 mo · Apr→Sep</div>
+      </div>
+      <div class="traj">
+        <div class="col"><div class="bar" style="height: 32%;"></div><div class="lbl">Apr</div></div>
+        <div class="col"><div class="bar" style="height: 36%;"></div><div class="lbl">May</div></div>
+        <div class="col"><div class="bar" style="height: 28%;"></div><div class="lbl">Jun</div></div>
+        <div class="col"><div class="bar" style="height: 24%;"></div><div class="lbl">Jul</div></div>
+        <div class="col"><div class="bar" style="height: 26%;"></div><div class="lbl">Aug</div></div>
+        <div class="col"><div class="bar" style="height: 48%;"></div><div class="lbl">Sep</div></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 10px;">
+        <div>
+          <div class="kpi" style="display: block;">
+            <span class="now-pill">Now</span>
+            <span class="now-v">৳ −83,589</span>
+          </div>
+        </div>
+        <div class="kpi">
+          <span class="k">Best</span>
+          <span class="v" style="color: var(--primary);">+৳ 1.8L</span>
+        </div>
+        <div class="kpi">
+          <span class="k">Worst</span>
+          <span class="v" style="color: var(--danger);">−৳ 1.0L</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cash flow -->
+    <div class="card">
+      <div class="card-h">
+        <h2>Income vs Expenses</h2>
+        <div class="sub">6 mo · grouped</div>
+      </div>
+      <div class="cf">
+        <div class="col"><div class="bars"><div class="bar in" style="height: 80%;"></div><div class="bar out" style="height: 30%;"></div></div><div class="lbl">Apr</div></div>
+        <div class="col"><div class="bars"><div class="bar in" style="height: 90%;"></div><div class="bar out" style="height: 28%;"></div></div><div class="lbl">May</div></div>
+        <div class="col"><div class="bars"><div class="bar in" style="height: 82%;"></div><div class="bar out" style="height: 45%;"></div></div><div class="lbl">Jun</div></div>
+        <div class="col"><div class="bars"><div class="bar in" style="height: 78%;"></div><div class="bar out" style="height: 60%;"></div></div><div class="lbl">Jul</div></div>
+        <div class="col"><div class="bars"><div class="bar in" style="height: 70%;"></div><div class="bar out" style="height: 65%;"></div></div><div class="lbl">Aug</div></div>
+        <div class="col"><div class="bars"><div class="bar in" style="height: 0%;"></div><div class="bar out" style="height: 80%;"></div></div><div class="lbl">Sep</div></div>
+      </div>
+      <div style="display: flex; gap: 14px; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 10px; font-size: 11px; color: var(--muted);">
+        <span><span style="display: inline-block; width: 8px; height: 8px; background: var(--primary); border-radius: 2px; margin-right: 4px; vertical-align: middle;"></span>Income</span>
+        <span><span style="display: inline-block; width: 8px; height: 8px; background: var(--danger); border-radius: 2px; margin-right: 4px; vertical-align: middle;"></span>Expense</span>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="card">
+      <div class="card-h">
+        <h2>Spending by category</h2>
+        <div class="sub">Top 6 + Other</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🛒</div>
+        <div>
+          <div class="name">Groceries</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 92%;"></div></div>
+        </div>
+        <div class="v">৳ 28,400</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">⛽</div>
+        <div>
+          <div class="name">Transport</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 78%;"></div></div>
+        </div>
+        <div class="v">৳ 24,200</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🍔</div>
+        <div>
+          <div class="name">Food & drink</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 64%;"></div></div>
+        </div>
+        <div class="v">৳ 19,800</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🏠</div>
+        <div>
+          <div class="name">Rent</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 58%;"></div></div>
+        </div>
+        <div class="v">৳ 18,000</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">💡</div>
+        <div>
+          <div class="name">Utilities</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 36%;"></div></div>
+        </div>
+        <div class="v">৳ 11,200</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">📱</div>
+        <div>
+          <div class="name">Mobile</div>
+          <div class="bar-track"><div class="bar-fill" style="width: 24%;"></div></div>
+        </div>
+        <div class="v">৳ 7,400</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Bucket sparklines + Trends -->
+  <div class="row-2">
+    <div class="card">
+      <div class="card-h">
+        <h2>Bucket sparklines</h2>
+        <div class="sub">Each component of net worth over time</div>
+      </div>
+      <div class="bucket-row">
+        <div style="min-width: 0;">
+          <div class="top"><span class="lbl">Cash</span><span class="v">৳ 15,388</span></div>
+          <div class="spark"><svg viewBox="0 0 200 22" preserveAspectRatio="none"><polyline fill="none" stroke="#3ecf6c" stroke-width="1.5" points="0,18 33,15 66,12 100,10 133,8 166,6 200,4"/></svg></div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div style="min-width: 0;">
+          <div class="top"><span class="lbl">Receivables</span><span class="v">৳ 54,000</span></div>
+          <div class="spark"><svg viewBox="0 0 200 22" preserveAspectRatio="none"><polyline fill="none" stroke="#3ecf6c" stroke-width="1.5" points="0,20 33,20 66,15 100,12 133,10 166,8 200,8"/></svg></div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div style="min-width: 0;">
+          <div class="top"><span class="lbl">Investments</span><span class="v">৳ 3,30,111</span></div>
+          <div class="spark"><svg viewBox="0 0 200 22" preserveAspectRatio="none"><polyline fill="none" stroke="#f5b94d" stroke-width="1.5" points="0,15 33,14 66,12 100,10 133,9 166,7 200,5"/></svg></div>
+        </div>
+      </div>
+      <div class="bucket-row">
+        <div style="min-width: 0;">
+          <div class="top"><span class="lbl">Debts (i owe)</span><span class="v">৳ 4,83,393</span></div>
+          <div class="spark"><svg viewBox="0 0 200 22" preserveAspectRatio="none"><polyline fill="none" stroke="#f06b6b" stroke-width="1.5" points="0,4 33,5 66,7 100,9 133,12 166,14 200,16"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <h2>Trends</h2>
+        <div class="sub">Aggregates</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Avg monthly expense</div>
+          <div class="hint">Over the range</div>
+        </div>
+        <div class="v">৳ 17,932</div>
+        <div class="delta down">▼ 4%</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Savings rate</div>
+          <div class="hint">(in − out) ÷ in</div>
+        </div>
+        <div class="v" style="color: var(--danger);">−62%</div>
+        <div class="delta down">▼ 14pp</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Invest. growth</div>
+          <div class="hint">All schemes</div>
+        </div>
+        <div class="v" style="color: var(--primary);">+৳ 1.0L</div>
+        <div class="delta up">▲ 31%</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Days runway</div>
+          <div class="hint">At current burn</div>
+        </div>
+        <div class="v">26d</div>
+        <div class="delta down">▼ 9d</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="small-note">ⓘ All numbers computed from the same source as Home. Goals / Debts / Investments lists live on their own screens.</div>
+</div>
+</body>
+</html>

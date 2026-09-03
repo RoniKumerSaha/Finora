@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Analytics — Variant C · Single tabbed chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1411;
+    --surface: #161d19;
+    --surface-2: #1c2520;
+    --surface-3: #232c27;
+    --border: #243028;
+    --divider: #1f2723;
+    --ink: #e6ece8;
+    --muted: #95a39b;
+    --primary: #3ecf6c;
+    --primary-soft: #143420;
+    --primary-on: #07140b;
+    --danger: #f06b6b;
+    --danger-soft: #2a1414;
+    --accent: #f5b94d;
+    --accent-soft: #2a200f;
+    --info: #6aa6ff;
+    --info-soft: #14223b;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --track: #1d2622;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+  h1.preview { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0; }
+  h1.preview strong { color: var(--ink); font-weight: 700; }
+  .preview-banner { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+  .preview-banner a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); }
+
+  .heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .heading-row h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .heading-row .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .range-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .pill.active { background: var(--primary-soft); color: var(--primary); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(62,207,108,0.35); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); overflow: hidden; }
+
+  /* Tab bar */
+  .tabs { display: flex; gap: 2px; padding: 6px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; flex: 1; text-align: center; transition: background .15s; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 0 var(--border); }
+
+  /* Chart body */
+  .chart-body { padding: 24px 28px 28px; }
+  .chart-h { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+  .chart-h .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); font-weight: 700; }
+  .chart-h .v { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; margin-top: 6px; }
+  .chart-h .v .rupee { color: var(--muted); font-weight: 600; margin-right: 4px; }
+  .chart-h .v.acc { color: var(--accent); }
+  .chart-h .v.neg { color: var(--danger); }
+  .chart-h .delta { font-size: 13px; font-weight: 600; margin-top: 6px; }
+  .chart-h .delta.up { color: var(--primary); }
+  .chart-h .delta.down { color: var(--danger); }
+
+  /* SVG line chart */
+  svg.chart { display: block; width: 100%; height: 280px; }
+  svg.chart .grid { stroke: var(--border); stroke-dasharray: 2 4; }
+  svg.chart .axis { stroke: var(--divider); }
+  svg.chart .axis-text { fill: var(--muted); font-size: 10px; font-family: inherit; }
+  svg.chart .area { fill: url(#g1); opacity: 0.6; }
+  svg.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
+  svg.chart .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+
+  /* Legend */
+  .legend { display: flex; gap: 18px; padding: 14px 28px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); }
+  .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* Sub-cards row under the chart */
+  .sub-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  @media (max-width: 600px) { .sub-row { grid-template-columns: 1fr; } }
+  .sub-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; }
+  .sub-card h3 { margin: 0 0 10px; font-size: 13.5px; font-weight: 700; }
+  .metric { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .metric:first-of-type { border-top: 0; }
+  .metric .k { font-size: 12px; font-weight: 600; }
+  .metric .hint { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .metric .v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+  .metric .v .rupee { color: var(--muted); font-weight: 600; margin-right: 2px; }
+
+  .small-note { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="preview">Preview · <strong>Analytics — Variant C · Single tabbed chart</strong></h1>
+  <div class="preview-banner">
+    <span><span class="badge">VARIANT C</span> One big tabbed chart: Net worth / Income vs Expenses / Categories / Trends. Click a tab, the chart morphs. Two supporting metric strips below.</span>
+    <span>Switch: <a href="./analytics-variant-a.html">Variant A →</a> · <a href="./analytics-variant-b.html">Variant B →</a></span>
+  </div>
+
+  <div class="heading-row">
+    <div>
+      <h1>Analytics</h1>
+      <div class="sub">Last 6 months · 5 entries this month</div>
+    </div>
+    <div class="range-pills">
+      <button class="pill">This month</button>
+      <button class="pill">Last 3 mo</button>
+      <button class="pill active">Last 6 mo</button>
+      <button class="pill">Last 12 mo</button>
+      <button class="pill">All time</button>
+    </div>
+  </div>
+
+  <!-- Single tabbed chart card -->
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active">Net worth</div>
+      <div class="tab">Income vs Expenses</div>
+      <div class="tab">Categories</div>
+      <div class="tab">Trends</div>
+    </div>
+
+    <div class="chart-body">
+      <div class="chart-h">
+        <div>
+          <div class="lbl">Net worth — month-end</div>
+          <div class="v acc"><span class="rupee">৳</span>−83,589</div>
+          <div class="delta up">▲ +৳ 2,01,111 vs last month</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="lbl">Range</div>
+          <div style="font-size: 13px; font-weight: 600; margin-top: 6px;">Apr 2026 → Sep 2026</div>
+        </div>
+      </div>
+
+      <svg class="chart" viewBox="0 0 800 280" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#f5b94d" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#f5b94d" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <line class="grid" x1="40" x2="780" y1="40"  y2="40"></line>
+        <line class="grid" x1="40" x2="780" y1="100" y2="100"></line>
+        <line class="grid" x1="40" x2="780" y1="160" y2="160"></line>
+        <line class="grid" x1="40" x2="780" y1="220" y2="220"></line>
+        <line class="axis" x1="40" x2="780" y1="250" y2="250"></line>
+        <!-- Y axis labels -->
+        <text class="axis-text" x="36" y="44" text-anchor="end">0</text>
+        <text class="axis-text" x="36" y="104" text-anchor="end">−1L</text>
+        <text class="axis-text" x="36" y="164" text-anchor="end">−2L</text>
+        <text class="axis-text" x="36" y="224" text-anchor="end">−3L</text>
+        <!-- Area + line: 6 month points -->
+        <path class="area" d="M 100,90 L 230,100 L 360,140 L 490,170 L 620,160 L 750,80 L 750,250 L 100,250 Z"></path>
+        <path class="line"  d="M 100,90 L 230,100 L 360,140 L 490,170 L 620,160 L 750,80"></path>
+        <!-- Dots -->
+        <circle class="dot" cx="100" cy="90"  r="4"></circle>
+        <circle class="dot" cx="230" cy="100" r="4"></circle>
+        <circle class="dot" cx="360" cy="140" r="4"></circle>
+        <circle class="dot" cx="490" cy="170" r="4"></circle>
+        <circle class="dot" cx="620" cy="160" r="4"></circle>
+        <circle class="dot" cx="750" cy="80"  r="6" fill="#f5b94d" stroke="#0e1411" stroke-width="3"></circle>
+        <!-- X labels -->
+        <text class="axis-text" x="100" y="270" text-anchor="middle">Apr</text>
+        <text class="axis-text" x="230" y="270" text-anchor="middle">May</text>
+        <text class="axis-text" x="360" y="270" text-anchor="middle">Jun</text>
+        <text class="axis-text" x="490" y="270" text-anchor="middle">Jul</text>
+        <text class="axis-text" x="620" y="270" text-anchor="middle">Aug</text>
+        <text class="axis-text" x="750" y="270" text-anchor="middle">Sep</text>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span class="item"><span style="display: inline-block; width: 10px; height: 2px; background: var(--accent);"></span>Net worth</span>
+      <span class="item" style="color: var(--muted);">Hover any point for that month's figure</span>
+      <span class="item" style="margin-left: auto;">6 months</span>
+    </div>
+  </div>
+
+  <!-- Two sub-cards -->
+  <div class="sub-row">
+    <div class="sub-card">
+      <h3>This month at a glance</h3>
+      <div class="metric">
+        <div>
+          <div class="k">Income</div>
+          <div class="hint">Sep 2026</div>
+        </div>
+        <div class="v" style="color: var(--muted);">৳ 0</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="k">Expenses</div>
+          <div class="hint">5 entries</div>
+        </div>
+        <div class="v" style="color: var(--danger);">৳ 2,17,932</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="k">Net saved</div>
+          <div class="hint">Income − expenses</div>
+        </div>
+        <div class="v" style="color: var(--danger);">−৳ 2,17,932</div>
+      </div>
+    </div>
+
+    <div class="sub-card">
+      <h3>Trends over the range</h3>
+      <div class="metric">
+        <div>
+          <div class="k">Avg monthly expense</div>
+          <div class="hint">Total ÷ months with activity</div>
+        </div>
+        <div class="v">৳ 17,932</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="k">Savings rate</div>
+          <div class="hint">(in − out) ÷ in</div>
+        </div>
+        <div class="v" style="color: var(--danger);">−62%</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="k">Days of runway</div>
+          <div class="hint">Cash ÷ daily burn</div>
+        </div>
+        <div class="v">26d</div>
+      </div>
+      <div class="metric">
+        <div>
+          <div class="k">Investment growth</div>
+          <div class="hint">All schemes · vs contributed</div>
+        </div>
+        <div class="v" style="color: var(--primary);">+৳ 1,02,233</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="small-note">ⓘ One chart, four lenses. Click a tab to morph the canvas. Goals / Debts / Investments lists live on their own screens.</div>
+</div>
+</body>
+</html>

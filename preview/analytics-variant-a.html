@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Analytics — Variant A · 4-up breathing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1411;
+    --surface: #161d19;
+    --surface-2: #1c2520;
+    --surface-3: #232c27;
+    --border: #243028;
+    --divider: #1f2723;
+    --ink: #e6ece8;
+    --muted: #95a39b;
+    --primary: #3ecf6c;
+    --primary-soft: #143420;
+    --primary-on: #07140b;
+    --danger: #f06b6b;
+    --danger-soft: #2a1414;
+    --accent: #f5b94d;
+    --accent-soft: #2a200f;
+    --info: #6aa6ff;
+    --info-soft: #14223b;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --track: #1d2622;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+  h1.preview { font-size: 13px; color: var(--muted); font-weight: 500; margin: 0; }
+  h1.preview strong { color: var(--ink); font-weight: 700; }
+  .preview-banner { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px dashed var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+  .preview-banner a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .heading-row h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .heading-row .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .range-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+  .pill.active { background: var(--primary-soft); color: var(--primary); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(62,207,108,0.35); }
+
+  /* Grid — 2-up on tablet, single column on mobile */
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .grid-2-1 { grid-column: span 2; }
+  @media (max-width: 767px) { .grid-2-1 { grid-column: span 1; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-sm); }
+  .card-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .card-h h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .card-h .sub { color: var(--muted); font-size: 11.5px; }
+
+  /* Trajectory chart */
+  .traj {
+    position: relative;
+    height: 220px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 8px 4px 0;
+  }
+  .traj .grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); }
+  .traj .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+  .traj .bar { width: 100%; background: linear-gradient(180deg, var(--accent), #d49a35); border-radius: 6px 6px 0 0; position: relative; }
+  .traj .bar.zero { background: var(--track); }
+  .traj .col .lbl { font-size: 10.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .traj .col .v { font-size: 11px; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+  .traj-legend { display: flex; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); }
+  .traj-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .kpi { padding: 0 8px; border-right: 1px solid var(--border); }
+  .kpi:last-child { border-right: 0; }
+  .kpi .k { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .kpi .v { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; margin-top: 4px; }
+  .kpi .d { font-size: 11px; margin-top: 2px; font-weight: 600; }
+  .kpi .d.up { color: var(--primary); }
+  .kpi .d.down { color: var(--danger); }
+
+  /* Cash flow (income vs expense) grouped bars */
+  .cf { position: relative; height: 200px; display: flex; align-items: flex-end; gap: 14px; padding: 8px 4px 0; }
+  .cf .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cf .bars { display: flex; gap: 4px; align-items: flex-end; height: 100%; width: 100%; justify-content: center; }
+  .cf .bar { flex: 1; border-radius: 4px 4px 0 0; min-width: 10px; }
+  .cf .bar.in { background: linear-gradient(180deg, var(--primary), #2da458); }
+  .cf .bar.out { background: linear-gradient(180deg, var(--danger), #c45151); }
+  .cf .col .lbl { font-size: 10.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .cf-legend { display: flex; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); }
+  .cf-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+  /* Spending by category */
+  .cat-row { display: grid; grid-template-columns: 80px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
+  .cat-row:first-of-type { border-top: 0; }
+  .cat-row .glyph { width: 28px; height: 28px; border-radius: 8px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .cat-row .name { font-size: 13px; font-weight: 600; }
+  .cat-row .bar-track { position: relative; height: 8px; background: var(--track); border-radius: 999px; overflow: hidden; }
+  .cat-row .bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, var(--danger), #c45151); }
+  .cat-row .pct { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 36px; }
+  .cat-row .v { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 90px; text-align: right; color: var(--ink); }
+
+  /* Trends panel */
+  .trend-row { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+  .trend-row:first-of-type { border-top: 0; }
+  .trend-row .lbl { font-size: 13px; font-weight: 600; }
+  .trend-row .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .trend-row .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .trend-row .v .rupee { color: var(--muted); font-weight: 600; margin-right: 2px; }
+  .trend-row .delta { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 70px; text-align: right; }
+  .delta.up { color: var(--primary); }
+  .delta.down { color: var(--danger); }
+  .delta.flat { color: var(--muted); }
+
+  .small-note { font-size: 11.5px; color: var(--muted); }
+  .empty-card { padding: 36px 22px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="preview">Preview · <strong>Analytics — Variant A · 4-up breathing</strong></h1>
+  <div class="preview-banner">
+    <span><span class="badge">VARIANT A</span> Trajectory (full-width) + Income vs Expenses + Categories + Trends. Lots of whitespace. Default range: 6 months.</span>
+    <span>Switch: <a href="./analytics-variant-b.html">Variant B →</a> · <a href="./analytics-variant-c.html">Variant C →</a></span>
+  </div>
+
+  <div class="heading-row">
+    <div>
+      <h1>Analytics</h1>
+      <div class="sub">Last 6 months · Apr 2026 → Sep 2026 · 5 entries this month</div>
+    </div>
+    <div class="range-pills">
+      <button class="pill">This month</button>
+      <button class="pill">Last 3 mo</button>
+      <button class="pill active">Last 6 mo</button>
+      <button class="pill">Last 12 mo</button>
+      <button class="pill">All time</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Trajectory (full width) -->
+    <div class="card grid-2-1">
+      <div class="card-h">
+        <div>
+          <h2>Net worth trajectory</h2>
+          <div class="sub">Month-end snapshots · future-dated transactions excluded</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Now</div>
+          <div style="font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">৳ −83,589</div>
+        </div>
+      </div>
+      <div class="traj">
+        <div class="grid-line" style="top: 25%;"></div>
+        <div class="grid-line" style="top: 50%;"></div>
+        <div class="grid-line" style="top: 75%;"></div>
+        <div class="col">
+          <div class="v">−2.1L</div>
+          <div class="bar" style="height: 32%;"></div>
+          <div class="lbl">Apr</div>
+        </div>
+        <div class="col">
+          <div class="v">−1.9L</div>
+          <div class="bar" style="height: 36%;"></div>
+          <div class="lbl">May</div>
+        </div>
+        <div class="col">
+          <div class="v">−2.4L</div>
+          <div class="bar" style="height: 28%;"></div>
+          <div class="lbl">Jun</div>
+        </div>
+        <div class="col">
+          <div class="v">−2.8L</div>
+          <div class="bar" style="height: 24%;"></div>
+          <div class="lbl">Jul</div>
+        </div>
+        <div class="col">
+          <div class="v">−2.6L</div>
+          <div class="bar" style="height: 26%;"></div>
+          <div class="lbl">Aug</div>
+        </div>
+        <div class="col">
+          <div class="v">−83k</div>
+          <div class="bar" style="height: 48%;"></div>
+          <div class="lbl">Sep</div>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="k">Avg / mo</div>
+          <div class="v" style="color: var(--ink);">৳ −2.1L</div>
+          <div class="d flat">trending</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Best month</div>
+          <div class="v" style="color: var(--primary);">৳ +1.8L</div>
+          <div class="d up">▲ Apr</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Worst month</div>
+          <div class="v" style="color: var(--danger);">৳ −1.0L</div>
+          <div class="d down">▼ Jul</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Income vs expense -->
+    <div class="card">
+      <div class="card-h">
+        <div>
+          <h2>Income vs Expenses</h2>
+          <div class="sub">Grouped by month · green = in, red = out</div>
+        </div>
+      </div>
+      <div class="cf">
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 80%;" title="Income 45,000"></div>
+            <div class="bar out" style="height: 30%;" title="Expenses 18,500"></div>
+          </div>
+          <div class="lbl">Apr</div>
+        </div>
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 90%;"></div>
+            <div class="bar out" style="height: 28%;"></div>
+          </div>
+          <div class="lbl">May</div>
+        </div>
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 82%;"></div>
+            <div class="bar out" style="height: 45%;"></div>
+          </div>
+          <div class="lbl">Jun</div>
+        </div>
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 78%;"></div>
+            <div class="bar out" style="height: 60%;"></div>
+          </div>
+          <div class="lbl">Jul</div>
+        </div>
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 70%;"></div>
+            <div class="bar out" style="height: 65%;"></div>
+          </div>
+          <div class="lbl">Aug</div>
+        </div>
+        <div class="col">
+          <div class="bars">
+            <div class="bar in" style="height: 0%;"></div>
+            <div class="bar out" style="height: 80%;"></div>
+          </div>
+          <div class="lbl">Sep</div>
+        </div>
+      </div>
+      <div class="cf-legend">
+        <span><span class="sw" style="background: var(--primary);"></span>Income</span>
+        <span><span class="sw" style="background: var(--danger);"></span>Expenses</span>
+      </div>
+    </div>
+
+    <!-- Spending by category -->
+    <div class="card">
+      <div class="card-h">
+        <div>
+          <h2>Spending by category</h2>
+          <div class="sub">Top 6 + Other · across the last 6 months</div>
+        </div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🛒</div>
+        <div>
+          <div class="name">Groceries</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 92%;"></div></div>
+        </div>
+        <div class="v">৳ 28,400</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">⛽</div>
+        <div>
+          <div class="name">Transport</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 78%;"></div></div>
+        </div>
+        <div class="v">৳ 24,200</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🍔</div>
+        <div>
+          <div class="name">Food & drink</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 64%;"></div></div>
+        </div>
+        <div class="v">৳ 19,800</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">🏠</div>
+        <div>
+          <div class="name">Rent</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 58%;"></div></div>
+        </div>
+        <div class="v">৳ 18,000</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">💡</div>
+        <div>
+          <div class="name">Utilities</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 36%;"></div></div>
+        </div>
+        <div class="v">৳ 11,200</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph">📱</div>
+        <div>
+          <div class="name">Mobile & internet</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 24%;"></div></div>
+        </div>
+        <div class="v">৳ 7,400</div>
+      </div>
+      <div class="cat-row">
+        <div class="glyph" style="background: var(--surface-3);">⋯</div>
+        <div>
+          <div class="name" style="color: var(--muted);">Other (4 categories)</div>
+          <div class="bar-track" style="margin-top: 6px;"><div class="bar-fill" style="width: 18%; background: var(--muted);"></div></div>
+        </div>
+        <div class="v" style="color: var(--muted);">৳ 5,500</div>
+      </div>
+    </div>
+
+    <!-- Trends -->
+    <div class="card grid-2-1">
+      <div class="card-h">
+        <div>
+          <h2>Trends</h2>
+          <div class="sub">Aggregates over the chosen range</div>
+        </div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Average monthly expense</div>
+          <div class="hint">Total out ÷ months with activity</div>
+        </div>
+        <div class="v"><span class="rupee">৳</span>17,932</div>
+        <div class="delta down">▼ 4% vs prior</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Savings rate</div>
+          <div class="hint">(income − expense) ÷ income · 0 if no income</div>
+        </div>
+        <div class="v" style="color: var(--danger);">−62%</div>
+        <div class="delta down">▼ 14pp</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Investment growth</div>
+          <div class="hint">Sum of (current − contributed) across active schemes</div>
+        </div>
+        <div class="v" style="color: var(--primary);">+৳ 1,02,233</div>
+        <div class="delta up">▲ 31%</div>
+      </div>
+      <div class="trend-row">
+        <div>
+          <div class="lbl">Days of runway</div>
+          <div class="hint">Cash ÷ daily avg expense · at current burn</div>
+        </div>
+        <div class="v" style="color: var(--ink);">26 days</div>
+        <div class="delta down">▼ 9 days</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="small-note">ⓘ Analytics is computed from the same source as Home — see the 4-up strip on Home for the underlying buckets. Goal / Debt / Investment lists live on their own screens.</div>
+</div>
+</body>
+</html>

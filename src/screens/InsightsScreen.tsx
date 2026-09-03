@@ -3,23 +3,21 @@
  *
  * Spine: docs/ux-designs/ux-finora-2026-08-14-analytics/EXPERIENCE.md
  *
- * Composed of six widgets in a fixed order:
- *   1. Stat row (3-up) — net flow, avg monthly expense, saved toward goals
- *   2. Cash flow chart — grouped bars, income (primary) + expense (danger)
- *   3. Spending by category — top 6 + Other
- *   4. Net worth trajectory — single line, primary
- *   5. Goals — active goals with progress bars
- *   6. Debts — active debts with ETA
- *   7. Investments — active investments with maturity countdown
+ * 2026-09-03 redesign (Variant A — 4-up breathing): the page now reads
+ * as an analytics dashboard. Goals / Debts / Investments card lists are
+ * gone — those live on /goals, /debts, /investments already. The header
+ * is "Insight" with a range-led sub-line. Layout: full-width Cash flow
+ * (hero), 2-up Spending + Net worth (compact), then full-width Trends.
  *
- * All widgets derive from the same in-memory state plus the chosen date
- * range. Date range is persisted to localStorage under
+ * Widgets derive from in-memory state plus the chosen date range.
+ * Date range is persisted to localStorage under
  * `finora.insights.range`. Default is "last 6 months".
  *
  * Privacy: no network requests. Pure local computation. Matches the
  * Finora local-first brand promise.
  */
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import {
@@ -28,28 +26,22 @@ import {
   RANGE_STORAGE_KEY,
   categoryBreakdown,
   computeStats,
-  debtsForInsights,
   earliestDate,
-  goalsForInsights,
-  investmentsForInsights,
   monthlyCashFlow,
   netWorthSeries,
   readRange,
   resolveRange,
   type DateRangeKey,
+  type StatRow,
 } from '../domain/insights';
-import { fmtBDT, fmtDate } from '../lib/format';
+import { fmtBDT } from '../lib/format';
 import {
-  investmentValue,
+  computeNetWorth,
+  dpsContributedSoFar,
+  dpsPaidOutSoFar,
+  investmentMaturityValueTyped,
 } from '../domain/math';
-import { ArrowUp, ArrowDown, ChevronRight, ICON_TILE_CLASS } from '../components/icons/Icons';
-import { InvestTile, GoalTile } from '../components/InvestLoanTile';
-import { Stat, type StatTone } from '../components/Stat';
 import { ProgressBar } from '../components/ProgressBar';
-import { Pill } from '../components/Pill';
-import { investmentTone } from '../lib/cardSurface';
-
-const MIDDOT = '\u00B7';
 
 export function InsightsScreen() {
   const state = useStore(s => s.state);
@@ -80,18 +72,18 @@ export function InsightsScreen() {
     () => netWorthSeries(state, range, rangeKey),
     [state, range, rangeKey]
   );
-  const goals = useMemo(() => goalsForInsights(state), [state]);
-  const debts = useMemo(() => debtsForInsights(state), [state]);
-  const investments = useMemo(() => investmentsForInsights(state), [state]);
 
-  const subLine = useMemo(() => formatRangeSubLine(rangeKey, range, state), [rangeKey, range, state]);
+  const subLine = useMemo(
+    () => formatRangeSubLine(rangeKey, range, state),
+    [rangeKey, range, state]
+  );
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
-          <h1 className="heading h1-screen">Insights</h1>
+          <h1 className="heading h1-screen">Insight</h1>
           <div className="text-muted text-[13px] mt-1.5 tabular">{subLine}</div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -106,90 +98,89 @@ export function InsightsScreen() {
         </div>
       </div>
 
-      {/* 1. Stat row (3-up) */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatTile
-          label="Net flow"
-          value={fmtBDT(stats.netFlow)}
-          tone={stats.netFlow >= 0 ? 'primary' : 'danger'}
-          caption={periodComparison(stats.netFlow, stats.netFlowPrev, rangeKey)}
-        />
-        <StatTile
-          label="Avg monthly expense"
-          value={fmtBDT(stats.avgMonthlyExpense)}
-          tone="danger"
-          caption={periodComparison(stats.avgMonthlyExpense, stats.avgMonthlyExpensePrev, rangeKey)}
-        />
-        <StatTile
-          label="Saved toward goals"
-          value={fmtBDT(stats.savedTowardGoals)}
-          tone="accent"
-          caption={periodComparison(stats.savedTowardGoals, stats.savedTowardGoalsPrev, rangeKey)}
-        />
-      </section>
+      {/* 2026-09-03 redesign (Variant A) — hero + 2-up:
+          - Cash flow goes full-width at the top — it's the most active
+            "what's happening" chart and earns the hero slot.
+          - Spending by category + Net worth share an equal-width
+            2-up strip below; Net worth is the compact variant (no KPI
+            strip beneath) so it doesn't compete with Cash flow.
+          - Trends sits full-width at the bottom — aggregates that
+            answer "how am I doing?" without forcing a click.
+          Goals / Debts / Investments cards were removed: those lists
+          live on /goals, /debts, /investments already. */}
 
-      {/* 2. Cash flow */}
+      {/* 1. Cash flow (hero, full-width) */}
       <section aria-label={`Cash flow over ${RANGE_LABELS[rangeKey]}`}>
         <CashFlowCard data={cashFlow} />
       </section>
 
-      {/* 3. Spending by category */}
+      {/* 2. Spending + Net worth (2-up, compact) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <SpendingCard rows={categories} />
-        <NetWorthCard data={netWorth} />
+        <section aria-label={`Net worth over ${RANGE_LABELS[rangeKey]}`}>
+          <NetWorthCard data={netWorth} compact />
+        </section>
       </section>
 
-      {/* 4. Goals, Debts, Investments */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <GoalsCard goals={goals} />
-        <DebtsCard debts={debts} />
+      {/* 3. Trends (full-width) */}
+      <section aria-label={`Trends over ${RANGE_LABELS[rangeKey]}`}>
+        <TrendsCard stats={stats} rangeKey={rangeKey} state={state} />
       </section>
-      <InvestmentsCard investments={investments} />
     </div>
   );
 }
 
 // ---------- Helpers ----------
 
+/**
+ * Sub-line under the page H1. Leads with the chosen range so the page
+ * reads as "Analytics · Last 6 months · Apr → Sep 2026" instead of an
+ * ambiguous date span.
+ */
 function formatRangeSubLine(
   key: DateRangeKey,
   range: { start: Date; end: Date },
   state: ReturnType<typeof useStore.getState>['state']
 ): string {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const rangeLabel = RANGE_LABELS[key];
   if (key === 'thisMonth') {
-    return `${months[range.start.getUTCMonth()]} ${range.start.getUTCFullYear()}`;
+    return `${rangeLabel} \u00B7 ${months[range.start.getUTCMonth()]} ${range.start.getUTCFullYear()}`;
   }
   if (key === 'all') {
     const e = earliestDate(state);
-    if (!e) return 'Since you started tracking';
+    if (!e) return rangeLabel;
     const startLabel = `${months[e.getUTCMonth()]} ${e.getUTCFullYear()}`;
     const endLabel = `${months[range.end.getUTCMonth()]} ${range.end.getUTCFullYear()}`;
-    return `${startLabel} \u2013 ${endLabel}`;
+    return `${rangeLabel} \u00B7 ${startLabel} \u2013 ${endLabel}`;
   }
   const startLabel = `${months[range.start.getUTCMonth()]} ${range.start.getUTCFullYear()}`;
   const endLabel = `${months[range.end.getUTCMonth()]} ${range.end.getUTCFullYear()}`;
-  return `${startLabel} \u2013 ${endLabel}`;
+  return `${rangeLabel} \u00B7 ${startLabel} \u2013 ${endLabel}`;
 }
 
-import type { ReactNode } from 'react';
-
 /**
- * Build a "vs previous period" caption. When the previous period has no
- * data, returns null (caller suppresses the caption).
+ * Build a "vs previous period" caption. Returns null when the previous
+ * period has no data (caller suppresses the caption) or when the
+ * comparison isn't meaningful for the current range key.
  *
- * 2026-09-02 — dropped the `+` / `−` sign prefix in favour of an
- * explicit arrow so the colour carries the direction (primary for
- * up, danger for down). The arrow is also more legible at small
- * sizes than a one-character sign.
+ * Drops the `+` / `−` sign prefix in favour of an explicit arrow so the
+ * colour carries the direction (primary for up, danger for down). The
+ * arrow is also more legible at small sizes than a one-character sign.
  */
-function periodComparison(current: number, previous: number, rangeKey: DateRangeKey): ReactNode {
+function periodComparison(
+  current: number,
+  previous: number,
+  rangeKey: DateRangeKey
+): ReactNode {
   if (rangeKey === 'thisMonth' || rangeKey === 'all') return null;
   if (previous === 0) return null;
   const diff = ((current - previous) / Math.abs(previous)) * 100;
-  const arrow = diff >= 0 ? '\u2191' : '\u2193'; // ↑ / ↓
+  const arrow = diff >= 0 ? '\u2191' : '\u2193';
   const abs = Math.abs(Math.round(diff));
-  const period = rangeKey === 'last3' ? '3 months' : rangeKey === 'last6' ? '6 months' : '12 months';
+  const period = rangeKey === 'last3'
+    ? '3 months'
+    : rangeKey === 'last6' ? '6 months' : '12 months';
   const arrowClass = diff >= 0 ? 'text-primary' : 'text-danger';
   return (
     <>
@@ -199,9 +190,11 @@ function periodComparison(current: number, previous: number, rangeKey: DateRange
   );
 }
 
-// ---------- Pill ----------
+// ---------- Range pill ----------
 
-function RangePill({ rangeKey, active, onSelect }: { rangeKey: DateRangeKey; active: boolean; onSelect: () => void }) {
+function RangePill({
+  rangeKey, active, onSelect,
+}: { rangeKey: DateRangeKey; active: boolean; onSelect: () => void }) {
   return (
     <button
       type="button"
@@ -218,33 +211,6 @@ function RangePill({ rangeKey, active, onSelect }: { rangeKey: DateRangeKey; act
     >
       {RANGE_LABELS[rangeKey]}
     </button>
-  );
-}
-
-// ---------- Stat tile ----------
-
-function StatTile({
-  label,
-  value,
-  tone,
-  caption,
-}: {
-  label: string;
-  value: string;
-  tone: 'primary' | 'danger' | 'ink' | 'accent' | 'info';
-  caption: ReactNode;
-}) {
-  // Tone mapping (legacy → canonical Stat tone):
-  //   'info' → 'primary' (info-blue used to convey "neutral positive",
-  //   which the canonical Stat collapses to primary). The Insights
-  //   screen never actually calls StatTile with 'info' — kept in the
-  //   signature for forward compatibility.
-  const mapped: StatTone =
-    tone === 'info' ? 'primary' : tone;
-  return (
-    <div className="card" role="group" aria-label={`${label}: ${value}${caption ? ', ' + caption : ''}`}>
-      <Stat label={label} value={value} size="xl" tone={mapped} hint={caption ?? undefined} />
-    </div>
   );
 }
 
@@ -278,10 +244,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
   // traces over them (slow). The dots set the pace — they fire on
   // a `dotPhase` timeline; the polyline starts once the last dot
   // has landed, then draws across the full chart width over
-  // `lineDraw`. The ratio (lineDraw ≫ dotPhase) makes the line the
-  // dominant motion of the chart — the dots are a quick setup, the
-  // line is the long, deliberate reveal. The `dataKey` is included
-  // on every animatable element so React remounts the polylines /
+  // `lineDraw`. The `dataKey` ensures React remounts the polylines /
   // dots when the period filter changes — without it, the animation
   // only fires once because the DOM nodes are reused.
   const prefersReduced =
@@ -293,6 +256,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
   const dataKey = bars[0] ? `${bars[0].year}-${bars[0].month}` : 'empty';
 
   const totalIncome = bars.reduce((s, b) => s + b.income, 0);
+  const totalExpense = bars.reduce((s, b) => s + b.expense, 0);
 
   const hoverBar = hover !== null ? bars[hover] : null;
   const hoverX = hover !== null ? xy(hover, 0)[0] : 0;
@@ -308,10 +272,12 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-muted">Income</span>
+            <span className="text-primary font-semibold">{fmtBDT(totalIncome)}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-danger" />
             <span className="text-muted">Expense</span>
+            <span className="text-danger font-semibold">{fmtBDT(totalExpense)}</span>
           </span>
         </div>
       </div>
@@ -384,26 +350,6 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               const [incX, incY] = xy(i, b.income);
               const [expX, expY] = xy(i, b.expense);
               const isHover = hover === i;
-              // Two-phase draw-in (continuation of the header comment).
-              //
-              // Phase 1 — dots: every dot pops in left-to-right across
-              // `dotPhase` (1200ms — fast). The dot's own pop takes
-              // `popMs`, so we stagger each dot's start time so they
-              // finish in sequence without overlap:
-              //
-              //   start_i = i × (dotPhase − popMs) / (n − 1)
-              //
-              // That way dot 0 begins at 0ms, the last dot begins at
-              // (dotPhase − popMs), and the last dot finishes exactly
-              // at dotPhase — which is also the moment the income
-              // line begins drawing.
-              //
-              // Phase 2 — line: the polylines animate `cashflow-draw`
-              // starting at dotPhase (income) and dotPhase + 200
-              // (expense), each running for `lineDraw` (5500ms —
-              // slow, deliberate). The expense dots trail the income
-              // dots by the same 200ms offset the expense line has on
-              // the income line, so every dot/line pair moves together.
               const popMs = 250;
               const lastDotStart = dotPhase - popMs;
               const dotDelay = prefersReduced
@@ -494,7 +440,9 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
             </div>
           )}
           <div className="flex justify-between items-center text-[11px] text-muted mt-2 tabular">
-            <span>{totalIncome > 0 ? `Total income ${fmtBDT(totalIncome)}` : ''}</span>
+            <span>Net cash flow <span className={totalIncome - totalExpense >= 0 ? 'text-primary font-semibold' : 'text-danger font-semibold'}>
+              {totalIncome - totalExpense >= 0 ? '+' : '\u2212'}{fmtBDT(Math.abs(totalIncome - totalExpense))}
+            </span></span>
             {totalMonths > cappedAt && (
               <span>Showing last {cappedAt} of {totalMonths} months</span>
             )}
@@ -514,7 +462,7 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
     <div className="card">
       <div className="flex justify-between items-end mb-3">
         <h2 className="heading h3-modal">Spending by category</h2>
-        <div className="text-[13px] text-muted tabular">{total > 0 ? `Total ${fmtBDT(total)}` : '—'}</div>
+        <div className="text-[13px] text-muted tabular">Total <span className="text-ink font-semibold">{fmtBDT(total)}</span></div>
       </div>
       {rows.length === 0 ? (
         <EmptyState
@@ -544,15 +492,41 @@ function SpendingCard({ rows }: { rows: ReturnType<typeof categoryBreakdown> }) 
 
 // ---------- Net worth ----------
 
-function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
+/**
+ * NetWorthCard — month-end net worth trajectory.
+ *
+ * 2026-09-03 redesign (Variant A — hero + 2-up):
+ *   - When `compact` is false (legacy / not used here), the card spans
+ *     the full content width with an Avg / Best / Worst KPI strip
+ *     underneath the chart.
+ *   - When `compact` is true (the only call site on /insights now, in
+ *     the 2-up strip next to Spending), the card drops the KPI strip
+ *     and the hover caption so it fits cleanly into half the row. The
+ *     chart height drops from 220 to 180 and the bar-width cap shrinks
+ *     proportionally so the trajectory reads as a compact glance, not
+ *     a half-hero.
+ *
+ * The "Now" figure on the right mirrors the Home hero so users can
+ * compare instantly. Bars grow from the zero line on mount; hover
+ * labels stay legible at the chart edges.
+ */
+function NetWorthCard({
+  data, compact = false,
+}: {
+  data: ReturnType<typeof netWorthSeries>;
+  compact?: boolean;
+}) {
   const { points } = data;
   const [hover, setHover] = useState<number | null>(null);
-  const W = 480;
-  const H = 220;
-  const PAD_L = 16;
-  const PAD_R = 16;
-  const PAD_T = 16;
-  const PAD_B = 24;
+  // The chart's viewBox width is fixed (1080) so the SVG scales
+  // smoothly regardless of the actual card width — full-row vs half-
+  // row — and the proportions stay identical across layouts.
+  const W = 1080;
+  const H = compact ? 180 : 220;
+  const PAD_L = compact ? 12 : 24;
+  const PAD_R = compact ? 12 : 24;
+  const PAD_T = 12;
+  const PAD_B = 22;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
 
@@ -563,12 +537,14 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
   const zeroY = PAD_T + innerH * (1 - (0 - minVal) / range);
 
   const monthWidth = innerW / Math.max(1, points.length);
-  const barWidth = Math.max(2, Math.min(28, (monthWidth - 8) * 0.6));
+  // In compact mode the bar width scales down so a half-row of 6 bars
+  // doesn't read as 6 huge rectangles.
+  const barWidthCap = compact ? 22 : 36;
+  const barWidth = Math.max(3, Math.min(barWidthCap, (monthWidth - 12) * 0.6));
 
   // Bar grow-in: each <rect> scales from 0 → 1 along its local Y axis,
   // anchored at the zero line so positive bars grow upward and negative
-  // bars grow downward. Same easing / per-index cadence as the progress
-  // bar so the Insights page feels unified.
+  // bars grow downward.
   const prefersReducedNw =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -577,15 +553,50 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
   const lastPoint = points[points.length - 1];
   const hoverPoint = hover !== null ? points[hover] : null;
 
+  // KPI strip — derived directly from the same `points` array the
+  // chart is rendering, so a Best/Worst/Avg triplet can never disagree
+  // with the bars. Only used in the full (non-compact) variant.
+  const kpi = useMemo(() => {
+    if (points.length === 0) {
+      return { avg: 0, best: { v: 0, label: '\u2014' }, worst: { v: 0, label: '\u2014' } };
+    }
+    const nonZero = points.filter(p => p.value !== 0);
+    if (nonZero.length === 0) {
+      return { avg: 0, best: { v: 0, label: '\u2014' }, worst: { v: 0, label: '\u2014' } };
+    }
+    let best = nonZero[0];
+    let worst = nonZero[0];
+    let sum = 0;
+    for (const p of nonZero) {
+      if (p.value > best.value) best = p;
+      if (p.value < worst.value) worst = p;
+      sum += p.value;
+    }
+    return {
+      avg: sum / nonZero.length,
+      best: { v: best.value, label: best.label.split(' ')[0] },
+      worst: { v: worst.value, label: worst.label.split(' ')[0] },
+    };
+  }, [points]);
+
   return (
     <div className="card">
-      <div className="flex justify-between items-end mb-3">
-        <div>
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="min-w-0">
           <h2 className="heading h3-modal">Net worth</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Real money now</div>
+          {!compact && (
+            <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Money in your hand at month-end</div>
+          )}
         </div>
-        <div className={`text-[22px] font-bold tabular ${lastPoint && lastPoint.value < 0 ? 'text-danger' : 'text-ink'}`}>
-          {lastPoint ? (lastPoint.value < 0 ? '\u2212' + fmtBDT(Math.abs(lastPoint.value)) : fmtBDT(lastPoint.value)) : '—'}
+        <div className="text-right shrink-0">
+          <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">Now</div>
+          <div className={`text-[22px] font-extrabold tabular tracking-tight leading-none mt-1 ${lastPoint && lastPoint.value < 0 ? 'text-danger' : 'text-accent'}`}>
+            {lastPoint
+              ? (lastPoint.value < 0
+                ? `\u2212${fmtBDT(Math.abs(lastPoint.value))}`
+                : fmtBDT(lastPoint.value))
+              : '\u2014'}
+          </div>
         </div>
       </div>
       {points.length === 0 || points.every(p => p.value === 0) ? (
@@ -710,307 +721,293 @@ function NetWorthCard({ data }: { data: ReturnType<typeof netWorthSeries> }) {
               );
             })}
           </svg>
-          {/* Bottom legend */}
-          {hoverPoint && (
+
+          {/* Bottom caption — hovered month, falls back to "Now" callout. */}
+          {hoverPoint ? (
             <div className="text-[11px] text-muted mt-2 tabular">
-              {hoverPoint.label}: <span className={`font-semibold ${hoverPoint.value < 0 ? 'text-danger' : 'text-ink'}`}>{hoverPoint.value < 0 ? '\u2212' + fmtBDT(Math.abs(hoverPoint.value)) : fmtBDT(hoverPoint.value)}</span>
+              {hoverPoint.label}:{' '}
+              <span className={`font-semibold ${hoverPoint.value < 0 ? 'text-danger' : 'text-ink'}`}>
+                {hoverPoint.value < 0
+                  ? `\u2212${fmtBDT(Math.abs(hoverPoint.value))}`
+                  : fmtBDT(hoverPoint.value)}
+              </span>
+            </div>
+          ) : (
+            <div className="text-[11px] text-muted mt-2 tabular">
+              Hover any bar for that month's figure.
             </div>
           )}
+
+          {/* KPI strip — Avg / Best / Worst. 3-up grid below the chart,
+              same canonical gap rhythm so the page reads as a single
+              composition. Tones: Best primary (upside), Worst danger
+              (the dip), Avg ink (neutral aggregate). */}
+          <div className="grid grid-cols-3 mt-4 -mx-2 px-2 pt-4 border-t border-border divide-x divide-border">
+            <div className="px-4 first:pl-0 last:pr-0">
+              <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+                Avg / month
+              </div>
+              <div className={`mt-1.5 text-[18px] font-extrabold tabular tracking-tight leading-none ${kpi.avg < 0 ? 'text-danger' : 'text-ink'}`}>
+                {kpi.avg < 0
+                  ? `\u2212${fmtBDT(Math.abs(kpi.avg))}`
+                  : fmtBDT(kpi.avg)}
+              </div>
+              <div className="text-[11.5px] text-muted mt-1 truncate">across {points.length} months</div>
+            </div>
+            <div className="px-4 first:pl-0 last:pr-0">
+              <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+                Best month
+              </div>
+              <div className="mt-1.5 text-[18px] font-extrabold tabular tracking-tight leading-none text-primary">
+                {kpi.best.v < 0
+                  ? `\u2212${fmtBDT(Math.abs(kpi.best.v))}`
+                  : `+${fmtBDT(kpi.best.v)}`}
+              </div>
+              <div className="text-[11.5px] text-muted mt-1 truncate">
+                {kpi.best.v >= 0 ? '\u25B2 ' : '\u25BC '}{kpi.best.label}
+              </div>
+            </div>
+            <div className="px-4 first:pl-0 last:pr-0">
+              <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+                Worst month
+              </div>
+              <div className="mt-1.5 text-[18px] font-extrabold tabular tracking-tight leading-none text-danger">
+                {kpi.worst.v < 0
+                  ? `\u2212${fmtBDT(Math.abs(kpi.worst.v))}`
+                  : `+${fmtBDT(kpi.worst.v)}`}
+              </div>
+              <div className="text-[11.5px] text-muted mt-1 truncate">
+                {kpi.worst.v <= 0 ? '\u25BC ' : '\u25B2 '}{kpi.worst.label}
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>
   );
 }
 
-// ---------- Goals ----------
+// ---------- Trends ----------
 
-function GoalsCard({ goals }: { goals: ReturnType<typeof goalsForInsights> }) {
-  // The widget caps the row list at 5 for visual density. When there are
-  // more goals than that, the header-right slot swaps from a passive
-  // "N active" count to an active "See all →" link so the extras don't
-  // become unreachable from this screen.
-  const overflow = goals.length > 5;
+/**
+ * TrendsCard — full-width aggregates strip at the bottom of /insights.
+ *
+ * Renders four "how am I doing?" metrics that fall out of the in-memory
+ * state without forcing a click. The four rows are intentionally
+ * derived from different domains so the user sees a single page-level
+ * summary instead of four unrelated tiles:
+ *
+ *   1. Avg monthly expense  — from `computeStats` (per-month aggregate).
+ *   2. Savings rate         — net flow ÷ income, computed inline so it
+ *                              can render even when the range key has
+ *                              no comparable previous period.
+ *   3. Days of runway       — total cash ÷ daily avg expense over the
+ *                              range. The same figure the Home Screen
+ *                              exposes, anchored here for at-a-glance
+ *                              trend visibility.
+ *   4. Investment growth    — sum of (maturity − contributed/principal)
+ *                              across active schemes, the same
+ *                              projection the Investments screen shows.
+ *
+ * Each row carries its own tone (primary / danger / accent) so the
+ * strip reads with the same semantic colour-coding as the rest of the
+ * analytics dashboard, and so a single row that's negative can't
+ * colour-wash the whole card. The "vs previous period" caption uses
+ * `periodComparison` so the same arrow/colour rule applies consistently.
+ */
+function TrendsCard({
+  stats, rangeKey, state,
+}: {
+  stats: StatRow;
+  rangeKey: DateRangeKey;
+  state: ReturnType<typeof useStore.getState>['state'];
+}) {
+  // Savings rate — (income − expense) ÷ income. When income is 0
+  // the rate is undefined, so we render a muted `—` instead of a
+  // misleading percentage. Comparisons are gated to ranges with a
+  // meaningful previous period (last3/last6/last12), so savings rate
+  // drops the "vs previous" caption on this month / all time.
+  const totalIncome = state.transactions
+    .filter(t => t.type === 'income')
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const totalExpense = state.transactions
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const netFlowSum = stats.netFlow;
+  const savingsRate = totalIncome > 0
+    ? (netFlowSum / totalIncome) * 100
+    : null;
+
+  // Days of runway — total cash across all accounts at `now`, divided
+  // by the user's daily average expense. We use the same computeNetWorth
+  // helper as Home so the figure matches the hero card there.
+  const cashNow = computeNetWorth(state).cash;
+  // Daily burn = total expense ÷ days in range. Falls back to "—"
+  // when there's no spend data so we don't divide by zero.
+  const dailyBurn = (() => {
+    if (state.transactions.length === 0) return 0;
+    let minDate = state.transactions[0].date;
+    let maxDate = state.transactions[0].date;
+    for (const t of state.transactions) {
+      if (t.date < minDate) minDate = t.date;
+      if (t.date > maxDate) maxDate = t.date;
+    }
+    const days = Math.max(
+      1,
+      Math.round((new Date(maxDate + 'T00:00:00Z').getTime() - new Date(minDate + 'T00:00:00Z').getTime()) / 86400000) + 1
+    );
+    return totalExpense / days;
+  })();
+  const daysRunway = dailyBurn > 0 ? Math.round(cashNow / dailyBurn) : null;
+
+  // Investment growth — sum of (maturity − contributed/principal) across
+  // active schemes. For DPS, contributed is `dpsContributedSoFar` (real
+  // money paid), not the original nominal principal; for FDR / savings
+  // we just use `Number(inv.principal)` because there's no installment
+  // stream.
+  const investedContributed = state.investments.reduce((s, inv) => {
+    if (inv.status !== 'active') return s;
+    if (inv.type === 'dps') {
+      return s + dpsContributedSoFar(inv, state.transactions);
+    }
+    return s + (Number(inv.principal) || 0);
+  }, 0);
+  const investedMaturity = state.investments.reduce((s, inv) => {
+    if (inv.status !== 'active') return s;
+    const projected = investmentMaturityValueTyped(inv);
+    const paidOut = inv.type === 'dps'
+      ? dpsPaidOutSoFar(inv, state.transactions)
+      : 0;
+    return s + Math.max(0, projected - paidOut);
+  }, 0);
+  const invGrowth = investedMaturity - investedContributed;
+  const hasInvestments = state.investments.some(inv => inv.status === 'active');
+
   return (
     <div className="card">
-      <div className="flex justify-between items-end mb-3">
-        <h2 className="heading h3-modal">Goals</h2>
-        {overflow
-          ? <Link to="/goals" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">See all {'\u2192'}</Link>
-          : <div className="text-[12px] text-muted tabular">{goals.length} active</div>}
-      </div>
-      {goals.length === 0 ? (
-        <EmptyState message="No active goals." cta={{ to: '/goals/add', label: 'Set a goal' }} />
-      ) : (
-        <div className="flex flex-col gap-1">
-          {goals.slice(0, 5).map((g, i) => <GoalRow key={g.id} goal={g} animDelay={i * 180} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GoalRow({ goal, animDelay = 0 }: { goal: ReturnType<typeof goalsForInsights>[number]; animDelay?: number }) {
-  return (
-    <Link
-      to={`/goals/${goal.id}`}
-      className="group relative flex items-center gap-3 py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-    >
-      <span
-        aria-hidden
-        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
-        style={{ background: 'var(--primary)' }}
-      />
-      <GoalTile />
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center gap-3">
-          <div className="font-semibold text-[14px] tracking-tight truncate">{goal.name}</div>
-          <div className="text-[13px] font-semibold tabular text-accent shrink-0">
-            {goal.perMonthLabel}
-          </div>
-        </div>
-        <div className="mt-2">
-          <ProgressBar value={goal.pct} height={8} animateOnMount animationDelay={animDelay} />
-        </div>
-        <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
-          <span>{goal.pct}% {MIDDOT} {fmtBDT(goal.saved)} / {fmtBDT(goal.target)}</span>
-          <span>by {fmtDate(goal.targetDate)}</span>
+      <div className="flex justify-between items-end mb-1">
+        <h2 className="heading h3-modal">Trends</h2>
+        <div className="text-[11.5px] text-muted">
+          Aggregates over the chosen range
         </div>
       </div>
-      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
-    </Link>
-  );
-}
-
-// ---------- Debts ----------
-
-function DebtsCard({ debts }: { debts: ReturnType<typeof debtsForInsights> }) {
-  // Header-right slot swaps from "N active" → "See all →" when the
-  // widget is hiding items. See GoalsCard for the rationale.
-  const overflow = debts.length > 5;
-  return (
-    <div className="card">
-      <div className="flex justify-between items-end mb-3">
-        <h2 className="heading h3-modal">Debts</h2>
-        {overflow
-          ? <Link to="/debts" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">See all {'\u2192'}</Link>
-          : <div className="text-[12px] text-muted tabular">{debts.length} active</div>}
+      <div className="mt-2">
+        <TrendRow
+          label="Average monthly expense"
+          hint="Total out across months with activity"
+          value={fmtBDT(stats.avgMonthlyExpense)}
+          valueTone="ink"
+          caption={periodComparison(stats.avgMonthlyExpense, stats.avgMonthlyExpensePrev, rangeKey)}
+        />
+        <TrendRow
+          label="Savings rate"
+          hint="(income − expense) ÷ income · 0 if no income"
+          value={
+            savingsRate === null
+              ? '\u2014'
+              : `${savingsRate > 0 ? '+' : savingsRate < 0 ? '\u2212' : ''}${Math.abs(Math.round(savingsRate))}%`
+          }
+          valueTone={
+            savingsRate === null ? 'ink'
+            : savingsRate > 0 ? 'primary'
+            : savingsRate < 0 ? 'danger'
+            : 'ink'
+          }
+        />
+        <TrendRow
+          label="Days of runway"
+          hint="Cash ÷ daily avg expense · at current burn"
+          value={daysRunway === null ? '\u2014' : `${daysRunway} d`}
+          valueTone={
+            daysRunway === null ? 'ink'
+            : daysRunway >= 30 ? 'primary'
+            : daysRunway >= 7 ? 'accent'
+            : 'danger'
+          }
+        />
+        <TrendRow
+          label="Investment growth"
+          hint={hasInvestments
+            ? 'Active schemes \u00B7 maturity − contributed'
+            : 'No active investments yet'}
+          value={hasInvestments
+            ? (invGrowth >= 0 ? `+${fmtBDT(invGrowth)}` : `\u2212${fmtBDT(Math.abs(invGrowth))}`)
+            : '\u2014'}
+          valueTone={
+            !hasInvestments ? 'ink'
+            : invGrowth > 0 ? 'primary'
+            : invGrowth < 0 ? 'danger'
+            : 'ink'
+          }
+        />
       </div>
-      {debts.length === 0 ? (
-        <EmptyState message="No active debts." />
-      ) : (
-        <div className="flex flex-col gap-1">
-          {debts.slice(0, 5).map((d, i) => <DebtRow key={d.id} debt={d} animDelay={i * 180} />)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DebtRow({ debt, animDelay = 0 }: { debt: ReturnType<typeof debtsForInsights>[number]; animDelay?: number }) {
-  const isOwed = debt.direction === 'owed_to_me';
-  // Gradient matches the goal-card treatment: progress-positive uses
-  // primary → accent; debt-reduction (i_owe) uses danger → warn. The
-  // All debt bars use the canonical primary → accent gradient —
-// the same one every progress bar in the app uses. The semantic
-// direction (owe vs owed-to-me) is already carried by the icon,
-// the arrow chip, the dollar colour, and the meta line; the bar
-// fill unifies the visual language across the app.
-  const chipColor = isOwed ? 'text-primary' : 'text-danger';
-  const remainingColor = isOwed ? 'text-primary' : 'text-danger';
-  return (
-    <Link
-      to={`/debts/${debt.id}/edit`}
-      className="group relative flex items-center gap-3 py-3 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-    >
-      <span
-        aria-hidden
-        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
-        style={{ background: 'var(--primary)' }}
-      />
-      <div className={ICON_TILE_CLASS}>
-        <span className={chipColor}>
-          {isOwed ? <ArrowUp className="w-5 h-5" /> : <ArrowDown className="w-5 h-5" />}
+<div className="mt-4 pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-[11.5px] text-muted">
+        <span className="min-w-0">Goal / Debt / Investment lists live on their own screens</span>
+        <span className="flex items-center gap-3 shrink-0">
+          <Link to="/goals" className="text-info font-semibold hover:underline underline-offset-2">Goals</Link>
+          <span className="text-muted/40" aria-hidden>{'\u00B7'}</span>
+          <Link to="/debts" className="text-danger font-semibold hover:underline underline-offset-2">Debts</Link>
+          <span className="text-muted/40" aria-hidden>{'\u00B7'}</span>
+          <Link to="/investments" className="text-primary font-semibold hover:underline underline-offset-2">Investments</Link>
         </span>
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center gap-3">
-          <div className="font-semibold text-[14px] tracking-tight truncate">{debt.name}</div>
-          <div className={`text-[13px] font-bold tabular shrink-0 ${remainingColor}`}>
-            {fmtBDT(debt.remaining)}
-          </div>
-        </div>
-        <div className="mt-2">
-          <ProgressBar value={debt.pct} height={4} animateOnMount animationDelay={animDelay} />
-        </div>
-        <div className="flex justify-between text-[11px] text-muted mt-1.5 tabular">
-          <span>{debt.pct}% paid {MIDDOT} {fmtBDT(debt.paid)} of {fmtBDT(debt.total)}</span>
-          <span>{debt.eta}</span>
-        </div>
-      </div>
-      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" aria-hidden />
-    </Link>
-  );
-}
-
-// ---------- Investments ----------
-
-function InvestmentsCard({ investments }: { investments: ReturnType<typeof investmentsForInsights> }) {
-  const state = useStore(s => s.state);
-  // Lookup table so each row's investment can be fetched in O(1)
-  // instead of an O(n) `Array.find`. `investmentValue` is computed
-  // once per item and shared with the row below.
-  const invById = new Map(state.investments.map(x => [x.id, x]));
-  let totalCurrent = 0;
-  let totalProjected = 0;
-  const rows = investments.map(inv => {
-    const full = invById.get(inv.id);
-    const current = full
-      ? investmentValue(full, state.transactions).currentValue
-      : Number(inv.principal) || 0;
-    // Per-row only needs `current` (the headline tiles up top still
-    // aggregate `totalProjected` for the At-maturity summary). The
-    // row no longer renders its own at-maturity figure or progress
-    // bar — keep it scannable.
-    totalCurrent += current;
-    totalProjected += inv.maturityValue;
-    return { inv, current };
-  });
-  const hasAny = investments.length > 0;
-  const showProjection = totalProjected - totalCurrent > 0;
-  return (
-    <div className="card">
-      <div className="flex justify-between items-end mb-3 gap-6">
-        <h2 className="heading h3-modal">Investments</h2>
-        <div className="grid grid-cols-2 gap-x-6 text-right">
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Current value</div>
-            <div className="text-[20px] font-bold tabular text-accent mt-1 leading-none tracking-[-0.02em]">
-              {fmtBDT(totalCurrent)}
-            </div>
-            <div className="text-[10px] text-muted mt-0.5 tabular">Money tied up now</div>
-          </div>
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">At maturity</div>
-            <div className="text-[20px] font-bold tabular text-primary mt-1 leading-none tracking-[-0.02em]">
-              {hasAny ? fmtBDT(totalProjected) : '\u2014'}
-            </div>
-            {hasAny && (
-              <div className="text-[10px] text-muted mt-0.5 tabular">
-                {showProjection ? 'Projection' : '— No growth —'}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      {investments.length === 0 ? (
-        <EmptyState
-          message="No active investments."
-          cta={{ to: '/investments/add', label: 'Add an investment' }}
-        />
-      ) : (
-        <>
-          <div className="flex flex-col gap-1">
-            {rows.slice(0, 5).map(({ inv, current }) => (
-              <InvestmentRow key={inv.id} inv={inv} current={current} />
-            ))}
-          </div>
-          {investments.length > 5 && (
-            <div className="flex justify-end pt-3">
-              <Link to="/investments" className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">
-                See all {'\u2192'}
-              </Link>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
 
-function InvestmentRow({
-  inv, current,
+/**
+ * TrendRow — one row inside TrendsCard.
+ *
+ * 2026-09-03 polish: collapsed the caption column into the value cell.
+ * Previously the row was a 3-col grid (label / value / caption) with
+ * a 140px-wide caption column that always rendered even when empty —
+ * leaving an awkward empty strip to the right of every value. Now the
+ * caption (when present) renders as a small muted sub-line *under* the
+ * value, so the row reads as a clean 2-up (label / value) with an
+ * optional explanatory chip below the figure.
+ *
+ * The label + hint stay grouped on the left in a single min-w-0 block
+ * so long hints truncate instead of forcing the row wider.
+ */
+function TrendRow({
+  label, hint, value, valueTone, caption,
 }: {
-  inv: ReturnType<typeof investmentsForInsights>[number];
-  current: number;
+  label: string;
+  hint: string;
+  value: string;
+  valueTone: 'primary' | 'danger' | 'accent' | 'ink';
+  caption?: ReactNode;
 }) {
-  const days = inv.daysToMaturity;
-  const isMatured = days <= 0;
-  const isDps = inv.type === 'dps';
-  const typeTone = investmentTone(inv.type);
-  const typeLabel = isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings';
-  // Variant B subtitle: a readable sentence in place of the old
-  // "X days · Account · ৳Y · Z% · Wmo" run. Matured rows get a
-  // "Ready to claim" callout; active rows show "Matures in N days".
-  const daysClause = isMatured
-    ? 'Ready to claim'
-    : `Matures in ${days} ${days === 1 ? 'day' : 'days'}`;
-  // The +Gain figure is what the user can still earn from this
-  // investment — surfaced explicitly so the row answers the question
-  // "what's the upside?" without forcing a hop to the detail screen.
-  const gain = Math.max(0, inv.maturityValue - current);
-  const hasGain = gain > 0;
+  const valueClass =
+    valueTone === 'primary' ? 'text-primary'
+    : valueTone === 'danger' ? 'text-danger'
+    : valueTone === 'accent' ? 'text-accent'
+    : 'text-ink';
   return (
-    <Link
-      to={`/investments/${inv.id}`}
-      className="group relative grid grid-cols-[44px_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-3.5 border-b border-border last:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-    >
-      <span
-        aria-hidden
-        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
-        style={{ background: 'var(--primary)' }}
-      />
-      {/* Icon tile — same `<InvestTile>` the Investments list uses so
-          the Insights row reads as a sibling of the same row there. */}
-      <InvestTile type={inv.type} />
+    // The value cell uses `minmax(0, auto)` instead of bare `auto` so
+    // it shrinks (not just sits at intrinsic width) — long figures like
+    // "+৳ 5,05,137" can't push the row past the card's right padding.
+    // `truncate` with `title` keeps the figure discoverable when it does
+    // overflow at very narrow widths.
+    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-3 sm:gap-6 items-center py-3 border-t border-border first:border-t-0">
       <div className="min-w-0">
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <div className="font-semibold text-[14px] tracking-tight truncate min-w-0">
-            {inv.name}
-          </div>
-          {/* Type stamp — FDR / DPS / Savings. */}
-          <Pill tone={typeTone} variant="solid" className="shrink-0">
-            {typeLabel}
-          </Pill>
-          {/* Matured badge — replaces the old "(matured)" parenthetical
-              in the title. Only renders when the row has actually
-              matured (days ≤ 0). Accent tone for visibility so it pops
-              in the sort-by-maturity-first order. */}
-          {isMatured && (
-            <Pill tone="accent" variant="outline" className="shrink-0 px-1.5 py-[1px] text-[9.5px] tracking-[0.06em]">
-              Matured
-            </Pill>
-          )}
-        </div>
-        <div className="text-[11px] text-muted mt-1 tabular truncate">
-          <span className={isMatured ? 'text-accent font-semibold' : 'text-ink font-semibold'}>
-            {daysClause}
-          </span>
-          {inv.payoutAccountName ? ` ${MIDDOT} ${inv.payoutAccountName}` : ''}
-          {' '}{MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo
-        </div>
+        <div className="text-[14px] font-semibold tracking-tight">{label}</div>
+        <div className="text-[11.5px] text-muted mt-0.5 truncate">{hint}</div>
       </div>
-      {/* NOW metric — what the user has tied up right now. Accent so
-          it reads as the same figure the headline tile summarises. */}
-      <div className="text-right shrink-0 min-w-[88px]">
-        <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted font-bold">Now</div>
-        <div className="text-[15px] font-extrabold tabular text-accent leading-none mt-1 tracking-tight">
-          {fmtBDT(current)}
+      <div className="text-right min-w-0 max-w-full">
+        <div
+          className={`text-[16px] sm:text-[18px] font-extrabold tabular tracking-tight leading-none ${valueClass}`}
+          title={value}
+        >
+          {value}
         </div>
-      </div>
-      {/* +GAIN metric — what the user can still earn from this row.
-          Hidden when zero (e.g. matured) so the column doesn't show a
-          useless "৳0". Primary green so it reads as upside, mirroring
-          the "At maturity" headline tile. */}
-      {hasGain && (
-        <div className="text-right shrink-0 min-w-[72px] pl-3.5 border-l border-border">
-          <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted font-bold">+Gain</div>
-          <div className="text-[15px] font-extrabold tabular text-primary leading-none mt-1 tracking-tight">
-            +{fmtBDT(gain)}
+        {caption && (
+          <div className="text-[11px] text-muted font-semibold tabular mt-1.5 truncate">
+            {caption}
           </div>
-        </div>
-      )}
-      <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition shrink-0 ml-1" aria-hidden />
-    </Link>
+        )}
+      </div>
+    </div>
   );
 }
 

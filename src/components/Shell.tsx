@@ -141,7 +141,7 @@ interface NavDef { to: string; label: string; Icon: (props: any) => JSX.Element 
 const NAV: NavDef[] = [
   { to: '/home',         label: 'Home',         Icon: NavHome },
   { to: '/plan',         label: 'Plan',         Icon: NavPlan },
-  { to: '/insights',     label: 'Insights',     Icon: NavInsights },
+  { to: '/insights',     label: 'Insight',      Icon: NavInsights },
   { to: '/transactions', label: 'Transactions', Icon: NavTransactions },
   { to: '/accounts',     label: 'Accounts',     Icon: NavAccounts },
   { to: '/goals',        label: 'Goals',        Icon: NavGoals },
