@@ -8,9 +8,27 @@
  * widths. Summary card pinned to the right at lg+ summarises the
  * remaining balance per direction (mirrors InvestmentsListScreen).
  *
- * Card shape (one row, on the left column):
+ * 2026-09-03 redesign: when a debt is loan-kind, the card mirrors
+ * the planned-loan card (`LoanCalculatorListScreen`) — same 4-row
+ * left zone (icon + name + Loan pill + "rate · term" + Principal /
+ * Interest you'll pay with mt-auto) and same right-zone
+ * "Monthly EMI / Total you pay" shape. Flat debts keep the original
+ * "I owe / Owed to me" + "Paid X of Y total" card.
+ *
+ * Card shape (loan-kind):
+ *   ┌─ [Bank]  City Bank Loan        [Loan]    ┌────────────┐
+ *   │                                            │ MONTHLY EMI│
+ *   │     9% APR · 12mo                          │ ৳8,742    │
+ *   │                                            ├────────────┤
+ *   │     Principal ৳87,418                      │OUTSTANDING │
+ *   │     Pay ৳4,900 interest                    │ ৳87,418    │
+ *   ├────────────────────────────────────────────┴────────────┤
+ *   │  ◯━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░  12% paid   [Pay now]│
+ *   └──────────────────────────────────────────────────────────┘
+ *
+ * Card shape (flat-kind):
  *   ┌─ I OWE                                          ┌────────────┐
- *   │  [↓] City Bank Loan                       │     │ ৳12,26,261│
+ *   │  [↓] Rahim                                │     │ ৳12,26,261│
  *   │       Paid ৳100 of ৳12,26,361 total     │     │   Remaining │
  *   │                                                 │  of ৳Y total│
  *   ├─────────────────────────────────────────────────┴────────────┤
@@ -24,7 +42,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
-import { loanPaymentSplit } from '../domain/math';
+import { loanEMI, loanPaymentSplit } from '../domain/math';
 import { Check, User } from '../components/icons/Icons';
 import { LoanPaymentModal } from './LoanPaymentModal';
 import { fmtBDT } from '../lib/format';
@@ -32,6 +50,8 @@ import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass } from '../lib/
 import { Pill } from '../components/Pill';
 import { ProgressBar } from '../components/ProgressBar';
 import { LoanTile } from '../components/InvestLoanTile';
+
+const MIDDOT = '\u00B7';
 
 export function DebtsListScreen() {
   const state = useStore(s => s.state);
@@ -146,7 +166,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   const isLoan = d.kind === 'loan';
   // Per-category tone — derived once and reused everywhere on the
   // card (wash, bar, icon tile, bold figure, pill, progress bar).
-  // Loan-kind debts override direction and use warn (amber).
   const cardTone = debtTone(d.direction, d.kind);
   const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
@@ -156,11 +175,18 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   const outstanding = isLoan
     ? debts.outstandingFor(d, state.transactions)
     : Math.max(0, d.total - (d.paidSoFar || 0));
-  const headlineLabel = isLoan ? 'Outstanding' : 'Remaining';
 
-  // For loan-kind debts with at least one payment: derive running
-  // totals and the last payment's split so the card can show both.
-  // Doing it once here avoids recomputing per-row in JSX.
+  // ── Loan-specific derived figures ──
+  // Loan cards mirror the planned-loan card layout (see
+  // LoanCalculatorListScreen), so the left-zone meta and right-zone
+  // hero need: APR, term, monthly EMI, total interest paid so far,
+  // and total principal paid so far. Computing these once here keeps
+  // the loan-branch JSX tight.
+  const rate = Number(d.interestRate) || 0;
+  const term = Number(d.termMonths) || 0;
+  const monthlyEmi = isLoan && term > 0
+    ? Math.round(loanEMI(Number(d.total) || 0, rate, term))
+    : 0;
   const linkedTx = isLoan
     ? state.transactions
         .filter(t => t.linkedDebtId === d.id)
@@ -170,7 +196,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   let totalInterest = 0;
   let totalPrincipal = 0;
   if (isLoan && linkedTx.length > 0) {
-    const rate = Number(d.interestRate) || 0;
     let out = Number(d.total) || 0;
     for (const t of linkedTx) {
       const matches =
@@ -183,7 +208,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
       out = Math.max(0, out - split.principal);
     }
   }
-  const hasPayments = linkedTx.length > 0;
 
   // Loan payment modal — opened from the Pay button on loan cards.
   const [payOpen, setPayOpen] = useState(false);
@@ -209,66 +233,100 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         aria-hidden
         className={`absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full pointer-events-none z-[1] ${leftBarClass(cardTone)}`}
       />
-      {/* Top row — horizontal split: identity (left) + remaining/outstanding
-          (right), separated by a 1px divider. Mirrors the investment card.
-          Padding tightened to pt-2.5 pb-2 + inner gap-1 (down from gap-1.5
-          + py-0.5) so the card reads as one line of identity plus a
-          compact second row. */}
+      {/* Top row — horizontal split: identity (left) + headline amount
+          (right), separated by a 1px divider. Mirrors the investment /
+          planned-loan card so the three surfaces read as one family. */}
       <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-2.5 pb-2">
-        {/* Left zone — direction tag, icon, name, meta. */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          {/* Direction tag — top-left, uppercase, muted. The first thing
-              the user scans so the polarity of the card is clear before
-              reading the number. */}
-          <div
-            className="text-[10.5px] text-muted uppercase tracking-[0.12em] font-semibold"
-            title={isIOwe ? 'You owe this person' : 'This person owes you'}
-          >
-            {directionLabel}
-            {isLoan && (
-              <Pill tone="danger" variant="solid" className="ml-2 align-middle">Loan</Pill>
-            )}
-          </div>
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* Loan-kind debts use the Bank pictogram (LoanTile); flat
-                debts use the User silhouette. The two silhouettes are
-                intentionally distinct so the user can tell loan from
-                personal IOU at a glance without reading the badge.
-                The wrapper is uniformly neutral; the icon itself is
-                tinted by direction: red for i_owe, green for
-                owed_to_me. */}
-            {isLoan ? (
-              <LoanTile />
-            ) : (
-              <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
-                <span className={isIOwe ? 'text-danger' : 'text-primary'}>
-                  <User className="w-[18px] h-[18px]" strokeWidth={2} />
-                </span>
+        {/* Left zone — identity, terms, totals. Two layouts selected
+            on `kind`. Loan-kind mirrors the planned-loan card exactly
+            so a planned and a real loan sit next to each other and
+            read as the same object differing only by the PLANNED pill. */}
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-1">
+          {isLoan ? (
+            <>
+              {/* Row 1: icon + name + Loan pill. No PLANNED pill —
+                  real loans are flagged by the card linking to the
+                  real edit screen, not by a state stamp. */}
+              <div className="flex items-center gap-2 min-w-0">
+                <LoanTile size={20} />
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
+                    {d.name}
+                  </div>
+                  <Pill tone={cardTone} variant="solid">Loan</Pill>
+                </div>
               </div>
-            )}
-            {/* Single-line name. Matches the investment / loan card
-                so short names don't reserve a phantom second line of
-                vertical space. Long names still truncate with ellipsis. */}
-            <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-              {d.name}
-            </div>
-          </div>
-          {/* V1.1 (L3.3): for loan-kind debts with payments, show
-              Paid · interest · principal on one row. Flat debts keep
-              the original "Paid X of Y total" wording. */}
-          <div className="text-[12px] text-muted tabular truncate">
-            {isLoan && hasPayments ? (
-              <>
-                Paid {fmtBDT(d.paidSoFar || 0)}
-                {' · '}
-                <span className="text-danger">{fmtBDT(totalInterest)}</span> interest
-                {' · '}
-                <span className={toneTextClass(cardTone)}>{fmtBDT(totalPrincipal)}</span> principal
-              </>
-            ) : (
-              <>Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total</>
-            )}
-          </div>
+
+              {/* Row 2: APR · term — the critical loan pair. Wrapped in
+                  a non-shrinking span so it never breaks across lines. */}
+              <div className="text-[12px] text-muted tabular truncate">
+                {rate > 0 && (
+                  <span className="shrink-0">{rate}% APR</span>
+                )}
+                {rate > 0 && term > 0 && <span> {MIDDOT} </span>}
+                {term > 0 && (
+                  <span className="shrink-0">{term}mo</span>
+                )}
+              </div>
+
+              {/* Row 3 (mt-auto): loan amount taken + interest paid so
+                  far on stacked rows so tokens don't split across
+                  lines. Mirrors the planned-loan card's
+                  Principal / Pay X interest layout — but for a real
+                  loan we want the *original borrowed amount*, not the
+                  remaining principal (which already lives in the
+                  right zone as "Outstanding"). */}
+              <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
+                <div className="tabular shrink-0">
+                  Loan amount <b className="text-ink font-semibold">{fmtBDT(d.total)}</b>
+                </div>
+                <div className="tabular shrink-0">
+                  Paid <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> interest
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Flat-kind layout — kept identical to the previous debt
+                  card: direction tag up top, icon + name on row 2,
+                  "Paid X of Y total" on row 3. */}
+              {/* Direction tag — top-left, uppercase, muted. The first
+                  thing the user scans so the polarity of the card is
+                  clear before reading the number. */}
+              <div
+                className="text-[10.5px] text-muted uppercase tracking-[0.12em] font-semibold"
+                title={isIOwe ? 'You owe this person' : 'This person owes you'}
+              >
+                {directionLabel}
+              </div>
+              <div className="flex items-center gap-2.5 min-w-0">
+                {/* Flat debts use the User silhouette tinted by
+                    direction (red for i_owe, green for owed_to_me). */}
+                <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
+                  <span className={isIOwe ? 'text-danger' : 'text-primary'}>
+                    <User className="w-[18px] h-[18px]" strokeWidth={2} />
+                  </span>
+                </div>
+                {/* Single-line name. Matches the investment / loan
+                    card so short names don't reserve a phantom second
+                    line of vertical space. Long names still truncate
+                    with ellipsis. */}
+                <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
+                  {d.name}
+                </div>
+              </div>
+              {/* Flat debts keep the original "Paid X of Y total"
+                  wording so users familiar with the previous card
+                  still see the same signal. */}
+              <div className="text-[12px] text-muted tabular truncate">
+                Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
+              </div>
+              {/* Spacer keeps the right-zone headline aligned with the
+                  name on loan-kind cards where the third row has
+                  more content. */}
+              <div className="mt-auto" />
+            </>
+          )}
         </div>
 
         {/* Vertical divider between identity and amounts. */}
@@ -278,21 +336,49 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
           style={{ background: 'var(--divider)' }}
         />
 
-        {/* Right zone — Outstanding/Remaining, right-aligned. flex flex-col +
-            items-end keeps the figures right-aligned; shrink-0 prevents
-            the right zone from being squeezed when the left zone gets
-            long names. z-[1] so any button in this zone stays clickable
+        {/* Right zone — headline amounts, right-aligned. Loan cards
+            get the planned-loan shape: Monthly EMI on top, Outstanding
+            below. Flat cards keep the single Outstanding / Remaining
+            block. z-[1] so any button in this zone stays clickable
             above the full-card <Link>. */}
-        <div className="relative z-[1] flex flex-col gap-1.5 items-end justify-center shrink-0">
-          <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-            {headlineLabel}
-          </span>
-          <span className={`font-bold tabular text-[24px] tracking-tight leading-none ${amtColor}`}>
-            {fmtBDT(outstanding)}
-          </span>
-          <span className="text-[10.5px] text-muted tabular">
-            of {fmtBDT(d.total)} total
-          </span>
+        <div className="relative z-[1] flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
+          {isLoan ? (
+            <>
+              <div className="flex flex-col items-end leading-none">
+                <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+                  Monthly EMI
+                </span>
+                <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${amtColor}`}>
+                  {monthlyEmi > 0 ? fmtBDT(monthlyEmi) : '—'}
+                </span>
+              </div>
+              <div className="flex flex-col items-end leading-none">
+                {/* Label + figure sit at white/70 + white — same treatment
+                    as the planned-loan card's "Total you pay" so the
+                    real and planned loan cards read as one family. The
+                    previous tone-coloured text landed red-on-red on the
+                    danger wash and disappeared into the gradient. */}
+                <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">
+                  Outstanding
+                </span>
+                <span className="font-bold tabular text-[15px] text-white mt-1">
+                  {fmtBDT(outstanding)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-1.5 items-end justify-center">
+              <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
+                Remaining
+              </span>
+              <span className={`font-bold tabular text-[24px] tracking-tight leading-none ${amtColor}`}>
+                {fmtBDT(outstanding)}
+              </span>
+              <span className="text-[10.5px] text-muted tabular">
+                of {fmtBDT(d.total)} total
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -311,9 +397,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             read as a separate control rather than a chip that
             belongs to the card's rounded-12px surface — the visual
             treatment is theme-consistent (uses the same surface-3
-            token in dark and light mode). Variant tracks the card's
-            polarity on the label edge: danger stripe for i_owe,
-            primary stripe for owed_to_me. z-[1] so it stays
+            token in dark and light mode). z-[1] so it stays
             clickable above the full-card <Link>. */}
         {isLoan && d.status === 'active' && (
           // Solid filled chip — the strongest call-to-action on the
