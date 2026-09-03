@@ -90,7 +90,7 @@ export function PlanScreen() {
           title="Investments"
           sub={`${investmentPlans.length} ${investmentPlans.length === 1 ? 'plan' : 'plans'}`}
           number={invHasPlans ? fmtBDT(invProjected) : '—'}
-          numberTone="gradient"
+          numberTone="primary"
           numberSuffix="at maturity"
         />
         <PlanRow
@@ -110,7 +110,7 @@ export function PlanScreen() {
           title="This month"
           sub={plans.monthLabel(thisMonth)}
           number={monthItems.length > 0 ? fmtBDT(monthBudget) : '—'}
-          numberTone="info"
+          numberTone="accent"
           numberSuffix={monthItems.length > 0
             ? `budgeted · ${monthItems.length} ${monthItems.length === 1 ? 'item' : 'items'}`
             : 'nothing planned'}
@@ -118,13 +118,13 @@ export function PlanScreen() {
         <PlanRow
           to="/plan/event"
           icon={<Clock className="w-5 h-5" />}
-          iconTone="primary"
+          iconTone="info"
           title="Events"
           sub={`${events.length} ${events.length === 1 ? 'event' : 'events'}`}
           number={nextEvent
             ? daysToNext === 0 ? 'today' : String(Math.abs(daysToNext!))
             : '—'}
-          numberTone="warn"
+          numberTone="info"
           numberSuffix={nextEvent
             ? daysToNext === 0
               ? nextEvent.name
@@ -144,10 +144,11 @@ export function PlanScreen() {
 
 /* ── Row primitive ──────────────────────────────────────────────── */
 
-const ICON_TONE: Record<'primary' | 'accent' | 'danger', string> = {
+const ICON_TONE: Record<'primary' | 'accent' | 'danger' | 'info', string> = {
   primary: 'text-primary',
   accent:  'text-accent',
   danger:  'text-danger',
+  info:    'text-info',
 };
 
 function PlanRow({
@@ -155,22 +156,13 @@ function PlanRow({
 }: {
   to: string;
   icon: React.ReactNode;
-  iconTone: 'primary' | 'accent' | 'danger';
+  iconTone: 'primary' | 'accent' | 'danger' | 'info';
   title: string;
   sub: string;
   number: string;
-  numberTone: 'gradient' | 'ink' | 'warn' | 'danger' | 'info';
+  numberTone: 'primary' | 'accent' | 'ink' | 'warn' | 'danger' | 'info';
   numberSuffix: string;
 }) {
-  const numberStyle =
-    numberTone === 'gradient'
-      ? {
-          backgroundImage: 'linear-gradient(90deg, var(--primary), var(--accent))',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-        }
-      : undefined;
   return (
     <Link
       to={to}
@@ -197,12 +189,13 @@ function PlanRow({
         <div
           className={[
             'text-[18px] font-extrabold tracking-tight tabular',
-            numberTone === 'ink'    ? 'text-ink'    : '',
-            numberTone === 'warn'   ? 'text-warn'   : '',
-            numberTone === 'danger' ? 'text-danger' : '',
-            numberTone === 'info'   ? 'text-info'   : '',
+            numberTone === 'primary' ? 'text-primary' : '',
+            numberTone === 'accent'  ? 'text-accent'  : '',
+            numberTone === 'ink'     ? 'text-ink'     : '',
+            numberTone === 'warn'    ? 'text-warn'    : '',
+            numberTone === 'danger'  ? 'text-danger'  : '',
+            numberTone === 'info'    ? 'text-info'    : '',
           ].filter(Boolean).join(' ')}
-          style={numberStyle}
         >
           {number}
         </div>
