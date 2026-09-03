@@ -69,6 +69,17 @@ export function DebtEditScreen() {
   const rateErrorClass = rateInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
+  // Term in months is REQUIRED when isLoan is true so the Pay button
+  // can always pre-fill with a meaningful EMI. Must be a positive
+  // integer.
+  const termInvalid = isLoan && !(Number(termMonths) > 0);
+  const termErrorClass = termInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
+  // Loan toggle only shows for i_owe — same rationale as the Add
+  // screen. You only pay interest on money you borrowed, not on
+  // money you lent.
+  const showLoanToggle = direction === 'i_owe';
 
   if (!debt) {
     return (
@@ -177,6 +188,15 @@ export function DebtEditScreen() {
         what: 'Enter the annual interest rate',
         why: 'A loan-kind debt needs a rate so each payment can be split into interest and principal.',
         fix: 'Enter the rate as a percentage, e.g. 12 for 12% APR.',
+      });
+      return;
+    }
+    if (isLoan && !(Number(termMonths) > 0)) {
+      showBanner({
+        kind: 'error',
+        what: 'Enter the term in months',
+        why: 'A loan-kind debt needs a term so the Pay button can pre-fill with the standard EMI.',
+        fix: 'Enter the term as a whole number of months, e.g. 36 for 3 years.',
       });
       return;
     }
@@ -324,7 +344,22 @@ export function DebtEditScreen() {
 
       <section className="card flex flex-col gap-5">
         <Field label="Direction" hint="Changing direction flips how linked payments are interpreted.">
-          <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
+          <Select
+            value={direction}
+            onChange={e => {
+              const next = e.target.value as DebtDirection;
+              setDirection(next);
+              // If the user flips from i_owe (where the loan toggle may
+              // have been on) to owed_to_me, clear the loan state —
+              // the toggle is hidden for that direction so leaving it
+              // set would leave orphan form fields the user can't see.
+              if (next !== 'i_owe' && isLoan) {
+                setIsLoan(false);
+                setInterestRate('');
+                setTermMonths('');
+              }
+            }}
+          >
             <option value="i_owe">I owe (you borrowed)</option>
             <option value="owed_to_me">Owed to me (you lent)</option>
           </Select>
@@ -350,30 +385,34 @@ export function DebtEditScreen() {
         </Field>
 
         {/* V1.1: optional loan toggle — same shape as DebtAddScreen.
-            Pre-filled from `debt.kind` / `debt.interestRate` / `debt.termMonths`. */}
-        <label className="flex items-start gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={isLoan}
-            onChange={e => {
-              setIsLoan(e.target.checked);
-              if (!e.target.checked) {
-                setInterestRate('');
-                setTermMonths('');
-              }
-            }}
-            className="mt-1 shrink-0"
-            aria-label="Mark this debt as a loan with interest"
-          />
-          <div className="min-w-0">
-            <div className="text-[13.5px] font-semibold text-ink leading-tight">
-              Is this a loan with interest?
+            Pre-filled from `debt.kind` / `debt.interestRate` / `debt.termMonths`.
+            Only shown when direction is 'i_owe' — interest only applies
+            to money you borrowed. */}
+        {showLoanToggle && (
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isLoan}
+              onChange={e => {
+                setIsLoan(e.target.checked);
+                if (!e.target.checked) {
+                  setInterestRate('');
+                  setTermMonths('');
+                }
+              }}
+              className="mt-1 shrink-0"
+              aria-label="Mark this debt as a loan with interest"
+            />
+            <div className="min-w-0">
+              <div className="text-[13.5px] font-semibold text-ink leading-tight">
+                Is this a loan with interest?
+              </div>
+              <div className="text-[12px] text-muted mt-1 leading-relaxed">
+                Each payment will be split into interest and principal based on the rate below.
+              </div>
             </div>
-            <div className="text-[12px] text-muted mt-1 leading-relaxed">
-              Each payment will be split into interest and principal based on the rate below.
-            </div>
-          </div>
-        </label>
+          </label>
+        )}
         {isLoan && (
           <div className="flex flex-col gap-4 pl-6 border-l-2 border-border">
             <Field
@@ -393,9 +432,14 @@ export function DebtEditScreen() {
                 className={rateErrorClass}
               />
             </Field>
+            {/* Term in months is required when isLoan is true so the
+                Pay button can always pre-fill with a meaningful EMI
+                and the loan card can display "Monthly EMI" rather
+                than "—". */}
             <Field
-              label="Term in months (optional)"
-              hint="If set, the Pay button will pre-fill with the standard EMI."
+              label="Term in months"
+              hint="Whole months, e.g. 36 for 3 years. Drives the Pay button's pre-filled EMI."
+              error={termInvalid ? 'Enter a term greater than zero.' : undefined}
             >
               <Input
                 type="number"
@@ -403,6 +447,8 @@ export function DebtEditScreen() {
                 min="1"
                 value={termMonths}
                 onChange={e => setTermMonths(e.target.value)}
+                aria-invalid={termInvalid || undefined}
+                className={termErrorClass}
               />
             </Field>
           </div>
@@ -412,7 +458,7 @@ export function DebtEditScreen() {
           <Button
             variant="outlined-primary"
             type="submit"
-            disabled={totalInvalid || !name.trim() || rateInvalid}
+            disabled={totalInvalid || !name.trim() || rateInvalid || termInvalid}
             success={saved}
           >
             Save changes

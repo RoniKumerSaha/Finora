@@ -18,9 +18,18 @@ export function DebtAddScreen() {
   const [dueDate, setDueDate] = useState('');
   // V1.1 (Loan-kind Debt): collapsed by default. Flipping the toggle
   // on exposes the rate + term fields and sets kind to 'loan'.
+  // Only meaningful when direction === 'i_owe' — you only pay interest
+  // on money you borrowed, not on money you lent. The toggle is hidden
+  // entirely for 'owed_to_me' so a "you lent" entry never accidentally
+  // becomes a loan-kind debt (which would split incoming repayments
+  // into interest/principal — wrong for that direction).
   const [isLoan, setIsLoan] = useState(false);
   const [interestRate, setInterestRate] = useState('');
   const [termMonths, setTermMonths] = useState('');
+
+  // Loan toggle only shows for i_owe. Derived so direction changes
+  // also hide + wipe the toggle and its dependent fields.
+  const showLoanToggle = direction === 'i_owe';
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
   const totalInvalid = !isPositiveMoney(total);
@@ -32,12 +41,32 @@ export function DebtAddScreen() {
   const rateErrorClass = rateInvalid
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
+  // Term in months is REQUIRED when isLoan is true so the Pay button
+  // can always pre-fill with a meaningful EMI and the loan card can
+  // show "Monthly EMI" rather than "—". Must be a positive integer.
+  const termInvalid = isLoan && !(Number(termMonths) > 0);
+  const termErrorClass = termInvalid
+    ? 'border-danger focus:border-danger focus:ring-danger/30'
+    : '';
 
   function onToggleLoan(on: boolean) {
     setIsLoan(on);
     if (!on) {
       // Clearing the toggle wipes the rate so a flat debt never has
       // a stale rate hanging around in form state.
+      setInterestRate('');
+      setTermMonths('');
+    }
+  }
+
+  function onChangeDirection(next: DebtDirection) {
+    setDirection(next);
+    // If the user switches from i_owe (where the loan toggle may have
+    // been on) to owed_to_me, clear the loan state — the toggle is
+    // hidden for that direction so leaving it set would leave orphan
+    // form fields the user can't see or edit.
+    if (next !== 'i_owe' && isLoan) {
+      setIsLoan(false);
       setInterestRate('');
       setTermMonths('');
     }
@@ -53,13 +82,23 @@ export function DebtAddScreen() {
       showBanner({ what: 'Total must be greater than zero', why: 'Zero or negative totals make the debt meaningless.', fix: 'Enter a positive number.' });
       return;
     }
-    if (isLoan && !(Number(interestRate) > 0)) {
-      showBanner({
-        what: 'Enter the annual interest rate',
-        why: 'A loan-kind debt needs a rate so each payment can be split into interest and principal.',
-        fix: 'Enter the rate as a percentage, e.g. 12 for 12% APR.',
-      });
-      return;
+    if (isLoan) {
+      if (!(Number(interestRate) > 0)) {
+        showBanner({
+          what: 'Enter the annual interest rate',
+          why: 'A loan-kind debt needs a rate so each payment can be split into interest and principal.',
+          fix: 'Enter the rate as a percentage, e.g. 12 for 12% APR.',
+        });
+        return;
+      }
+      if (!(Number(termMonths) > 0)) {
+        showBanner({
+          what: 'Enter the term in months',
+          why: 'A loan-kind debt needs a term so the Pay button can pre-fill with the standard EMI.',
+          fix: 'Enter the term as a whole number of months, e.g. 36 for 3 years.',
+        });
+        return;
+      }
     }
     try {
       update(s => debts.add(s, {
@@ -84,7 +123,7 @@ export function DebtAddScreen() {
       </header>
       <section className="card flex flex-col gap-5">
         <Field label="Direction" hint="Pick 'I owe' for loans you took. 'Owed to me' for money you lent.">
-          <Select value={direction} onChange={e => setDirection(e.target.value as DebtDirection)}>
+          <Select value={direction} onChange={e => onChangeDirection(e.target.value as DebtDirection)}>
             <option value="i_owe">I owe (you borrowed)</option>
             <option value="owed_to_me">Owed to me (you lent)</option>
           </Select>
@@ -110,26 +149,30 @@ export function DebtAddScreen() {
           <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </Field>
 
-        {/* V1.1: optional loan toggle. When off, the debt is treated as
-            a flat personal IOU (today's behaviour). When on, each
-            recorded payment is split into interest + principal. */}
-        <label className="flex items-start gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={isLoan}
-            onChange={e => onToggleLoan(e.target.checked)}
-            className="mt-1 shrink-0"
-            aria-label="Mark this debt as a loan with interest"
-          />
-          <div className="min-w-0">
-            <div className="text-[13.5px] font-semibold text-ink leading-tight">
-              Is this a loan with interest?
+        {/* V1.1: optional loan toggle. Only shown when direction is
+            'i_owe' — interest only applies to money you borrowed, not
+            to money you lent. When the toggle is on, each recorded
+            payment is split into interest + principal using the
+            standard EMI math. */}
+        {showLoanToggle && (
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isLoan}
+              onChange={e => onToggleLoan(e.target.checked)}
+              className="mt-1 shrink-0"
+              aria-label="Mark this debt as a loan with interest"
+            />
+            <div className="min-w-0">
+              <div className="text-[13.5px] font-semibold text-ink leading-tight">
+                Is this a loan with interest?
+              </div>
+              <div className="text-[12px] text-muted mt-1 leading-relaxed">
+                If the loan charges interest, enter the annual rate. We'll split each payment into interest and principal.
+              </div>
             </div>
-            <div className="text-[12px] text-muted mt-1 leading-relaxed">
-              If the loan charges interest, enter the annual rate. We'll split each payment into interest and principal.
-            </div>
-          </div>
-        </label>
+          </label>
+        )}
         {isLoan && (
           <div className="flex flex-col gap-4 pl-6 border-l-2 border-border">
             <Field
@@ -150,9 +193,14 @@ export function DebtAddScreen() {
                 className={rateErrorClass}
               />
             </Field>
+            {/* Term in months is required when isLoan is true so the
+                Pay button can always pre-fill with a meaningful EMI
+                and the loan card can display "Monthly EMI" rather
+                than "—". */}
             <Field
-              label="Term in months (optional)"
-              hint="If set, the Pay button will pre-fill with the standard EMI."
+              label="Term in months"
+              hint="Whole months, e.g. 36 for 3 years. Drives the Pay button's pre-filled EMI."
+              error={termInvalid ? 'Enter a term greater than zero.' : undefined}
             >
               <Input
                 type="number"
@@ -161,6 +209,8 @@ export function DebtAddScreen() {
                 value={termMonths}
                 onChange={e => setTermMonths(e.target.value)}
                 placeholder="36"
+                aria-invalid={termInvalid || undefined}
+                className={termErrorClass}
               />
             </Field>
           </div>
@@ -170,7 +220,7 @@ export function DebtAddScreen() {
           <Button
             variant="outlined-primary"
             type="submit"
-            disabled={totalInvalid || !name.trim() || rateInvalid}
+            disabled={totalInvalid || !name.trim() || rateInvalid || termInvalid}
           >
             Save debt
           </Button>

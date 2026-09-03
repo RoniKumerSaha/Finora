@@ -269,19 +269,19 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
                 )}
               </div>
 
-              {/* Row 3 (mt-auto): loan amount taken + interest paid so
-                  far on stacked rows so tokens don't split across
-                  lines. Mirrors the planned-loan card's
-                  Principal / Pay X interest layout — but for a real
-                  loan we want the *original borrowed amount*, not the
-                  remaining principal (which already lives in the
-                  right zone as "Outstanding"). */}
+              {/* Row 3 (mt-auto): loan amount taken + the split of every
+                  payment so far (interest vs principal) on stacked rows
+                  so tokens don't split across lines. Both figures sit
+                  on the same line so the user can read the split at a
+                  glance — interest in the danger tone (money paid to
+                  the lender) and principal in green (money that
+                  actually reduced what you still owe). */}
               <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
                 <div className="tabular shrink-0">
                   Loan amount <b className="text-ink font-semibold">{fmtBDT(d.total)}</b>
                 </div>
                 <div className="tabular shrink-0">
-                  Paid <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> interest
+                  Paid <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> interest and <b className="text-primary font-semibold">{fmtBDT(totalPrincipal)}</b> principal
                 </div>
               </div>
             </>
