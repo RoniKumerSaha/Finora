@@ -6,6 +6,7 @@ import { SecuritySection } from '../security';
 import { clearPin } from '../security/pin';
 import { resetRateLimit } from '../security/rateLimit';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
+import { clearSyncRows } from '../domain/persistence';
 import { AccountSection } from '../components/AccountSection';
 import { syncEngine } from '../domain/sync';
 
@@ -72,6 +73,13 @@ export function SettingsScreen() {
     // PIN + rate-limit reset so a forgotten PIN doesn't strand the user.
     clearPin();
     resetRateLimit();
+    // Wipe sync metadata so the next boot treats this device as fresh.
+    // Without this, the engine would still think it has synced before
+    // (lastSyncedAt in IDB), and the reconcile code path would skip
+    // the empty-state guard — risking pushing empty local over the
+    // other device's cloud row.
+    await clearSyncRows();
+    syncEngine.resetSyncMetadata();
     showBanner({
       kind: 'success',
       what: 'All data wiped',

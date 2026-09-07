@@ -503,16 +503,44 @@ export class SyncEngine {
   async forceSync(): Promise<void> {
     if (!this.userId) return;
     await this.reconcileAndPushLatest();
-    // Then push local (in case reconcile pulled down newer data and
-    // we still want to make sure cloud mirrors local exactly).
+    // Then push local ONLY if local has data — otherwise an empty
+    // local would clobber any cloud row pulled in above (or push
+    // empty when cloud is also empty). Mirrors the hasData guard in
+    // reconcileAndPushLatest.
     const { useStore } = await import('./store');
-    void this.push(useStore.getState().state);
+    const local = useStore.getState().state;
+    const localHasData = local.accounts.length > 0
+      || local.transactions.length > 0
+      || local.goals.length > 0
+      || local.debts.length > 0
+      || local.investments.length > 0;
+    if (localHasData) {
+      void this.push(local);
+    }
   }
 
   /** Used by Settings to display the current account email. */
   getEmail = (): string | null => this.userEmail;
   getLastSyncedAt = (): number | null => this.lastSyncedAt;
   isCloudConfigured = (): boolean => Boolean(this.client);
+
+  /**
+   * Wipe in-memory sync metadata without touching the IDB keys (the
+   * caller is expected to clearSyncRows() too) or the cloud. Called
+   * after a local "Wipe all data" so the next boot's reconcile
+   * treats this device as fresh — otherwise the stale
+   * `lastSyncedAt` would skip the empty-state guard and an empty
+   * local could clobber another device's cloud row.
+   */
+  resetSyncMetadata(): void {
+    this.lastSyncedAt = null;
+    this.lastError = null;
+    if (this.queueDrainTimer !== null) {
+      clearTimeout(this.queueDrainTimer);
+      this.queueDrainTimer = null;
+    }
+    this.pendingPush = null;
+  }
 
   // ── Offline handling ─────────────────────────────────────────────────
 
