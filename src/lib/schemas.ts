@@ -21,6 +21,27 @@ const requiredString = (label: string) =>
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}/, { message: 'Use a valid date.' });
 
+// ---------- Auth (cloud sync) ----------
+//
+// Email + password schemas for the Settings → Cloud sync sign-in /
+// sign-up dialog. Min 8 chars matches the client-side guard; Supabase's
+// own `minimum_password_length = 6` (supabase/config.toml:182) is the
+// server-side floor and is satisfied by any 8-char password.
+//
+// Used by src/components/SignInDialog.tsx; failures route through
+// `formatZodError()` in lib/errors.ts to render three-part inline
+// errors below each field.
+
+export const emailSchema = z
+  .string()
+  .trim()
+  .min(1, { message: 'Email is required.' })
+  .email({ message: 'Enter a valid email address.' });
+
+export const passwordSchema = z
+  .string()
+  .min(8, { message: 'Password must be at least 8 characters.' });
+
 // ---------- Account ----------
 
 export const accountSchema = z.object({

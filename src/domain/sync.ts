@@ -447,29 +447,42 @@ export class SyncEngine {
 
   // ── Auth ─────────────────────────────────────────────────────────────
 
-  async signIn(email: string): Promise<void> {
+  /**
+   * Sign in an existing user with email + password. Synchronously
+   * establishes a session on success (no email round-trip, no redirect
+   * magic to worry about). The thrown `AuthError` carries `status`,
+   * `name`, and `message` so `formatSyncError()` can give the user
+   * actionable advice without any new error-formatting code.
+   */
+  async signInWithPassword(email: string, password: string): Promise<void> {
     const client = this.client ?? requireSupabase();
-    // Redirect to the bare origin (no `/#/settings` suffix) so GoTrue's
-    // 303 response puts the access_token cleanly in the URL fragment:
-    //   Location: ${origin}#access_token=...&type=magiclink
-    // supabase-js's `detectSessionInUrl` parses that fragment and
-    // fires SIGNED_IN. If we put `/#/settings` here, GoTrue places
-    // the params after the existing hash and the access_token ends
-    // up in the query string (`/settings?access_token=...`), which
-    // the hash router renders as a settings page WITHOUT picking
-    // up the token. The hash router then navigates to /home
-    // (default) since the path is `/settings` not the access_token
-    // we wanted. Use the origin; the user lands on the app, the
-    // session is established, the in-app navigation to /settings
-    // happens via the auth state change.
-    const redirectTo = typeof window !== 'undefined'
-      ? `${window.location.origin}/`
-      : undefined;
-    const { error } = await client.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
-    });
+    const { error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
+  }
+
+  /**
+   * Create a new account. Returns `requiresEmailConfirmation: true`
+   * when Supabase created the user but did NOT issue a session (the
+   * host project has `enable_confirmations = true`). The dialog uses
+   * this to surface a "Check your email to confirm" toast instead of
+   * assuming the user is signed in.
+   *
+   * When `requiresEmailConfirmation` is false, the `onAuthStateChange`
+   * callback fires SIGNED_IN synchronously and `recordSignIn` runs as
+   * normal — no extra wiring needed here.
+   */
+  async signUpWithPassword(
+    email: string,
+    password: string,
+  ): Promise<{ requiresEmailConfirmation: boolean }> {
+    const client = this.client ?? requireSupabase();
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) throw error;
+    // Supabase returns { user, session: null } when email confirmation
+    // is required, and { user, session: { access_token, ... } } when
+    // confirmation is auto-confirmed (the local stack default).
+    const requiresEmailConfirmation = !data.session;
+    return { requiresEmailConfirmation };
   }
 
   async signOut(): Promise<void> {

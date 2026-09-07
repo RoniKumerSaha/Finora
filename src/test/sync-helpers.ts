@@ -35,6 +35,17 @@ const cloud = new Map<string, CloudRow>();
 let authState: { user: { id: string; email: string } | null } = { user: null };
 const authListeners = new Set<(event: string, session: { user: { id: string; email: string } } | null) => void>();
 
+// Per-account password (set via `__seedAuthPassword`). When unset, any
+// non-empty password is accepted — this matches the "create account
+// without verification" path on the local stack where
+// `enable_confirmations = false` (supabase/config.toml:226).
+const authPasswords = new Map<string, string>();
+// Pre-seeded "users" so tests can drive `signInWithPassword` against a
+// known account without going through `signUp` first. Keyed by email.
+const seededUsers = new Map<string, { id: string; email: string }>();
+// Optional error to inject on the next auth call (consumed once).
+let injectedAuthError: { name: string; status: number; message: string } | null = null;
+
 /** Reset everything — the in-memory cloud table, the fake auth state,
  *  AND the production SyncEngine singleton's transient state. Safe
  *  to call from afterEach. */
@@ -42,7 +53,33 @@ export function __resetSyncForTests(): void {
   cloud.clear();
   authState = { user: null };
   authListeners.clear();
+  authPasswords.clear();
+  seededUsers.clear();
+  injectedAuthError = null;
   __resetSyncEngineForTests();
+}
+
+/**
+ * Seed a "user" the fake auth client can sign in as via
+ * `signInWithPassword`. Email + password pair is matched exactly
+ * (case-sensitive on email); if `password` is omitted any non-empty
+ * string is accepted.
+ */
+export function __seedAuthUser(email: string, password?: string): { id: string; email: string } {
+  const id = `seeded-${email}`;
+  const user = { id, email };
+  seededUsers.set(email, user);
+  if (password !== undefined) authPasswords.set(email, password);
+  return user;
+}
+
+/**
+ * Inject an error to be returned by the next `signInWithPassword` or
+ * `signUp` call (consumed once, then cleared). Mirrors Supabase's
+ * `AuthError` shape so `formatSyncError()` recognises it.
+ */
+export function __setAuthError(err: { name: string; status: number; message: string } | null): void {
+  injectedAuthError = err;
 }
 
 /** Inspect / seed the fake cloud directly from a test. */
@@ -72,12 +109,56 @@ function makeFakeClient(): SupabaseClient {
   return {
     auth: {
       getSession: async () => ({ data: { session: authState.user ? { user: authState.user } : null }, error: null }),
-      signInWithOtp: async () => {
-        // In tests we don't actually send an email — just flip the
-        // session to mirror what the production callback would do.
-        // Tests that want to assert on the magic-link send can spy on
-        // this method before installing.
-        return { data: {}, error: null };
+      // Magic-link path is kept so any stray legacy test still works,
+      // but it's a no-op: the production code no longer calls it.
+      signInWithOtp: async () => ({ data: {}, error: null }),
+      signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+        if (injectedAuthError) {
+          const err = injectedAuthError;
+          injectedAuthError = null;
+          return { data: { user: null, session: null }, error: err as unknown as Error };
+        }
+        const user = seededUsers.get(email);
+        if (!user) {
+          return {
+            data: { user: null, session: null },
+            error: { name: 'AuthApiError', status: 400, message: 'Invalid login credentials' } as unknown as Error,
+          };
+        }
+        const expected = authPasswords.get(email);
+        if (expected !== undefined && expected !== password) {
+          return {
+            data: { user: null, session: null },
+            error: { name: 'AuthApiError', status: 400, message: 'Invalid login credentials' } as unknown as Error,
+          };
+        }
+        authState = { user };
+        for (const l of authListeners) l('SIGNED_IN', { user });
+        return { data: { user, session: { user } }, error: null };
+      },
+      signUp: async ({ email, password }: { email: string; password: string }) => {
+        if (injectedAuthError) {
+          const err = injectedAuthError;
+          injectedAuthError = null;
+          return { data: { user: null, session: null }, error: err as unknown as Error };
+        }
+        if (seededUsers.has(email)) {
+          return {
+            data: { user: null, session: null },
+            error: { name: 'AuthApiError', status: 422, message: 'User already registered' } as unknown as Error,
+          };
+        }
+        // Mimic the local stack default: `enable_confirmations = false`
+        // (supabase/config.toml:226) → sign-up returns a session, no
+        // verification round-trip. Tests that want the confirmation
+        // path can use __setAuthError to inject the alternate shape.
+        const id = `signedup-${email}`;
+        const user = { id, email };
+        seededUsers.set(email, user);
+        authPasswords.set(email, password);
+        authState = { user };
+        for (const l of authListeners) l('SIGNED_IN', { user });
+        return { data: { user, session: { user } }, error: null };
       },
       signOut: async () => {
         authState = { user: null };

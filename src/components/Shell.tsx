@@ -61,7 +61,6 @@ import {
   Menu, Close,
 } from './icons/Icons';
 import { Toast } from './Toast';
-import { SyncStatusPill } from './SyncStatusPill';
 
 /**
  * FinoraLogo — animated equalizer mark that pairs with the FINORA
@@ -299,13 +298,10 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="flex-1" />
 
-          {/* Theme toggle removed — dark is the only mode (see Settings
-             > Theme for the explanatory copy). The slot now hosts the
-             SyncStatusPill, an always-visible chip that surfaces the
-             current cloud-sync state ("Cloud off" / "Synced · just
-             now" / "Syncing…" / "Offline · N pending" / "Sync error").
-             Clicking it routes to Settings or surfaces a banner. */}
-          <SyncStatusPill />
+          {/* SyncStatusPill removed from the sidebar — the live cloud-sync
+             chip now lives inside Settings → Cloud sync (see
+             AccountSection.tsx). Sidebar stays focused on navigation +
+             the primary CTA. */}
 
           {!hideAddTx && (
             <NavLink

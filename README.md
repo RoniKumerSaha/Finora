@@ -135,7 +135,8 @@ with your email to seed the cloud row.
 ### What cloud sync does and doesn't do
 
 - ✅ One row per user, scoped by Supabase RLS (`auth.uid() = user_id`).
-- ✅ Magic-link sign-in, no passwords.
+- ✅ Email + password sign-in (and sign-up). One dialog with a "Sign in" /
+  "Create account" toggle, no magic-link round-trip.
 - ✅ Last-write-wins reconciliation across devices, with server clock
   tiebreaker for the rare same-millisecond case.
 - ✅ Offline-tolerant: edits queue in IndexedDB and flush on reconnect,

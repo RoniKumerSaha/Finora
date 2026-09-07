@@ -18,6 +18,8 @@ import {
   __getCloudRow,
   __resetSyncForTests,
   __seedCloudRow,
+  __seedAuthUser,
+  __setAuthError,
 } from '../../test/sync-helpers';
 import { resetIDB } from '../../test/idb-helpers';
 import { SyncEngine } from '../sync';
@@ -155,5 +157,68 @@ describe('SyncEngine — auth', () => {
     expect(__getCloudRow('u1')).toBeDefined();
     await engine.deleteCloudCopy();
     expect(__getCloudRow('u1')).toBeUndefined();
+  });
+
+  it('signInWithPassword succeeds and the engine treats the user as signed in', async () => {
+    __seedAuthUser('a@b.com', 'correct-horse');
+    // init() registers the onAuthStateChange listener that flips
+    // userEmail + status when the fake fires SIGNED_IN after a
+    // successful password sign-in.
+    await engine.init();
+    await engine.signInWithPassword('a@b.com', 'correct-horse');
+    // The onAuthStateChange handler is fire-and-forget; give its
+    // async block (recordSignIn → reconcileAndPushLatest → recomputeStatus)
+    // a few ticks to drain before asserting on derived state.
+    await new Promise(r => setTimeout(r, 20));
+    expect(engine.getStatus().kind).toBe('signed-in-synced');
+    expect(engine.getEmail()).toBe('a@b.com');
+    // recordSignIn persists the email into Settings via the store;
+    // verify it landed.
+    const { useStore } = await import('../store');
+    expect(useStore.getState().state.settings.cloudUserEmail).toBe('a@b.com');
+    expect(useStore.getState().state.settings.cloudSyncEnabled).toBe(true);
+  });
+
+  it('signInWithPassword throws on a wrong password and leaves the engine signed-out', async () => {
+    __seedAuthUser('a@b.com', 'correct-horse');
+    await engine.init();
+    await expect(engine.signInWithPassword('a@b.com', 'wrong')).rejects.toBeDefined();
+    expect(engine.getStatus().kind).toBe('signed-out');
+    expect(engine.getEmail()).toBeNull();
+  });
+
+  it('signUpWithPassword returns requiresEmailConfirmation=false on the local stack', async () => {
+    // Local stack: enable_confirmations = false → sign-up returns a
+    // session synchronously. The fake mirrors that.
+    await engine.init();
+    const result = await engine.signUpWithPassword('new@example.com', 'password1');
+    expect(result.requiresEmailConfirmation).toBe(false);
+    // The onAuthStateChange listener is fire-and-forget — give its
+    // async block a tick to drain before asserting on status.
+    await new Promise(r => setTimeout(r, 20));
+    // Engine should be signed-in now (the fake's signUp flips authState).
+    expect(engine.getStatus().kind).toBe('signed-in-synced');
+  });
+
+  it('signUpWithPassword returns requiresEmailConfirmation=true when the server withholds the session', async () => {
+    // Inject an alternate signUp shape: { user, session: null }.
+    __setAuthUser(null);
+    __setAuthError(null);
+    await engine.init();
+    // Monkey-patch the fake's signUp to return user-without-session.
+    const fake = (engine as unknown as { client: { auth: { signUp: typeof engine.signUpWithPassword } } }).client.auth;
+    const origSignUp = fake.signUp;
+    fake.signUp = (async () => ({
+      data: { user: { id: 'pending', email: 'pending@example.com' }, session: null },
+      error: null,
+    })) as unknown as typeof origSignUp;
+    try {
+      const result = await engine.signUpWithPassword('pending@example.com', 'password1');
+      expect(result.requiresEmailConfirmation).toBe(true);
+      // No session was issued, so the engine stays signed-out.
+      expect(engine.getStatus().kind).toBe('signed-out');
+    } finally {
+      fake.signUp = origSignUp;
+    }
   });
 });

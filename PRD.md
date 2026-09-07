@@ -1258,9 +1258,11 @@ Every error message must:
 
 #### 9.19.3 Authentication
 
-- **Magic link only** (`signInWithOtp`). No passwords.
+- **Email + password** via Supabase Auth. `signInWithPassword({ email, password })` handles existing users; `signUp({ email, password })` handles new accounts. The same dialog hosts both modes via a "Sign in" / "Create account" toggle.
 - Session persisted in `localStorage` by `supabase-js`; auto-refreshed; cleared on sign-out.
-- `emailRedirectTo` is the bare origin (`${origin}/`) — the hash router swallows the access_token if a `/#/settings` suffix is included, which surfaces as "sync just doesn't work" with no obvious error.
+- On the local stack, `[auth.email] enable_confirmations = false` (config.toml:226) so sign-up completes in one step and `signUp` returns a session synchronously. On hosted Supabase the same flag is configurable per project; when `true`, `signUp` issues a user row but **no** session, and `signUpWithPassword` returns `{ requiresEmailConfirmation: true }` so the dialog can show a "Check your email" toast instead of assuming the user is signed in.
+- **No magic-link flow.** The earlier `signInWithOtp` + `emailRedirectTo` workaround (which was needed because GoTrue puts the access_token in the URL fragment and the hash router would swallow it) is no longer needed — password sign-in establishes a session synchronously, no redirect involved.
+- **Client-side password rules**: minimum 8 characters, no complexity gates. Supabase's own `minimum_password_length = 6` (config.toml:182) is the server-side floor; client validation is one above.
 
 #### 9.19.4 Storage shape
 
@@ -1316,6 +1318,7 @@ The anon key **must** be the JWT format (starts with `eyJ…`). The newer `sb_pu
 - `src/test/sync-helpers.ts` provides an in-memory Supabase fake covering every method `SyncEngine` actually calls (`auth.{getSession,signInWithOtp,signOut,onAuthStateChange}`, `from('finora_state').{select/upsert/delete/eq/maybeSingle}`).
 - `installFakeSupabase()` swaps the production singleton's client via the `__setClientForTests()` escape hatch so the real UI talks to the same engine the test controls.
 - `__seedCloudRow()` and `__setAuthUser()` give specs direct hooks into the fake cloud + auth state.
+- `__seedAuthUser(email, password?)` and `__setAuthError(err)` cover the password sign-in / sign-up paths. `SignInDialog.spec.tsx` covers empty / invalid-email / short-password submit blocking, valid sign-in dispatch, wrong-password banner, and the mode toggle.
 
 ---
 
