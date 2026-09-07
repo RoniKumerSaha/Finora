@@ -145,6 +145,21 @@ export interface Category {
 export interface Settings {
   theme: Theme;
   onboardingComplete: boolean;
+  /**
+   * V1.x — Supabase cloud-sync opt-in. Defaults to `false` everywhere
+   * (DEFAULT_STATE, mergeDefaults) so existing users don't silently
+   * start sending data to the cloud. The user flips this on explicitly
+   * from Settings → Account.
+   */
+  cloudSyncEnabled?: boolean;
+  /** Last signed-in email, surfaced in Settings → Account. Informational. */
+  cloudUserEmail?: string | null;
+  /**
+   * Monotonic ms-epoch bumped by every mutation that flows through
+   * `run` / `runPlan` / `add*Plan` / `importAndReplace`. Used as the
+   * LWW key during boot reconciliation — see `src/domain/sync.reconcile.ts`.
+   */
+  stateUpdatedAt?: number;
 }
 
 /* ─────────────────────────────────────────────────────────────────────

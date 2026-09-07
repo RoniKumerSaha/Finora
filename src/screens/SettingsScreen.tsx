@@ -6,6 +6,8 @@ import { SecuritySection } from '../security';
 import { clearPin } from '../security/pin';
 import { resetRateLimit } from '../security/rateLimit';
 import { downloadExport, parseImport, ImportError } from '../lib/exportImport';
+import { AccountSection } from '../components/AccountSection';
+import { syncEngine } from '../domain/sync';
 
 /**
  * SettingsScreen — local-only app preferences.
@@ -62,6 +64,32 @@ export function SettingsScreen() {
     });
   }
 
+  async function onDeleteCloud() {
+    const ok = await confirm({
+      title: 'Delete your cloud copy?',
+      body: 'Your data will be removed from Supabase. Other devices will stop syncing until the next push from this device recreates the cloud row. Local data on this device stays intact.',
+      confirmLabel: 'Delete cloud copy',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await syncEngine.deleteCloudCopy();
+      showBanner({
+        kind: 'success',
+        what: 'Cloud copy deleted',
+        why: 'Your data has been removed from Supabase.',
+        fix: 'Other devices will need to sync from this device to restore their cloud copy.',
+      });
+    } catch (err) {
+      showBanner({
+        kind: 'error',
+        what: 'Couldn\'t delete cloud copy',
+        why: (err as Error).message || 'The request failed.',
+        fix: 'Try again. If it keeps failing, sign out and back in.',
+      });
+    }
+  }
+
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-import of the same file
@@ -116,6 +144,7 @@ export function SettingsScreen() {
         {/* Left column — existing controls */}
         <div className="flex flex-col gap-6">
           <SecuritySection />
+          <AccountSection />
           <section className="card">
             <h2 className="heading h3-modal mb-4">Backup</h2>
             <div className="flex gap-2 flex-wrap">
@@ -144,13 +173,28 @@ export function SettingsScreen() {
           >
             <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
             <p className="text-[13px] text-muted mb-5">
-              This permanently deletes all data on this device. Export first if unsure.
+              These actions are destructive. Export first if unsure.
             </p>
+
+            {syncEngine.getEmail() && (
+              <div className="flex flex-wrap items-start justify-between gap-3 pb-5 mb-5" style={{ borderBottom: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
+                <div className="min-w-0 flex-1 max-w-prose">
+                  <div className="font-semibold text-[14px] text-ink">Delete cloud copy</div>
+                  <div className="text-[12px] text-muted mt-1">
+                    Removes your data from Supabase. Other devices will stop syncing. Local data on this device stays intact.
+                  </div>
+                </div>
+                <Button variant="danger" className="shrink-0" onClick={onDeleteCloud}>
+                  Delete cloud copy
+                </Button>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1 max-w-prose">
                 <div className="font-semibold text-[14px] text-ink">Wipe everything</div>
                 <div className="text-[12px] text-muted mt-1">
-                  Deletes every account, transaction, goal, debt, investment, and plan — leaves the app as a clean install.
+                  Deletes every account, transaction, goal, debt, investment, and plan — leaves the app as a clean install on this device. Cloud copy is preserved.
                 </div>
               </div>
               <Button variant="danger" onClick={onWipe} className="shrink-0">Wipe all data</Button>
@@ -197,7 +241,11 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
         <MetaRow label="Version" value={`v${version}`} />
         <MetaRow
           label="Privacy"
-          value="All data lives in your browser. No accounts, no cloud, no telemetry."
+          value={
+            syncEngine.getEmail()
+              ? 'Stored on this device. Cloud sync is optional and end-to-end scoped to your account.'
+              : 'Stored on this device only. Cloud sync is opt-in from the panel above.'
+          }
           block
         />
         <MetaRow

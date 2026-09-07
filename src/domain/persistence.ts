@@ -41,6 +41,20 @@ export const SINGLETON_KEY = 'state';
 const SCHEMA_KEY = 'schema';
 const CURRENT_SCHEMA_VERSION = 1;
 
+/**
+ * Cloud-sync auxiliary rows, all sharing the `kv` table.
+ *   cloudQueue        — JSON array of queued State snapshots waiting to
+ *                       be pushed once the device comes back online.
+ *   cloudLastSyncedAt — ms epoch of the last successful cloud push.
+ *   cloudLastPulledAt — ms epoch of the last successful cloud pull.
+ *
+ * These rows never appear in the user-facing State blob; they live
+ * alongside it and are written by SyncEngine only.
+ */
+export const CLOUD_QUEUE_KEY = 'cloudQueue';
+export const CLOUD_LAST_SYNCED_KEY = 'cloudLastSyncedAt';
+export const CLOUD_LAST_PULLED_KEY = 'cloudLastPulledAt';
+
 interface MetaRow {
   key: string;
   value: unknown;
@@ -307,6 +321,67 @@ export function clear(): void {
       }
     }
   })();
+}
+
+// ─── Cloud-sync auxiliary reads/writes ─────────────────────────────────
+//
+// These rows are read/written by the SyncEngine. Kept here (rather than
+// in sync.ts) so the rest of the codebase can swap them without pulling
+// in the Supabase client. All writes are fire-and-forget, mirroring the
+// pattern used for the main state blob.
+
+/** Read a single sync-aux row. Returns `undefined` if missing or if
+ *  IndexedDB isn't ready yet. */
+export async function getSyncRow(key: string): Promise<unknown> {
+  try {
+    const db = await getIDB();
+    const row = await db.kv.get(key);
+    return row?.data;
+  } catch (err) {
+    if (typeof console !== 'undefined') {
+      console.warn(`[finora/persistence] getSyncRow(${key}) failed`, err);
+    }
+    return undefined;
+  }
+}
+
+/** Write a single sync-aux row. Fire-and-forget; failures are logged
+ *  but never thrown — the queue is best-effort durability. */
+export function putSyncRow(key: string, data: unknown): void {
+  void (async () => {
+    try {
+      const db = await getIDB();
+      await db.kv.put({ id: key, data }, key);
+    } catch (err) {
+      if (typeof console !== 'undefined') {
+        console.error(`[finora/persistence] putSyncRow(${key}) failed`, err);
+      }
+    }
+  })();
+}
+
+/** Delete a single sync-aux row. Used when clearing the queue or
+ *  wiping local-only state on sign-out. */
+export async function deleteSyncRow(key: string): Promise<void> {
+  try {
+    const db = await getIDB();
+    await db.kv.delete(key);
+  } catch (err) {
+    if (typeof console !== 'undefined') {
+      console.warn(`[finora/persistence] deleteSyncRow(${key}) failed`, err);
+    }
+  }
+}
+
+/** Clear ALL sync-aux rows (queue, last-synced, last-pulled).
+ *  Called by tests and by sign-out. Does NOT touch the main state
+ *  blob or any cloud copy. */
+export async function clearSyncRows(): Promise<void> {
+  await Promise.all([
+    deleteSyncRow(CLOUD_QUEUE_KEY),
+    deleteSyncRow(CLOUD_LAST_SYNCED_KEY),
+    deleteSyncRow(CLOUD_LAST_PULLED_KEY),
+  ]);
 }
 
 // ─── Validation + merge (unchanged from localStorage era) ──────────────

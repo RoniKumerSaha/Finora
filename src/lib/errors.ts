@@ -106,3 +106,73 @@ export function formatError(err: unknown): ThreePartError {
     fix: 'Try again. If it keeps happening, export your data and reload.',
   };
 }
+
+/**
+ * Build a banner-ready error from a Supabase / sync-engine failure.
+ * Recognises the common shapes thrown by `@supabase/supabase-js` and
+ * the browser network stack so the user sees actionable advice rather
+ * than a stack-trace summary.
+ *
+ * Categories:
+ *   - Network failure (offline, DNS, fetch threw)
+ *   - Auth failure (no session, expired token, OTP rejected)
+ *   - RLS / permission denied (Supabase returns 401/403)
+ *   - Server-side 5xx
+ *   - Anything else → falls through to a generic "sync error" shape
+ *     that names the underlying message.
+ */
+export function formatSyncError(err: unknown): ThreePartError {
+  // Network: navigator reports offline, or the error looks like a
+  // browser fetch failure.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return {
+      what: 'You appear to be offline.',
+      why: 'Finora couldn\'t reach Supabase — your device has no internet connection right now.',
+      fix: 'Reconnect to the internet. Your recent changes are queued and will sync automatically.',
+    };
+  }
+
+  const name = (err as { name?: string } | null)?.name ?? '';
+  const msg = (err as { message?: string } | null)?.message ?? '';
+  const lower = msg.toLowerCase();
+  const status = (err as { status?: number } | null)?.status;
+
+  if (name === 'AuthRetryableFetchError' || lower.includes('fetch')) {
+    return {
+      what: 'Couldn\'t reach Supabase.',
+      why: 'The sync request never completed — usually a flaky network or a Supabase outage.',
+      fix: 'We\'ll retry automatically. If this keeps showing up, check your connection.',
+    };
+  }
+
+  if (status === 401 || lower.includes('jwt') || lower.includes('invalid claim') || lower.includes('token')) {
+    return {
+      what: 'Your sign-in has expired.',
+      why: 'The session token Supabase uses to authorise your account is no longer valid.',
+      fix: 'Sign in again from Settings → Account.',
+    };
+  }
+
+  if (status === 403 || lower.includes('row-level security') || lower.includes('permission denied')) {
+    return {
+      what: 'Supabase denied the sync request.',
+      why: 'Your account no longer has permission to write to its cloud copy.',
+      fix: 'Sign out and sign back in. If it persists, contact support.',
+    };
+  }
+
+  if (status && status >= 500) {
+    return {
+      what: 'Supabase is having trouble.',
+      why: `The server returned ${status}. This is on Supabase's side, not yours.`,
+      fix: 'We\'ll keep retrying. If it persists, check status.supabase.com.',
+    };
+  }
+
+  // Fallback — preserve the original message but don't blame the user.
+  return {
+    what: msg || 'Sync failed.',
+    why: 'Finora tried to push your changes to the cloud and the request failed.',
+    fix: 'We\'ll keep retrying in the background. Open Settings → Account to force a sync.',
+  };
+}

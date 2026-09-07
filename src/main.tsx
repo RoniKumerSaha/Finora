@@ -16,10 +16,14 @@
  *      DEFAULT_STATE that `store.ts` captured at module load time
  *      (before this boot ran), and the first mutation would persist
  *      a "default-state + delta" snapshot, erasing the real data.
- *   3. `useLockStore.init(...)` — feature-detect localStorage; if a
+ *   3. `await syncEngine.init()` (V1.x cloud sync) — restores any
+ *      persisted Supabase session and, if signed-in + sync enabled,
+ *      pulls the cloud row + reconciles into the store BEFORE first
+ *      paint. Safe to call when env vars are missing (no-ops).
+ *   4. `useLockStore.init(...)` — feature-detect localStorage; if a
  *      PIN is configured AND storage is available, flip the lock
  *      flag so the root renders `<LockScreen />` instead of `<App />`.
- *   4. Mount React — Root decides which tree to render based on
+ *   5. Mount React — Root decides which tree to render based on
  *      `useLockStore.locked`.
  *
  * Theme is applied imperatively before React mounts so the first paint
@@ -31,6 +35,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { ensureReady, load } from './domain/persistence';
 import { useStore } from './domain/store';
+import { syncEngine } from './domain/sync';
 import { useLockStore } from './security';
 import { hasPin, isLocalStorageAvailable } from './security/pin';
 import { LockScreen } from './security/LockScreen';
@@ -46,6 +51,15 @@ async function boot() {
   // re-sync the first user mutation overwrites IndexedDB with the
   // default state. See AD-29.
   useStore.setState({ state: load() });
+
+  // Cloud sync init (V1.x). Must run AFTER ensureReady() (the engine
+  // reads its last-synced timestamp from IDB) and AFTER the store is
+  // re-synced with the cache (so reconcile has a baseline). Restores
+  // any persisted Supabase session and, if signed-in AND cloud sync
+  // is enabled in Settings, performs the first pull+reconcile before
+  // React mounts — the store is mutated in-place if cloud wins, so
+  // no second render is needed.
+  await syncEngine.init();
 
   // Decide whether to render the lock screen. If localStorage is
   // unavailable (private mode / storage full), skip the PIN

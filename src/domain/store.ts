@@ -15,6 +15,14 @@
  *
  * The hook is the only thing components import — selectors are explicit
  * so re-renders stay predictable.
+ *
+ * Cloud sync (V1.x): every mutation chokepoint (`run`, `runPlan`, the
+ * three `add*Plan` actions that return a generated id, and
+ * `importAndReplace`) ends with `saveAndMaybeSync(state)`, which writes
+ * to IndexedDB and notifies the SyncEngine. The sync engine debounces
+ * 400ms before pushing to Supabase, so a burst of edits collapses into
+ * one network write. `stateUpdatedAt` is bumped inside the same wrapper
+ * and is the LWW key used during boot reconciliation.
  */
 import { create } from 'zustand';
 import type { State, Banner, Toast } from './types';
@@ -24,6 +32,7 @@ import * as plans from './plans';
 import * as investmentPlans from './investmentPlans';
 import * as loanPlans from './loanPlans';
 import { uid } from './ids';
+import { syncEngine } from './sync';
 
 
 interface Store {
@@ -46,6 +55,19 @@ interface Store {
 
   // Settings
   completeOnboarding: () => void;
+
+  // ── Cloud sync (V1.x) ────────────────────────────────────────────────
+  /** Toggle cloud-sync opt-in. When turning ON, the engine performs an
+   *  initial reconcile (pull from cloud, mutate store if cloud wins,
+   *  push local otherwise). */
+  setCloudSyncEnabled: (enabled: boolean) => void;
+  /** Called by the SyncEngine after a successful sign-in to persist
+   *  the user's email into Settings so the AccountSection can show it
+   *  even when the SyncEngine isn't available (e.g. test environments). */
+  recordSignIn: (email: string) => void;
+  /** Wipes the cloudUserEmail from Settings. Local data is NOT cleared
+   *  (sign-out is reversible by signing back in). */
+  recordSignOut: () => void;
 
   // ── Plan: Month Planner (PRD §9.14) ──────────────────────────────
   patchMonthPlan: (key: string, patch: Parameters<typeof plans.patchMonthPlan>[2]) => void;
@@ -85,11 +107,30 @@ interface Store {
   update: (mutator: (s: State) => State) => void;
 }
 
+/**
+ * Bump `stateUpdatedAt` and persist + schedule a cloud push. Every
+ * mutation that flows through `run` / `runPlan` / inline `add*Plan` /
+ * `importAndReplace` ends here. Local write always succeeds; the
+ * SyncEngine silently no-ops when sync is disabled / signed-out /
+ * offline / locked.
+ */
+function saveAndMaybeSync(state: State): void {
+  const stamped: State = {
+    ...state,
+    settings: {
+      ...state.settings,
+      stateUpdatedAt: Date.now(),
+    },
+  };
+  save(stamped);
+  syncEngine.schedulePush(stamped);
+}
+
 function run(get: () => Store, mutator: (s: State) => State): void {
   const next = mutator(get().state);
   const recomputed = recomputeDerived(next);
   useStore.setState({ state: recomputed });
-  save(recomputed);
+  saveAndMaybeSync(recomputed);
 }
 
 /**
@@ -101,7 +142,7 @@ function run(get: () => Store, mutator: (s: State) => State): void {
 function runPlan(get: () => Store, mutator: (s: State) => State): void {
   const next = mutator(get().state);
   useStore.setState({ state: next });
-  save(next);
+  saveAndMaybeSync(next);
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -112,8 +153,22 @@ export const useStore = create<Store>((set, get) => ({
   recompute: () => set(s => ({ state: recomputeDerived(s.state) })),
 
   reset: () => {
+    // LOCAL ONLY. The Settings → Danger-zone "Wipe everything" wipes
+    // local IndexedDB + the in-memory cache; the cloud copy is left
+    // untouched so the user's other devices aren't destroyed by a
+    // local wipe. The SettingsScreen's "Delete cloud copy" button
+    // handles the authoritative cloud-side delete via the engine.
     clear();
-    set({ state: recomputeDerived({ ...DEFAULT_STATE }) });
+    const wiped: State = {
+      ...DEFAULT_STATE,
+      settings: {
+        ...DEFAULT_STATE.settings,
+        onboardingComplete: true,
+        cloudSyncEnabled: get().state.settings.cloudSyncEnabled,
+        cloudUserEmail: get().state.settings.cloudUserEmail,
+      },
+    };
+    set({ state: recomputeDerived(wiped) });
   },
 
   importAndReplace: (next) => {
@@ -133,7 +188,7 @@ export const useStore = create<Store>((set, get) => ({
     // Persist immediately. Without this, the imported data only lives in
     // memory and is lost on reload — the in-memory store and IndexedDB
     // would diverge until the next mutation re-saved (regression 2026-08-30).
-    save(recomputed);
+    saveAndMaybeSync(recomputed);
   },
 
   showBanner: (b) => set({ banner: b }),
@@ -149,6 +204,45 @@ export const useStore = create<Store>((set, get) => ({
     const next: State = {
       ...get().state,
       settings: { ...get().state.settings, onboardingComplete: true },
+    };
+    set({ state: next });
+    saveAndMaybeSync(next);
+  },
+
+  // ── Cloud sync actions ─────────────────────────────────────────────
+  setCloudSyncEnabled: (enabled) => {
+    const next: State = {
+      ...get().state,
+      settings: { ...get().state.settings, cloudSyncEnabled: enabled },
+    };
+    set({ state: next });
+    // Persist directly so the toggle survives a reload even when
+    // SyncEngine isn't wired (test env, missing env vars).
+    save(next);
+    syncEngine.setEnabled(enabled);
+  },
+
+  recordSignIn: (email) => {
+    const next: State = {
+      ...get().state,
+      settings: {
+        ...get().state.settings,
+        cloudUserEmail: email,
+        cloudSyncEnabled: true,
+      },
+    };
+    set({ state: next });
+    save(next);
+  },
+
+  recordSignOut: () => {
+    const next: State = {
+      ...get().state,
+      settings: {
+        ...get().state.settings,
+        cloudUserEmail: null,
+        cloudSyncEnabled: false,
+      },
     };
     set({ state: next });
     save(next);
@@ -167,7 +261,7 @@ export const useStore = create<Store>((set, get) => ({
   addEventPlan: (input) => {
     const { state: next, id } = plans.addEventPlan(get().state, input);
     useStore.setState({ state: next });
-    save(next);
+    saveAndMaybeSync(next);
     return id;
   },
   updateEventPlan: (id, patch) => runPlan(get, s => plans.updateEventPlan(s, id, patch)),
@@ -184,7 +278,7 @@ export const useStore = create<Store>((set, get) => ({
   addInvestmentPlan: (input) => {
     const { state: next, id } = investmentPlans.addInvestmentPlan(get().state, input);
     useStore.setState({ state: next });
-    save(next);
+    saveAndMaybeSync(next);
     return id;
   },
   updateInvestmentPlan: (id, patch) => runPlan(get, s => investmentPlans.updateInvestmentPlan(s, id, patch)),
@@ -195,7 +289,7 @@ export const useStore = create<Store>((set, get) => ({
   addLoanPlan: (input) => {
     const { state: next, id } = loanPlans.addLoanPlan(get().state, input);
     useStore.setState({ state: next });
-    save(next);
+    saveAndMaybeSync(next);
     return id;
   },
   updateLoanPlan: (id, patch) => runPlan(get, s => loanPlans.updateLoanPlan(s, id, patch)),

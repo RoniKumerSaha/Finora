@@ -7,6 +7,23 @@
 import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
 
+// Cloud sync (V1.x): install a fake Supabase client so SyncEngine
+// never tries to hit the network. The fake is reset between tests via
+// the afterEach hook below.
+import { installFakeSupabase, resetSyncBetweenTests } from './src/test/sync-helpers';
+import { resetIDB } from './src/test/idb-helpers';
+
+beforeEach(() => {
+  installFakeSupabase();
+});
+
+// Wipe IndexedDB + sync state between tests so they don't leak. This
+// mirrors the pattern of running each spec against a fresh app boot.
+afterEach(async () => {
+  resetSyncBetweenTests();
+  await resetIDB();
+});
+
 // happy-dom does NOT provide crypto.subtle either. Web Crypto is
 // required by the PIN lock feature (src/security/pin.ts). Polyfill
 // from Node's webcrypto so SHA-256 hashing + secure random salts work
