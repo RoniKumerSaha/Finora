@@ -1,6 +1,7 @@
 # Finora V1
 
-Bangladesh-first personal finance / bookkeeping web app. Local-first, single-user, no backend.
+Bangladesh-first personal finance / bookkeeping web app. Local-first,
+single-user. **Cloud sync is opt-in** — see [Cloud sync](#cloud-sync) below.
 
 ## Quick start
 
@@ -78,6 +79,74 @@ Backup → Import backup**.
 Users upgrading from a pre-2026-09-02 build will have their existing
 `localStorage['finora:v1']` data automatically migrated into IndexedDB on
 first load; the legacy key is then removed.
+
+## Cloud sync
+
+Cloud sync is **opt-in**. When signed in, Finora pushes the whole local
+state blob to Supabase and reconciles on every boot using last-write-wins
+(client `stateUpdatedAt` with server `updated_at` as the tiebreaker). The
+cloud copy is purely a copy — signing out or deleting it never deletes
+local data, and wiping local data never deletes the cloud copy.
+
+### Enabling cloud sync (development / self-hosting)
+
+1. Start a local Supabase stack (or point at a hosted project):
+   ```bash
+   supabase start
+   ```
+2. Apply the migration so the `finora_state` table exists:
+   ```bash
+   supabase db reset   # or: supabase migration up
+   ```
+3. Copy `.env.local.example` (if present) → `.env.local`, or set:
+   - `BASE_URL` — e.g. `http://127.0.0.1:54321` for the local stack, or
+     `https://<project-ref>.supabase.co` for a hosted project.
+   - `BASE_ANON_KEY` — the project's anon JWT key (Project Settings → API).
+     **Must** be the JWT-format key (starts with `eyJ…`), not the new
+     `sb_publishable_…` format — GoTrue rejects publishable keys as
+     bearer tokens with `bad_jwt: missing sub claim`, which surfaces as
+     sync failures in the UI.
+4. `npm run dev` and open Settings → Account → Sign in.
+
+If either variable is missing or empty at build time, the build ships
+without cloud sync — the Settings → Cloud sync panel surfaces a muted
+"Cloud sync is disabled in this build" message instead of throwing.
+
+### Enabling cloud sync (production deploys)
+
+`BASE_URL` and `BASE_ANON_KEY` are **build-time** env vars (passed
+through Vite's `define` block, not `VITE_`-prefixed). For each deploy
+target:
+
+- **Netlify**: Site → Site configuration → Environment variables → add
+  `BASE_URL` and `BASE_ANON_KEY` → trigger a redeploy.
+- **Vercel**: Project → Settings → Environment Variables → add to
+  "Production" → redeploy.
+- **GitHub Pages**: the included `.github/workflows/deploy.yml` runs
+  `npm run build` without secrets — for sync-enabled Pages you'll need
+  to add `BASE_URL` and `BASE_ANON_KEY` as repo/org GitHub Actions
+  secrets and expose them in the workflow, or build the bundle locally
+  and push `dist/` directly.
+
+After deploying with these vars set, the Settings → Cloud sync panel
+stops showing "Cloud sync is disabled in this build" and you can sign in
+with your email to seed the cloud row.
+
+### What cloud sync does and doesn't do
+
+- ✅ One row per user, scoped by Supabase RLS (`auth.uid() = user_id`).
+- ✅ Magic-link sign-in, no passwords.
+- ✅ Last-write-wins reconciliation across devices, with server clock
+  tiebreaker for the rare same-millisecond case.
+- ✅ Offline-tolerant: edits queue in IndexedDB and flush on reconnect,
+  coalescing into a single push.
+- ✅ Works with the PIN lock — locked devices don't push.
+- ❌ No real-time subscriptions. Cross-device edits are eventual.
+- ❌ No client-side encryption. Data sits in the cloud row as JSONB
+  gated only by RLS — fine against another user reading your row, **not**
+  a compromise of the Supabase project itself.
+- ❌ No per-field conflict resolution. Concurrent edits on two devices
+  resolve "last write wins" — one of them wins in full.
 
 ## Vanilla v1 (archived)
 

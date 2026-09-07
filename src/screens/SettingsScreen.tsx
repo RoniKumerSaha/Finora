@@ -219,6 +219,8 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
     s.state.investments.length
   );
 
+  const email = syncEngine.getEmail();
+
   // VITE_APP_VERSION is set at build time when a release is cut.
   // Hard-coded fallback matches package.json "version" (1.0.0).
   const version = (import.meta as any).env?.VITE_APP_VERSION || '1.0.0';
@@ -239,9 +241,9 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
         <MetaRow
           label="Privacy"
           value={
-            syncEngine.getEmail()
-              ? 'Stored on this device and synced to your cloud copy on Supabase.'
-              : 'Stored on this device only. Sign in from the panel above to enable cloud sync.'
+            email
+              ? 'Stored on this device and synced to your cloud copy on Supabase. RLS scopes every read and write to your account.'
+              : 'Stored on this device only. Cloud sync is opt-in — see the Cloud sync panel above.'
           }
           block
         />

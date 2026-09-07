@@ -34,7 +34,13 @@ function relativeTime(ms: number | null): string {
   return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
-function describe(status: SyncStatus): { label: string; tone: 'muted' | 'success' | 'info' | 'warn' | 'danger'; title: string } {
+/**
+ * The label / tone / tooltip that the SyncStatusPill renders for a given
+ * `SyncStatus`. Exported so other surfaces (e.g. AccountSection's inline
+ * pill) can render the same status in the same way — single source of
+ * truth, no chance of the pill and the AccountSection diverging.
+ */
+export function describeSyncStatus(status: SyncStatus): { label: string; tone: 'muted' | 'success' | 'info' | 'warn' | 'danger'; title: string } {
   switch (status.kind) {
     case 'unconfigured':
       return {
@@ -82,7 +88,7 @@ export function SyncStatusPill() {
   const navigate = useNavigate();
   const showBanner = useStore(s => s.showBanner);
 
-  const { label, tone, title } = describe(status);
+  const { label, tone, title } = describeSyncStatus(status);
 
   // Click handlers — signed-out goes to Settings; error shows a banner.
   const handleClick = () => {

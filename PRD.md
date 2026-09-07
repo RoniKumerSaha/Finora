@@ -118,7 +118,7 @@ A user should be able to:
 | N6 | Monthly budget recommendations | Power-user feature; deferred to V2 |
 | N7 | Insights / trend analysis | Too analytical; deferred to V2 |
 | N8 | Bank integration / automatic import | Privacy and complexity concerns |
-| N9 | Cloud sync / user accounts | V1 is local-first by design |
+| N9 | Cloud sync / user accounts | **Superseded by §9.18** — V1 is still local-first, but opt-in cloud sync (magic-link sign-in, single-blob row per user, last-write-wins reconciliation) shipped in V1.x. |
 | N10 | Tax calculations | Out of scope entirely |
 | N11 | Multi-currency | V1 is BDT only |
 | N12 | Notifications / reminders | In-app only; no push/email/SMS |
@@ -1239,6 +1239,83 @@ Every error message must:
 | **Investments record, never guess** | Finora shows the calculated maturity value but does not accrue interest daily. The maturity value is honest math; the payout is real money and only happens when the bank pays it. |
 | **No setup walls** | Onboarding asks one question. Everything else is progressive. |
 | **Offline always** | No feature requires internet. |
+
+### 9.19 Cloud sync (added 2026-09-07)
+
+**V1 is still local-first**, but V1.x adds **opt-in cross-device cloud sync** powered by Supabase. Users without an account see no difference from the local-only product; users who sign in get a single cloud copy they can move between devices.
+
+#### 9.19.1 Goals
+
+- Move between devices (laptop → phone, etc.) without exporting/importing JSON.
+- Keep cloud sync **strictly subordinate** to local data: the local store is always the source of truth for the device; the cloud is a copy.
+- Stay simple: no CRDTs, no realtime channels, no conflict-resolution UI.
+
+#### 9.19.2 Non-goals (carried over from V1)
+
+- Real-time multi-device editing. Concurrent edits resolve as "last write wins".
+- Sharing. One user, one account, one cloud copy.
+- Client-side encryption. Data sits in the cloud row as JSONB gated by RLS — fine against another user reading your row, **not** a project-level compromise.
+
+#### 9.19.3 Authentication
+
+- **Magic link only** (`signInWithOtp`). No passwords.
+- Session persisted in `localStorage` by `supabase-js`; auto-refreshed; cleared on sign-out.
+- `emailRedirectTo` is the bare origin (`${origin}/`) — the hash router swallows the access_token if a `/#/settings` suffix is included, which surfaces as "sync just doesn't work" with no obvious error.
+
+#### 9.19.4 Storage shape
+
+One row per user, holding the entire local `State` as JSONB:
+
+```sql
+create table public.finora_state (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  version    int          not null default 1,
+  payload    jsonb        not null,
+  updated_at timestamptz  not null default now()
+);
+```
+
+- **RLS** is the entire security model — every read/write/update/delete gated on `auth.uid() = user_id`.
+- **`updated_at` is server-trusted** via a `before update` trigger (`touch_updated_at()`). Clients can write the row but never the clock.
+
+#### 9.19.5 Reconciliation: last-write-wins with a server clock tiebreaker
+
+- Every local mutation bumps `settings.stateUpdatedAt` (client ms-epoch). This is the **primary** LWW key.
+- Server's `updated_at` is the **tiebreaker** when client stamps are equal (rare, but happens when a device has the wrong clock).
+- Three outcomes: `adopt-cloud`, `keep-local (local-newer)`, `keep-local (equal-and-cloud-not-newer)`.
+- **First-ever pull with no cloud row**: push local up only if local already has data. An empty local stays empty so the first device with data on it wins, rather than racing to seed.
+
+#### 9.19.6 Push behavior
+
+- **400 ms debounce** so a burst of edits collapses into one Supabase write.
+- **Offline-tolerant**: when `navigator.onLine === false` (or the upsert throws a network error), the pending state goes into an IndexedDB-backed queue that **coalesces** (replaces the tail rather than appending) so 30 offline edits become a single push on reconnect.
+- **Retry with backoff** (`[1s, 3s, 9s]`). 4xx errors other than 401/408/429 are treated as permanent and surfaced via the banner.
+- **No-op when**: cloud sync is disabled, user is signed out, Supabase client is not configured, or the PIN lock is engaged.
+
+#### 9.19.7 UI surfaces
+
+- **`SyncStatusPill`** (always visible, sidebar): muted / "Syncing…" / "Synced · 2m ago" / "Offline · N pending" / "Sync error".
+- **`AccountSection`** (Settings → Cloud sync): sign-in / signed-in summary / force-sync / sign-out. The "Delete cloud copy" destructive action lives in the Danger Zone rather than here per the destructive-action convention.
+- **About panel** (Settings → About): a "Cloud sync" row that surfaces the same state in plain language, so the user can see at a glance whether cloud sync is on, off, or unavailable in this build.
+- Every failure surfaces via the standard three-part `what / why / fix` banner. Local writes never block on cloud state.
+
+#### 9.19.8 Build-time configuration
+
+`BASE_URL` and `BASE_ANON_KEY` are passed to the client through Vite's `define` block (not `VITE_`-prefixed). **If either is empty at build time, the build ships without cloud sync** — `src/lib/supabase.ts` exports `null` and the SyncEngine treats the build as `unconfigured`. The Settings → Cloud sync panel surfaces a muted "Cloud sync is disabled in this build" message in that case rather than throwing at boot.
+
+The anon key **must** be the JWT format (starts with `eyJ…`). The newer `sb_publishable_…` format is rejected by GoTrue's session validator as `bad_jwt: missing sub claim` and surfaces as persistent sync failures in the UI.
+
+#### 9.19.9 Local ↔ cloud destruction independence
+
+- Local "Wipe all data" leaves the cloud copy alone (the other device isn't destroyed by a local wipe).
+- Cloud "Delete cloud copy" leaves local data alone (signing out is reversible by signing back in).
+- The `resetSyncMetadata()` call after a local wipe clears `lastSyncedAt` so the next boot's reconcile doesn't skip the empty-state guard and accidentally push empty local over a populated cloud row on another device.
+
+#### 9.19.10 Tests
+
+- `src/test/sync-helpers.ts` provides an in-memory Supabase fake covering every method `SyncEngine` actually calls (`auth.{getSession,signInWithOtp,signOut,onAuthStateChange}`, `from('finora_state').{select/upsert/delete/eq/maybeSingle}`).
+- `installFakeSupabase()` swaps the production singleton's client via the `__setClientForTests()` escape hatch so the real UI talks to the same engine the test controls.
+- `__seedCloudRow()` and `__setAuthUser()` give specs direct hooks into the fake cloud + auth state.
 
 ---
 

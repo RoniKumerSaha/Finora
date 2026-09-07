@@ -14,10 +14,17 @@
  *
  * Reads `useSyncStatus()` for the live state. Doesn't own any state
  * besides the SignInDialog's open flag.
+ *
+ * The status pill next to the section heading is the same component
+ * used in the Shell sidebar (`SyncStatusPill`) — we re-use the
+ * `describeSyncStatus()` mapping rather than copy/pasting it so the
+ * two surfaces can never tell different stories.
  */
 import { useState } from 'react';
 import { Button } from './Button';
+import { Pill } from './Pill';
 import { SignInDialog } from './SignInDialog';
+import { describeSyncStatus } from './SyncStatusPill';
 import { useSyncStatus, syncEngine } from '../domain/sync';
 import { useStore } from '../domain/store';
 
@@ -41,7 +48,12 @@ export function AccountSection() {
   if (status.kind === 'unconfigured') {
     return (
       <section className="card">
-        <h2 className="heading h3-modal mb-4">Cloud sync</h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="heading h3-modal m-0">Cloud sync</h2>
+          <Pill tone={describeSyncStatus(status).tone} variant="outline" title={describeSyncStatus(status).title}>
+            {describeSyncStatus(status).label}
+          </Pill>
+        </div>
         <div
           className="text-[13px] text-muted rounded-btn px-3.5 py-2.5"
           style={{ background: 'var(--surface-2)' }}
@@ -86,7 +98,12 @@ export function AccountSection() {
 
   return (
     <section className="card">
-      <h2 className="heading h3-modal mb-4">Cloud sync</h2>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h2 className="heading h3-modal m-0">Cloud sync</h2>
+        <Pill tone={describeSyncStatus(status).tone} variant="outline" title={describeSyncStatus(status).title}>
+          {describeSyncStatus(status).label}
+        </Pill>
+      </div>
 
       {signedIn ? (
         <div className="flex flex-col gap-4">
