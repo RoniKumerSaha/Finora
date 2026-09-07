@@ -144,8 +144,11 @@ export function installFakeSupabase(): SyncEngine {
     installed = true;
   }
   // Always (re-)swap the client so the singleton hits the fake.
-  engine.__setClientForTests(fake);
-  return engine;
+  // `engine` was either just assigned to the singleton above, or
+  // was already assigned on a previous installFakeSupabase call —
+  // either way it's non-null here.
+  engine!.__setClientForTests(fake);
+  return engine!;
 }
 
 /** Get the currently-installed fake engine. Returns null if

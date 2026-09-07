@@ -10,13 +10,13 @@ import { enqueue, readQueue, dequeue, clearQueue, queueLength } from '../sync.qu
 import { resetIDB } from '../../test/idb-helpers';
 import type { State } from '../types';
 
-function makeState(stamp: number, label: string): State {
+function makeState(stamp: number, _label: string): State {
   return {
     version: 1,
     accounts: [], transactions: [], goals: [], debts: [], investments: [],
     categories: [], monthPlans: [], eventPlans: [], investmentPlans: [], loanPlans: [],
     settings: { theme: 'dark', onboardingComplete: true, stateUpdatedAt: stamp },
-  } as State & { _label?: string } as unknown as State;
+  };
 }
 
 beforeEach(async () => {

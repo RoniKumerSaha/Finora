@@ -32,7 +32,9 @@ describe('sync.reconcile.pickWinner', () => {
     const local = makeState(1_000);
     const outcome = pickWinner(local, null);
     expect(outcome.kind).toBe('keep-local');
-    expect(outcome.reason).toBe('no-cloud');
+    if (outcome.kind === 'keep-local') {
+      expect(outcome.reason).toBe('no-cloud');
+    }
   });
 
   it('adopts cloud when cloud stamp is strictly greater than local', () => {
@@ -50,7 +52,9 @@ describe('sync.reconcile.pickWinner', () => {
     const cloud = makeCloudRow(1_000, 1_000);
     const outcome = pickWinner(local, cloud);
     expect(outcome.kind).toBe('keep-local');
-    expect(outcome.reason).toBe('local-newer');
+    if (outcome.kind === 'keep-local') {
+      expect(outcome.reason).toBe('local-newer');
+    }
   });
 
   it('treats undefined stateUpdatedAt as 0 (older saves before this field existed)', () => {
@@ -75,6 +79,8 @@ describe('sync.reconcile.pickWinner', () => {
     const cloud = makeCloudRow(1_000, 1_000);
     const outcome = pickWinner(local, cloud);
     expect(outcome.kind).toBe('keep-local');
-    expect(outcome.reason).toBe('equal-and-cloud-not-newer');
+    if (outcome.kind === 'keep-local') {
+      expect(outcome.reason).toBe('equal-and-cloud-not-newer');
+    }
   });
 });

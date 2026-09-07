@@ -2,7 +2,7 @@
  * formatSyncError.spec.ts — verify the Supabase/network error mapper
  * returns the right ThreePartError for each known category.
  */
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { formatSyncError } from '../errors';
 
 describe('formatSyncError', () => {

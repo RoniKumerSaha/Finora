@@ -395,7 +395,6 @@ export class SyncEngine {
       // next pull.
       const { useStore } = await import('./store');
       const local = useStore.getState().state;
-      const localStamp = local.settings.stateUpdatedAt ?? 0;
       const hasData = local.accounts.length > 0
         || local.transactions.length > 0
         || local.goals.length > 0
