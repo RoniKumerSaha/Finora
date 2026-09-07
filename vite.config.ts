@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
@@ -12,34 +12,45 @@ import path from 'node:path';
 // `.env.local`) to client code under `import.meta.env.*`. These names
 // intentionally do NOT use the standard `VITE_` prefix, so we have to
 // whitelist them here — otherwise Vite would strip them at build time.
+//
+// We call `loadEnv(mode, root, '')` explicitly so the values come from
+// `.env.local` (not the parent shell's `process.env`). `loadEnv` is
+// normally only used for `VITE_*` vars; doing it ourselves here means
+// custom names also get picked up.
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, path.resolve(import.meta.dirname), '');
+  const baseUrl = env.BASE_URL ?? '';
+  const baseAnonKey = env.BASE_ANON_KEY ?? '';
+
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(import.meta.dirname, './src'),
+      },
     },
-  },
-  define: {
-    // Replace the literal placeholders at build time. Using a function
-    // form (rather than `import.meta.env.BASE_URL`) keeps the values
-    // out of the source bundle's static analysis so a quick grep for
-    // "BASE_URL" in the built `dist/` won't reveal them.
-    'import.meta.env.BASE_URL': JSON.stringify(process.env.BASE_URL ?? ''),
-    'import.meta.env.BASE_ANON_KEY': JSON.stringify(process.env.BASE_ANON_KEY ?? ''),
-  },
-  server: {
-    host: 'localhost',
-    port: 5173,
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-  },
-  test: {
-    globals: true,
-    environment: 'happy-dom',
-    setupFiles: ['./tests-setup.ts'],
-    include: ['src/**/*.spec.{ts,tsx}', 'tests/**/*.spec.ts'],
-  },
+    define: {
+      // Replace the literal placeholders at build time. Using a function
+      // form (rather than `import.meta.env.BASE_URL`) keeps the values
+      // out of the source bundle's static analysis so a quick grep for
+      // "BASE_URL" in the built `dist/` won't reveal them.
+      'import.meta.env.BASE_URL': JSON.stringify(baseUrl),
+      'import.meta.env.BASE_ANON_KEY': JSON.stringify(baseAnonKey),
+    },
+    server: {
+      host: 'localhost',
+      port: 5173,
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: true,
+    },
+    test: {
+      globals: true,
+      environment: 'happy-dom',
+      setupFiles: ['./tests-setup.ts'],
+      include: ['src/**/*.spec.{ts,tsx}', 'tests/**/*.spec.ts'],
+    },
+  };
 });

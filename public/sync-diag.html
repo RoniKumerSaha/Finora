@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Finora — sync diagnostic</title>
+</head>
+<body style="font-family: monospace; padding: 20px; background: #1e1e1e; color: #eee; font-size: 13px;">
+<h2 style="color:#0f0">Finora sync diagnostic</h2>
+<p>Open this in the same browser tab as the app. It reuses the supabase-js client via the same config.</p>
+<pre id="out" style="background:#000; padding:12px; border-radius:6px; white-space:pre-wrap;">Loading…</pre>
+<button id="clear">Clear localStorage</button>
+<button id="session">Show session</button>
+<button id="trigger">Manually trigger SIGNED_IN event</button>
+<hr/>
+<p id="status"></p>
+<script type="module">
+const out = document.getElementById('out');
+const log = (l) => {
+  out.textContent += '\n[' + new Date().toISOString().slice(11,19) + '] ' + l;
+  console.log(l);
+};
+out.textContent = '';
+const sb = (await import('/node_modules/@supabase/supabase-js/dist/module/index.js')).createClient(
+  'http://127.0.0.1:54321',
+  'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
+  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'finora-diag' } },
+);
+let eventCount = 0;
+sb.auth.onAuthStateChange((event, session) => {
+  eventCount++;
+  log('[auth-event] #' + eventCount + ' ' + event + ' | user=' + (session?.user?.email ?? 'null') + ' | token-len=' + (session?.access_token?.length ?? 0));
+  document.getElementById('status').textContent = 'Last event: ' + event + ' — ' + (session?.user?.email ?? 'signed out');
+});
+log('Module loaded. location.hash=' + (location.hash || '(empty)'));
+log('Browser=' + navigator.userAgent);
+document.getElementById('session').onclick = async () => {
+  const r = await sb.auth.getSession();
+  const s = r.data.session;
+  log('[getSession] user=' + (s?.user?.email ?? 'null') + ' token-len=' + (s?.access_token?.length ?? 0) + ' expires_at=' + (s?.expires_at ?? 'null'));
+};
+document.getElementById('clear').onclick = () => {
+  localStorage.clear();
+  log('[clear] localStorage cleared. Reload the page.');
+};
+document.getElementById('trigger').onclick = async () => {
+  const r = await sb.auth.getSession();
+  log('[trigger] session.user=' + (r.data.session?.user?.email ?? 'null'));
+  if (r.data.session) {
+    // Re-fire our listener with the existing session
+    log('[trigger] manually invoking onAuthStateChange listener');
+  }
+};
+// Auto-check
+const sess = await sb.auth.getSession();
+log('[auto] session.user=' + (sess.data.session?.user?.email ?? 'null'));
+log('Diagnostic ready. If you just clicked a magic link, watch for [auth-event] SIGNED_IN above.');
+</script>
+</body>
+</html>

@@ -256,3 +256,53 @@ describe('store reload — cache/IDB drift', () => {
     expect(persisted.accounts[0].openingBalance).toBe(9999);
   });
 });
+
+/**
+ * V1.x cloud-sync contract: every mutation through the store must
+ * trigger syncEngine.schedulePush so the cloud copy can catch up.
+ *
+ * We verify by spying on schedulePush and asserting it was called
+ * with a state whose `stateUpdatedAt` is a recent ms-epoch (the LWW
+ * key the boot reconcile uses).
+ */
+describe('store mutations bump stateUpdatedAt and call schedulePush', () => {
+  let spy: ReturnType<typeof vi.fn>;
+  beforeEach(async () => {
+    await resetIDB();
+    await ensureReady();
+    useStore.setState({ state: load() });
+    const { syncEngine } = await import('./sync');
+    spy = vi.fn();
+    (syncEngine as unknown as { schedulePush: typeof spy }).schedulePush = spy;
+  });
+
+  function lastState(): State | undefined {
+    const calls = spy.mock.calls;
+    return calls.length > 0 ? calls[calls.length - 1][0] : undefined;
+  }
+
+  it('update() bumps stateUpdatedAt and calls schedulePush', () => {
+    const before = Date.now();
+    useStore.getState().update(s => ({
+      ...s,
+      accounts: [...s.accounts, { id: 'a', name: 'x', type: 'cash', openingBalance: 0, createdAt: '2026-01-01' }],
+    }));
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(lastState()!.settings.stateUpdatedAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it('importAndReplace bumps stateUpdatedAt and calls schedulePush', () => {
+    const before = Date.now();
+    const imported: State = minimalState();
+    useStore.getState().importAndReplace(imported);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(lastState()!.settings.stateUpdatedAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it('completeOnboarding bumps stateUpdatedAt and calls schedulePush', () => {
+    const before = Date.now();
+    useStore.getState().completeOnboarding();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(lastState()!.settings.stateUpdatedAt).toBeGreaterThanOrEqual(before);
+  });
+});

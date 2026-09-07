@@ -26,14 +26,42 @@ export function SettingsScreen() {
   const { confirm, dialog } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function onWipe() {
+  /**
+   * Single destructive button — wipes everything, on this device AND
+   * in the cloud (if signed in). Replaces the prior three options
+   * (Delete cloud copy, Wipe all data, Erase everything). The user's
+   * intent is the same in all three cases: "make this app empty",
+   * so we collapse them into one.
+   */
+  async function onWipeEverything() {
+    const signedIn = Boolean(syncEngine.getEmail());
+    const body = signedIn
+      ? 'Every account, transaction, goal, debt, investment, and plan will be deleted from THIS DEVICE and from your cloud copy on Supabase. This cannot be undone.'
+      : 'Every account, transaction, goal, debt, investment, and plan will be deleted from this device. This cannot be undone.';
     const ok = await confirm({
       title: 'Wipe all data?',
-      body: 'Every account, transaction, goal, debt, investment, and plan will be deleted. This cannot be undone.',
+      body,
       confirmLabel: 'Wipe everything',
       danger: true,
     });
     if (!ok) return;
+
+    // Cloud first — if it fails, abort before we nuke local.
+    if (signedIn) {
+      try {
+        await syncEngine.deleteCloudCopy();
+      } catch (err) {
+        showBanner({
+          kind: 'error',
+          what: 'Couldn\'t delete cloud copy',
+          why: (err as Error).message || 'The request failed.',
+          fix: 'Check your connection and try again. Local data was NOT wiped.',
+        });
+        return;
+      }
+    }
+
+    // Local: blank the store.
     update(s => ({
       version: 1,
       accounts: [], transactions: [], goals: [], debts: [], investments: [], categories: [],
@@ -41,14 +69,15 @@ export function SettingsScreen() {
       investmentPlans: [], loanPlans: [],
       settings: { ...s.settings, onboardingComplete: true },
     }));
-    // PIN lock survives a wipe: drop the salt + hash too so the next
-    // cold launch doesn't ask for a forgotten PIN.
+    // PIN + rate-limit reset so a forgotten PIN doesn't strand the user.
     clearPin();
     resetRateLimit();
     showBanner({
       kind: 'success',
       what: 'All data wiped',
-      why: 'Your local store is now empty.',
+      why: signedIn
+        ? 'Your local store and cloud copy are now empty.'
+        : 'Your local store is now empty.',
       fix: 'Add an account to start tracking again.',
     });
   }
@@ -62,32 +91,6 @@ export function SettingsScreen() {
       why: 'This file contains every account, transaction, goal, debt, and investment from your local store.',
       fix: 'Keep it somewhere safe — it\'s the only way to restore from a wipe.',
     });
-  }
-
-  async function onDeleteCloud() {
-    const ok = await confirm({
-      title: 'Delete your cloud copy?',
-      body: 'Your data will be removed from Supabase. Other devices will stop syncing until the next push from this device recreates the cloud row. Local data on this device stays intact.',
-      confirmLabel: 'Delete cloud copy',
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await syncEngine.deleteCloudCopy();
-      showBanner({
-        kind: 'success',
-        what: 'Cloud copy deleted',
-        why: 'Your data has been removed from Supabase.',
-        fix: 'Other devices will need to sync from this device to restore their cloud copy.',
-      });
-    } catch (err) {
-      showBanner({
-        kind: 'error',
-        what: 'Couldn\'t delete cloud copy',
-        why: (err as Error).message || 'The request failed.',
-        fix: 'Try again. If it keeps failing, sign out and back in.',
-      });
-    }
   }
 
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -173,37 +176,23 @@ export function SettingsScreen() {
           >
             <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
             <p className="text-[13px] text-muted mb-5">
-              These actions are destructive. Export first if unsure.
+              This action is destructive. Export first if unsure.
             </p>
-
-            {syncEngine.getEmail() && (
-              <div className="flex flex-wrap items-start justify-between gap-3 pb-5 mb-5" style={{ borderBottom: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
-                <div className="min-w-0 flex-1 max-w-prose">
-                  <div className="font-semibold text-[14px] text-ink">Delete cloud copy</div>
-                  <div className="text-[12px] text-muted mt-1">
-                    Removes your data from Supabase. Other devices will stop syncing. Local data on this device stays intact.
-                  </div>
-                </div>
-                <Button variant="danger" className="shrink-0" onClick={onDeleteCloud}>
-                  Delete cloud copy
-                </Button>
-              </div>
-            )}
 
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1 max-w-prose">
-                <div className="font-semibold text-[14px] text-ink">Wipe everything</div>
+                <div className="font-semibold text-[14px] text-ink">Wipe all data</div>
                 <div className="text-[12px] text-muted mt-1">
-                  Deletes every account, transaction, goal, debt, investment, and plan — leaves the app as a clean install on this device. Cloud copy is preserved.
+                  Deletes every account, transaction, goal, debt, investment, and plan from this device{syncEngine.getEmail() ? ' and from your cloud copy on Supabase' : ''} — leaves the app as a clean install.
                 </div>
               </div>
-              <Button variant="danger" onClick={onWipe} className="shrink-0">Wipe all data</Button>
+              <Button variant="danger" onClick={onWipeEverything} className="shrink-0">Wipe all data</Button>
             </div>
           </section>
         </div>
 
         {/* Right column — About */}
-        <AboutPanel onReset={onWipe} />
+        <AboutPanel onReset={onWipeEverything} />
       </div>
 
       {dialog}
@@ -243,8 +232,8 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
           label="Privacy"
           value={
             syncEngine.getEmail()
-              ? 'Stored on this device. Cloud sync is optional and end-to-end scoped to your account.'
-              : 'Stored on this device only. Cloud sync is opt-in from the panel above.'
+              ? 'Stored on this device and synced to your cloud copy on Supabase.'
+              : 'Stored on this device only. Sign in from the panel above to enable cloud sync.'
           }
           block
         />

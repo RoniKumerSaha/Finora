@@ -3,17 +3,17 @@
  *
  * Two states:
  *   - signed-out: explains what cloud sync does, lets the user open
- *     SignInDialog to send a magic link, and offers a toggle to
- *     enable sync (the toggle is meaningless until signed in but
- *     we surface it so the user can pre-commit to the choice).
+ *     SignInDialog to send a magic link. Once they sign in, the
+ *     SyncEngine's onAuthStateChange callback auto-flips
+ *     `cloudSyncEnabled = true` and seeds the cloud row — no separate
+ *     toggle.
  *   - signed-in: shows email + last-synced timestamp, exposes
  *     "Force sync now" and "Sign out". The "Delete cloud copy" action
  *     lives in the parent SettingsScreen's Danger zone so it follows
  *     the existing destructive-action convention.
  *
- * Reads `useSyncStatus()` for the live state and `useStore` for the
- * settings toggle. Doesn't own any state besides the SignInDialog's
- * open flag.
+ * Reads `useSyncStatus()` for the live state. Doesn't own any state
+ * besides the SignInDialog's open flag.
  */
 import { useState } from 'react';
 import { Button } from './Button';
@@ -33,8 +33,6 @@ function relativeTime(ms: number | null): string {
 
 export function AccountSection() {
   const status = useSyncStatus();
-  const cloudSyncEnabled = useStore(s => s.state.settings.cloudSyncEnabled ?? false);
-  const setCloudSyncEnabled = useStore(s => s.setCloudSyncEnabled);
   const recordSignOut = useStore(s => s.recordSignOut);
   const showToast = useStore(s => s.showToast);
   const [signInOpen, setSignInOpen] = useState(false);
@@ -127,23 +125,7 @@ export function AccountSection() {
         </div>
       )}
 
-      {/* Toggle is always shown so the user can pre-commit; the engine
-          ignores it until signed-in. */}
-      <label className="flex items-center gap-3 mt-5 pt-5 cursor-pointer" style={{ borderTop: '1px solid var(--border)' }}>
-        <input
-          type="checkbox"
-          checked={cloudSyncEnabled}
-          onChange={e => setCloudSyncEnabled(e.target.checked)}
-          className="w-4 h-4 rounded border-border accent-primary"
-        />
-        <span className="text-[13px] text-ink">
-          Enable cloud sync
-          <span className="block text-[11.5px] text-muted mt-0.5">
-            When off, your data stays on this device only.
-          </span>
-        </span>
-      </label>
-
+      {/* Toggle removed — cloud sync is automatic once the user signs in. */}
       <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </section>
   );

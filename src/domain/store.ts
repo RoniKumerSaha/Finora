@@ -57,16 +57,14 @@ interface Store {
   completeOnboarding: () => void;
 
   // ── Cloud sync (V1.x) ────────────────────────────────────────────────
-  /** Toggle cloud-sync opt-in. When turning ON, the engine performs an
-   *  initial reconcile (pull from cloud, mutate store if cloud wins,
-   *  push local otherwise). */
-  setCloudSyncEnabled: (enabled: boolean) => void;
   /** Called by the SyncEngine after a successful sign-in to persist
-   *  the user's email into Settings so the AccountSection can show it
-   *  even when the SyncEngine isn't available (e.g. test environments). */
+   *  the user's email + auto-enable sync into Settings. The engine
+   *  mirrors this state, so subsequent store mutations are picked up
+   *  by the 400ms-debounced schedulePush. */
   recordSignIn: (email: string) => void;
-  /** Wipes the cloudUserEmail from Settings. Local data is NOT cleared
-   *  (sign-out is reversible by signing back in). */
+  /** Wipes the cloudUserEmail from Settings and disables sync.
+   *  Local data is NOT cleared (sign-out is reversible by signing
+   *  back in). */
   recordSignOut: () => void;
 
   // ── Plan: Month Planner (PRD §9.14) ──────────────────────────────
@@ -210,18 +208,6 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   // ── Cloud sync actions ─────────────────────────────────────────────
-  setCloudSyncEnabled: (enabled) => {
-    const next: State = {
-      ...get().state,
-      settings: { ...get().state.settings, cloudSyncEnabled: enabled },
-    };
-    set({ state: next });
-    // Persist directly so the toggle survives a reload even when
-    // SyncEngine isn't wired (test env, missing env vars).
-    save(next);
-    syncEngine.setEnabled(enabled);
-  },
-
   recordSignIn: (email) => {
     const next: State = {
       ...get().state,
@@ -232,7 +218,17 @@ export const useStore = create<Store>((set, get) => ({
       },
     };
     set({ state: next });
+    // Plain save (not saveAndMaybeSync) — recordSignIn is an
+    // identity change, not a data mutation. Bumping stateUpdatedAt
+    // here would make a fresh, empty local state look "newer" than
+    // a populated cloud row from another device, and the LWW
+    // reconcile would push the empty state up, clobbering the
+    // other device's data. SyncEngine.onAuthStateChange calls this
+    // when a magic link establishes a session; the engine then
+    // runs reconcileAndPushLatest which uses real stateUpdatedAt
+    // values to decide what to do.
     save(next);
+    syncEngine.setEnabled(true);
   },
 
   recordSignOut: () => {
@@ -245,7 +241,14 @@ export const useStore = create<Store>((set, get) => ({
       },
     };
     set({ state: next });
+    // Same reasoning: sign-out is an identity change, not a data
+    // mutation. Don't bump stateUpdatedAt.
     save(next);
+    // Disarm the engine so subsequent mutations stay local until
+    // the user signs back in. SyncEngine.signOut() (called by
+    // AccountSection.onSignOut before recordSignOut) already
+    // cleared the session; this just flips the enabled flag.
+    syncEngine.setEnabled(false);
   },
 
   // ── Month Planner ───────────────────────────────────────────────

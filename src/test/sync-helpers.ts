@@ -18,7 +18,7 @@
  *     test starts clean — no leaked session, no carried-over pending
  *     pushes).
  */
-import { SyncEngine } from '../domain/sync';
+import { SyncEngine, __resetSyncEngineForTests, syncEngine } from '../domain/sync';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { State } from '../domain/types';
 
@@ -36,11 +36,13 @@ let authState: { user: { id: string; email: string } | null } = { user: null };
 const authListeners = new Set<(event: string, session: { user: { id: string; email: string } } | null) => void>();
 
 /** Reset everything — the in-memory cloud table, the fake auth state,
- *  and the production SyncEngine singleton. */
+ *  AND the production SyncEngine singleton's transient state. Safe
+ *  to call from afterEach. */
 export function __resetSyncForTests(): void {
   cloud.clear();
   authState = { user: null };
   authListeners.clear();
+  __resetSyncEngineForTests();
 }
 
 /** Inspect / seed the fake cloud directly from a test. */
@@ -134,12 +136,15 @@ let engine: SyncEngine | null = null;
  *  call from beforeEach. Returns the engine instance for direct
  *  assertions. */
 export function installFakeSupabase(): SyncEngine {
+  const fake = makeFakeClient();
   if (!installed) {
-    engine = new SyncEngine(makeFakeClient());
+    // Reuse the production singleton so callers (the store, the
+    // UI) talk to the same engine that the test controls.
+    engine = syncEngine;
     installed = true;
-  } else if (!engine) {
-    engine = new SyncEngine(makeFakeClient());
   }
+  // Always (re-)swap the client so the singleton hits the fake.
+  engine.__setClientForTests(fake);
   return engine;
 }
 

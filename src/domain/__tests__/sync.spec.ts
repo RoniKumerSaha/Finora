@@ -99,16 +99,37 @@ describe('SyncEngine — boot reconcile', () => {
     expect(useStore.getState().state.settings.stateUpdatedAt).toBe(99_999);
   });
 
-  it('does not push local when cloud has no row but user is signed in + enabled', async () => {
-    // Initial-push behaviour: the engine leaves it to the next user
-    // mutation. We assert no immediate cloud write happens during init.
+  it('pushes local to seed cloud when cloud has no row but user is signed in + enabled', async () => {
+    // First-ever sign-in with data: the engine pushes the local state
+    // to the cloud so a second device signing in to the same account
+    // has something to pull.
+    __setAuthUser({ id: 'u1', email: 'a@b.com' });
+    engine.setEnabled(true);
+    const { useStore } = await import('../store');
+    const state = makeState(1);
+    state.accounts = [{ id: 'a', name: 'Cash', type: 'cash', openingBalance: 0, createdAt: '2026-01-01' }];
+    useStore.setState({ state });
+    await engine.init();
+    // The push is async; give it a moment to land.
+    await new Promise(r => setTimeout(r, 100));
+    const row = __getCloudRow('u1');
+    expect(row).toBeDefined();
+    expect((row!.payload as State).settings.stateUpdatedAt).toBe(1);
+    expect((row!.payload as State).accounts.length).toBe(1);
+  });
+
+  it('does NOT push empty local on first-ever sign-in (would clobber other devices)', async () => {
+    // Regression: when a fresh device with empty local state signed
+    // in for the first time, the engine pushed its empty state to
+    // the cloud, which clobbered any data the user had on another
+    // device. The fix: only seed the cloud when local has data.
     __setAuthUser({ id: 'u1', email: 'a@b.com' });
     engine.setEnabled(true);
     const { useStore } = await import('../store');
     useStore.setState({ state: makeState(1) });
+    // makeState returns an empty State with stamp set but no entities.
     await engine.init();
-    // No row exists yet (reconcile decided "no cloud, nothing to push
-    // until a mutation happens").
+    await new Promise(r => setTimeout(r, 100));
     expect(__getCloudRow('u1')).toBeUndefined();
   });
 });

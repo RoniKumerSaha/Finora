@@ -102,6 +102,14 @@ export class SyncEngine {
     this.client = client === undefined ? defaultSupabase : client;
   }
 
+  /** Test-only: swap the underlying Supabase client. Used by
+   *  `installFakeSupabase()` to replace the real client with an
+   *  in-memory mock without changing the singleton's identity
+   *  (so `useStore` callbacks still point at this object). */
+  __setClientForTests(client: SupabaseClient | null): void {
+    this.client = client;
+  }
+
   // ── Status accessors ─────────────────────────────────────────────────
 
   getStatus = (): SyncStatus => this.bus.get();
@@ -154,8 +162,17 @@ export class SyncEngine {
       this.userId = u?.id ?? null;
       this.userEmail = u?.email ?? null;
       if (u) {
-        // First-time sign-in: trigger a reconcile in the background.
-        void this.reconcileAndPushLatest();
+        // Sign-in: persist the email, enable the engine, and run
+        // the first reconcile. recordSignIn() inside the store does
+        // the persistence + stateUpdatedAt bump + syncEngine.setEnabled(true).
+        // We only need to handle the engine-side state and the
+        // initial pull here.
+        void (async () => {
+          const { useStore } = await import('./store');
+          useStore.getState().recordSignIn(u.email ?? '');
+          this.enabled = true;
+          await this.reconcileAndPushLatest();
+        })();
       } else {
         this.recomputeStatus();
       }
@@ -370,9 +387,31 @@ export class SyncEngine {
     }
 
     if (this.lastSyncedAt === null && cloud === null) {
-      // First-ever pull with no cloud row — push local so cloud has
-      // a baseline.
-      this.recomputeStatus();
+      // First-ever pull with no cloud row. Only push local if local
+      // actually has data — otherwise, this is a fresh/empty device
+      // racing to seed the cloud, and pushing empty would clobber
+      // any data the user has on another device. The first non-empty
+      // device to sign in wins; empty devices stay empty until the
+      // next pull.
+      const { useStore } = await import('./store');
+      const local = useStore.getState().state;
+      const localStamp = local.settings.stateUpdatedAt ?? 0;
+      const hasData = local.accounts.length > 0
+        || local.transactions.length > 0
+        || local.goals.length > 0
+        || local.debts.length > 0
+        || local.investments.length > 0;
+      if (hasData) {
+        // Push local so cloud has a baseline for cross-device sync.
+        // We push directly rather than going through schedulePush so
+        // the initial-seed isn't lost to the 400ms debounce.
+        void this.push(local);
+      } else {
+        // Empty local — don't push. Just compute status and wait for
+        // the other device to seed. On the next mutation we'll pull
+        // first, then push our delta on top.
+        this.recomputeStatus();
+      }
       return;
     }
 
@@ -389,8 +428,19 @@ export class SyncEngine {
       this.lastSyncedAt = Date.now();
       putSyncRow(CLOUD_LAST_SYNCED_KEY, this.lastSyncedAt);
     } else if (cloud === null && this.userId) {
-      // No cloud row yet — push local so cloud has a baseline.
-      void this.push(local);
+      // No cloud row — push local ONLY if local has data. An empty
+      // local pushing would clobber any data the user has on
+      // another device (which is what the user reported). The
+      // pickWinner above already chose keep-local for this case,
+      // so the user intends to keep what's here.
+      const localHasData = local.accounts.length > 0
+        || local.transactions.length > 0
+        || local.goals.length > 0
+        || local.debts.length > 0
+        || local.investments.length > 0;
+      if (localHasData) {
+        void this.push(local);
+      }
     }
 
     this.recomputeStatus();
@@ -400,8 +450,21 @@ export class SyncEngine {
 
   async signIn(email: string): Promise<void> {
     const client = this.client ?? requireSupabase();
+    // Redirect to the bare origin (no `/#/settings` suffix) so GoTrue's
+    // 303 response puts the access_token cleanly in the URL fragment:
+    //   Location: ${origin}#access_token=...&type=magiclink
+    // supabase-js's `detectSessionInUrl` parses that fragment and
+    // fires SIGNED_IN. If we put `/#/settings` here, GoTrue places
+    // the params after the existing hash and the access_token ends
+    // up in the query string (`/settings?access_token=...`), which
+    // the hash router renders as a settings page WITHOUT picking
+    // up the token. The hash router then navigates to /home
+    // (default) since the path is `/settings` not the access_token
+    // we wanted. Use the origin; the user lands on the app, the
+    // session is established, the in-app navigation to /settings
+    // happens via the auth state change.
     const redirectTo = typeof window !== 'undefined'
-      ? `${window.location.origin}/#/settings`
+      ? `${window.location.origin}/`
       : undefined;
     const { error } = await client.auth.signInWithOtp({
       email,
@@ -559,6 +622,33 @@ function sleep(ms: number): Promise<void> {
 /** Module-level singleton. The test fixture mutates this via
  *  `installFakeSupabase()` to swap in a fake client. */
 export const syncEngine = new SyncEngine();
+
+/** Test-only escape hatch. Wipes the singleton's identity + init flag
+ *  so a fresh test can re-run init() from a clean slate. Production
+ *  code MUST NOT call this. Not exported from any barrel. */
+export function __resetSyncEngineForTests(): void {
+  const e = syncEngine as unknown as {
+    userId: string | null;
+    userEmail: string | null;
+    inited: boolean;
+    enabled: boolean;
+    lastSyncedAt: number | null;
+    lastError: string | null;
+    pendingPush: unknown;
+    queueDrainTimer: number | null;
+  };
+  e.userId = null;
+  e.userEmail = null;
+  e.inited = false;
+  e.enabled = false;
+  e.lastSyncedAt = null;
+  e.lastError = null;
+  e.pendingPush = null;
+  if (e.queueDrainTimer !== null) {
+    clearTimeout(e.queueDrainTimer);
+    e.queueDrainTimer = null;
+  }
+}
 
 // ─── React hook ────────────────────────────────────────────────────────
 
