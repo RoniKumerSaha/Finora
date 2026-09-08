@@ -9,10 +9,25 @@
  * Tag derivation (precedence matters — only one tag per row, since
  * the data model allows at most one link per transaction):
  *
- *   1. linkedInvestmentId  → "Payout"        (accent)
- *   2. linkedDebtId        → direction-aware:
- *      - expense (i_owe, paying down)         → "Debt payment" (primary)
- *      - income  (owed_to_me, being paid)     → "Debt received" (info)
+ *   1. linkedInvestmentId              → "Payout"            (accent outline)
+ *   2. linkedDebtId + opening note     → direction of the tx:
+ *        - income  (cash into account)  → "Borrowed"          (primary outline)
+ *        - expense (cash out of account) → "Lent"             (accent  outline)
+ *      Detected by `tx.note` starting with "Debt: " — written by
+ *      DebtAddScreen when the debt is first created (the opening leg
+ *      of the debt's ledger entry). User-written repayment notes are
+ *      free-form and don't collide with this prefix.
+ *   3. linkedDebtId + repayment        → tx type:
+ *        - expense (i_owe, paying down) → "Debt payment"      (primary outline)
+ *        - income  (owed_to_me, paid back) → "Debt received"  (info outline)
+ *   4. Nothing                         → renders `null`
+ *
+ * All four debt-related tags share the same outline treatment — 1px
+ * tone border, transparent fill, tone-coloured text — so a row of
+ * mixed opening + repayment entries reads as one chip family. Only
+ * the colour and label differentiate them. (Earlier revisions used
+ * soft-fill for the opening leg; reverted to outline for visual
+ * consistency.)
  *
  * Tone palette mirrors the app's existing token system. No new
  * tokens are introduced — every color used here is already defined
@@ -27,10 +42,16 @@
  */
 import type { Transaction } from '../domain/types';
 
-export type TagKind = 'payout' | 'debt-out' | 'debt';
+export type TagKind = 'payout' | 'borrowed' | 'lent' | 'debt-out' | 'debt';
+
+/** Prefix written by DebtAddScreen on the opening transaction so the
+ *  row can be classified as the cash-event leg of a debt rather
+ *  than a repayment. Kept exported so tests / future migrations can
+ *  reference the same constant. */
+export const DEBT_OPENING_NOTE_PREFIX = 'Debt: ';
 
 interface Props {
-  tx: Pick<Transaction, 'linkedInvestmentId' | 'linkedDebtId' | 'type'>;
+  tx: Pick<Transaction, 'linkedInvestmentId' | 'linkedDebtId' | 'type' | 'note'>;
 }
 
 /**
@@ -40,23 +61,37 @@ interface Props {
 export function deriveTag(tx: Props['tx']): TagKind | null {
   if (tx.linkedInvestmentId) return 'payout';
   if (tx.linkedDebtId) {
-    // Direction can't be inferred from the tx alone (it just holds
-    // linkedDebtId), so the caller needs to pass the resolved debt
-    // direction. The component below accepts an optional `direction`
-    // override. When no override is supplied, fall back to a generic
-    // "debt" tag (info tone) — still useful, just less specific.
+    // Opening leg: written by DebtAddScreen with a "Debt: {name}" note.
+    // Direction here is the transaction's own direction (cash movement
+    // type), not the debt's polarity — borrowed cash is income into
+    // the account; lent cash is expense out of it. This is the same
+    // rule the rest of the ledger uses for what an income/expense
+    // means, so the tag always agrees with the row's signed amount.
+    if (tx.note && tx.note.startsWith(DEBT_OPENING_NOTE_PREFIX)) {
+      return tx.type === 'income' ? 'borrowed' : 'lent';
+    }
+    // Repayment leg: derive from the debt's polarity. The caller
+    // supplies `debtDirection` via the component prop below; the bare
+    // `deriveTag` (this function) only sees the tx, so without that
+    // hint we fall back to the generic "debt" tag (info outline) —
+    // still useful, just less specific.
     return 'debt';
   }
   return null;
 }
 
 const TAG_STYLES: Record<TagKind, { label: string; className: string }> = {
-  // Outline-only treatment — no soft fill, just a 1px tone border so
-  // the tag reads as a label rather than a coloured badge. The text
+  // Outline-only treatment — no fill, just a 1px tone border so the
+  // tag reads as a label rather than a coloured badge. The text
   // picks up the same tone so legibility stays high in dark mode.
+  // All four debt-related tags (Borrowed / Lent / Debt payment /
+  // Debt received) share this treatment so a row of repayments plus
+  // the opening leg all look like one chip family.
   'payout':   { label: 'Payout',         className: 'border border-accent text-accent' },
   'debt-out': { label: 'Debt payment',   className: 'border border-primary text-primary' },
   'debt':     { label: 'Debt received',  className: 'border border-info text-info' },
+  'borrowed': { label: 'Borrowed',       className: 'border border-primary text-primary' },
+  'lent':     { label: 'Lent',           className: 'border border-accent text-accent' },
 };
 
 interface FullProps extends Props {
@@ -77,9 +112,12 @@ export function TransactionTag({ tx, debtDirection }: FullProps) {
   if (!kind) return null;
 
   const style = TAG_STYLES[kind];
+  // All tags share the same outline treatment (1px tone border,
+  // transparent fill). The 9.5px / tight-padding sizing keeps the
+  // row line-height stable when a tag is present.
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill text-[9.5px] font-bold uppercase tracking-[0.06em] leading-[1.5] bg-transparent ${style.className}`}
+      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill text-[9.5px] font-bold uppercase tracking-[0.06em] leading-[1.5] ${style.className}`}
       aria-label={`category: ${style.label.toLowerCase()}`}
     >
       {style.label}
