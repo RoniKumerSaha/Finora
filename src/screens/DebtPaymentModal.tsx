@@ -1,18 +1,25 @@
 /**
- * LoanPaymentModal — quick payment entry for a loan-kind debt (V1.1).
+ * DebtPaymentModal — quick payment entry for any active debt (V1.1 + B1).
  *
- * Lives inline within the Debts list card (right zone of DebtCard).
- * Pre-fills the amount with the standard EMI from `loanEMI` when the
- * debt carries a `termMonths` value; otherwise leaves it empty for the
- * user to type whatever they paid. Saves a single expense (i_owe) or
- * income (owed_to_me) transaction tagged with `linkedDebtId`, then
- * fires a toast showing the actual interest/principal split computed
- * by `loanPaymentSplit`.
+ * Used by both flat-kind and loan-kind debts via the Pay / Receive chip
+ * on the Debts list card. Pre-fills the amount with the standard EMI from
+ * `loanEMI` when the debt carries a `termMonths` value; otherwise leaves
+ * it empty for the user to type whatever they paid. Saves a single
+ * expense (i_owe) or income (owed_to_me) transaction tagged with
+ * `linkedDebtId`, then fires a toast.
  *
- * The split is computed here at submit time and *derived* (not stored)
- * — the underlying ledger entry is just one transaction for the gross
- * amount. `outstandingFor()` walks the same transaction history on
- * every read, so the card's "Outstanding" figure stays in sync.
+ * For loan-kind debts the toast shows the actual interest/principal split
+ * computed by `loanPaymentSplit`. For flat-kind debts the split is
+ * irrelevant, so the toast simply says "Payment recorded".
+ *
+ * The split is computed here at submit time and *derived* (not stored) —
+ * the underlying ledger entry is just one transaction for the gross
+ * amount. `outstandingFor()` walks the same transaction history on every
+ * read, so the card's "Outstanding" figure stays in sync.
+ *
+ * Replaces the older LoanPaymentModal which was loan-only. The
+ * no-account guard is preserved verbatim from that version so the UX is
+ * identical when the user has zero accounts.
  */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -29,25 +36,31 @@ interface Props {
   debt: Debt;
   /** Outstanding at the moment the modal opens — used to compute the
    *  "this payment didn't cover this month's interest" warning when
-   *  the user pays less than one month of interest. */
+   *  the user pays less than one month of interest (loan-kind only). */
   outstandingAtOpen: number;
   onClose: () => void;
 }
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
+export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
   const state = useStore(s => s.state);
   const update = useStore(s => s.update);
   const showToast = useStore(s => s.showToast);
   const showBanner = useStore(s => s.showBanner);
 
+  // Loan-kind gate: drives the EMI pre-fill, the rate subtitle, and the
+  // interest/principal preview block at the bottom of the modal. Flat
+  // debts get a plain amount field with no math chrome.
+  const isLoan = debt.kind === 'loan';
   const txType: TxType = debt.direction === 'i_owe' ? 'expense' : 'income';
   const rate = Number(debt.interestRate) || 0;
 
   // Pre-fill amount from the standard EMI if the loan has a term.
-  // `Math.round` keeps the input tidy — UI is integer taka.
-  const emi = debt.termMonths && debt.termMonths > 0
+  // For flat-kind debts, leave the field empty so the user types what
+  // they actually paid. `Math.round` keeps the input tidy — UI is
+  // integer taka.
+  const emi = isLoan && debt.termMonths && debt.termMonths > 0
     ? Math.round(loanEMI(Number(debt.total) || 0, rate, debt.termMonths))
     : 0;
   const [amount, setAmount] = useState(emi > 0 ? String(emi) : '');
@@ -67,11 +80,12 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
   const [accountId, setAccountId] = useState(defaultAccountId);
 
   // Live split preview — lets the user see the split before saving.
+  // Loan-kind only; for flat-kind the preview stays zeroed.
   const amt = Number(amount) || 0;
-  const preview = amt > 0
+  const preview = isLoan && amt > 0
     ? loanPaymentSplit(outstandingAtOpen, amt, rate)
     : { interest: 0, principal: 0 };
-  const underpayment = preview.interest > 0 && preview.principal === 0 && amt > 0;
+  const underpayment = isLoan && preview.interest > 0 && preview.principal === 0 && amt > 0;
 
   // Escape-to-close + focus the amount field on open.
   useEffect(() => {
@@ -138,7 +152,9 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
     }
     try {
       const beforeOutstanding = outstandingAtOpen;
-      const split = loanPaymentSplit(beforeOutstanding, Number(amount), rate);
+      const split = isLoan
+        ? loanPaymentSplit(beforeOutstanding, Number(amount), rate)
+        : { interest: 0, principal: 0 };
       update(s => transactions.add(s, {
         type: txType,
         amount: Number(amount),
@@ -148,13 +164,19 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
         note: note.trim() || undefined,
       }));
       const verb = txType === 'expense' ? 'paid' : 'received';
-      const extraNote = underpayment
-        ? ` — underpayment: this didn't cover the month's interest.`
-        : '';
+      // Toast wording — loan-kind gets the interest/principal split
+      // (the whole point of paying toward a loan is seeing where the
+      // money goes). Flat-kind just confirms the amount was recorded.
+      const toastWhat = isLoan
+        ? `Payment ${verb} — ${fmtBDT(split.interest)} interest, ${fmtBDT(split.principal)} principal`
+        : `Payment ${verb} — ${fmtBDT(Number(amount))}`;
+      const toastWhy = isLoan
+        ? `Outstanding reduced from ${fmtBDT(beforeOutstanding)} to ${fmtBDT(Math.max(0, beforeOutstanding - split.principal))}.${underpayment ? ' — underpayment: this didn\'t cover the month\'s interest.' : ''}`
+        : undefined;
       showToast({
         kind: 'success',
-        what: `Payment ${verb} — ${fmtBDT(split.interest)} interest, ${fmtBDT(split.principal)} principal`,
-        why: `Outstanding reduced from ${fmtBDT(beforeOutstanding)} to ${fmtBDT(Math.max(0, beforeOutstanding - split.principal))}.${extraNote}`,
+        what: toastWhat,
+        why: toastWhy,
       });
       onClose();
     } catch (err) {
@@ -167,12 +189,19 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
     }
   }
 
+  // Title flips with direction: a payment toward an i_owe debt reduces
+  // what you owe; a receipt against an owed_to_me debt records money
+  // coming back to you.
+  const modalTitle = debt.direction === 'i_owe'
+    ? `Pay toward "${debt.name}"`
+    : `Receive toward "${debt.name}"`;
+
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="loan-pay-title"
+      aria-labelledby="debt-pay-title"
     >
       <button
         type="button"
@@ -196,18 +225,26 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
           animation: 'modal-pop-in 180ms ease-out both',
         }}
       >
-        <h3 id="loan-pay-title" className="heading h3-modal m-0 mb-1.5">
-          Pay toward "{debt.name}"
+        <h3 id="debt-pay-title" className="heading h3-modal m-0 mb-1.5">
+          {modalTitle}
         </h3>
         <div className="text-[12.5px] text-muted leading-relaxed mb-5">
           Outstanding: <span className="tabular font-semibold text-ink">{fmtBDT(outstandingAtOpen)}</span>
-          {' · '}Rate: <span className="tabular font-semibold text-ink">{rate}%</span>
+          {/* Rate subtitle — loan-kind only. Flat-kind debts don't carry
+              a rate so the subtitle would just be noise. */}
+          {isLoan && (
+            <>
+              {' · '}Rate: <span className="tabular font-semibold text-ink">{rate}%</span>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-4">
           <Field
             label="Amount"
-            hint={emi > 0 ? `Pre-filled with the standard EMI for ${debt.termMonths}-month term. Adjust if you paid a different amount.` : 'Enter whatever you paid.'}
+            hint={emi > 0
+              ? `Pre-filled with the standard EMI for ${debt.termMonths}-month term. Adjust if you paid a different amount.`
+              : 'Enter whatever you paid.'}
             error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}
           >
             <Input
@@ -238,13 +275,14 @@ export function LoanPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
             <Input
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="e.g. September EMI"
+              placeholder={isLoan ? 'e.g. September EMI' : 'e.g. Partial payment'}
             />
           </Field>
 
-          {/* Live split preview — the user can see exactly where their
-              money goes before confirming. */}
-          {amt > 0 && (
+          {/* Live split preview — loan-kind only. The whole point of the
+              preview is to show where the money goes; flat-kind has no
+              split so we hide this block entirely. */}
+          {isLoan && amt > 0 && (
             <div
               className="rounded-btn px-3.5 py-3 text-[12.5px] leading-relaxed"
               style={{

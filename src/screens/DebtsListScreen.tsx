@@ -44,7 +44,7 @@ import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { loanEMI, loanPaymentSplit } from '../domain/math';
 import { Check, User } from '../components/icons/Icons';
-import { LoanPaymentModal } from './LoanPaymentModal';
+import { DebtPaymentModal } from './DebtPaymentModal';
 import { fmtBDT } from '../lib/format';
 import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
@@ -143,7 +143,7 @@ export function DebtsListScreen() {
                 )}
               </div>
               <div className="text-xs text-muted mt-5 leading-relaxed">
-                <strong className="text-ink">How it works:</strong> <em>Remaining</em> is what's still owed on each active debt — total minus payments recorded against it. When you pay toward an <em>i_owe</em> debt, record it as an Expense tagged with the debt; when someone pays back an <em>owed_to_me</em> debt, record it as Income tagged the same way.
+                <strong className="text-ink">How it works:</strong> Each debt records an opening transaction for the cash that gave rise to it — borrowed cash lands as <em>Income</em> in your account for <em>i_owe</em>; lent cash lands as <em>Expense</em> for <em>owed_to_me</em>. Use the <em>Pay now</em> / <em>Receive now</em> chip on a card to record a partial repayment against the same account.
                 {hasAnyLoan && (
                   <>
                     {' '}
@@ -315,12 +315,24 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
                   {d.name}
                 </div>
               </div>
-              {/* Flat debts keep the original "Paid X of Y total"
-                  wording so users familiar with the previous card
-                  still see the same signal. */}
+              {/* Direction-aware copy. "You've paid" for i_owe (the
+                  user is the one paying); "They've paid" for
+                  owed_to_me (the other party is paying back). The
+                  verb + subject combination is the single biggest
+                  signal differentiating the two card polarities. */}
               <div className="text-[12px] text-muted tabular truncate">
-                Paid {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)} total
+                {isIOwe ? 'You\'ve paid' : 'They\'ve paid'} {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)}
               </div>
+              {/* Counterparty line — only when `person` is set, so
+                  the card stays quiet when the user didn't fill it
+                  in. Direction-aware preposition so a Rahim entry
+                  reads "Owed to Rahim" (i_owe: he is owed) or
+                  "Owed by Rahim" (owed_to_me: he owes you). */}
+              {d.person && (
+                <div className="text-[12px] text-muted tabular truncate">
+                  {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
+                </div>
+              )}
               {/* Spacer keeps the right-zone headline aligned with the
                   name on loan-kind cards where the third row has
                   more content. */}
@@ -391,50 +403,53 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
           <ProgressBar value={pct} height={4} animateOnMount animationDelay={animDelay} />
           <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
         </div>
-        {/* V1.1 (L3.1): Pay shortcut — loan-kind only, active only.
-            Bottom-right of the card, opposite the figures up top.
-            Sharp 4px corners + raised surface (surface-3) make it
-            read as a separate control rather than a chip that
-            belongs to the card's rounded-12px surface — the visual
-            treatment is theme-consistent (uses the same surface-3
-            token in dark and light mode). z-[1] so it stays
-            clickable above the full-card <Link>. */}
-        {isLoan && d.status === 'active' && (
+        {/* V1.1 (L3.1) + B1: Pay / Receive shortcut — every active
+            debt card gets one, not just loans. Bottom-right of the
+            card, opposite the figures up top. Sharp 4px corners +
+            raised surface (surface-3) make it read as a separate
+            control rather than a chip that belongs to the card's
+            rounded-12px surface — the visual treatment is theme-
+            consistent (uses the same surface-3 token in dark and
+            light mode). z-[1] so it stays clickable above the
+            full-card <Link>. */}
+        {d.status === 'active' && (
           // Solid filled chip — the strongest call-to-action on the
           // card. Matches fintech convention (Revolut/Wise solid pills
-          // for primary actions). Dark crimson fill + white text +
-          // white dot. A plain <button> instead of <Button> so we
-          // control every aspect without fighting shared
-          // variant/size classes.
+          // for primary actions). Dark fill + white text + white dot;
+          // colour flips on direction — danger for i_owe (you're
+          // paying), primary for owed_to_me (you're receiving). A
+          // plain <button> instead of <Button> so we control every
+          // aspect without fighting shared variant/size classes.
           <button
             type="button"
             onClick={openPay}
-            title={`Record a payment toward "${d.name}"`}
-            // Darker crimson than the theme --danger surface tone.
-            // The base --danger is too pale in light mode (#DC8678
-            // salmon) and not punchy enough in dark mode (#B03222 —
-            // fine, but feels washed next to the deep bg). We darken
-            // both modes toward pure black so the chip lands in the
-            // same deep-oxblood range regardless of theme, giving
-            // white text the contrast it needs. Mixing with `black`
-            // (not --ink or --danger-on, both of which are white in
-            // dark mode and would *lighten* the chip there) keeps it
-            // consistently dark across themes.
-            style={{ background: 'color-mix(in srgb, var(--danger) 65%, black)' }}
-            className="shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 transition active:translate-y-px"
+            title={isIOwe ? `Record a payment toward "${d.name}"` : `Record a receipt from "${d.name}"`}
+            // Direction-coloured fill mixed toward black so the chip
+            // lands in a deep, consistent tone across both light and
+            // dark themes (the base --danger / --primary are too pale
+            // in light mode and too washed next to the deep bg in
+            // dark mode). Mixing with `black` (not --ink or the tone-
+            // on, both of which are white in dark mode and would
+            // *lighten* the chip there) keeps it consistently dark.
+            style={{
+              background: isIOwe
+                ? 'color-mix(in srgb, var(--danger) 65%, black)'
+                : 'color-mix(in srgb, var(--primary) 65%, black)',
+            }}
+            className={`shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
           >
-            {/* Filled dot — solid white on the dark-red surface. */}
+            {/* Filled dot — solid white on the dark fill. */}
             <span
               aria-hidden
               className="inline-block w-1.5 h-1.5 rounded-full bg-white"
             />
-            Pay now
+            {isIOwe ? 'Pay now' : 'Receive now'}
           </button>
         )}
       </div>
 
       {payOpen && (
-        <LoanPaymentModal
+        <DebtPaymentModal
           debt={d}
           outstandingAtOpen={outstanding}
           onClose={() => setPayOpen(false)}

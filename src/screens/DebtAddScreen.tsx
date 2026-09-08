@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
+import * as transactions from '../domain/transactions';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
@@ -9,11 +11,16 @@ import type { DebtDirection, DebtKind } from '../domain/types';
 
 export function DebtAddScreen() {
   const navigate = useNavigate();
+  const state = useStore(s => s.state);
   const update = useStore(s => s.update);
   const showBanner = useStore(s => s.showBanner);
   const [name, setName] = useState('');
   const [direction, setDirection] = useState<DebtDirection>('i_owe');
   const [total, setTotal] = useState('');
+  // B1: account picker — the chosen account is the one whose balance
+  // moves on debt creation. We default to the user's first account
+  // (or empty if they have none) so the user can adjust before saving.
+  const [accountId, setAccountId] = useState(state.accounts[0]?.id ?? '');
   const [person, setPerson] = useState('');
   const [dueDate, setDueDate] = useState('');
   // V1.1 (Loan-kind Debt): collapsed by default. Flipping the toggle
@@ -82,6 +89,14 @@ export function DebtAddScreen() {
       showBanner({ what: 'Total must be greater than zero', why: 'Zero or negative totals make the debt meaningless.', fix: 'Enter a positive number.' });
       return;
     }
+    if (!accountId) {
+      showBanner({
+        what: 'Pick an account',
+        why: 'A debt is recorded alongside the cash that gave rise to it — borrowed or lent money has to land somewhere.',
+        fix: 'Choose the account this cash entered or left.',
+      });
+      return;
+    }
     if (isLoan) {
       if (!(Number(interestRate) > 0)) {
         showBanner({
@@ -100,19 +115,84 @@ export function DebtAddScreen() {
         return;
       }
     }
+    // B1: opening ledger entry runs through the account the user
+    // picked. i_owe = borrowed cash → Income into the account.
+    // owed_to_me = lent cash → Expense out of the account. Either
+    // way the picked account's balance moves on save.
+    const openingTxType = direction === 'i_owe' ? 'income' : 'expense';
     try {
-      update(s => debts.add(s, {
-        name, direction, total: Number(total),
-        person: person.trim() || undefined,
-        dueDate: dueDate || undefined,
-        kind: isLoan ? 'loan' as DebtKind : undefined,
-        interestRate: isLoan ? Number(interestRate) : undefined,
-        termMonths: isLoan && termMonths ? Number(termMonths) : undefined,
-      }));
+      update(s => {
+        // Generate the debt first so we can stamp the opening tx
+        // with `linkedDebtId`. Same closure-id pattern used by
+        // `addEventPlan` / `addLoanPlan` in src/domain/store.ts.
+        const withDebt = debts.add(s, {
+          name: name.trim(),
+          direction,
+          total: Number(total),
+          person: person.trim() || undefined,
+          dueDate: dueDate || undefined,
+          kind: isLoan ? 'loan' as DebtKind : undefined,
+          interestRate: isLoan ? Number(interestRate) : undefined,
+          termMonths: isLoan && termMonths ? Number(termMonths) : undefined,
+        });
+        const createdId = withDebt.debts[withDebt.debts.length - 1].id;
+        return transactions.add(withDebt, {
+          type: openingTxType,
+          amount: Number(total),
+          date: new Date().toISOString().slice(0, 10),
+          accountId,
+          linkedDebtId: createdId,
+          note: `Debt: ${name.trim()}`,
+        });
+      });
       navigate('/debts');
     } catch (err) {
       showBanner({ what: 'Could not add debt', why: (err as Error).message, fix: 'Try again.' });
     }
+  }
+
+  // No-accounts guard: rendering the form when the user has no
+  // accounts would let them submit a debt whose opening transaction
+  // has nowhere to land. Mirror the pattern from DebtPaymentModal:
+  // portal-rendered notice with a clear next step.
+  if (state.accounts.length === 0) {
+    return createPortal(
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+      >
+        <button
+          type="button"
+          aria-label="Close dialog"
+          onClick={() => navigate('/debts')}
+          className="absolute inset-0 cursor-default"
+          style={{
+            background: 'var(--overlay)',
+            backdropFilter: 'blur(8px)',
+          }}
+        />
+        <div
+          className="relative rounded-card w-[440px] max-w-full shadow-modal"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-modal), var(--card-inset)',
+            padding: '28px',
+          }}
+        >
+          <h3 className="heading h3-modal m-0 mb-3">Add an account first</h3>
+          <p className="text-[13.5px] text-muted leading-relaxed mb-5">
+            A debt records the cash that gave rise to it. Add an account in Settings → Accounts, then come back to track this debt.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outlined-ghost" onClick={() => navigate('/debts')}>Back</Button>
+            <Button variant="primary" onClick={() => navigate('/settings')}>Open Settings</Button>
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
   }
 
   return (
@@ -131,7 +211,7 @@ export function DebtAddScreen() {
         <Field label="Name">
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Loan from a friend, advance to a colleague…" autoFocus />
         </Field>
-        <Field label="Total amount" hint="Total amount — principal, not total repayments expected." error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+        <Field label="Total amount" hint="Total amount — principal, not total repayments expected. We'll record the cash side of this debt against the account you pick below." error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
           <Input
             type="number"
             inputMode="decimal"
@@ -141,6 +221,24 @@ export function DebtAddScreen() {
             aria-invalid={totalInvalid || undefined}
             className={totalErrorClass}
           />
+        </Field>
+        {/* B1: account picker — the chosen account is the one whose
+            balance moves on debt creation. i_owe → borrowed cash lands
+            as Income here; owed_to_me → lent cash lands as Expense
+            here. Required; without an account there's nowhere for the
+            opening transaction to land. */}
+        <Field
+          label={direction === 'i_owe' ? 'Cash goes into' : 'Cash goes from'}
+          hint={direction === 'i_owe'
+            ? 'The account the borrowed money landed in.'
+            : 'The account the lent money came from.'}
+          error={accountId === '' ? 'Pick an account.' : undefined}
+        >
+          <Select value={accountId} onChange={e => setAccountId(e.target.value)}>
+            {state.accounts.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </Select>
         </Field>
         <Field label="Person (optional)">
           <Input value={person} onChange={e => setPerson(e.target.value)} placeholder="Friend, family…" />
@@ -220,7 +318,7 @@ export function DebtAddScreen() {
           <Button
             variant="outlined-primary"
             type="submit"
-            disabled={totalInvalid || !name.trim() || rateInvalid || termInvalid}
+            disabled={totalInvalid || !name.trim() || rateInvalid || termInvalid || accountId === ''}
           >
             Save debt
           </Button>
