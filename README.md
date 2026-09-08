@@ -8,7 +8,7 @@ single-user. **Cloud sync is opt-in** — see [Cloud sync](#cloud-sync) below.
 ```bash
 npm install
 npm run dev      # dev server at http://localhost:5173
-npm test         # 28 tests
+npm test         # 391 tests across 33 files
 npm run build    # static output in dist/
 ```
 
@@ -18,27 +18,37 @@ The dev server picks the next free port if 5173 is busy.
 
 - **React 18** + **TypeScript** + **Vite**
 - **Tailwind v4** consuming the V2 Soft theme tokens (dark / light / auto)
-- **Zustand** for state, with localStorage single-blob persistence on key `finora:v1`
+- **Zustand** for state, with IndexedDB single-blob persistence (database `finora`)
+- **Dexie** wrapping IndexedDB for the state blob + the cloud-sync auxiliary rows
 - **React Router v7** in hash mode so the build also works as `file://`
 - **react-hook-form** + **zod** for forms + three-part error formatting
-- **Vitest** + **@testing-library/react** + **happy-dom** for tests
+- **Vitest** + **@testing-library/react** + **happy-dom** + **fake-indexeddb** for tests
+- **Supabase JS** for the optional cloud-sync backend (see below)
 
 ## Architecture
 
-The spine lives at `docs/architecture/2026-08-13-arch-v1/ARCHITECTURE-SPINE.md`.
-Current build order is recorded in `.memlog.md` — **AD-14..20** for the React rebuild.
+The historical (pre-React) architecture spine lives at
+`docs/architecture/2026-08-13-arch-v1/ARCHITECTURE-SPINE.md` and is preserved
+for reference. The current React-era layout is:
 
 ```
 src/
-  domain/         # pure modules + tests (math, accounts, transactions, etc.)
+  domain/         # pure modules + tests (math, accounts, transactions, debts,
+                   # investments, goals, plans, recompute, persistence, sync)
                    # + Zustand store
-  components/     # Shell, Button, Field, RoleAlertBanner, ConfirmDialog
+  components/     # Shell, Button, Field, Dialog, Picker, SyncStatusPill, …
   screens/        # HomeScreen + list screens + form screens (one per route)
-  lib/            # schemas (zod), errors (three-part formatter), exportImport, demoSeed
+  security/       # PIN lock, lockStore, ChangePinDialog, SecuritySection
+  lib/            # schemas (zod), errors (three-part formatter), exportImport,
+                   # supabase client, demoSeed
+  test/           # sync-helpers, idb-helpers, boot.spec
   styles/         # theme.css (tokens) + app.css (small overrides)
-  main.tsx        # entry
-  App.tsx         # router + theme + banner
+  main.tsx        # entry — awaits ensureReady() + syncEngine.init() before mount
+  App.tsx         # router + theme + banner + recovery listener
 ```
+
+Detailed product behaviour lives in `PRD.md`. The full wipe / sign-out / sign-in
+contract is documented in `PRD.md §9.19.9` (Local ↔ cloud destruction independence).
 
 ## Deploy
 
@@ -84,9 +94,31 @@ first load; the legacy key is then removed.
 
 Cloud sync is **opt-in**. When signed in, Finora pushes the whole local
 state blob to Supabase and reconciles on every boot using last-write-wins
-(client `stateUpdatedAt` with server `updated_at` as the tiebreaker). The
-cloud copy is purely a copy — signing out or deleting it never deletes
-local data, and wiping local data never deletes the cloud copy.
+(client `stateUpdatedAt` with server `updated_at` as the tiebreaker).
+The cloud copy is treated as a backup-of-record for the user's *other*
+devices, so the local ↔ cloud destruction contract is deliberate:
+
+- **Signing out** wipes the local store but preserves the cloud copy.
+  The user has effectively said "this device no longer belongs to that
+  account." On re-sign-in the wiped local has `stateUpdatedAt = 0`, and
+  `pickWinner` adopts the cloud row via LWW so the user sees their
+  latest snapshot without any export/import dance.
+- **Settings → Danger zone "Delete everything" while signed in**
+  deletes both local AND cloud (cloud first, with confirmation copy
+  spelling that out). The user stays signed in locally — sync
+  identity is preserved so the next push (if any) starts from a
+  known-empty state.
+- **Settings → Danger zone "Delete everything" while signed out**
+  deletes only local. The cloud copy (under the previous userId) is
+  untouched, so signing back in still pulls it.
+- **`Delete cloud copy` (Settings → Danger zone)** deletes only the
+  cloud row. Local stays.
+
+The point is that the cloud is a copy of the user's *other* devices.
+We never want a local action to silently destroy what another device
+owns — but we also never want a stale cloud row to clobber a fresh
+local view. The exact reconciliation is in
+`PRD.md §9.19.5` and the four wipe flows are in `PRD.md §9.19.9`.
 
 ### Enabling cloud sync (development / self-hosting)
 
@@ -139,6 +171,9 @@ with your email to seed the cloud row.
   "Create account" toggle, no magic-link round-trip.
 - ✅ Password recovery via Supabase email link — auto-detected on return
   (`#access_token=...&type=recovery`), opens a "Set a new password" dialog.
+- ✅ In-app "Change password" for signed-in users (Settings → Cloud sync).
+  Skips the email round-trip entirely — calls `auth.updateUser({ password })`
+  on the active session.
 - ✅ Cross-tab recovery — opening the email link in a new tab auto-opens
   the dialog there; other tabs stay on the signed-in view and reload
   automatically once the password is updated.

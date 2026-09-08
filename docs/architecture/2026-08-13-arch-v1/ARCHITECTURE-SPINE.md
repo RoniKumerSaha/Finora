@@ -1,17 +1,38 @@
 ---
 project: Finora
-scope: V1 functional prototype
+scope: V1 functional prototype (vanilla, pre-React)
 altitude: feature (entire V1)
 date: 2026-08-13
-status: draft
+status: HISTORICAL — preserved for reference
 audience: solo developer (single user)
 ---
 
-# Finora — Architecture Spine
+# Finora — Architecture Spine (historical)
 
-## 1. Paradigm
+> **⚠️ This document is historical.** It describes the **vanilla
+> HTML+CSS+JS** prototype that pre-dated the React + Vite + IndexedDB
+> rebuild. The React-era app is the shipped V1; this spine is kept
+> as a record of the design decisions that shaped it (data shape,
+> math rules, theming tokens, error model). For the current layout,
+> see:
+>
+> - `README.md` (Architecture section) for the current `src/` tree
+> - `PRD.md §9.19` for cloud sync, the sign-out / wipe / sign-in
+>   contract, and the local-first guarantees
+> - `src/domain/persistence.ts` (header comment) for the IndexedDB
+>   storage layer
+> - `src/domain/sync.ts` for the SyncEngine
+
+## 1. Paradigm (historical — vanilla prototype)
 
 **Local-first single-page app, no framework, no build step.** The product is a personal bookkeeping tool for one user (you). The whole app lives in one HTML file plus a CSS file plus a handful of JS modules. It opens by double-click. Data is per-browser via `localStorage`. There is no backend, no account, no sync.
+
+**Superseded by:** the React 18 + TypeScript + Vite + Zustand + Dexie
+rebuild. Persistence moved from `localStorage['finora:v1']` (5 MB
+ceiling, silent eviction) to a Dexie-managed IndexedDB database
+`finora` with a single `state` row plus cloud-sync auxiliary rows
+(see `src/domain/persistence.ts`). The optional cloud-sync backend
+(Supabase) was added later — see `PRD.md §9.19`.
 
 **Why this paradigm:** the PRD is local-first by design (§1, §13). Every architectural choice flows from that. Choosing otherwise would mean rewriting the PRD.
 
@@ -212,18 +233,25 @@ docs/ux-designs/ux-finora-2026-08-13/
 
 ## 13. Deferred (named so they don't sneak back in)
 
-- **Backend / sync** — explicitly out per PRD §1, §13.2. Not even a "future" placeholder in code.
-- **Auth / account / PIN recovery** — PRD §1 says no. PIN-lock is the only auth surface; loss = data loss.
-- **Charts, financial health, monthly planning, net worth, insights** — PRD §5 non-goals.
+> **Historical note:** several of the items below are no longer deferred
+> in the shipped V1. Specifically: **Backend / sync** (Supabase, opt-in),
+> **Auth / account** (email + password, opt-in), **React framework port**
+> (shipped), **State-management library / Zustand** (shipped), and
+> **Build tool / Vite** (shipped). The React-era docs are the source of
+> truth for what's actually shipped.
+
+- **Backend / sync** — explicitly out per PRD §1, §13.2. Not even a "future" placeholder in code. *(Superseded: Supabase cloud sync ships as opt-in in V1.x. See `PRD.md §9.19`.)*
+- **Auth / account / PIN recovery** — PRD §1 says no. PIN-lock is the only auth surface; loss = data loss. *(Superseded: email + password sign-in ships as opt-in in V1.x. PIN-lock is preserved as a device-local lock.)*
+- **Charts, financial health, monthly planning, net worth, insights** — PRD §5 non-goals. *(Superseded: Insights module ships in V1. See `PRD.md §9.16`.)*
 - **Stocks / mutual funds / crypto / market-price instruments** — PRD §5 N3 deferred to V2.
 - **Daily interest accrual** — PRD §5 N4 explicitly deferred.
 - **Pre-closure of investments with adjusted interest** — deferred to V2 per PRD §9.8.
 - **Compounding frequency other than simple** — deferred.
 - **Tax (TDS) tracking on interest income** — deferred.
-- **React / any framework port** — possible V2 if the prototype graduates, but not in V1.
-- **State-management library / Zustand / Redux** — vanilla is enough.
-- **Build tool / Vite / esbuild / webpack** — none in V1.
-- **Hosting beyond static files** — no server-side rendering, no edge functions.
+- **React / any framework port** — possible V2 if the prototype graduates, but not in V1. *(Superseded: shipped.)*
+- **State-management library / Zustand / Redux** — vanilla is enough. *(Superseded: Zustand shipped.)*
+- **Build tool / Vite / esbuild / webpack** — none in V1. *(Superseded: Vite shipped.)*
+- **Hosting beyond static files** — no server-side rendering, no edge functions. *(Still deferred — V1 ships as a static bundle.)*
 
 ## 14. Open questions
 

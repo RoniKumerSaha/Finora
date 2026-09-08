@@ -258,9 +258,36 @@ A user should be able to:
 
 ### 8.9 Delete All Data
 
-1. Tap **Settings** → **Delete all data**.
-2. App shows confirmation: *"This deletes all your transactions, accounts, and goals on this device. This cannot be undone."*
+The single **Settings → Danger zone → Delete everything** button has two
+modes that depend on whether the user is signed in to cloud sync:
+
+**Signed in (cloud sync on):**
+1. Tap **Settings** → Danger zone → **Delete everything**.
+2. Confirmation copy: *"This permanently deletes all your transactions,
+   accounts, goals, debts, and investments on this device AND in your
+   cloud copy. This cannot be undone."*
 3. Two buttons: **Cancel** | **Delete everything**.
+4. Cloud row is deleted first; only after the cloud delete confirms do we
+   wipe local. A failed network call aborts the wipe with a banner — local
+   stays intact.
+5. Local wipe uses `reset()` (not `update()`) so the wiped state doesn't
+   bump `stateUpdatedAt` and trigger a debounced re-push that would
+   re-create the cloud row we just deleted.
+6. Sync identity (`cloudSyncEnabled`, `cloudUserEmail`) is preserved —
+   the user stays signed in.
+
+**Signed out (local-only):**
+1. Tap **Settings** → Danger zone → **Delete everything**.
+2. Confirmation copy: *"This permanently deletes all your transactions,
+   accounts, goals, debts, and investments on this device. Your cloud
+   copy (if any) is preserved — signing back in will pull the latest
+   snapshot."*
+3. Two buttons: **Cancel** | **Delete everything**.
+4. Local wipe + IDB sync-row clear only. The cloud row under the
+   previous userId is **not** touched; signing back in still pulls it.
+
+For the sign-out path that auto-wipes local (instead of being user-initiated),
+see §9.19.9 (Local ↔ cloud destruction independence).
 
 ### 8.10 Create a Debt (Money I Owe)
 
@@ -692,10 +719,27 @@ CSV export is **not required** for V1. JSON is sufficient and lossless.
 
 ### 9.12 Data Deletion
 
-- Single button in Settings: **Delete all data**.
-- Confirmation: *"This permanently deletes all your transactions, accounts, goals, debts, and investments on this device. This cannot be undone."*
+- Single button in Settings → Danger zone: **Delete everything**. Behaviour
+  depends on whether cloud sync is enabled and signed in — see the four
+  flows in §9.19.9 for the full contract.
+- **Signed in**: confirmation copy is *"This permanently deletes all your
+  transactions, accounts, goals, debts, and investments on this device
+  AND in your cloud copy. This cannot be undone."* The cloud row is
+  deleted first (`syncEngine.deleteCloudCopy()`); only after the cloud
+  delete confirms do we wipe local. Sync identity is preserved — the
+  user stays signed in locally with `cloudSyncEnabled` / `cloudUserEmail`
+  intact.
+- **Signed out**: confirmation copy is *"This permanently deletes all
+  your transactions, accounts, goals, debts, and investments on this
+  device. Your cloud copy (if any) is preserved — signing back in will
+  pull the latest snapshot."* Local-only wipe; the cloud row is untouched.
 - Buttons: **Cancel** | **Delete everything**.
-- The app does **not** require an export before deletion.
+- The app does **not** require an export before deletion. (Export is
+  always available separately in Settings → Backup.)
+- Separately, **`Delete cloud copy`** (also in Danger zone) deletes only
+  the cloud row — local data is preserved. Used when the user wants to
+  drop a stale cloud snapshot without touching what they have on this
+  device.
 
 ### 9.13 Inline Help Text (added 2026-08-17)
 
@@ -1264,6 +1308,7 @@ Every error message must:
 - **No magic-link flow.** The earlier `signInWithOtp` + `emailRedirectTo` workaround (which was needed because GoTrue puts the access_token in the URL fragment and the hash router would swallow it) is no longer needed — password sign-in establishes a session synchronously, no redirect involved.
 - **Client-side password rules**: minimum 8 characters, no complexity gates. Supabase's own `minimum_password_length = 6` (config.toml:182) is the server-side floor; client validation is one above.
 - **Password reset.** A "Forgot password?" link in the SignInDialog (sign-in mode only) opens an inline reset-request panel — the user enters their email and clicks "Send reset link", which calls `auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })`. Supabase emails a recovery link; on click, the user lands back in the app at `#access_token=...&type=recovery`, and supabase-js fires the `PASSWORD_RECOVERY` event on `onAuthStateChange` (auto-detected because `detectSessionInUrl: true`, supabase.ts:37). App.tsx subscribes to that event via `syncEngine.onPasswordRecovery()` and opens the `ResetPasswordDialog` automatically on top of whatever screen the user is on — no new route. The dialog asks for a new password (≥ 8 chars, same `passwordSchema`) and calls `auth.updateUser({ password })`. On success: success toast + dialog closes + the user is signed in with the new password. On server error: inline password error if the message mentions "password", otherwise fall through to a toast.
+- **In-app password change for signed-in users** (Settings → Cloud sync → "Change password"). The most common case once a user is already signed in — no email round-trip, no `PASSWORD_RECOVERY` event, no cross-tab BroadcastChannel coordination. Calls `auth.updateUser({ password })` directly on the active session. Same `passwordSchema` validation, same error-classification rules (message-mentions-password → inline; otherwise → toast). Lives at `src/components/ChangePasswordDialog.tsx`. Two flows and two dialogs because the recovery flow (`ResetPasswordDialog`) carries the cross-tab dedupe machinery (`isOwnRecoveryUrl()`, `recovery-opened` / `recovery-complete` broadcasts, cold-boot replay) that is irrelevant when the user is actively signed in and explicitly opened the modal.
 - **Cold-boot recovery replay.** On the cold-boot recovery flow, the user lands on the app with `#access_token=...&type=recovery`. `main.tsx`'s boot awaits `syncEngine.init()` to completion BEFORE React mounts the App — but `PASSWORD_RECOVERY` fires inside `init()` (during `getSession()` → `initialize()`). Without replay, App.tsx's late subscriber would never receive the event and the user would see the signed-in app. The fix: when `PASSWORD_RECOVERY` fires inside the engine's auth-state listener, the engine sets `pendingRecovery = true` and notifies any current listeners. When `onPasswordRecovery(cb)` is later called by App.tsx, the engine replays the event synchronously to that cb. App.tsx then calls `acknowledgePendingRecovery()` so subsequent mount cycles (StrictMode, route changes) don't re-open the dialog.
 - **Cross-tab recovery dedupe.** When the user clicks the recovery link in their email, it opens in a NEW tab (the email client decides where links open). Supabase's auth storage is shared across tabs, so the OLD tab — still signed in with the previous session — also fires `PASSWORD_RECOVERY` from supabase-js's storage listener. Without coordination, both tabs would open the `ResetPasswordDialog`. The fix lives in `src/components/crossTabRecovery.ts` and wires both directions through a `BroadcastChannel('finora-recovery')`:
   - On open, the dialog checks `isOwnRecoveryUrl()` (`/type=recovery/.test(window.location.hash)`); if false, it calls `onClose()` immediately so the old (non-fragment) tab is a no-op. The fragment-receiving tab then broadcasts `recovery-opened` with its per-tab `tabId` (UUID in `sessionStorage`). Other tabs subscribe and, if they see a `recovery-opened` from a *different* tabId, suppress their own dialog — preventing duplicate dialogs if the same fragment ever lands in multiple tabs.
@@ -1305,7 +1350,7 @@ create table public.finora_state (
 #### 9.19.7 UI surfaces
 
 - **`SyncStatusPill`** (always visible, sidebar): muted / "Syncing…" / "Synced · 2m ago" / "Offline · N pending" / "Sync error".
-- **`AccountSection`** (Settings → Cloud sync): sign-in / signed-in summary / force-sync / sign-out. The "Delete cloud copy" destructive action lives in the Danger Zone rather than here per the destructive-action convention.
+- **`AccountSection`** (Settings → Cloud sync): sign-in / signed-in summary / force-sync / **change password** / sign-out. The "Delete cloud copy" destructive action lives in the Danger Zone rather than here per the destructive-action convention.
 - **About panel** (Settings → About): a "Cloud sync" row that surfaces the same state in plain language, so the user can see at a glance whether cloud sync is on, off, or unavailable in this build.
 - Every failure surfaces via the standard three-part `what / why / fix` banner. Local writes never block on cloud state.
 
@@ -1317,10 +1362,32 @@ The anon key **must** be the JWT format (starts with `eyJ…`). The newer `sb_pu
 
 #### 9.19.9 Local ↔ cloud destruction independence
 
-- **Sign-out wipes local, preserves cloud.** Signing out means "this device no longer belongs to that account." `SyncEngine.signOut()` calls `clearSyncRows()` + `useStore.reset()` + `resetSyncMetadata()` and clears the Supabase session, but never touches the cloud row. On the next sign-in the wiped local has `stateUpdatedAt` of 0 and `pickWinner` adopts the cloud row via LWW. The user's other devices keep their data.
-- **Local "Wipe all data" (Settings → Danger Zone) leaves the cloud copy alone** so a local wipe doesn't destroy other devices.
-- **Cloud "Delete cloud copy" is destructive only on the cloud.** The local store is preserved.
-- `resetSyncMetadata()` clears `lastSyncedAt` after any local wipe so the next boot's reconcile doesn't skip the empty-state guard and accidentally push empty local over a populated cloud row on another device.
+There are four user-visible flows, each with deliberate semantics around what
+gets wiped where:
+
+- **Sign-out wipes local, preserves cloud.** Signing out means "this device
+  no longer belongs to that account." `SyncEngine.signOut()` calls
+  `clearSyncRows()` + `useStore.reset()` + `resetSyncMetadata()` and clears
+  the Supabase session, but never touches the cloud row. On the next
+  sign-in the wiped local has `stateUpdatedAt` of 0 and `pickWinner`
+  adopts the cloud row via LWW. The user's other devices keep their data.
+- **Settings → Danger zone "Delete everything" while signed in** deletes
+  BOTH local and cloud. The cloud row is deleted first
+  (`syncEngine.deleteCloudCopy()`) so a failed network call aborts the
+  wipe with a banner before we touch local. Local wipe uses `reset()` (not
+  `update()`) so the wiped state doesn't bump `stateUpdatedAt` and
+  trigger a debounced re-push that would re-create the cloud row we just
+  deleted. Sync identity is preserved — the user stays signed in locally.
+- **Settings → Danger zone "Delete everything" while signed out** deletes
+  only local. The cloud row (under the previous userId) is untouched, so
+  signing back in still pulls it.
+- **`Delete cloud copy` (Settings → Danger zone) is destructive only on
+  the cloud.** The local store is preserved. Used when the user wants to
+  drop a stale cloud snapshot without touching what they have on this
+  device.
+- `resetSyncMetadata()` clears `lastSyncedAt` after any local wipe so the
+  next boot's reconcile doesn't skip the empty-state guard and accidentally
+  push empty local over a populated cloud row on another device.
 
 #### 9.19.10 Tests
 
