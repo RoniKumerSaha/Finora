@@ -24,6 +24,7 @@ import { useState } from 'react';
 import { Button } from './Button';
 import { Pill } from './Pill';
 import { SignInDialog } from './SignInDialog';
+import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { describeSyncStatus } from './SyncStatusPill';
 import { useSyncStatus, syncEngine } from '../domain/sync';
 import { useStore } from '../domain/store';
@@ -42,6 +43,7 @@ export function AccountSection() {
   const status = useSyncStatus();
   const showToast = useStore(s => s.showToast);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (status.kind === 'unconfigured') {
@@ -127,6 +129,9 @@ export function AccountSection() {
             <Button variant="primary" onClick={onForceSync} disabled={busy}>
               {busy ? 'Syncing…' : 'Force sync now'}
             </Button>
+            <Button variant="secondary" onClick={() => setChangePwOpen(true)} disabled={busy}>
+              Change password
+            </Button>
             <Button variant="secondary" onClick={onSignOut} disabled={busy}>
               Sign out
             </Button>
@@ -149,6 +154,7 @@ export function AccountSection() {
 
       {/* Toggle removed — cloud sync is automatic once the user signs in. */}
       <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
+      <ChangePasswordDialog open={changePwOpen} onClose={() => setChangePwOpen(false)} />
     </section>
   );
 }
