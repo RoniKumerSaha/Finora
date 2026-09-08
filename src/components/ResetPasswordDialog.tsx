@@ -41,6 +41,7 @@ import { passwordSchema } from '../lib/schemas';
 import { useStore } from '../domain/store';
 import {
   broadcast,
+  clearRecoveryFragment,
   isOwnRecoveryUrl,
   subscribe,
   tabId,
@@ -114,6 +115,14 @@ export function ResetPasswordDialog({ open, onClose }: Props) {
       window.clearTimeout(focusId);
       document.removeEventListener('keydown', onKey);
       offMsg();
+      // Clear the boot-time snapshot so a route change / re-mount
+      // of App doesn't re-trigger this dialog. The live hash is
+      // already cleared by supabase-js; this drops the fallback we
+      // kept in `crossTabRecovery.ts` so `isOwnRecoveryUrl()`
+      // answers consistently. Fires for every close path:
+      // Escape, Cancel button, backdrop click, sibling tab's
+      // `recovery-opened` message, AND successful `updatePassword`.
+      clearRecoveryFragment();
     };
   }, [open]);
 

@@ -13,7 +13,7 @@
  * so we don't mock them — the production wiring is what we're testing.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
-import { broadcast, captureRecoveryFragment, isOwnRecoveryUrl, subscribe, tabId } from '../crossTabRecovery';
+import { broadcast, captureRecoveryFragment, clearRecoveryFragment, isOwnRecoveryUrl, subscribe, tabId } from '../crossTabRecovery';
 
 beforeEach(() => {
   // Reset the per-tab id and the URL fragment so each test starts from
@@ -24,8 +24,10 @@ beforeEach(() => {
   // event when we write; happy-dom is quiet here which is what we want.
   window.location.hash = '';
   // Clear any boot-time snapshot from a previous test — it's a module
-  // singleton so we have to scrub it manually.
-  captureRecoveryFragment('');
+  // singleton so we have to scrub it manually. `clearRecoveryFragment`
+  // is the public helper; `captureRecoveryFragment('')` works too but
+  // the dedicated helper documents the intent better.
+  clearRecoveryFragment();
 });
 
 describe('tabId', () => {
@@ -73,6 +75,18 @@ describe('isOwnRecoveryUrl', () => {
   it('does not false-positive on a non-recovery snapshot', () => {
     captureRecoveryFragment('#access_token=abc&type=magiclink');
     window.location.hash = '';
+    expect(isOwnRecoveryUrl()).toBe(false);
+  });
+
+  it('clearRecoveryFragment() drops the snapshot so a remount does not re-trigger the dialog', () => {
+    // Simulate: boot with the recovery fragment, supabase-js wipes
+    // the live hash, the dialog mounts (which uses the snapshot).
+    // Now the user cancels the dialog — the snapshot should be
+    // cleared so a route change / remount doesn't re-open.
+    captureRecoveryFragment('#access_token=abc&type=recovery');
+    window.location.hash = '';
+    expect(isOwnRecoveryUrl()).toBe(true);
+    clearRecoveryFragment();
     expect(isOwnRecoveryUrl()).toBe(false);
   });
 });

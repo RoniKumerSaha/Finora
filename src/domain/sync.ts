@@ -104,6 +104,18 @@ export class SyncEngine {
   // on the app). Listed on top of the single onAuthStateChange
   // listener registered in init() — see that block.
   private recoveryListeners = new Set<() => void>();
+  // Set to true when PASSWORD_RECOVERY fires while no listeners are
+  // registered yet. This happens on the cold-boot recovery flow: the
+  // user lands on the app with `#access_token=...&type=recovery` in
+  // the URL, `syncEngine.init()` runs inside `main.tsx`'s boot (which
+  // awaits React mount), and React mounts the App AFTER init() has
+  // already completed — so by the time App.tsx calls
+  // `onPasswordRecovery(cb)`, the event has already fired and
+  // dispatched to zero listeners. The flag lets newly-registered
+  // listeners replay the missed event once on subscription.
+  // Cleared by `acknowledgePendingRecovery()` so subsequent
+  // re-mounts don't re-open the dialog.
+  private pendingRecovery = false;
 
   constructor(client?: SupabaseClient | null) {
     this.client = client === undefined ? defaultSupabase : client;
@@ -194,6 +206,11 @@ export class SyncEngine {
         // ResetPasswordDialog). Don't recomputeStatus either: the
         // recovery session has the same user_id so the engine's
         // signed-in state stays accurate.
+        //
+        // Set the pending flag so a listener that subscribes AFTER
+        // this event fires (the common case on cold-boot — React
+        // mounts after `init()` completes) still gets notified.
+        this.pendingRecovery = true;
         for (const cb of this.recoveryListeners) cb();
         return;
       }
@@ -577,11 +594,47 @@ export class SyncEngine {
    * Subscribe to the `PASSWORD_RECOVERY` auth event (the recovery
    * hash fragment was detected on the URL). App.tsx uses this to
    * auto-open the ResetPasswordDialog when the user returns from
-   * the emailed link. Returns an unsubscribe.
+   * the emailed link.
+   *
+   * **Replay-on-subscribe.** On the cold-boot recovery flow, the
+   * user lands on the app with `#access_token=...&type=recovery`
+   * in the URL, `main.tsx`'s boot awaits `syncEngine.init()` to
+   * completion, and React mounts the App AFTER init() has already
+   * fired `PASSWORD_RECOVERY` (it runs inside `getSession()` →
+   * `initialize()`). If we naively registered the listener then
+   * called any existing listeners, there'd be zero listeners and
+   * the event would be lost — the user would see the signed-in app
+   * instead of the reset dialog.
+   *
+   * The fix: when `onPasswordRecovery` is called, if a recovery
+   * event has already fired (the `pendingRecovery` flag is true),
+   * we replay it once via the new subscriber's callback so the
+   * dialog opens. The caller is expected to call
+   * `acknowledgePendingRecovery()` once it has handled the replay
+   * so subsequent re-mounts (StrictMode, route changes that
+   * unmount App, etc.) don't re-open the dialog.
+   *
+   * Returns an unsubscribe.
    */
   onPasswordRecovery(cb: () => void): () => void {
     this.recoveryListeners.add(cb);
+    if (this.pendingRecovery) {
+      // Replay the missed event synchronously so the dialog opens
+      // on the same render cycle that subscribes.
+      cb();
+    }
     return () => { this.recoveryListeners.delete(cb); };
+  }
+
+  /**
+   * Clear the `pendingRecovery` flag after the recovery event has
+   * been handled (the reset dialog has been opened, or the user has
+   * dismissed it, or the URL is no longer a recovery URL). Called
+   * by App.tsx once it has decided what to do with the replayed
+   * event so subsequent mount/unmount cycles don't re-trigger.
+   */
+  acknowledgePendingRecovery(): void {
+    this.pendingRecovery = false;
   }
 
   /**
@@ -825,6 +878,7 @@ export function __resetSyncEngineForTests(): void {
     pendingPush: unknown;
     queueDrainTimer: number | null;
     recoveryListeners: Set<unknown>;
+    pendingRecovery: boolean;
   };
   e.userId = null;
   e.userEmail = null;
@@ -837,6 +891,7 @@ export function __resetSyncEngineForTests(): void {
     clearTimeout(e.queueDrainTimer);
     e.queueDrainTimer = null;
   }
+  e.pendingRecovery = false;
   e.recoveryListeners.clear();
 }
 

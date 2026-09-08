@@ -65,6 +65,18 @@ export function captureRecoveryFragment(fragment: string): void {
 }
 
 /**
+ * Clear the boot-time recovery fragment snapshot. Called by the
+ * ResetPasswordDialog after the user closes it (success or cancel)
+ * so a route change / remount doesn't re-trigger the dialog. The
+ * live `window.location.hash` was already cleared by supabase-js
+ * during `initialize()`; this just nukes the fallback we kept for
+ * `isOwnRecoveryUrl()`.
+ */
+export function clearRecoveryFragment(): void {
+  snapshotRecoveryFragment = null;
+}
+
+/**
  * Per-tab UUID stored in `sessionStorage` (per-tab by definition —
  * discarded when the tab closes). Stable across re-renders within a
  * tab; unique across tabs.

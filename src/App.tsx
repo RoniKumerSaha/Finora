@@ -77,14 +77,31 @@ export function App() {
   // — that's why the dialog itself dedupes via `isOwnRecoveryUrl()` and
   // the `recovery-opened` BroadcastChannel message.
   //
+  // **Cold-boot replay.** `syncEngine.init()` is awaited in `main.tsx`
+  // BEFORE React mounts. The PASSWORD_RECOVERY event fires inside
+  // `init()` (during `getSession()` → `initialize()`), before any
+  // listener can be registered. The engine buffers the event as
+  // `pendingRecovery` and replays it to any subscriber that
+  // registers later — that's how this `useEffect` (which runs AFTER
+  // init has completed) still gets called.
+  //
+  // **Acknowledge-on-handle.** We acknowledge immediately because the
+  // dialog's own dedupe (`isOwnRecoveryUrl()` + `recovery-opened`
+  // broadcast) decides whether to actually open — the engine just
+  // forwards the signal. Acknowledging here keeps StrictMode
+  // double-mounts and route changes from re-triggering.
+  //
   // On the successful-update side: when the fragment-receiving tab
   // finishes `updatePassword`, it broadcasts `recovery-complete` and
-  // Closes its own dialog. THIS tab (any sibling that was open) reloads
+  // closes its own dialog. THIS tab (any sibling that was open) reloads
   // to pick up the new session — both our in-memory Zustand store and
   // the SyncEngine's cached status were tied to the old auth.
   const [resetOpen, setResetOpen] = useState(false);
   useEffect(() => {
-    const offRecovery = syncEngine.onPasswordRecovery(() => setResetOpen(true));
+    const offRecovery = syncEngine.onPasswordRecovery(() => {
+      syncEngine.acknowledgePendingRecovery();
+      setResetOpen(true);
+    });
     const offMsg = subscribe(msg => {
       if (msg.type === 'recovery-complete') {
         // Safe to reload immediately — by the time the opening tab

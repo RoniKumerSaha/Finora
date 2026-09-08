@@ -20,6 +20,7 @@ import {
   __seedCloudRow,
   __seedAuthUser,
   __setAuthError,
+  __simulateRecovery,
 } from '../../test/sync-helpers';
 import { resetIDB } from '../../test/idb-helpers';
 import { clearSyncRows } from '../persistence';
@@ -218,6 +219,60 @@ describe('SyncEngine — auth', () => {
     expect(local.accounts.length).toBe(1);
     expect(local.accounts[0].name).toBe('Bank');
     expect(local.settings.stateUpdatedAt).toBe(7_777);
+  });
+
+  it('onPasswordRecovery replays a pending recovery event to a late subscriber', async () => {
+    // Regression for the cold-boot recovery flow: the user lands on
+    // the app with `#access_token=...&type=recovery` in the URL.
+    // `syncEngine.init()` runs (during `main.tsx`'s awaited boot)
+    // and fires PASSWORD_RECOVERY on its auth-state listener BEFORE
+    // React has mounted. App.tsx's `onPasswordRecovery(cb)` only
+    // registers its callback AFTER init() has completed — without
+    // replay support, the event is lost and the user sees the
+    // signed-in app instead of the reset dialog.
+    __setAuthUser({ id: 'u-recovery', email: 'recovery@example.com' });
+    await engine.init();
+    // Simulate PASSWORD_RECOVERY firing before any listener has
+    // registered. This is exactly what happens when the recovery
+    // link is opened in a cold-boot tab.
+    __simulateRecovery();
+
+    // Now the App mounts and registers its listener. Without replay
+    // support, the cb would never fire — the test would assert 0
+    // calls. With replay, the cb is called synchronously on
+    // subscribe.
+    let calls = 0;
+    const off = engine.onPasswordRecovery(() => { calls += 1; });
+    expect(calls).toBe(1);
+
+    // Acknowledging prevents a second subscriber (StrictMode
+    // double-mount, route-change re-mount) from re-triggering.
+    engine.acknowledgePendingRecovery();
+    let calls2 = 0;
+    const off2 = engine.onPasswordRecovery(() => { calls2 += 1; });
+    expect(calls2).toBe(0);
+
+    off();
+    off2();
+  });
+
+  it('onPasswordRecovery fires live events when no pending recovery is buffered', async () => {
+    // The non-cold-boot path: App.tsx mounts and registers BEFORE
+    // any recovery event fires. A subsequent PASSWORD_RECOVERY
+    // should reach the live callback (not just the replay).
+    __setAuthUser({ id: 'u-recovery-live', email: 'live@example.com' });
+    await engine.init();
+
+    let calls = 0;
+    const off = engine.onPasswordRecovery(() => { calls += 1; });
+
+    __simulateRecovery();
+    expect(calls).toBe(1);
+
+    __simulateRecovery();
+    expect(calls).toBe(2);
+
+    off();
   });
 
   it('deleteCloudCopy removes the cloud row', async () => {
