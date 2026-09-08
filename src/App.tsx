@@ -10,10 +10,13 @@
  *   /transactions/:id/edit edits.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Shell } from './components/Shell';
 import { RoleAlertBanner } from './components/RoleAlertBanner';
+import { ResetPasswordDialog } from './components/ResetPasswordDialog';
+import { subscribe } from './components/crossTabRecovery';
+import { syncEngine } from './domain/sync';
 import { useStore } from './domain/store';
 import { HomeScreen } from './screens/HomeScreen';
 import { InsightsScreen } from './screens/InsightsScreen';
@@ -61,6 +64,39 @@ export function App() {
 
   // Recompute derived fields on boot (status flips, paidSoFar cache).
   useEffect(() => { recompute(); }, [recompute]);
+
+  // Recovery: open the ResetPasswordDialog when supabase-js fires
+  // PASSWORD_RECOVERY (the user just clicked the link in their
+  // recovery email). The dialog manages its own field state; we
+  // only own the open/close lifecycle.
+  //
+  // Cross-tab coordination (see crossTabRecovery.ts + ResetPasswordDialog):
+  // supabase-js writes the recovery session to localStorage, which is
+  // shared across tabs. The OTHER tab (still signed in with the old
+  // session) picks up the storage change and also fires PASSWORD_RECOVERY
+  // — that's why the dialog itself dedupes via `isOwnRecoveryUrl()` and
+  // the `recovery-opened` BroadcastChannel message.
+  //
+  // On the successful-update side: when the fragment-receiving tab
+  // finishes `updatePassword`, it broadcasts `recovery-complete` and
+  // Closes its own dialog. THIS tab (any sibling that was open) reloads
+  // to pick up the new session — both our in-memory Zustand store and
+  // the SyncEngine's cached status were tied to the old auth.
+  const [resetOpen, setResetOpen] = useState(false);
+  useEffect(() => {
+    const offRecovery = syncEngine.onPasswordRecovery(() => setResetOpen(true));
+    const offMsg = subscribe(msg => {
+      if (msg.type === 'recovery-complete') {
+        // Safe to reload immediately — by the time the opening tab
+        // broadcasts, it has already persisted the new session to
+        // localStorage. Reloading this tab hydrates the store from
+        // IDB (which the opening tab has flushed via its own sync
+        // cycle) and re-reads the auth session.
+        window.location.reload();
+      }
+    });
+    return () => { offRecovery(); offMsg(); };
+  }, []);
 
   return (
     <HashRouter>
@@ -111,6 +147,10 @@ export function App() {
           <Route path="*" element={<div className="p-8 text-muted">Not found.</div>} />
         </Route>
       </Routes>
+      {/* Auto-opened when the user lands back from a password-recovery
+          email link. Renders into a portal (z-40) so it stacks above
+          the current screen regardless of route. */}
+      <ResetPasswordDialog open={resetOpen} onClose={() => setResetOpen(false)} />
     </HashRouter>
   );
 }

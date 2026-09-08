@@ -1263,6 +1263,12 @@ Every error message must:
 - On the local stack, `[auth.email] enable_confirmations = false` (config.toml:226) so sign-up completes in one step and `signUp` returns a session synchronously. On hosted Supabase the same flag is configurable per project; when `true`, `signUp` issues a user row but **no** session, and `signUpWithPassword` returns `{ requiresEmailConfirmation: true }` so the dialog can show a "Check your email" toast instead of assuming the user is signed in.
 - **No magic-link flow.** The earlier `signInWithOtp` + `emailRedirectTo` workaround (which was needed because GoTrue puts the access_token in the URL fragment and the hash router would swallow it) is no longer needed — password sign-in establishes a session synchronously, no redirect involved.
 - **Client-side password rules**: minimum 8 characters, no complexity gates. Supabase's own `minimum_password_length = 6` (config.toml:182) is the server-side floor; client validation is one above.
+- **Password reset.** A "Forgot password?" link in the SignInDialog (sign-in mode only) opens an inline reset-request panel — the user enters their email and clicks "Send reset link", which calls `auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })`. Supabase emails a recovery link; on click, the user lands back in the app at `#access_token=...&type=recovery`, and supabase-js fires the `PASSWORD_RECOVERY` event on `onAuthStateChange` (auto-detected because `detectSessionInUrl: true`, supabase.ts:37). App.tsx subscribes to that event via `syncEngine.onPasswordRecovery()` and opens the `ResetPasswordDialog` automatically on top of whatever screen the user is on — no new route. The dialog asks for a new password (≥ 8 chars, same `passwordSchema`) and calls `auth.updateUser({ password })`. On success: success toast + dialog closes + the user is signed in with the new password. On server error: inline password error if the message mentions "password", otherwise fall through to a toast.
+- **Cross-tab recovery dedupe.** When the user clicks the recovery link in their email, it opens in a NEW tab (the email client decides where links open). Supabase's auth storage is shared across tabs, so the OLD tab — still signed in with the previous session — also fires `PASSWORD_RECOVERY` from supabase-js's storage listener. Without coordination, both tabs would open the `ResetPasswordDialog`. The fix lives in `src/components/crossTabRecovery.ts` and wires both directions through a `BroadcastChannel('finora-recovery')`:
+  - On open, the dialog checks `isOwnRecoveryUrl()` (`/type=recovery/.test(window.location.hash)`); if false, it calls `onClose()` immediately so the old (non-fragment) tab is a no-op. The fragment-receiving tab then broadcasts `recovery-opened` with its per-tab `tabId` (UUID in `sessionStorage`). Other tabs subscribe and, if they see a `recovery-opened` from a *different* tabId, suppress their own dialog — preventing duplicate dialogs if the same fragment ever lands in multiple tabs.
+  - On successful `updatePassword`, the dialog broadcasts `recovery-complete`. App.tsx subscribes to this on every tab and calls `window.location.reload()` — the old tab's in-memory Zustand store and SyncEngine status were tied to the old session, and a reload is the simplest way to re-hydrate both from IDB + the new auth state.
+  - The channel is fail-open: if `BroadcastChannel` is unavailable (private mode in some browsers), both `broadcast` and `subscribe` become no-ops. The fragment-receiving tab still opens the dialog on its own via `isOwnRecoveryUrl()`; other tabs may briefly open it too in that edge case, but the user is only interacting with one at a time.
+  - Cancel: `recovery-complete` only fires on success. If the user cancels the dialog, the recovery session stays in `localStorage` and they can re-open the email link to try again.
 
 #### 9.19.4 Storage shape
 
@@ -1286,6 +1292,7 @@ create table public.finora_state (
 - Server's `updated_at` is the **tiebreaker** when client stamps are equal (rare, but happens when a device has the wrong clock).
 - Three outcomes: `adopt-cloud`, `keep-local (local-newer)`, `keep-local (equal-and-cloud-not-newer)`.
 - **First-ever pull with no cloud row**: push local up only if local already has data. An empty local stays empty so the first device with data on it wins, rather than racing to seed.
+- **Sign-back-in after sign-out**: sign-out wipes local (see §9.19.9), so re-sign-in always lands on a device with `stateUpdatedAt = 0` and a populated cloud row. `pickWinner` adopts cloud via LWW and the user sees their data without any manual intervention.
 
 #### 9.19.6 Push behavior
 
@@ -1309,16 +1316,20 @@ The anon key **must** be the JWT format (starts with `eyJ…`). The newer `sb_pu
 
 #### 9.19.9 Local ↔ cloud destruction independence
 
-- Local "Wipe all data" leaves the cloud copy alone (the other device isn't destroyed by a local wipe).
-- Cloud "Delete cloud copy" leaves local data alone (signing out is reversible by signing back in).
-- The `resetSyncMetadata()` call after a local wipe clears `lastSyncedAt` so the next boot's reconcile doesn't skip the empty-state guard and accidentally push empty local over a populated cloud row on another device.
+- **Sign-out wipes local, preserves cloud.** Signing out means "this device no longer belongs to that account." `SyncEngine.signOut()` calls `clearSyncRows()` + `useStore.reset()` + `resetSyncMetadata()` and clears the Supabase session, but never touches the cloud row. On the next sign-in the wiped local has `stateUpdatedAt` of 0 and `pickWinner` adopts the cloud row via LWW. The user's other devices keep their data.
+- **Local "Wipe all data" (Settings → Danger Zone) leaves the cloud copy alone** so a local wipe doesn't destroy other devices.
+- **Cloud "Delete cloud copy" is destructive only on the cloud.** The local store is preserved.
+- `resetSyncMetadata()` clears `lastSyncedAt` after any local wipe so the next boot's reconcile doesn't skip the empty-state guard and accidentally push empty local over a populated cloud row on another device.
 
 #### 9.19.10 Tests
 
-- `src/test/sync-helpers.ts` provides an in-memory Supabase fake covering every method `SyncEngine` actually calls (`auth.{getSession,signInWithOtp,signOut,onAuthStateChange}`, `from('finora_state').{select/upsert/delete/eq/maybeSingle}`).
+- `src/test/sync-helpers.ts` provides an in-memory Supabase fake covering every method `SyncEngine` actually calls (`auth.{getSession,signInWithPassword,signUp,signOut,resetPasswordForEmail,updateUser,onAuthStateChange}`, `from('finora_state').{select/upsert/delete/eq/maybeSingle}`).
 - `installFakeSupabase()` swaps the production singleton's client via the `__setClientForTests()` escape hatch so the real UI talks to the same engine the test controls.
 - `__seedCloudRow()` and `__setAuthUser()` give specs direct hooks into the fake cloud + auth state.
-- `__seedAuthUser(email, password?)` and `__setAuthError(err)` cover the password sign-in / sign-up paths. `SignInDialog.spec.tsx` covers empty / invalid-email / short-password submit blocking, valid sign-in dispatch, wrong-password banner, and the mode toggle.
+- `__seedAuthUser(email, password?)` and `__setAuthError(err)` cover the password sign-in / sign-up paths. `SignInDialog.spec.tsx` covers empty / invalid-email / short-password submit blocking, valid sign-in dispatch, wrong-password banner, the mode toggle, and the forgot-password flow (link visibility per mode + reset-request panel calling `resetPasswordForEmail`). `ResetPasswordDialog.spec.tsx` covers empty / short-password submit blocking, valid updatePassword → close + success toast + `recovery-complete` broadcast, rate-limited update → toast, inline password rejection, and the cross-tab dedupe (no-fragment tab self-closes on mount; fragment tab broadcasts `recovery-opened` on mount; second tab sees a sibling's `recovery-opened` and closes itself).
+- `crossTabRecovery.spec.ts` covers the channel wrapper itself: `tabId()` is stable per tab, `isOwnRecoveryUrl()` reflects the URL hash, and `subscribe()` receives broadcasts (including the unsubscribe path).
+- `App.spec.tsx` covers the recovery-subscriber wiring: a `recovery-complete` broadcast triggers `window.location.reload()`, while `recovery-opened` does not.
+- `__simulateRecovery(user?)` fires `PASSWORD_RECOVERY` on every registered `onAuthStateChange` listener; tests use it to drive the recovery dialog without simulating a real email click.
 
 ---
 

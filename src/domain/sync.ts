@@ -25,6 +25,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { supabase as defaultSupabase, requireSupabase, supabaseEnabled } from '../lib/supabase';
+import { captureRecoveryFragment } from '../components/crossTabRecovery';
 import { formatSyncError } from '../lib/errors';
 import { useLockStore } from '../security/lockStore';
 import { recomputeDerived } from './recompute';
@@ -32,6 +33,7 @@ import { save as saveLocal } from './persistence';
 import {
   CLOUD_LAST_PULLED_KEY,
   CLOUD_LAST_SYNCED_KEY,
+  clearSyncRows,
   getSyncRow,
   putSyncRow,
 } from './persistence';
@@ -97,6 +99,11 @@ export class SyncEngine {
   private lastError: string | null = null;
   private lastSyncedAt: number | null = null;
   private inited = false;
+  // Subscribers fired when supabase-js emits `PASSWORD_RECOVERY`
+  // (user clicked the recovery link in their email and landed back
+  // on the app). Listed on top of the single onAuthStateChange
+  // listener registered in init() — see that block.
+  private recoveryListeners = new Set<() => void>();
 
   constructor(client?: SupabaseClient | null) {
     this.client = client === undefined ? defaultSupabase : client;
@@ -123,10 +130,38 @@ export class SyncEngine {
    * (store already has the local snapshot). It restores the auth
    * session and, if signed-in + cloud-sync enabled, performs the
    * first reconcile. Safe to call multiple times.
+   *
+   * **Listener-first ordering.** The auth state-change listener MUST
+   * be attached BEFORE `getSession()` (or any other method that
+   * triggers `initialize()`). supabase-js buffers notifications fired
+   * during the init chain (the recovery flow runs entirely inside
+   * `initialize()` → `detectSessionInUrl` → fire PASSWORD_RECOVERY)
+   * and flushes them once `initializePromise` resolves. `getSession()`
+   * awaits that promise, so by the time it returns the buffer has
+   * already been drained. If our listener is attached after
+   * `getSession()` we miss the recovery event entirely and the
+   * ResetPasswordDialog never opens.
+   *
+   * **Snapshotting the recovery URL fragment.** `detectSessionInUrl`
+   * also clears `window.location.hash` after extracting the tokens
+   * (auth-js GoTrueClient.js:3325: `window.location.hash = ''`).
+   * The ResetPasswordDialog's cross-tab dedupe needs to know
+   * whether THIS tab is the fragment-receiving tab, but by the time
+   * the dialog mounts the hash is already gone. We snapshot the
+   * fragment here — BEFORE supabase-js clears it — so the dedupe
+   * helper can answer correctly.
    */
   async init(): Promise<void> {
     if (this.inited) return;
     this.inited = true;
+
+    // Snapshot the URL fragment before supabase-js wipes it. See the
+    // method doc above for why ordering matters. We only do this
+    // when the client is actually configured — the no-client branch
+    // below returns early and never calls getSession().
+    if (this.client && typeof window !== 'undefined') {
+      captureRecoveryFragment(window.location.hash);
+    }
 
     // Pull persisted timestamps so the UI shows the right "Last
     // synced" hint before the first push completes.
@@ -144,23 +179,24 @@ export class SyncEngine {
       return;
     }
 
-    // Restore session (if any).
-    const { data } = await this.client.auth.getSession();
-    const session = data.session;
-    if (session?.user) {
-      this.userId = session.user.id;
-      this.userEmail = session.user.email ?? null;
-      // Don't auto-enable — `enabled` follows the user's Settings
-      // toggle, which the store reads separately on first mutation.
-      // We just set up identity so we know who we're syncing as.
-    }
-
-    // Subscribe to auth state changes so magic-link returns on this
-    // device flip us into signed-in without an app reload.
-    this.client.auth.onAuthStateChange((_event, newSession) => {
+    // Attach the auth-state listener FIRST so the PASSWORD_RECOVERY
+    // event fired during `initialize()` (called from `getSession()`
+    // below) reaches us. See the method doc.
+    this.client.auth.onAuthStateChange((event, newSession) => {
       const u = newSession?.user;
       this.userId = u?.id ?? null;
       this.userEmail = u?.email ?? null;
+      if (event === 'PASSWORD_RECOVERY') {
+        // User clicked the recovery link in their email. We don't
+        // run reconcileAndPushLatest — the recovery session is
+        // short-lived and the user is about to set a new password.
+        // Just notify any listeners (App.tsx mounts the
+        // ResetPasswordDialog). Don't recomputeStatus either: the
+        // recovery session has the same user_id so the engine's
+        // signed-in state stays accurate.
+        for (const cb of this.recoveryListeners) cb();
+        return;
+      }
       if (u) {
         // Sign-in: persist the email, enable the engine, and run
         // the first reconcile. recordSignIn() inside the store does
@@ -177,6 +213,19 @@ export class SyncEngine {
         this.recomputeStatus();
       }
     });
+
+    // Now safe to call getSession() — by the time its `initialize()`
+    // completes (including the recovery-fragment extraction that
+    // fires PASSWORD_RECOVERY), our listener above is attached.
+    const { data } = await this.client.auth.getSession();
+    const session = data.session;
+    if (session?.user) {
+      this.userId = session.user.id;
+      this.userEmail = session.user.email ?? null;
+      // Don't auto-enable — `enabled` follows the user's Settings
+      // toggle, which the store reads separately on first mutation.
+      // We just set up identity so we know who we're syncing as.
+    }
 
     // If we're signed in AND enabled, pull from cloud.
     if (this.userId && this.enabled) {
@@ -485,6 +534,75 @@ export class SyncEngine {
     return { requiresEmailConfirmation };
   }
 
+  /**
+   * Send a password-recovery email. The link in the email redirects
+   * back to `window.location.origin` (the app root) with a
+   * `#access_token=...&type=recovery` hash fragment. supabase-js
+   * auto-detects the fragment because `detectSessionInUrl: true`
+   * (src/lib/supabase.ts:37) and fires `PASSWORD_RECOVERY` on our
+   * `onAuthStateChange` listener — App.tsx listens for that via
+   * `onPasswordRecovery()` and opens the reset dialog.
+   *
+   * Throws on Supabase error (rate-limit, invalid email format on
+   * server, etc.). Errors flow through `formatSyncError` to the
+   * toast layer.
+   */
+  async resetPasswordForEmail(email: string): Promise<void> {
+    const client = this.client ?? requireSupabase();
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/',
+    });
+    if (error) throw error;
+  }
+
+  /**
+   * Update the password for the currently signed-in user. Called by
+   * the ResetPasswordDialog after the user clicks the recovery link
+   * and lands back in the app with a short-lived recovery session.
+   * The recovery session has `updateUser` privileges scoped to
+   * password changes only — it does NOT grant access to other
+   * user-mgmt endpoints, which is the right behavior for this flow.
+   *
+   * Throws on Supabase error. The dialog maps validation-style
+   * errors to inline field copy; everything else falls through to
+   * the toast layer.
+   */
+  async updatePassword(newPassword: string): Promise<void> {
+    const client = this.client ?? requireSupabase();
+    const { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+
+  /**
+   * Subscribe to the `PASSWORD_RECOVERY` auth event (the recovery
+   * hash fragment was detected on the URL). App.tsx uses this to
+   * auto-open the ResetPasswordDialog when the user returns from
+   * the emailed link. Returns an unsubscribe.
+   */
+  onPasswordRecovery(cb: () => void): () => void {
+    this.recoveryListeners.add(cb);
+    return () => { this.recoveryListeners.delete(cb); };
+  }
+
+  /**
+   * Sign the current user out of Supabase and wipe the local store.
+   *
+   * **Local is always wiped on sign-out (the cloud copy is NOT).**
+   * This is deliberate: signing out means "this device no longer
+   * belongs to that account." Leaving the local data behind would
+   * (a) expose the next person to use this device to the previous
+   * owner's accounts/transactions, and (b) trip the reconcile guard
+   * on the next sign-in — an empty local with a recent `stateUpdatedAt`
+   * would beat the cloud's older stamp via LWW and clobber the cloud
+   * row. Wiping local ensures the next sign-in sees the cloud as the
+   * source of truth and pulls it via `pickWinner`.
+   *
+   * `onboardingComplete` is preserved as `true` so the user doesn't
+   * get re-onboarded after signing back in (their account is the same
+   * one they already onboarded). `cloudSyncEnabled` + `cloudUserEmail`
+   * are cleared — those are identity, not preference, and will be
+   * re-stamped by `recordSignIn` on the next sign-in.
+   */
   async signOut(): Promise<void> {
     if (this.client) {
       await this.client.auth.signOut();
@@ -492,6 +610,36 @@ export class SyncEngine {
     this.userId = null;
     this.userEmail = null;
     await queue.clearQueue();
+    // Local wipe — see the method doc. Mirrors the Settings → Danger
+    // zone "Wipe all data" path, but scoped to "I am done being this
+    // user on this device" rather than "delete everything I care
+    // about". Same machinery, different intent.
+    await clearSyncRows();
+    // Dynamic import to break the sync.ts → store.ts cycle.
+    const { useStore } = await import('./store');
+    const { DEFAULT_STATE: defaultState } = await import('./persistence');
+    useStore.getState().reset();
+    // `reset()` preserves the previous `cloudSyncEnabled` /
+    // `cloudUserEmail` (the Danger-zone wipe reuses the same action
+    // and the user's sync opt-in should survive a wipe of their
+    // data). For sign-out we want the opposite: clear identity so the
+    // next sign-in starts from a clean slate. Stamp a clean state on
+    // top of the wiped store.
+    const wiped = useStore.getState().state;
+    const signedOut: State = {
+      ...defaultState,
+      settings: {
+        ...wiped.settings,
+        cloudSyncEnabled: false,
+        cloudUserEmail: null,
+      },
+    };
+    useStore.setState({ state: signedOut });
+    saveLocal(signedOut);
+    // Drop the engine's in-memory sync metadata so the next sign-in's
+    // reconcile treats this device as fresh (the cloud copy will
+    // overwrite the wiped local via pickWinner's LWW).
+    this.resetSyncMetadata();
     this.recomputeStatus();
   }
 
@@ -676,6 +824,7 @@ export function __resetSyncEngineForTests(): void {
     lastError: string | null;
     pendingPush: unknown;
     queueDrainTimer: number | null;
+    recoveryListeners: Set<unknown>;
   };
   e.userId = null;
   e.userEmail = null;
@@ -688,6 +837,7 @@ export function __resetSyncEngineForTests(): void {
     clearTimeout(e.queueDrainTimer);
     e.queueDrainTimer = null;
   }
+  e.recoveryListeners.clear();
 }
 
 // ─── React hook ────────────────────────────────────────────────────────

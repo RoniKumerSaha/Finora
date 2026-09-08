@@ -137,8 +137,16 @@ with your email to seed the cloud row.
 - ✅ One row per user, scoped by Supabase RLS (`auth.uid() = user_id`).
 - ✅ Email + password sign-in (and sign-up). One dialog with a "Sign in" /
   "Create account" toggle, no magic-link round-trip.
+- ✅ Password recovery via Supabase email link — auto-detected on return
+  (`#access_token=...&type=recovery`), opens a "Set a new password" dialog.
+- ✅ Cross-tab recovery — opening the email link in a new tab auto-opens
+  the dialog there; other tabs stay on the signed-in view and reload
+  automatically once the password is updated.
 - ✅ Last-write-wins reconciliation across devices, with server clock
   tiebreaker for the rare same-millisecond case.
+- ✅ Sign-out wipes the local store but preserves the cloud copy. Signing
+  back in pulls the latest snapshot from the cloud automatically — no
+  manual export/restore dance.
 - ✅ Offline-tolerant: edits queue in IndexedDB and flush on reconnect,
   coalescing into a single push.
 - ✅ Works with the PIN lock — locked devices don't push.

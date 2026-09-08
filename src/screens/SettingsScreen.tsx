@@ -21,7 +21,6 @@ import { syncEngine } from '../domain/sync';
  * zone.
  */
 export function SettingsScreen() {
-  const update = useStore(s => s.update);
   const importAndReplace = useStore(s => s.importAndReplace);
   const showBanner = useStore(s => s.showBanner);
   const { confirm, dialog } = useConfirm();
@@ -29,16 +28,29 @@ export function SettingsScreen() {
 
   /**
    * Single destructive button — wipes everything, on this device AND
-   * in the cloud (if signed in). Replaces the prior three options
-   * (Delete cloud copy, Wipe all data, Erase everything). The user's
-   * intent is the same in all three cases: "make this app empty",
-   * so we collapse them into one.
+   * in the cloud (if signed in). The behaviour depends on sign-in
+   * state:
+   *
+   *   - **Signed in**: confirmation copy says local + cloud will be
+   *     deleted. Cloud is deleted FIRST so a failed network call
+   *     aborts before we nuke local. Local wipe uses `reset()` (not
+   *     `update()`) so the wiped state doesn't bump `stateUpdatedAt`
+   *     and trigger a debounced re-push that would re-create the
+   *     cloud row we just deleted.
+   *   - **Signed out**: confirmation copy says only local will be
+   *     deleted. The cloud copy is untouched — there is no cloud
+   *     copy on this account's userId, and signing back in will
+   *     pull whatever the user has on their other devices.
+   *
+   * In both branches we wipe the local IDB sync metadata and the
+   * engine's in-memory metadata so the next boot (or the next sign-in)
+   * treats the device as fresh.
    */
   async function onWipeEverything() {
     const signedIn = Boolean(syncEngine.getEmail());
     const body = signedIn
       ? 'Every account, transaction, goal, debt, investment, and plan will be deleted from THIS DEVICE and from your cloud copy on Supabase. This cannot be undone.'
-      : 'Every account, transaction, goal, debt, investment, and plan will be deleted from this device. This cannot be undone.';
+      : 'Every account, transaction, goal, debt, investment, and plan will be deleted from this device. Your cloud copy (if any) is preserved so signing back in will restore the latest snapshot. This cannot be undone.';
     const ok = await confirm({
       title: 'Wipe all data?',
       body,
@@ -62,14 +74,15 @@ export function SettingsScreen() {
       }
     }
 
-    // Local: blank the store.
-    update(s => ({
-      version: 1,
-      accounts: [], transactions: [], goals: [], debts: [], investments: [], categories: [],
-      monthPlans: [], eventPlans: [],
-      investmentPlans: [], loanPlans: [],
-      settings: { ...s.settings, onboardingComplete: true },
-    }));
+    // Local: use `reset()` (not `update()`). `update()` would route
+    // through `saveAndMaybeSync` and bump `stateUpdatedAt` to NOW,
+    // then schedule a debounced push. For the signed-in branch that
+    // push would re-create the cloud row we just deleted — wiping
+    // data on this device AND clobbering whatever the user has on
+    // other devices when they next reconcile. `reset()` clears IDB
+    // and stamps the store to DEFAULT_STATE without bumping
+    // `stateUpdatedAt` or scheduling a push.
+    useStore.getState().reset();
     // PIN + rate-limit reset so a forgotten PIN doesn't strand the user.
     clearPin();
     resetRateLimit();
@@ -85,8 +98,10 @@ export function SettingsScreen() {
       what: 'All data wiped',
       why: signedIn
         ? 'Your local store and cloud copy are now empty.'
-        : 'Your local store is now empty.',
-      fix: 'Add an account to start tracking again.',
+        : 'Your local store is now empty. Your cloud copy (if any) is preserved — sign back in to restore.',
+      fix: signedIn
+        ? 'Add an account to start tracking again.'
+        : 'Add an account to start tracking again, or sign back in to pull from the cloud.',
     });
   }
 

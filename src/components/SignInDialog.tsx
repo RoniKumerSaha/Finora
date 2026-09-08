@@ -37,7 +37,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Mode = 'signIn' | 'signUp';
+type Mode = 'signIn' | 'signUp' | 'resetRequest' | 'resetSent';
 
 interface FieldErrors {
   email?: string;
@@ -88,6 +88,31 @@ export function SignInDialog({ open, onClose }: Props) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
+
+    // Reset modes only need the email — the password field is hidden.
+    if (mode === 'resetRequest' || mode === 'resetSent') {
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        const issue = emailResult.error.issues[0] as ZodIssue;
+        setFieldErrors({ email: issue.message });
+        return;
+      }
+      const cleanEmail = emailResult.data;
+      setFieldErrors({});
+      setSubmitting(true);
+      try {
+        await syncEngine.resetPasswordForEmail(cleanEmail);
+        setMode('resetSent');
+        setSubmitting(false);
+      } catch (err) {
+        // Reset has only one field — no inline mapping. Fall through
+        // to the toast so the user sees the failure prominently.
+        const formatted = formatSyncError(err);
+        showToast({ kind: 'error', what: formatted.what, why: formatted.why });
+        setSubmitting(false);
+      }
+      return;
+    }
 
     // Client-side validation first — fail fast on the cheap checks so
     // we never hit the network with malformed inputs.
@@ -166,8 +191,21 @@ export function SignInDialog({ open, onClose }: Props) {
   }
 
   const isSignIn = mode === 'signIn';
-  const headline = isSignIn ? 'Sign in to sync' : 'Create your account';
-  const subtitle = isSignIn
+  const isResetRequest = mode === 'resetRequest';
+  const isResetSent = mode === 'resetSent';
+  const isReset = isResetRequest || isResetSent;
+  const headline = isResetRequest
+    ? 'Reset your password'
+    : isResetSent
+    ? 'Check your email'
+    : isSignIn
+    ? 'Sign in to sync'
+    : 'Create your account';
+  const subtitle = isResetRequest
+    ? 'Enter the email you signed up with. We\'ll send a link to set a new password.'
+    : isResetSent
+    ? `If an account exists for ${email}, we sent a password-reset link. Click it to set a new password.`
+    : isSignIn
     ? 'Sign in with the email and password you used when you created your account.'
     : 'Pick an email and a password — you\'ll use these to sign in on every device.';
 
@@ -175,7 +213,9 @@ export function SignInDialog({ open, onClose }: Props) {
   // becomes invalid (zod runs on every render — cheap, two fields).
   const emailValid = emailSchema.safeParse(email).success;
   const passwordValid = passwordSchema.safeParse(password).success;
-  const canSubmit = emailValid && passwordValid && !submitting;
+  const canSubmit = isReset
+    ? emailValid && !submitting
+    : emailValid && passwordValid && !submitting;
 
   // Live client-side errors — only surfaced after the field has been
   // touched (focused then blurred) so we don't flash "required" on the
@@ -227,44 +267,48 @@ export function SignInDialog({ open, onClose }: Props) {
 
         {/* Mode toggle — two pill-style buttons. Keeps the dialog to a
             single screen so users don't have to navigate between two
-            separate flows. */}
-        <div
-          role="tablist"
-          aria-label="Sign-in mode"
-          className="flex rounded-btn p-1 mb-5"
-          style={{ background: 'var(--surface-2)' }}
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={isSignIn}
-            onClick={() => { if (!submitting) setMode('signIn'); }}
-            disabled={submitting}
-            className={[
-              'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
-              isSignIn
-                ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
-                : 'text-muted hover:text-ink',
-            ].join(' ')}
+            separate flows. Hidden in reset modes (the reset flow is
+            single-purpose — sign-in / create-account navigation
+            doesn't apply). */}
+        {!isReset && (
+          <div
+            role="tablist"
+            aria-label="Sign-in mode"
+            className="flex rounded-btn p-1 mb-5"
+            style={{ background: 'var(--surface-2)' }}
           >
-            Sign in
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!isSignIn}
-            onClick={() => { if (!submitting) setMode('signUp'); }}
-            disabled={submitting}
-            className={[
-              'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
-              !isSignIn
-                ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
-                : 'text-muted hover:text-ink',
-            ].join(' ')}
-          >
-            Create account
-          </button>
-        </div>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isSignIn}
+              onClick={() => { if (!submitting) setMode('signIn'); }}
+              disabled={submitting}
+              className={[
+                'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
+                isSignIn
+                  ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
+                  : 'text-muted hover:text-ink',
+              ].join(' ')}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!isSignIn}
+              onClick={() => { if (!submitting) setMode('signUp'); }}
+              disabled={submitting}
+              className={[
+                'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
+                !isSignIn
+                  ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
+                  : 'text-muted hover:text-ink',
+              ].join(' ')}
+            >
+              Create account
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-4">
           {fieldErrors.form && (
@@ -293,34 +337,76 @@ export function SignInDialog({ open, onClose }: Props) {
               aria-invalid={Boolean(emailError)}
             />
           </Field>
-          <Field label="Password" error={passwordError}>
-            <Input
-              type="password"
-              required
-              autoComplete={isSignIn ? 'current-password' : 'new-password'}
-              placeholder={isSignIn ? 'Your password' : 'At least 8 characters'}
-              value={password}
-              onChange={e => { setPassword(e.target.value); setTouched(t => ({ ...t, password: true })); if (fieldErrors.password) setFieldErrors(p => ({ ...p, password: undefined })); }}
-              disabled={submitting}
-              aria-label="Password"
-              aria-invalid={Boolean(passwordError)}
-            />
-          </Field>
+          {!isReset && (
+            <Field label="Password" error={passwordError}>
+              <Input
+                type="password"
+                required
+                autoComplete={isSignIn ? 'current-password' : 'new-password'}
+                placeholder={isSignIn ? 'Your password' : 'At least 8 characters'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setTouched(t => ({ ...t, password: true })); if (fieldErrors.password) setFieldErrors(p => ({ ...p, password: undefined })); }}
+                disabled={submitting}
+                aria-label="Password"
+                aria-invalid={Boolean(passwordError)}
+              />
+            </Field>
+          )}
         </div>
 
+        {/* "Forgot password?" link — only in sign-in mode (irrelevant
+            on the create-account tab). Triggers the inline reset
+            panel within this same dialog (no new modal). */}
+        {isSignIn && (
+          <div className="flex justify-end mt-2 -mb-1">
+            <button
+              type="button"
+              onClick={() => { if (!submitting) { setFieldErrors({}); setTouched({}); setMode('resetRequest'); } }}
+              disabled={submitting}
+              className="text-[12.5px] text-muted hover:text-ink hover:underline underline-offset-2 transition focus-visible:outline-none focus-visible:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2.5 justify-end mt-6">
-          <Button variant="secondary" type="button" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            type="submit"
-            disabled={!canSubmit}
-          >
-            {submitting
-              ? (isSignIn ? 'Signing in…' : 'Creating account…')
-              : (isSignIn ? 'Sign in' : 'Create account')}
-          </Button>
+          {isReset ? (
+            <>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => { if (!submitting) setMode('signIn'); }}
+                disabled={submitting}
+              >
+                Back to sign in
+              </Button>
+              {!isResetSent && (
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={!canSubmit}
+                >
+                  {submitting ? 'Sending…' : 'Send reset link'}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" type="button" onClick={onClose} disabled={submitting}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={!canSubmit}
+              >
+                {submitting
+                  ? (isSignIn ? 'Signing in…' : 'Creating account…')
+                  : (isSignIn ? 'Sign in' : 'Create account')}
+              </Button>
+            </>
+          )}
         </div>
       </form>
     </div>,

@@ -101,6 +101,21 @@ export function __setAuthUser(user: { id: string; email: string } | null): void 
   for (const l of authListeners) l(user ? 'SIGNED_IN' : 'SIGNED_OUT', user ? { user } : null);
 }
 
+/**
+ * Simulate the user clicking the password-recovery link in their
+ * email. Fires PASSWORD_RECOVERY on every registered
+ * onAuthStateChange listener — that's the signal App.tsx watches to
+ * open the ResetPasswordDialog.
+ *
+ * If `user` is omitted, defaults to the currently-authenticated user
+ * (or null if signed-out, which is a malformed recovery flow but
+ * matches what the real Supabase client would do).
+ */
+export function __simulateRecovery(user?: { id: string; email: string } | null): void {
+  const u = user === undefined ? authState.user : user;
+  for (const l of authListeners) l('PASSWORD_RECOVERY', u ? { user: u } : null);
+}
+
 // ─── Fake SupabaseClient ────────────────────────────────────────────────
 
 type Listener = (event: string, session: { user: { id: string; email: string } } | null) => void;
@@ -164,6 +179,34 @@ function makeFakeClient(): SupabaseClient {
         authState = { user: null };
         for (const l of authListeners) l('SIGNED_OUT', null);
         return { error: null };
+      },
+      // Password recovery. Mirrors Supabase v2 — returns
+      // { data: {}, error } and does NOT auto-sign-in (the recovery
+      // link itself is what establishes the session in the real flow).
+      // Tests that want to simulate "user clicked the link and is
+      // back in the app" should call __simulateRecovery() below.
+      resetPasswordForEmail: async () => {
+        if (injectedAuthError) {
+          const err = injectedAuthError;
+          injectedAuthError = null;
+          return { data: {}, error: err as unknown as Error };
+        }
+        return { data: {}, error: null };
+      },
+      // Password update. The fake stores the new password into
+      // authPasswords so a subsequent signInWithPassword(newPassword)
+      // succeeds — matches the real Supabase behavior where the
+      // user's stored credentials rotate.
+      updateUser: async ({ password }: { password?: string }) => {
+        if (injectedAuthError) {
+          const err = injectedAuthError;
+          injectedAuthError = null;
+          return { data: { user: authState.user }, error: err as unknown as Error };
+        }
+        if (password && authState.user) {
+          authPasswords.set(authState.user.email, password);
+        }
+        return { data: { user: authState.user }, error: null };
       },
       onAuthStateChange: (cb: Listener) => {
         authListeners.add(cb);

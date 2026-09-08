@@ -40,7 +40,6 @@ function relativeTime(ms: number | null): string {
 
 export function AccountSection() {
   const status = useSyncStatus();
-  const recordSignOut = useStore(s => s.recordSignOut);
   const showToast = useStore(s => s.showToast);
   const [signInOpen, setSignInOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -82,8 +81,13 @@ export function AccountSection() {
     if (busy) return;
     setBusy(true);
     try {
+      // `syncEngine.signOut()` does the full sign-out: clears the
+      // Supabase session, wipes the local store, and flips sync
+      // identity in Settings. No separate `recordSignOut()` call
+      // needed — that action is now redundant (kept on the store
+      // for legacy callers that bypass the engine, but AccountSection
+      // goes through the engine for the wipe-on-sign-out invariant).
       await syncEngine.signOut();
-      recordSignOut();
       showToast({ kind: 'success', what: 'Signed out' });
     } catch (err) {
       showToast({ kind: 'error', what: (err as Error).message || 'Sign out failed' });
@@ -132,7 +136,8 @@ export function AccountSection() {
         <div className="flex flex-col gap-4">
           <p className="text-[13px] text-muted leading-relaxed">
             Sync your data across devices with end-to-end RLS-scoped storage. Optional —
-            Finora works fine without it, and local data is never deleted when you sign out.
+            Finora works fine without it. Your cloud copy is preserved when you sign out,
+            so signing back in pulls the latest snapshot.
           </p>
           <div className="flex gap-2 flex-wrap">
             <Button variant="primary" onClick={() => setSignInOpen(true)}>

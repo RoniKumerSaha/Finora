@@ -22,6 +22,7 @@ import {
   __setAuthError,
 } from '../../test/sync-helpers';
 import { resetIDB } from '../../test/idb-helpers';
+import { clearSyncRows } from '../persistence';
 import { SyncEngine } from '../sync';
 import type { State } from '../types';
 
@@ -148,6 +149,77 @@ describe('SyncEngine — auth', () => {
     expect(engine.getStatus().kind).toBe('signed-out');
   });
 
+  it('signOut wipes local state but leaves the cloud row intact', async () => {
+    // Regression: signing out previously preserved local data on
+    // disk, which meant wiping data + signing back in with the same
+    // email exposed the user to an empty local that beat the cloud's
+    // older LWW stamp and clobbered the cloud row. The fix: sign-out
+    // is now a full local reset; cloud is preserved untouched.
+    __setAuthUser({ id: 'u1', email: 'a@b.com' });
+    engine.setEnabled(true);
+    await engine.init();
+    const cloudStamped = makeState(5_000);
+    cloudStamped.accounts = [{ id: 'acc-1', name: 'Cash', type: 'cash', openingBalance: 100, createdAt: '2026-01-01' }];
+    engine.schedulePush(cloudStamped);
+    await flush(500);
+    expect(__getCloudRow('u1')).toBeDefined();
+
+    await engine.signOut();
+
+    // Cloud survived — other devices still see the data.
+    expect(__getCloudRow('u1')).toBeDefined();
+    expect((__getCloudRow('u1')!.payload as State).accounts.length).toBe(1);
+
+    // Local is wiped: settings cleared, accounts empty.
+    const { useStore } = await import('../store');
+    const local = useStore.getState().state;
+    expect(local.settings.cloudSyncEnabled).toBe(false);
+    expect(local.settings.cloudUserEmail).toBeNull();
+    expect(local.accounts.length).toBe(0);
+    expect(local.transactions.length).toBe(0);
+  });
+
+  it('sign-back-in pulls the cloud row over the wiped local state', async () => {
+    // Regression for the "wipe + re-sign-in loses cloud data" bug:
+    // previously, after signing out and back in, the empty local was
+    // either ignored (because lastSyncedAt cleared during the wipe)
+    // or it pushed its empty state over the cloud. Now sign-out wipes
+    // local, so re-sign-in always sees an empty local and pulls the
+    // cloud row via pickWinner's LWW.
+    //
+    // Seed a user FIRST so __seedAuthUser's synthetic id
+    // (`seeded-b@c.com`) is the id we use throughout — the cloud row
+    // is keyed by userId, so we have to keep id consistent across
+    // sign-out → sign-in.
+    const seeded = __seedAuthUser('b@c.com', 'pw');
+    __setAuthUser(seeded);
+    engine.setEnabled(true);
+    await engine.init();
+    const cloudStamped = makeState(7_777);
+    cloudStamped.accounts = [{ id: 'cloud-acc', name: 'Bank', type: 'bank', openingBalance: 500, createdAt: '2026-01-01' }];
+    engine.schedulePush(cloudStamped);
+    await flush(500);
+
+    // Sign out → wipes local. Cloud row stays.
+    await engine.signOut();
+    expect((__getCloudRow(seeded.id)!.payload as State).accounts.length).toBe(1);
+
+    // Sign back in as the SAME user. The fake's signInWithPassword
+    // fires SIGNED_IN → onAuthStateChange → recordSignIn +
+    // reconcileAndPushLatest.
+    await engine.signInWithPassword('b@c.com', 'pw');
+    // Drain the fire-and-forget async block in the auth listener.
+    await new Promise(r => setTimeout(r, 100));
+
+    // The cloud row was adopted into local — the user sees their
+    // "Bank" account after signing back in.
+    const { useStore } = await import('../store');
+    const local = useStore.getState().state;
+    expect(local.accounts.length).toBe(1);
+    expect(local.accounts[0].name).toBe('Bank');
+    expect(local.settings.stateUpdatedAt).toBe(7_777);
+  });
+
   it('deleteCloudCopy removes the cloud row', async () => {
     __setAuthUser({ id: 'u1', email: 'a@b.com' });
     engine.setEnabled(true);
@@ -220,5 +292,96 @@ describe('SyncEngine — auth', () => {
     } finally {
       fake.signUp = origSignUp;
     }
+  });
+});
+
+describe('SyncEngine — wipe flows', () => {
+  it('signed-in wipe deletes the cloud row and stays signed-in locally', async () => {
+    // The Settings → Danger-zone "Wipe all data" path, when signed
+    // in: deletes the cloud row first (via deleteCloudCopy), then
+    // wipes the local store. The user remains signed in. A
+    // regression here would have the post-wipe local state bump
+    // stateUpdatedAt and trigger a debounced re-push that re-creates
+    // the cloud row — clobbering whatever the user has on other
+    // devices the next time they reconcile.
+    __setAuthUser({ id: 'u-wipe', email: 'wipe@example.com' });
+    engine.setEnabled(true);
+    await engine.init();
+    const stamped = makeState(2_000);
+    stamped.accounts = [{ id: 'acc', name: 'Cash', type: 'cash', openingBalance: 0, createdAt: '2026-01-01' }];
+    engine.schedulePush(stamped);
+    await flush(500);
+    expect(__getCloudRow('u-wipe')).toBeDefined();
+
+    // Force the local store's identity fields to match the engine's
+    // current user (the store is a module singleton that leaks across
+    // tests; previous specs may have stamped a different email).
+    const { useStore } = await import('../store');
+    const seeded = useStore.getState().state;
+    useStore.setState({
+      state: {
+        ...seeded,
+        settings: {
+          ...seeded.settings,
+          cloudSyncEnabled: true,
+          cloudUserEmail: 'wipe@example.com',
+        },
+      },
+    });
+
+    // Simulate the SettingsScreen flow: deleteCloudCopy + reset.
+    await engine.deleteCloudCopy();
+    expect(__getCloudRow('u-wipe')).toBeUndefined();
+
+    useStore.getState().reset();
+    await clearSyncRows();
+    engine.resetSyncMetadata();
+
+    // Local is empty, but sync identity is preserved.
+    const local = useStore.getState().state;
+    expect(local.accounts.length).toBe(0);
+    expect(local.settings.cloudSyncEnabled).toBe(true);
+    expect(local.settings.cloudUserEmail).toBe('wipe@example.com');
+
+    // CRITICAL: the cloud row must NOT be re-created by the reset.
+    // Wait long enough for any debounced push to fire (and fail
+    // to create a row) before asserting.
+    await flush(700);
+    expect(__getCloudRow('u-wipe')).toBeUndefined();
+  });
+
+  it('signed-out wipe leaves the cloud row intact', async () => {
+    // The Danger-zone wipe while signed out: local is wiped but the
+    // cloud copy (under the user's id) is preserved untouched. The
+    // user can sign back in and have their cloud data pulled.
+    const seeded = __seedAuthUser('return@example.com', 'pw');
+    __setAuthUser(seeded);
+    engine.setEnabled(true);
+    await engine.init();
+    const stamped = makeState(8_888);
+    stamped.accounts = [{ id: 'acc', name: 'Bank', type: 'bank', openingBalance: 200, createdAt: '2026-01-01' }];
+    engine.schedulePush(stamped);
+    await flush(500);
+
+    // Sign out (now wipes local) — cloud row stays.
+    await engine.signOut();
+    expect(__getCloudRow(seeded.id)).toBeDefined();
+
+    // Simulate the Danger-zone wipe path. reset() preserves
+    // cloudSyncEnabled/cloudUserEmail — but since we're signed out,
+    // both are already cleared. The cloud row must NOT be touched.
+    const { useStore } = await import('../store');
+    useStore.getState().reset();
+    await flush(700);
+    expect(__getCloudRow(seeded.id)).toBeDefined();
+    expect((__getCloudRow(seeded.id)!.payload as State).accounts.length).toBe(1);
+
+    // Sign back in → cloud row is adopted into local.
+    await engine.signInWithPassword('return@example.com', 'pw');
+    await new Promise(r => setTimeout(r, 100));
+    const local = useStore.getState().state;
+    expect(local.accounts.length).toBe(1);
+    expect(local.accounts[0].name).toBe('Bank');
+    expect(local.settings.stateUpdatedAt).toBe(8_888);
   });
 });

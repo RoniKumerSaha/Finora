@@ -24,6 +24,7 @@ import {
   __setAuthError,
 } from '../../test/sync-helpers';
 import { syncEngine } from '../../domain/sync';
+import { useStore } from '../../domain/store';
 import { resetIDB } from '../../test/idb-helpers';
 
 beforeEach(async () => {
@@ -39,6 +40,9 @@ beforeEach(async () => {
   // main.tsx calls init() at boot before any UI mounts; do the same
   // here so the dialog's onClose → status assertion holds.
   await syncEngine.init();
+  // Wipe stale toast/banner so a previous test's "Too many requests"
+  // (or similar) doesn't leak into the next one's assertions.
+  useStore.setState({ toast: null, banner: null });
 });
 
 function renderDialog() {
@@ -127,6 +131,64 @@ describe('SignInDialog — sign-in flow', () => {
     expect(syncEngine.getStatus().kind).toBe('signed-out');
   });
 });
+
+describe('SignInDialog — forgot password', () => {
+  it('the link is visible in sign-in mode and hidden in create-account mode', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    // Default mode is sign-in.
+    expect(screen.getByRole('button', { name: /forgot password\?/i })).toBeInTheDocument();
+    // Switch to create-account.
+    await user.click(screen.getByRole('tab', { name: /create account/i }));
+    expect(screen.queryByRole('button', { name: /forgot password\?/i })).not.toBeInTheDocument();
+  });
+
+  it('clicking the link opens the inline reset panel; submit fires resetPasswordForEmail', async () => {
+    // Spy on the engine call rather than stubbing the method (the
+    // dialog calls `syncEngine.resetPasswordForEmail(...)` directly,
+    // and overwriting the method would also affect the spy).
+    const orig = syncEngine.resetPasswordForEmail;
+    let calledWith: string | null = null;
+    syncEngine.resetPasswordForEmail = async (email: string) => {
+      calledWith = email;
+    };
+    try {
+      const user = userEvent.setup();
+      const onClose = vi.fn();
+      render(
+        <MemoryRouter>
+          <Toast />
+          <SignInDialog open onClose={onClose} />
+        </MemoryRouter>,
+      );
+      await user.click(screen.getByRole('button', { name: /forgot password\?/i }));
+      // Inline reset panel: same email field, primary "Send reset link",
+      // secondary "Back to sign in". The sign-in mode toggle is hidden
+      // while in reset mode.
+      expect(screen.getByRole('button', { name: /send reset link/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to sign in/i })).toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: /create account/i })).not.toBeInTheDocument();
+
+      await user.type(emailInput(), 'a@b.com');
+      await user.click(screen.getByRole('button', { name: /send reset link/i }));
+      expect(calledWith).toBe('a@b.com');
+      // Engine call succeeded → dialog flips to the "check your email"
+      // confirmation panel. Dialog stays open.
+      await waitFor(() => expect(screen.getByText(/check your email/i)).toBeInTheDocument());
+      expect(onClose).not.toHaveBeenCalled();
+    } finally {
+      syncEngine.resetPasswordForEmail = orig;
+    }
+  });
+});
+
+// The Field label renders a <label> with text "Email" and the input
+// has aria-label="Email address" — both match
+// getByLabelText(/email/i). Query the input directly to avoid the
+// duplicate-match error.
+function emailInput() {
+  return screen.getByLabelText('Email address');
+}
 
 describe('SignInDialog — sign-up flow', () => {
   it('the mode toggle re-labels the primary button and changes autoComplete', async () => {
