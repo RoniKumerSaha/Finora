@@ -1,51 +1,51 @@
 /**
  * RoleAlertBanner — AD-11 error UI.
  *
- * Lives once at the App root. Subscribes to the Zustand banner slice so
- * any module can call `showBanner({what, why, fix, kind?})` and have it
- * appear at the top of the page with the correct ARIA semantics.
+ * Lives once at the App root. Subscribes to the Zustand banner slice
+ * so any module can call `showBanner({what, why, fix, kind?})`.
  *
- * Visual treatment is kind-aware:
- *   - success: opaque sage callout (var(--success-callout-bg)) with
- *              --success-title accent and success border
- *   - info:    opaque surface-2 with neutral ink + border
- *   - error:   opaque red callout (var(--danger-callout-bg)) with
- *              --danger-title accent and danger border
- * No transparent tones — banner must not bleed through to the page
- * beneath it.
- *
- * 2026-08-14 polish: a left-edge accent bar keyed to the kind, refined
- * shadow, and a more compact action row.
- *
- * Animation: slides in from above (translateY(-12px → 0) over 200ms)
- * via the `banner-slide-in` keyframe in app.css. Fades out over 400ms
- * starting at 8.6s, then unmounts at 9s. The user can also click the
- * X to dismiss instantly. Longer total life (9s) gives users with
- * slower reading speeds a fair chance to absorb the what/why/fix.
+ * Duration: success/info 3000ms, error 6000ms. Per-banner override
+ * via `durationMs`. Hover/focus re-arms the timer (matches Toast) so
+ * long error fixes can be read mid-flow.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../domain/store';
 import type { BannerKind } from '../domain/types';
 import { Close } from './icons/Icons';
 
+const DEFAULT_TOTAL_MS = 3000;
+const ERROR_TOTAL_MS = 6000;
 const FADE_OUT_MS = 400;
-const TOTAL_MS = 9000;
+
+function defaultTotalMs(kind: BannerKind): number {
+  return kind === 'error' ? ERROR_TOTAL_MS : DEFAULT_TOTAL_MS;
+}
 
 export function RoleAlertBanner() {
   const banner = useStore(s => s.banner);
   const dismiss = useStore(s => s.clearBanner);
   const [fading, setFading] = useState(false);
+  const [hovering, setHovering] = useState(false);
+
+  // Hold both timers so a banner swap cancels the prior fade/unmount cleanly.
+  const timersRef = useRef<{ fade: number; unmount: number } | null>(null);
 
   useEffect(() => {
     if (!banner) return;
+    if (timersRef.current) {
+      window.clearTimeout(timersRef.current.fade);
+      window.clearTimeout(timersRef.current.unmount);
+    }
     setFading(false);
-    const fadeT = setTimeout(() => setFading(true), TOTAL_MS - FADE_OUT_MS);
-    const unmountT = setTimeout(() => dismiss(), TOTAL_MS);
+    const total = banner.durationMs ?? defaultTotalMs(banner.kind ?? 'info');
+    const fade = window.setTimeout(() => setFading(true), total - FADE_OUT_MS);
+    const unmount = window.setTimeout(() => dismiss(), total);
+    timersRef.current = { fade, unmount };
     return () => {
-      clearTimeout(fadeT);
-      clearTimeout(unmountT);
+      window.clearTimeout(fade);
+      window.clearTimeout(unmount);
     };
-  }, [banner, dismiss]);
+  }, [banner?.id, banner?.durationMs, banner?.kind, hovering, dismiss]);
 
   if (!banner) return null;
   const kind: BannerKind = banner.kind ?? 'info';
@@ -64,6 +64,10 @@ export function RoleAlertBanner() {
         fading ? 'opacity-0' : 'opacity-100',
         styleFor(kind),
       ].join(' ')}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onFocus={() => setHovering(true)}
+      onBlur={() => setHovering(false)}
       style={{
         animation: 'banner-slide-in 200ms ease-out both',
         boxShadow: 'var(--shadow-modal)',

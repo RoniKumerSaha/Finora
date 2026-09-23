@@ -334,17 +334,20 @@ export interface State {
 export type BannerKind = 'success' | 'info' | 'error';
 
 export interface Banner {
+  id?: string;
   /** Visual treatment. Defaults to 'info' when unspecified. */
   kind?: BannerKind;
   what: string;
   why: string;
   fix: string;
+  /** Override the per-kind default (success/info 3000ms, error 6000ms). */
+  durationMs?: number;
 }
 
 /**
  * A moment-of-success feedback channel. Used for save flows where the
  * user has already moved on by the time the message would land —
- * toasts appear top-right, dwell ~2.4s, and fade. Errors stay on the
+ * toasts appear top-right, dwell briefly, and fade. Errors stay on the
  * sticky banner (use `Banner`).
  *
  * Differences from `Banner`:
@@ -360,4 +363,6 @@ export interface Toast {
   why?: string;
   /** Optional action affordance — renders as a primary text-link. */
   action?: { label: string; onClick: () => void };
+  /** Override the per-kind default (success/info 1500ms, error 4000ms). */
+  durationMs?: number;
 }
