@@ -250,12 +250,14 @@ type BatchMode = 'apply' | 'custom' | 'percent' | 'clear';
 
 export function BatchEditorControls({
   open,
+  activeKey,
   categories,
   selectedIds,
   onDone,
   onCancel,
 }: {
   open: boolean;
+  activeKey: string;
   categories: PlanCategory[];
   selectedIds: string[];
   onDone: () => void;
@@ -264,7 +266,6 @@ export function BatchEditorControls({
   const batchUpdate = useStore(s => s.batchUpdateMonthCategoryBudget);
   const batchUpdateMap = useStore(s => s.batchUpdateMonthCategoryBudgetMap);
   const showBanner = useStore(s => s.showBanner);
-  const activeKey = useStore(s => s.state.monthPlans[0]?.key ?? '');
   const [mode, setMode] = useState<BatchMode>('custom');
   const [amountText, setAmountText] = useState('');
   const [customDrafts, setCustomDrafts] = useState<Record<string, string>>({});
@@ -365,10 +366,10 @@ export function BatchEditorControls({
   function apply() {
     if (!activeKey) return;
     if (mode === 'clear') {
-      batchUpdate(activeKey, selectedIds, 0);
+      const changed = batchUpdate(activeKey, selectedIds, 0);
       showBanner({
         kind: 'info',
-        what: `${selectedIds.length} card${selectedIds.length === 1 ? '' : 's'} cleared`,
+        what: `${changed} card${changed === 1 ? '' : 's'} cleared`,
         why: 'Budgets set to ৳0. Edit them back any time.',
         fix: 'Tap Save plan to keep the change.',
       });
@@ -383,10 +384,10 @@ export function BatchEditorControls({
         const current = Number(c.budget) || 0;
         budgetMap[c.id] = Math.max(0, Math.round(current * (1 + pct / 100)));
       }
-      batchUpdateMap(activeKey, budgetMap);
+      const changed = batchUpdateMap(activeKey, budgetMap);
       showBanner({
         kind: 'success',
-        what: `${selectedIds.length} card${selectedIds.length === 1 ? '' : 's'} updated`,
+        what: `${changed} card${changed === 1 ? '' : 's'} updated`,
         why: `Applied ${pct >= 0 ? '+' : ''}${pct}% to selected budgets.`,
         fix: 'Tap Save plan to keep the change.',
       });
@@ -395,10 +396,10 @@ export function BatchEditorControls({
     }
     if (mode === 'apply') {
       const n = clampNonNegative(amountText);
-      batchUpdate(activeKey, selectedIds, n);
+      const changed = batchUpdate(activeKey, selectedIds, n);
       showBanner({
         kind: 'success',
-        what: `${selectedIds.length} card${selectedIds.length === 1 ? '' : 's'} updated`,
+        what: `${changed} card${changed === 1 ? '' : 's'} updated`,
         why: `Budget set to ${fmtBDT(n)} for each selected card.`,
         fix: 'Tap Save plan to keep the change.',
       });
@@ -419,11 +420,11 @@ export function BatchEditorControls({
       onDone();
       return;
     }
-    batchUpdateMap(activeKey, budgetMap);
+    const changed = batchUpdateMap(activeKey, budgetMap);
     showBanner({
       kind: 'success',
-      what: `${touched} card${touched === 1 ? '' : 's'} updated`,
-      why: `Custom budgets applied to ${touched} of ${selectedIds.length} selected.`,
+      what: `${changed} card${changed === 1 ? '' : 's'} updated`,
+      why: `Custom budgets applied to ${changed} of ${selectedIds.length} selected.`,
       fix: 'Tap Save plan to keep the change.',
     });
     onDone();

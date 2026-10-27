@@ -73,8 +73,8 @@ interface Store {
   addMonthCategories: (key: string, cats: Parameters<typeof plans.addMonthCategories>[2]) => void;
   updateMonthCategory: (key: string, id: string, patch: Parameters<typeof plans.updateMonthCategory>[3]) => void;
   removeMonthCategory: (key: string, id: string) => void;
-  batchUpdateMonthCategoryBudget: (key: string, ids: string[], budget: number) => void;
-  batchUpdateMonthCategoryBudgetMap: (key: string, budgetMap: Record<string, number>) => void;
+  batchUpdateMonthCategoryBudget: (key: string, ids: string[], budget: number) => number;
+  batchUpdateMonthCategoryBudgetMap: (key: string, budgetMap: Record<string, number>) => number;
 
   // ── Plan: Event Planner (PRD §9.15) ──────────────────────────────
   addEventPlan: (input: Parameters<typeof plans.addEventPlan>[1]) => string;
@@ -257,8 +257,24 @@ export const useStore = create<Store>((set, get) => ({
   addMonthCategories: (key, cats) => runPlan(get, s => plans.addMonthCategories(s, key, cats)),
   updateMonthCategory: (key, id, patch) => runPlan(get, s => plans.updateMonthCategory(s, key, id, patch)),
   removeMonthCategory: (key, id) => runPlan(get, s => plans.removeMonthCategory(s, key, id)),
-  batchUpdateMonthCategoryBudget: (key, ids, budget) => runPlan(get, s => plans.batchUpdateMonthCategoryBudget(s, key, ids, budget)),
-  batchUpdateMonthCategoryBudgetMap: (key, budgetMap) => runPlan(get, s => plans.batchUpdateMonthCategoryBudgetMap(s, key, budgetMap)),
+  batchUpdateMonthCategoryBudget: (key, ids, budget) => {
+    let changed = 0;
+    runPlan(get, s => {
+      const result = plans.batchUpdateMonthCategoryBudget(s, key, ids, budget);
+      changed = result.changed;
+      return result.state;
+    });
+    return changed;
+  },
+  batchUpdateMonthCategoryBudgetMap: (key, budgetMap) => {
+    let changed = 0;
+    runPlan(get, s => {
+      const result = plans.batchUpdateMonthCategoryBudgetMap(s, key, budgetMap);
+      changed = result.changed;
+      return result.state;
+    });
+    return changed;
+  },
 
   // ── Event Planner ────────────────────────────────────────────────
   addEventPlan: (input) => {

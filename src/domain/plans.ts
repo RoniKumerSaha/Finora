@@ -93,8 +93,17 @@ export function patchMonthPlan(
     ...existing,
     ...patch,
   };
-  const list = state.monthPlans.filter(p => p.key !== key);
-  list.push(next);
+  // Keep the plan's position in the array stable. Re-appending it at
+  // the tail would reorder `monthPlans` on every edit, which breaks
+  // any consumer that resolves a plan by index and churns the cloud
+  // payload's order. New plans are appended; existing ones are
+  // replaced in place.
+  const idx = state.monthPlans.findIndex(p => p.key === key);
+  if (idx === -1) {
+    return { ...state, monthPlans: [...state.monthPlans, next] };
+  }
+  const list = [...state.monthPlans];
+  list[idx] = next;
   return { ...state, monthPlans: list };
 }
 
@@ -127,50 +136,55 @@ export function removeMonthCategory(state: State, key: string, id: string): Stat
  *
  * Silently no-ops on unknown ids so a stale selection (e.g. a card
  * removed while the picker was open) doesn't throw.
+ *
+ * Returns the number of categories actually changed so callers can
+ * report truthfully instead of showing an unconditional success.
  */
 export function batchUpdateMonthCategoryBudget(
   state: State,
   key: string,
   ids: string[],
   budget: number,
-): State {
-  if (ids.length === 0) return state;
+): { state: State; changed: number } {
+  if (ids.length === 0) return { state, changed: 0 };
   const plan = ensureMonthPlan(state, key);
   const idSet = new Set(ids);
-  let touched = false;
+  let touched = 0;
   const nextCats = plan.categories.map(c => {
     if (!idSet.has(c.id)) return c;
     if (Number(c.budget) === budget) return c;
-    touched = true;
+    touched++;
     return { ...c, budget };
   });
-  if (!touched) return state;
-  return patchMonthPlan(state, key, { categories: nextCats });
+  if (touched === 0) return { state, changed: 0 };
+  return { state: patchMonthPlan(state, key, { categories: nextCats }), changed: touched };
 }
 
 /**
  * Batch-set the budget on every PlanCategory using a per-id map.
  * Used by the percent-mode batch editor where each card's bump is
  * based on its own current value. Single store write. Unknown ids are silently skipped.
+ *
+ * Returns the number of categories actually changed.
  */
 export function batchUpdateMonthCategoryBudgetMap(
   state: State,
   key: string,
   budgetMap: Record<string, number>,
-): State {
+): { state: State; changed: number } {
   const ids = Object.keys(budgetMap);
-  if (ids.length === 0) return state;
+  if (ids.length === 0) return { state, changed: 0 };
   const plan = ensureMonthPlan(state, key);
-  let touched = false;
+  let touched = 0;
   const nextCats = plan.categories.map(c => {
     const next = budgetMap[c.id];
     if (next === undefined) return c;
     if (Number(c.budget) === next) return c;
-    touched = true;
+    touched++;
     return { ...c, budget: next };
   });
-  if (!touched) return state;
-  return patchMonthPlan(state, key, { categories: nextCats });
+  if (touched === 0) return { state, changed: 0 };
+  return { state: patchMonthPlan(state, key, { categories: nextCats }), changed: touched };
 }
 
 /**

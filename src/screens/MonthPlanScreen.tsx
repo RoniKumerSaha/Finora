@@ -285,6 +285,7 @@ export function MonthPlanScreen() {
           modes as before. Single store write per apply. */}
       <BatchEditorControls
         open={batchEditorOpen}
+        activeKey={activeKey}
         categories={plan.categories}
         selectedIds={Array.from(batchSelected)}
         onDone={() => {

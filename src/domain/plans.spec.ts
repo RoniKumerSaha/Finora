@@ -12,6 +12,7 @@ import {
   batchUpdateMonthCategoryBudgetMap,
   ensureMonthPlan,
   addEventCategories,
+  patchMonthPlan,
 } from './plans';
 import { DEFAULT_STATE } from './persistence';
 import type { State } from './types';
@@ -175,7 +176,7 @@ describe('addMonthCategories', () => {
 describe('batchUpdateMonthCategoryBudget', () => {
   it('writes the same budget to every selected category in a single store write', () => {
     const state = makeMonthStateWithCats();
-    const next = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'b'], 7000);
+    const { state: next, changed } = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'b'], 7000);
     const cats = ensureMonthPlan(next, '2026-08').categories;
     expect(cats[0].budget).toBe(7000);
     expect(cats[1].budget).toBe(7000);
@@ -183,28 +184,31 @@ describe('batchUpdateMonthCategoryBudget', () => {
     expect(cats[2].budget).toBe(2000);
     // The plan is updated in a single write — caller can carry on editing.
     expect(ensureMonthPlan(next, '2026-08').categories[0].budget).toBe(7000);
+    expect(changed).toBe(2);
   });
 
   it('ignores unknown ids without throwing', () => {
     const state = makeMonthStateWithCats();
-    const next = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'nope'], 100);
+    const { state: next, changed } = batchUpdateMonthCategoryBudget(state, '2026-08', ['a', 'nope'], 100);
     const cats = ensureMonthPlan(next, '2026-08').categories;
     expect(cats[0].budget).toBe(100);
     expect(cats[1].budget).toBe(5000); // unchanged
     expect(cats[2].budget).toBe(2000); // unchanged
+    expect(changed).toBe(1);
   });
 
   it('no-ops when the selection is empty', () => {
     const state = makeMonthStateWithCats();
-    const next = batchUpdateMonthCategoryBudget(state, '2026-08', [], 100);
+    const { state: next, changed } = batchUpdateMonthCategoryBudget(state, '2026-08', [], 100);
     expect(next).toBe(state);
+    expect(changed).toBe(0);
   });
 });
 
 describe('batchUpdateMonthCategoryBudgetMap', () => {
   it('writes per-id budgets in a single store write', () => {
     const state = makeMonthStateWithCats();
-    const next = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
+    const { state: next, changed } = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
       a: 12000,
       c: 3000,
     });
@@ -212,15 +216,40 @@ describe('batchUpdateMonthCategoryBudgetMap', () => {
     expect(cats[0].budget).toBe(12000);
     expect(cats[1].budget).toBe(5000); // unchanged
     expect(cats[2].budget).toBe(3000);
+    expect(changed).toBe(2);
   });
 
   it('no-ops when every per-id value equals the current value', () => {
     const state = makeMonthStateWithCats();
-    const next = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
+    const { state: next, changed } = batchUpdateMonthCategoryBudgetMap(state, '2026-08', {
       a: 10000, // already 10000 — no change
       b: 5000,  // already 5000 — no change
     });
     expect(next).toBe(state);
+    expect(changed).toBe(0);
+  });
+});
+
+describe('month plan ordering is stable', () => {
+  it('keeps an edited plan in its original position', () => {
+    const state: State = {
+      ...DEFAULT_STATE,
+      monthPlans: [
+        { key: '2026-08', plannedIncome: 0, categories: [] },
+        { key: '2026-10', plannedIncome: 0, categories: [] },
+      ],
+    };
+    const next = patchMonthPlan(state, '2026-10', { plannedIncome: 500 });
+    expect(next.monthPlans.map(p => p.key)).toEqual(['2026-08', '2026-10']);
+  });
+
+  it('appends a brand-new plan at the end', () => {
+    const state: State = {
+      ...DEFAULT_STATE,
+      monthPlans: [{ key: '2026-08', plannedIncome: 0, categories: [] }],
+    };
+    const next = patchMonthPlan(state, '2026-10', { plannedIncome: 500 });
+    expect(next.monthPlans.map(p => p.key)).toEqual(['2026-08', '2026-10']);
   });
 });
 
