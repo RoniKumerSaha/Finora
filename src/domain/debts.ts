@@ -12,7 +12,7 @@
  */
 import type { Debt, DebtDirection, DebtKind, State, Transaction } from './types';
 import { uid } from './ids';
-import { debtPaidSoFar, isDebtCompleted, loanPaymentSplit } from './math';
+import { debtOutstanding, debtPaidSoFar, isDebtCompleted } from './math';
 
 export function list(state: State): Debt[] {
   return state.debts.map(d => withDerived(d, state));
@@ -25,11 +25,17 @@ export function get(state: State, id: string): Debt | undefined {
 
 function withDerived(d: Debt, state: State): Debt {
   const paid = debtPaidSoFar(d, state.transactions);
-  const total = Number(d.total) || 0;
   // Default missing kind to 'flat' so older JSON in localStorage
   // continues to deserialize without a migration step.
   const next: Debt = { ...d, paidSoFar: paid, kind: d.kind ?? 'flat' };
-  if (d.status === 'active' && paid >= total) next.status = 'completed';
+  // Completion is decided on OUTSTANDING principal, not gross paid.
+  // On a loan-kind debt every payment carries interest, so gross paid
+  // hits `total` several EMIs before the principal is actually retired
+  // — completing on gross paid would silently drop the remaining
+  // balance from every total.
+  if (d.status === 'active' && debtOutstanding(next, state.transactions) <= 0) {
+    next.status = 'completed';
+  }
   return next;
 }
 
@@ -133,41 +139,14 @@ export function archive(state: State, id: string): State {
  *                 outstanding after the last transaction.
  *
  * Pure: derived from debt + transactions, never stored.
+ *
+ * Thin wrapper over `math.debtOutstanding` — the canonical helper that
+ * every screen reads. Keeping the delegation here preserves the
+ * existing `debts.outstandingFor(...)` call sites and the L1.4 test
+ * contract without maintaining a second copy of the amortisation walk.
  */
 export function outstandingFor(debt: Debt, transactions: Transaction[]): number {
-  if (!debt) return 0;
-  const total = Number(debt.total) || 0;
-  if (debt.kind !== 'loan') {
-    // Flat: simple subtraction against paidSoFar (R7).
-    const paid = debtPaidSoFar(debt, transactions);
-    return Math.max(0, total - paid);
-  }
-  // Loan: walk every linked transaction in chronological order.
-  const rate = Number(debt.interestRate) || 0;
-  let outstanding = total;
-  // Filter + sort — stable ordering matters when two transactions
-  // share the same date. Fall back to id for determinism.
-  const linked = transactions
-    .filter(t => t.linkedDebtId === debt.id)
-    .slice()
-    .sort((a, b) => {
-      const d = a.date.localeCompare(b.date);
-      return d !== 0 ? d : a.id.localeCompare(b.id);
-    });
-  for (const t of linked) {
-    // Only the direction-matching type counts toward outstanding:
-    // i_owe payments are expenses; owed_to_me receipts are income.
-    // We don't reject cross-direction transactions here — that's a
-    // tagging-mistake hint, not a math error. The amount just won't
-    // reduce outstanding.
-    const matches =
-      (debt.direction === 'i_owe' && t.type === 'expense') ||
-      (debt.direction === 'owed_to_me' && t.type === 'income');
-    if (!matches) continue;
-    const split = loanPaymentSplit(outstanding, Number(t.amount) || 0, rate);
-    outstanding = Math.max(0, outstanding - split.principal);
-  }
-  return outstanding;
+  return debtOutstanding(debt, transactions);
 }
 
 export { isDebtCompleted };

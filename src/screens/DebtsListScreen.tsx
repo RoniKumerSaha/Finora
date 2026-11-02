@@ -61,15 +61,15 @@ export function DebtsListScreen() {
   const active = ds.filter(d => d.status === 'active');
   const completed = ds.filter(d => d.status === 'completed');
 
-  // Per-direction remaining totals for the Summary card. For loan-kind
-  // debts we use `outstandingFor()` so the totals reflect the
-  // interest-aware split, not just gross paid-off.
+  // Per-direction remaining totals for the Summary card. Uses the
+  // canonical `debtOutstanding` helper for every debt — loan-kind
+  // replays the interest/principal split, flat-kind subtracts paid
+  // from total. Same helper Home and net worth read, so the three
+  // screens always agree.
   let oweRemaining = 0;
   let receivableRemaining = 0;
   for (const d of active) {
-    const left = d.kind === 'loan'
-      ? debts.outstandingFor(d, state.transactions)
-      : Math.max(0, (Number(d.total) || 0) - (Number(d.paidSoFar) || 0));
+    const left = debts.outstandingFor(d, state.transactions);
     if (d.direction === 'i_owe') oweRemaining += left;
     else receivableRemaining += left;
   }
@@ -161,7 +161,6 @@ export function DebtsListScreen() {
 
 function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number }) {
   const state = useStore(s => s.state);
-  const pct = d.total > 0 ? Math.min(100, Math.round(((d.paidSoFar || 0) / d.total) * 100)) : 0;
   const isIOwe = d.direction === 'i_owe';
   const isLoan = d.kind === 'loan';
   // Per-category tone — derived once and reused everywhere on the
@@ -170,11 +169,11 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
 
-  // Right-zone figure: flat = total − paidSoFar (today's behaviour);
-  // loan = outstandingFor() (walks transactions, applies split).
-  const outstanding = isLoan
-    ? debts.outstandingFor(d, state.transactions)
-    : Math.max(0, d.total - (d.paidSoFar || 0));
+  // Right-zone figure: the canonical outstanding. For loan-kind this
+  // replays the interest/principal split (so it reports the principal
+  // still owed, not total minus gross payments); for flat-kind it's
+  // total minus what's been paid.
+  const outstanding = debts.outstandingFor(d, state.transactions);
 
   // ── Loan-specific derived figures ──
   // Loan cards mirror the planned-loan card layout (see
@@ -208,6 +207,18 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
       out = Math.max(0, out - split.principal);
     }
   }
+
+  // Progress bar — the share of the PRINCIPAL that's been retired.
+  //
+  // For a loan, `paidSoFar` is gross: every payment also carried
+  // interest, so gross-paid-over-total ran ahead of the real progress
+  // (and could even read 100% while principal was still outstanding).
+  // Use the principal actually repaid instead.
+  const pct = d.total > 0
+    ? Math.min(100, Math.round(
+        ((isLoan ? totalPrincipal : (d.paidSoFar || 0)) / d.total) * 100
+      ))
+    : 0;
 
   // Loan payment modal — opened from the Pay button on loan cards.
   const [payOpen, setPayOpen] = useState(false);

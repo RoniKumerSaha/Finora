@@ -38,8 +38,9 @@ import {
   monthlyIncome,
   monthlyExpenses,
   accountBalance,
-  dpsContributedSoFar,
-  debtPaidSoFar,
+  debtOutstanding,
+  investmentValue,
+  isInvestmentHeld,
   computeNetWorth,
 } from '../domain/math';
 import * as accounts from '../domain/accounts';
@@ -69,21 +70,29 @@ export function HomeScreen() {
   const incomeCount = txs.filter(t => t.type === 'income' && startsInMonth(t.date, y, m)).length;
   const expenseCount = txs.filter(t => t.type === 'expense' && startsInMonth(t.date, y, m)).length;
 
-  // Debts — sum of remaining (= total − paid) for active debts, split by direction.
+  // Debts — sum of remaining for active debts, split by direction.
+  //
+  // Uses the canonical `debtOutstanding` helper rather than a local
+  // `total − paid` sum. On a loan-kind debt every payment carries
+  // interest, so gross paid overstates what has actually retired
+  // principal — `total − paid` understated what you still owe and made
+  // Home disagree with the Debts screen by exactly the interest paid.
   const activeDebts = state.debts.filter(d => d.status === 'active');
-  const remainingOn = (d: typeof activeDebts[number]) => Math.max(0, (Number(d.total) || 0) - debtPaidSoFar(d, txs));
-  const debtIOweRemaining      = activeDebts.filter(d => d.direction === 'i_owe').reduce((s, d) => s + remainingOn(d), 0);
-  const debtOwedToMeRemaining  = activeDebts.filter(d => d.direction === 'owed_to_me').reduce((s, d) => s + remainingOn(d), 0);
+  const debtIOweRemaining      = activeDebts.filter(d => d.direction === 'i_owe').reduce((s, d) => s + debtOutstanding(d, txs), 0);
+  const debtOwedToMeRemaining  = activeDebts.filter(d => d.direction === 'owed_to_me').reduce((s, d) => s + debtOutstanding(d, txs), 0);
   const activeDebtCount = activeDebts.length;
 
-  // Investments — sum of active principals. DPS-aware: dpsContributedSoFar
-  // for DPS (real money paid in), `Number(inv.principal)` for FDR/savings.
-  const activeInvestments = state.investments.filter(inv => inv.status === 'active');
-  const totalInvestment = activeInvestments.reduce((s, inv) => {
-    if (inv.type === 'dps') return s + dpsContributedSoFar(inv, txs);
-    return s + (Number(inv.principal) || 0);
-  }, 0);
-  const investmentCount = activeInvestments.length;
+  // Investments — sum of current values for the schemes you're holding.
+  // Uses the same `investmentValue` helper the Investments screen reads
+  // and the same `isInvestmentHeld` predicate net worth uses, so Home
+  // and /investments can never disagree. DPS current value is the
+  // contributions compounded to today; FDR/savings is the principal.
+  const heldInvestments = state.investments.filter(isInvestmentHeld);
+  const totalInvestment = heldInvestments.reduce(
+    (s, inv) => s + investmentValue(inv, txs).currentValue,
+    0
+  );
+  const investmentCount = heldInvestments.length;
 
   // Net worth comes from the domain helper so the dual-value treatment
   // (current vs projected) matches what /insights and the Investments

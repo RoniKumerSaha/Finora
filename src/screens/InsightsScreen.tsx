@@ -40,6 +40,7 @@ import {
   dpsContributedSoFar,
   dpsPaidOutSoFar,
   investmentMaturityValueTyped,
+  isInvestmentHeld,
 } from '../domain/math';
 import { ProgressBar } from '../components/ProgressBar';
 
@@ -861,19 +862,23 @@ function TrendsCard({
   const daysRunway = dailyBurn > 0 ? Math.round(cashNow / dailyBurn) : null;
 
   // Investment growth — sum of (maturity − contributed/principal) across
-  // active schemes. For DPS, contributed is `dpsContributedSoFar` (real
-  // money paid), not the original nominal principal; for FDR / savings
-  // we just use `Number(inv.principal)` because there's no installment
-  // stream.
+  // the schemes you're holding. For DPS, contributed is
+  // `dpsContributedSoFar` (real money paid), not the original nominal
+  // principal; for FDR / savings we just use `Number(inv.principal)`
+  // because there's no installment stream.
+  //
+  // Uses `isInvestmentHeld` so matured-but-unpaid schemes are counted —
+  // they still hold money at the bank. Same predicate the Investments
+  // screen and net worth use.
   const investedContributed = state.investments.reduce((s, inv) => {
-    if (inv.status !== 'active') return s;
+    if (!isInvestmentHeld(inv)) return s;
     if (inv.type === 'dps') {
       return s + dpsContributedSoFar(inv, state.transactions);
     }
     return s + (Number(inv.principal) || 0);
   }, 0);
   const investedMaturity = state.investments.reduce((s, inv) => {
-    if (inv.status !== 'active') return s;
+    if (!isInvestmentHeld(inv)) return s;
     const projected = investmentMaturityValueTyped(inv);
     const paidOut = inv.type === 'dps'
       ? dpsPaidOutSoFar(inv, state.transactions)
@@ -881,7 +886,7 @@ function TrendsCard({
     return s + Math.max(0, projected - paidOut);
   }, 0);
   const invGrowth = investedMaturity - investedContributed;
-  const hasInvestments = state.investments.some(inv => inv.status === 'active');
+  const hasInvestments = state.investments.some(inv => isInvestmentHeld(inv));
 
   return (
     <div className="card">

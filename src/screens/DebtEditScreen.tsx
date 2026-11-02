@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
-import { accountBalance, debtPaidSoFar, loanPaymentSplit } from '../domain/math';
+import { accountBalance, debtOutstanding, loanPaymentSplit } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
@@ -147,8 +147,11 @@ export function DebtEditScreen() {
   // When fully paid, look up the most-recently-used account from the
   // linked transactions and show its current balance — gives the user
   // a quick read on what the account looks like post-settlement.
-  const paidSoFar = debtPaidSoFar(debt, state.transactions);
-  const isFullyPaid = paidSoFar >= (Number(debt.total) || 0);
+  //
+  // "Fully paid" is decided on OUTSTANDING principal, not gross paid.
+  // On a loan-kind debt every payment includes interest, so gross paid
+  // crosses the principal months before the loan is actually retired.
+  const isFullyPaid = debtOutstanding(debt, state.transactions) <= 0;
   const latestAccount = isFullyPaid
     ? state.transactions
         .filter(t => t.linkedDebtId === debt.id)

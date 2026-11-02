@@ -21,6 +21,7 @@ import type {
 } from './types';
 import {
   daysBetween,
+  debtOutstanding,
   debtPaidSoFar,
   goalProgress,
   goalSaved,
@@ -500,7 +501,10 @@ export function debtsForInsights(state: StateLike, now: Date = new Date()): Debt
     if (d.status === 'completed' || d.status === 'archived') continue;
     const total = Number(d.total) || 0;
     const paid = debtPaidSoFar(d, state.transactions);
-    const remaining = Math.max(0, total - paid);
+    // Canonical outstanding — for a loan-kind debt this is the
+    // principal still owed (gross payments include interest), which is
+    // what every other screen shows.
+    const remaining = debtOutstanding(d, state.transactions);
     const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
     rows.push({
       id: d.id,

@@ -25,6 +25,7 @@ import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
 import {
   investmentValue,
+  isInvestmentHeld,
   daysToMaturity,
 } from '../domain/math';
 import { fmtBDT } from '../lib/format';
@@ -37,8 +38,13 @@ const MIDDOT = '\u00B7';
 export function InvestmentsListScreen() {
   const state = useStore(s => s.state);
   const invs = investments.list(state);
-  const active = invs.filter(i => i.status === 'active');
-  const closed = invs.filter(i => i.status !== 'active');
+  // "Held" = still holding the money. A matured-but-unpaid scheme
+  // still holds cash at the bank, so it stays in the main list and in
+  // the summary. `closed` / `rolled_over` schemes are retired and move
+  // to the quiet list at the bottom. Uses the same predicate as net
+  // worth and the Home strip so all three agree.
+  const active = invs.filter(isInvestmentHeld);
+  const closed = invs.filter(i => !isInvestmentHeld(i));
   // Compute each row's value once and reuse for summary + the row
   // itself (avoids recomputing dpsCurrentValue, which scans every
   // transaction, twice per row).

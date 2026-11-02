@@ -19,6 +19,7 @@
  */
 import type { State } from './types';
 import {
+  debtOutstanding,
   debtPaidSoFar,
   deriveInvestmentStatus,
   dpsContributedSoFar,
@@ -29,9 +30,14 @@ import { migrateGoalsAddContributions, recomputeGoalSaved } from './goals';
 export function recomputeDerived(state: State): State {
   const debts = state.debts.map(d => {
     const paid = debtPaidSoFar(d, state.transactions);
-    const total = Number(d.total) || 0;
     const next = { ...d, paidSoFar: paid };
-    if (d.status === 'active' && paid >= total) next.status = 'completed' as const;
+    // Completion is decided on OUTSTANDING principal, not gross paid.
+    // A loan-kind debt's payments include interest, so gross paid
+    // reaches `total` several EMIs early — completing on gross paid
+    // would drop the live balance out of every total on the app.
+    if (d.status === 'active' && debtOutstanding(next, state.transactions) <= 0) {
+      next.status = 'completed' as const;
+    }
     return next;
   });
   const investments = state.investments.map(inv => {

@@ -271,9 +271,68 @@ export function debtPaidSoFar(debt: Debt, transactions: Transaction[]): number {
   return total;
 }
 
-/** R8: auto-complete when paid_so_far >= total. */
+/**
+ * Canonical outstanding principal on a debt.
+ *
+ *  - flat debt → total − paidSoFar (every payment retires principal 1-for-1).
+ *  - loan debt → the principal still outstanding after replaying every
+ *    linked payment through `loanPaymentSplit` (interest first, then
+ *    principal). Gross payments on a loan INCLUDE interest, so
+ *    `total − paid` understates what you still owe by the interest
+ *    paid to date.
+ *
+ * This is the single source of truth for "what's left to pay". Home,
+ * the Debts list, the debt detail screen, the Pay modal and net worth
+ * all read from here, so the figures can never disagree with each other.
+ */
+export function debtOutstanding(debt: Debt, transactions: Transaction[]): number {
+  if (!debt) return 0;
+  const total = Number(debt.total) || 0;
+  if (debt.kind !== 'loan') {
+    // Flat: simple subtraction against paidSoFar (R7).
+    const paid = debtPaidSoFar(debt, transactions);
+    return Math.max(0, total - paid);
+  }
+  // Loan: walk every linked transaction in chronological order. The
+  // order matters — each payment's interest is computed on the balance
+  // left behind by the previous one. Ties break on id for determinism.
+  const rate = Number(debt.interestRate) || 0;
+  let outstanding = total;
+  const linked = transactions
+    .filter(t => t.linkedDebtId === debt.id)
+    .slice()
+    .sort((a, b) => {
+      const d = a.date.localeCompare(b.date);
+      return d !== 0 ? d : a.id.localeCompare(b.id);
+    });
+  for (const t of linked) {
+    // Only the direction-matching type reduces the balance:
+    // i_owe payments are expenses; owed_to_me receipts are income.
+    // We don't reject cross-direction transactions here — that's a
+    // tagging-mistake hint, not a math error. The amount just won't
+    // reduce outstanding.
+    const matches =
+      (debt.direction === 'i_owe' && t.type === 'expense') ||
+      (debt.direction === 'owed_to_me' && t.type === 'income');
+    if (!matches) continue;
+    const split = loanPaymentSplit(outstanding, Number(t.amount) || 0, rate);
+    outstanding = Math.max(0, outstanding - split.principal);
+  }
+  return outstanding;
+}
+
+/**
+ * R8: a debt is complete when nothing is left outstanding.
+ *
+ * Flat debts: paidSoFar >= total.
+ * Loan debts: the principal is fully retired. Gross payments on a loan
+ * include interest, so comparing gross paid against the principal would
+ * mark the loan complete months before its last EMI — every remaining
+ * payment would then vanish from every total.
+ */
 export function isDebtCompleted(debt: Debt, transactions: Transaction[]): boolean {
   if (!debt) return false;
+  if (debt.kind === 'loan') return debtOutstanding(debt, transactions) <= 0;
   return debtPaidSoFar(debt, transactions) >= (Number(debt.total) || 0);
 }
 
@@ -542,6 +601,26 @@ export function investmentValue(
 // ---------- Net worth (dual value) ----------
 
 /**
+ * Should this investment count toward the money you're holding?
+ *
+ * `closed` and `rolled_over` are excluded — the money has either been
+ * paid out or moved into a replacement scheme, so counting it would
+ * double-count.
+ *
+ * `matured` IS included. A matured scheme whose payout hasn't been
+ * recorded yet still holds real money at the bank; it's simply ready to
+ * be collected. Excluding it would make net worth dip and then jump
+ * back the moment the user records the payout.
+ *
+ * Every screen that totals investments (Home's strip, the Investments
+ * summary, net worth) must use this predicate so the figures agree.
+ */
+export function isInvestmentHeld(investment: Investment): boolean {
+  if (!investment) return false;
+  return investment.status !== 'closed' && investment.status !== 'rolled_over';
+}
+
+/**
  * Net worth computed two ways so the UI can show both:
  *
  *  - `currentNetWorth` is the honest "what you actually have right now"
@@ -591,7 +670,7 @@ export function computeNetWorth(
   let invCurrent = 0;
   let invProjected = 0;
   for (const inv of state.investments) {
-    if (inv.status === 'closed' || inv.status === 'rolled_over') continue;
+    if (!isInvestmentHeld(inv)) continue;
     if (inv.startDate > todayISO) continue;
     const v = investmentValue(inv, state.transactions, now);
     invCurrent += v.currentValue;
@@ -599,14 +678,15 @@ export function computeNetWorth(
   }
 
   // Receivables (owed_to_me) and outstanding i_owe, as of "now".
+  // Uses the canonical `debtOutstanding` so a loan-kind debt reports the
+  // principal still outstanding (gross payments include interest), and
+  // so this figure matches the Debts screen exactly.
   let receivables = 0;
   let oweRemaining = 0;
   for (const d of state.debts) {
     if (d.status === 'completed' || d.status === 'archived') continue;
-    const paid = debtPaidSoFar(d, state.transactions);
-    const total = Number(d.total) || 0;
-    if (paid >= total) continue;
-    const remaining = total - paid;
+    const remaining = debtOutstanding(d, state.transactions);
+    if (remaining <= 0) continue;
     if (d.direction === 'i_owe') oweRemaining += remaining;
     else receivables += remaining;
   }
