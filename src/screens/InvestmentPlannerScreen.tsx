@@ -24,6 +24,7 @@ import {
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
+import { formatDuration, formatDurationShort } from '../domain/duration';
 import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
 import { InvestTile } from '../components/InvestLoanTile';
@@ -107,9 +108,7 @@ export function InvestmentPlannerScreen() {
                 dirty: false,
                 savedAt: null,
               } as Parameters<typeof investmentPlanMaturityValue>[0]);
-              const termLabel = kit.defaults.termMonths === 1
-                ? '1 month'
-                : `${kit.defaults.termMonths} months`;
+              const termLabel = formatDuration(kit.defaults.termMonths);
               const cardTone = investmentTone(kit.id as 'dps' | 'fdr' | 'savings');
               return (
                 <button
@@ -337,7 +336,7 @@ function InvestmentPlanCard({
             critical pair — wrap them in a non-shrinking span so a
             long institution doesn't push them off the line. */}
         <div className="text-[12px] text-muted tabular truncate">
-          <span className="shrink-0">{plan.rate}% {MIDDOT} {plan.termMonths}mo</span>
+          <span className="shrink-0">{plan.rate}% {MIDDOT} {formatDurationShort(plan.termMonths)}</span>
           {plan.institution && <span className="opacity-70"> {MIDDOT} {plan.institution}</span>}
         </div>
 

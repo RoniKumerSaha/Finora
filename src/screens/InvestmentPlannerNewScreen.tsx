@@ -10,6 +10,7 @@ import { useStore } from '../domain/store';
 import { INVESTMENT_PLAN_KITS, investmentPlanMaturityValue } from '../domain/investmentPlans';
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
+import { formatDuration } from '../domain/duration';
 import { InvestmentTypeBadge, investmentTypeColor } from '../components/planner/InvestmentTypeBadge';
 import { InvestTile } from '../components/InvestLoanTile';
 import type { InvestmentPlan } from '../domain/types';
@@ -79,9 +80,7 @@ export function InvestmentPlannerNewScreen() {
             dirty: false,
             savedAt: null,
           } as InvestmentPlan);
-          const termLabel = kit.defaults.termMonths === 1
-            ? '1 month'
-            : `${kit.defaults.termMonths} months`;
+          const termLabel = formatDuration(kit.defaults.termMonths);
           return (
             <button
               key={kit.id}

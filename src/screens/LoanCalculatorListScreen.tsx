@@ -25,6 +25,7 @@ import { useStore } from '../domain/store';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
 import { fmtBDT } from '../lib/format';
+import { formatDurationShort } from '../domain/duration';
 import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass } from '../lib/cardSurface';
 import { Pill } from '../components/Pill';
 import { LoanTile } from '../components/InvestLoanTile';
@@ -177,7 +178,7 @@ export function LoanCalculatorListScreen() {
                         in a non-shrinking span so the start date
                         (when present) doesn't push them off. */}
                     <div className="text-[12px] text-muted tabular truncate">
-                      <span className="shrink-0">{plan.rate}% APR {MIDDOT} {plan.termMonths}mo</span>
+                      <span className="shrink-0">{plan.rate}% APR {MIDDOT} {formatDurationShort(plan.termMonths)}</span>
                       {plan.startDate && <span className="opacity-70"> {MIDDOT} starts {plan.startDate}</span>}
                     </div>
 

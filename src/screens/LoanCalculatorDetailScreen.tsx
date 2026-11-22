@@ -23,10 +23,12 @@ import { loanAmortization, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input } from '../components/Field';
+import { DurationField } from '../components/DurationField';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
 import { InvestmentDonut } from '../components/planner/InvestmentDonut';
 import { Stat } from '../components/Stat';
 import { fmtBDT } from '../lib/format';
+import { formatDuration } from '../domain/duration';
 
 const MAX_INLINE_ROWS = 60;
 
@@ -197,14 +199,14 @@ export function LoanCalculatorDetailScreen() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Term (months)" hint="Total number of monthly payments.">
-            <Input
-              type="number" inputMode="numeric"
-              value={termMonths}
-              onChange={e => { setTermMonths(e.target.value); updateLoanPlan(plan.id, { termMonths: Number(e.target.value) || 0 }); }}
-              placeholder="12"
-            />
-          </Field>
+          <DurationField
+            months={Math.max(0, Math.floor(Number(termMonths) || 0))}
+            onChange={m => {
+              setTermMonths(String(m));
+              updateLoanPlan(plan.id, { termMonths: m });
+            }}
+            hint="Total number of monthly payments. Enter the term in months or years."
+          />
           <Field label="First payment date" hint="When the first EMI is due.">
             <Input
               type="date"
@@ -217,7 +219,16 @@ export function LoanCalculatorDetailScreen() {
 
       {/* Amortization table */}
       <section className="card flex flex-col gap-3">
-        <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Amortization table</div>
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Amortization table</div>
+          {/* Year-aware term caption — "36 monthly payments over 3 years"
+              reads better than "over 36 months". */}
+          {rows.length > 0 && (
+            <div className="text-[11.5px] text-muted tabular">
+              {rows.length} monthly payment{rows.length === 1 ? '' : 's'} over {formatDuration(summary.termMonths)}
+            </div>
+          )}
+        </div>
         {rows.length === 0 ? (
           <div className="text-sm text-muted">Enter a principal and term to see the breakdown.</div>
         ) : (

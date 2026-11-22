@@ -1,0 +1,411 @@
+{
+  "monthPlan": {
+    "plannedIncome": 70000,
+    "categories": [
+      {
+        "id": "pc-groceries",
+        "emoji": "🛒",
+        "name": "Groceries",
+        "budget": 8000,
+        "planned": 8000,
+        "tone": "primary"
+      },
+      {
+        "id": "pc-rent",
+        "emoji": "🏠",
+        "name": "Rent",
+        "budget": 25000,
+        "planned": 25000,
+        "tone": "accent"
+      }
+    ]
+  },
+  "eventPlans": [
+    {
+      "id": "event-trip",
+      "name": "Cox's Bazar trip",
+      "emoji": "🏖️",
+      "eventDate": "2030-06-15",
+      "budget": 0,
+      "planned": 0,
+      "categories": [
+        {
+          "id": "ec-hotel",
+          "emoji": "🏨",
+          "name": "Hotel",
+          "budget": 40000,
+          "planned": 40000,
+          "tone": "primary",
+          "dueDate": "2030-06-14",
+          "items": [
+            {
+              "id": "ei-hotel-1",
+              "label": "Two nights",
+              "amount": 40000,
+              "done": false
+            }
+          ]
+        },
+        {
+          "id": "ec-tickets",
+          "emoji": "🚌",
+          "name": "Tickets",
+          "budget": 12000,
+          "planned": 12000,
+          "tone": "accent",
+          "dueDate": "2030-06-10",
+          "items": [
+            {
+              "id": "ei-tickets-1",
+              "label": "Bus tickets",
+              "amount": 12000,
+              "done": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "monthPlan": {
+      "categoryCount": 2,
+      "totalBudgetFormatted": "৳ 33,000",
+      "savedFormatted": "৳ 37,000"
+    },
+    "eventPlan": {
+      "categoryCount": 2,
+      "budgetFormatted": "৳ 52,000",
+      "plannedFormatted": "৳ 52,000",
+      "paidFormatted": "৳ 12,000"
+    }
+  },
+  "L01_hub": {
+    "expected": {
+      "heading": "Plan",
+      "subLine": "Scratchpads for what you intend to spend. Nothing here is recorded in your ledger — it's a way to think ahead.",
+      "rows": [
+        "Investments",
+        "Loans",
+        "This month",
+        "Events"
+      ],
+      "footer": "ⓘ Plans are pure scratch — switch tabs, swap emoji, abandon mid-edit. Nothing here touches your real accounts or transactions.",
+      "rowSuffixes": {
+        "investments": "at maturity",
+        "loans": "/mo EMI",
+        "month": "budgeted · N item(s)",
+        "events": "N days away · {name}"
+      },
+      "destinations": [
+        "Investment Planner",
+        "Loan Calculator",
+        "Plan my month",
+        "Plan an event"
+      ]
+    }
+  },
+  "L02_batchEditor": {
+    "selectionCount": 3,
+    "sameAmount": "5000",
+    "percentChange": "+10%",
+    "expected": {
+      "hint": "Tap cards to select",
+      "countFormat": "{n} of {total} selected",
+      "selectAll": "Select all",
+      "allSelected": "All selected",
+      "clear": "Clear",
+      "editBudgets": "Edit budgets",
+      "sheetTitle": "Batch update budget",
+      "tabs": [
+        "Custom amounts",
+        "Same amount",
+        "Adjust %",
+        "Clear"
+      ],
+      "applyFormat": "Apply to {n} card(s)",
+      "applyFormatSingular": "Apply to {n} card",
+      "applyFormatPlural": "Apply to {n} cards",
+      "customHelper": "Type a new budget for each card. Leave blank to skip that card.",
+      "clearAll": "Clear all",
+      "fillAllWith": "Fill all with…",
+      "updatedBanner": "{n} card(s) updated",
+      "updatedBannerSingular": "{n} card updated",
+      "updatedBannerPlural": "{n} cards updated",
+      "clearedBanner": "{n} card(s) cleared",
+      "clearedBannerSingular": "{n} card cleared",
+      "clearedBannerPlural": "{n} cards cleared",
+      "bannerFix": "Tap Save plan to keep the change.",
+      "nothingSelected": "Nothing is selected. Pick a few cards first, then come back here."
+    }
+  },
+  "L03_eventCreate": {
+    "created": {
+      "name": "Cox's Bazar trip",
+      "eventDate": "2030-06-15",
+      "unallocated": "80000"
+    },
+    "expected": {
+      "listHeading": "Plan an event",
+      "listSubLine": "Weddings, trips, Eid, anything with a date and a budget. Each event is its own scratchpad.",
+      "emptyTitle": "Plan your first event",
+      "emptyBody": "Set a date. Add categories with their own budgets — the event's total is the sum of category budgets.",
+      "headerTotal": "৳ 80,000 total (sum of categories)",
+      "headerTotalAmount": "৳ 80,000",
+      "budgetPillAmount": "৳ 80,000",
+      "summaryPills": [
+        "Allocated",
+        "Paid",
+        "Days to go"
+      ],
+      "unallocatedCategory": "🪙 Unallocated"
+    }
+  },
+  "L04_planners": {
+    "loan": {
+      "name": "Car loan",
+      "principal": "100000",
+      "rate": "9",
+      "term": "12",
+      "firstPaymentDate": "2030-01-01"
+    },
+    "investmentKits": [
+      {
+        "name": "Monthly deposit scheme (DPS)",
+        "contribution": "৳5,000/mo",
+        "rate": "8%",
+        "term": "12mo"
+      },
+      {
+        "name": "Fixed deposit receipt (FDR)",
+        "principal": "৳100,000",
+        "rate": "9%",
+        "term": "12mo"
+      },
+      {
+        "name": "Savings certificate / term deposit",
+        "principal": "৳50,000",
+        "rate": "7%",
+        "term": "36mo"
+      }
+    ],
+    "expected": {
+      "loanHeading": "Loan Calculator",
+      "loanSubLine": "Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.",
+      "loanEmptyTitle": "No projections yet",
+      "loanEmptyBody": "Try a sample — 100,000 BDT at 9% for 12 months — and see the EMI + total interest computed live.",
+      "loanEmptyCta": "Start a projection",
+      "loanFields": [
+        "Name",
+        "Principal",
+        "Annual rate (%)",
+        "Term",
+        "First payment date"
+      ],
+      "loanBlockedReasons": [
+        "Add a name and a principal to save.",
+        "Add a name to save.",
+        "Enter a positive principal to save."
+      ],
+      "loanSummaryStats": [
+        "EMI",
+        "Total you pay",
+        "Total interest"
+      ],
+      "loanWarning": "ⓘ Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.",
+      "amortizationColumns": [
+        "Period",
+        "Due",
+        "Payment",
+        "Interest",
+        "Principal",
+        "Balance"
+      ],
+      "loanTermUnitLabels": [
+        "Months",
+        "Years"
+      ],
+      "loanTermYearsCaption": "36 monthly payments over 3 years",
+      "investCompositionYears": "Composition at maturity, over 1 year",
+      "investTermYearsCaption": "12 monthly payments over 1 year",
+      "investHeading": "Investment Planner",
+      "investSubLine": "Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for \"what if I opened a 1-year FDR at 9%?\".",
+      "investProjection": "Projection",
+      "investMaturity": "At maturity (projection)",
+      "investLegend": [
+        "Your money",
+        "Interest earned"
+      ],
+      "investChips": [
+        "You put in",
+        "You earn",
+        "Matures"
+      ],
+      "investWarning": "ⓘ This is a projection. Actual bank payouts may differ.",
+      "investFooter": "Plans never touch your ledger."
+    }
+  },
+  "L05_saveReset": {
+    "unsavedPlan": {
+      "name": "Never saved",
+      "principal": "50000"
+    },
+    "expected": {
+      "dirtyLine": "Unsaved changes — your edits haven't been saved yet.",
+      "savedLine": "Saved",
+      "monthFooter": "ⓘ Tap an item to edit it in a pop-up. Changes save automatically."
+    }
+  },
+  "L06_monthPlanItem": {
+    "added": {
+      "name": "Groceries",
+      "budget": "8000"
+    },
+    "cleared": "",
+    "updated": "9000",
+    "expected": {
+      "heading": "Plan my month",
+      "budgetAmount": "৳ 8,000",
+      "updatedBudgetAmount": "৳ 9,000",
+      "subLine": "Fill the items with budgets for what you intend to spend. Changes save as you go.",
+      "countChip": "N card(s) in plan",
+      "sectionHeading": "Your items",
+      "sectionHint": "· Tap cards to select",
+      "footer": "ⓘ Tap an item to edit it in a pop-up. Changes save automatically.",
+      "addModalTitle": "Add new item",
+      "addModalBody": "Pick an icon, name the item, set the budget. You can edit the budget later.",
+      "addFields": [
+        "Icon",
+        "Name",
+        "Budget (optional)"
+      ],
+      "editorHeading": "Set the budget.",
+      "editorPills": [
+        "Budget set",
+        "No budget"
+      ],
+      "editorActions": [
+        "Clear budget",
+        "Save"
+      ],
+      "editorFooter": "Done with this item?",
+      "removeItem": "Remove item",
+      "deleteTitle": "Delete “{name}”?",
+      "deleteBody": "This item will be removed from this month’s plan.",
+      "deleteDanger": "The budget value for this item is removed.",
+      "nameRequiredBanner": {
+        "what": "Name the item",
+        "why": "An item without a name has no plan.",
+        "fix": "Type a name (e.g. \"Groceries\") then save."
+      }
+    }
+  },
+  "L07_quickTotal": {
+    "income": "50000",
+    "lowIncome": "1000",
+    "selectedCount": 2,
+    "expected": {
+      "title": "Quick total",
+      "subLine": "Check the cards you'll pay",
+      "totalAmount": "৳ 33,000",
+      "savedAmount": "৳ 17,000",
+      "overByAmount": "৳ 32,000",
+      "emptyAmount": "৳ 0",
+      "explanation": "Tick items, set your income, see how much you'd save (or overspend). Nothing is saved.",
+      "incomeLabel": "Income",
+      "clearSelection": "Clear selection",
+      "selectedFormat": "N of M selected",
+      "totalLabel": "Total",
+      "savedLabel": "Saved",
+      "overByLabel": "Over by",
+      "emptyState": "No items in this month's plan yet — open the planner to start."
+    }
+  },
+  "L08_eventDetail": {
+    "categories": [
+      {
+        "name": "Hotel",
+        "budget": "40000",
+        "itemLabel": "Two nights",
+        "itemAmount": "40000"
+      },
+      {
+        "name": "Tickets",
+        "budget": "12000",
+        "itemLabel": "Bus tickets",
+        "itemAmount": "12000"
+      }
+    ],
+    "expected": {
+      "headerTotal": "৳ 52,000 total (sum of categories)",
+      "allocatedAmount": "৳ 52,000",
+      "allocatedDenominator": "/ ৳ 52,000",
+      "paidAmount": "৳ 12,000",
+      "editedTotal": "৳ 57,000 total (sum of categories)",
+      "summaryPills": [
+        "Allocated",
+        "Paid",
+        "Days to go"
+      ],
+      "editorSubLine": "Budget · spent (sum of line items) · due date.",
+      "noBudgetPill": "No budget",
+      "editorFields": [
+        "Budget",
+        "Spent",
+        "Due date",
+        "Line items"
+      ],
+      "spentHint": "Sum of all line items below.",
+      "composerPlaceholder": "Add a line — e.g. Deposit, Tickets",
+      "amountPlaceholder": "Amount",
+      "paidPill": "৳12,000",
+      "ticketsFooter": "1 of 1 paid",
+      "hotelFooter": "0 of 1 paid",
+      "timelineHeader": "Timeline",
+      "timelinePastHeader": "Timeline (past)",
+      "timelineLabels": [
+        "today",
+        "tomorrow",
+        "in N days",
+        "N days ago"
+      ]
+    }
+  },
+  "L09_eventValidation": {
+    "expected": {
+      "nameRequired": {
+        "what": "Event name is required",
+        "why": "Without a name the event cannot be tracked.",
+        "fix": "Enter a name (e.g. \"Cox's Bazar trip\")."
+      },
+      "dateRequired": {
+        "what": "Event date is required",
+        "why": "The timeline is anchored to the date.",
+        "fix": "Pick a date."
+      },
+      "categoryNameRequired": {
+        "what": "Name the category",
+        "why": "A category without a name is impossible to track.",
+        "fix": "Type a name (e.g. \"Hotel\") then save."
+      },
+      "completedTitle": "Event completed",
+      "completedBody": "Every line item is paid. {plan.name} is wrapped up.",
+      "overBudgetHeadlines": [
+        "Paid past the budget",
+        "Categories sum past the budget"
+      ],
+      "overBudgetFigures": [
+        "Budget",
+        "Allocated",
+        "Over by"
+      ],
+      "overBudgetAmount": "৳ 52,000",
+      "dateEditorTitle": "Edit event date",
+      "dateEditorNote": "The event's total budget is the sum of category budgets — edit a category to adjust the total.",
+      "deleteCategoryTitle": "Delete {name}?",
+      "deleteCategoryBody": "The category and every line item inside it will be removed from this event.",
+      "deleteCategoryDanger": "This can’t be undone — any amounts you typed are lost.",
+      "deleteEventTitle": "Delete this event plan?",
+      "deleteEventBody": "This is a scratchpad — nothing was recorded in your ledger. The plan and its categories are removed."
+    }
+  }
+}

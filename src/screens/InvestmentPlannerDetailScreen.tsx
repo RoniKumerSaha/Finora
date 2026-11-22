@@ -32,10 +32,12 @@ import {
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Field, Input, Select } from '../components/Field';
+import { DurationField } from '../components/DurationField';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
 import { InvestmentDonut } from '../components/planner/InvestmentDonut';
 import { InvestmentTypeBadge } from '../components/planner/InvestmentTypeBadge';
 import { fmtBDT, fmtDate } from '../lib/format';
+import { formatDuration } from '../domain/duration';
 import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
 import type { InvestmentType } from '../domain/types';
 
@@ -217,8 +219,8 @@ export function InvestmentPlannerDetailScreen() {
             strokeWidth={18}
             ariaLabel={
               type === 'dps'
-                ? `DPS projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${Number(termMonths) || 0} months`
-                : `${type.toUpperCase()} projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${Number(termMonths) || 0} months`
+                ? `DPS projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${formatDuration(Number(termMonths) || 0)}`
+                : `${type.toUpperCase()} projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${formatDuration(Number(termMonths) || 0)}`
             }
           />
           <div className="flex flex-col gap-2.5 min-w-0">
@@ -236,7 +238,7 @@ export function InvestmentPlannerDetailScreen() {
               valueClass="text-accent"
             />
             <div className="text-[11px] text-muted mt-0.5">
-              Composition at maturity, over {Number(termMonths) || 0} months
+              Composition at maturity, over {formatDuration(Number(termMonths) || 0)}
             </div>
           </div>
         </div>
@@ -305,14 +307,14 @@ export function InvestmentPlannerDetailScreen() {
               placeholder="8.5"
             />
           </Field>
-          <Field label="Term (months)" hint="Use the same number of months as your bank contract.">
-            <Input
-              type="number" inputMode="numeric"
-              value={termMonths}
-              onChange={e => { setTermMonths(e.target.value); patch({ termMonths: Number(e.target.value) || 0 }); }}
-              placeholder="12"
-            />
-          </Field>
+          <DurationField
+            months={Math.max(0, Math.floor(Number(termMonths) || 0))}
+            onChange={m => {
+              setTermMonths(String(m));
+              patch({ termMonths: m });
+            }}
+            hint="Use the same term as your bank contract. Enter it in months or years."
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Start date" hint="When the deposit would land.">
