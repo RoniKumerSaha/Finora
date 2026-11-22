@@ -1,0 +1,214 @@
+{
+  "debts": [
+    {
+      "name": "Loan from Rahim",
+      "direction": "i_owe",
+      "total": 20000,
+      "person": "Rahim",
+      "kind": "flat"
+    },
+    {
+      "name": "Bike loan",
+      "direction": "i_owe",
+      "total": 60000,
+      "kind": "loan",
+      "interestRate": 12,
+      "termMonths": 36
+    },
+    {
+      "name": "Lent to Karim",
+      "direction": "owed_to_me",
+      "total": 15000,
+      "person": "Karim",
+      "kind": "flat"
+    }
+  ],
+  "loan": {
+    "name": "Bike loan",
+    "total": "60000",
+    "rate": "12",
+    "term": "36",
+    "emi": "1993",
+    "interest": "600",
+    "principal": "1393",
+    "outstandingAfterEmi": "58607"
+  },
+  "validation": [
+    {
+      "case": "a zero total amount",
+      "total": "0",
+      "interestRate": "12",
+      "termMonths": "36",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "a negative total amount",
+      "total": "-500",
+      "interestRate": "12",
+      "termMonths": "36",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "a zero interest rate",
+      "total": "60000",
+      "interestRate": "0",
+      "termMonths": "36",
+      "expectedError": "Enter a rate greater than zero."
+    },
+    {
+      "case": "a zero loan term",
+      "total": "60000",
+      "interestRate": "12",
+      "termMonths": "0",
+      "expectedError": "Enter a term greater than zero."
+    }
+  ],
+  "D01_flatLifecycle": {
+    "created": {
+      "name": "Loan from Rahim",
+      "direction": "I owe (you borrowed)",
+      "total": "20000",
+      "account": "Main Bank",
+      "person": "Rahim"
+    },
+    "payment": { "amount": "5000", "account": "Main Bank", "note": "Part payment" },
+    "expected": {
+      "directionTag": "I owe",
+      "paidLine": "You've paid ৳ 0 of ৳ 20,000",
+      "counterparty": "Owed to Rahim",
+      "remaining": "৳ 20,000",
+      "totalCaption": "of ৳ 20,000 total",
+      "percentPaid": "0% paid",
+      "openingTransactionNote": "Debt: Loan from Rahim",
+      "openingTag": "category: borrowed",
+      "paymentModalTitle": "Pay toward \"Loan from Rahim\"",
+      "paymentOutstanding": "Outstanding: ৳ 20,000",
+      "paymentToast": "Payment paid — ৳ 5,000",
+      "paidAfter": "You've paid ৳ 5,000 of ৳ 20,000",
+      "remainingAfter": "৳ 15,000",
+      "percentPaidAfter": "25% paid",
+      "balanceBefore": "৳ 1,20,000",
+      "balanceAfterOpening": "৳ 1,40,000",
+      "balanceAfterPayment": "৳ 1,35,000"
+    }
+  },
+  "D02_loanKind": {
+    "created": {
+      "name": "Bike loan",
+      "direction": "I owe",
+      "total": "60000",
+      "isLoan": true,
+      "rate": "12",
+      "term": "36",
+      "account": "Main Bank"
+    },
+    "secondPaymentAmount": "500",
+    "expected": {
+      "loanPill": "Loan",
+      "termsLine": "12% APR · 36mo",
+      "loanAmount": "Loan amount ৳ 60,000",
+      "splitLine": "Paid ৳ 0 interest and ৳ 0 principal",
+      "emiLabel": "Monthly EMI",
+      "emi": "৳ 1,993",
+      "outstanding": "৳ 60,000",
+      "emiHint": "Pre-filled with the standard EMI for 36-month term. Adjust if you paid a different amount.",
+      "splitPreviewHeading": "This payment will be split as:",
+      "firstSplit": "৳ 600 interest · ৳ 1,393 principal",
+      "firstToast": "Payment paid — ৳ 600 interest, ৳ 1,393 principal",
+      "firstToastWhy": "Outstanding reduced from ৳ 60,000 to ৳ 58,607.",
+      "outstandingAfter": "৳ 58,607",
+      "splitLineAfter": "Paid ৳ 600 interest and ৳ 1,393 principal",
+      "balanceAfterOpening": "৳ 1,80,000",
+      "balanceAfterPayment": "৳ 1,78,007",
+      "underpaymentChip": "Underpayment — this didn't cover the month's interest.",
+      "secondSplit": "৳ 500 interest · ৳ 0 principal",
+      "underpaymentToast": "Payment paid — ৳ 500 interest, ৳ 0 principal",
+      "underpaymentSuffix": "— underpayment: this didn't cover the month's interest."
+    }
+  },
+  "D03_directionValidation": {
+    "owedToMeDirection": "Owed to me (you lent)",
+    "nameRequired": {
+      "banner": {
+        "what": "Debt name is required",
+        "why": "Debts without a name cannot be tracked.",
+        "fix": "Enter a name (e.g. \"Loan from a friend\")."
+      }
+    },
+    "totalError": "Amount must be greater than zero.",
+    "rateError": "Enter a rate greater than zero.",
+    "termError": "Enter a term greater than zero.",
+    "accountHint": "Pick an account.",
+    "created": { "direction": "Owed to me (you lent)", "total": "15000", "account": "Cash", "person": "Karim" },
+    "expected": {
+      "paidLine": "They've paid ৳ 0 of ৳ 15,000",
+      "counterparty": "Owed by Karim",
+      "receiveChip": "Receive now",
+      "directionTag": "Owed to me",
+      "openingTransactionNote": "Debt: Lent to Karim",
+      "openingTag": "category: lent",
+      "cashBefore": "৳ 5,000",
+      "cashAfter": "৳ -10,000",
+      "editHeading": "Edit debt",
+      "editSubLine": "Change the debt details. Linked transactions stay as they are.",
+      "totalAmountHint": "Repayments are tracked via linked transactions, not here.",
+      "updateToast": "Debt updated",
+      "updateToastBody": "Changes are saved."
+    }
+  },
+  "D04_deleteAndCompletion": {
+    "debtWithPayment": { "name": "Loan from Rahim", "direction": "I owe", "total": 20000, "payment": 5000 },
+    "debtWithoutPayment": { "name": "Advance to Karim", "direction": "I owe", "total": 8000 },
+    "debtToPayOff": { "name": "Bike loan", "direction": "I owe", "total": 60000 },
+    "expected": {
+      "orphanTag": "category: debt received",
+      "orphanTagLabel": "Debt received",
+      "completedHeading": "Completed (1)",
+      "paidOffLabel": "৳ 60,000 paid off",
+      "flipAfter": "0% paid",
+      "deleteBanner": "Debt deleted",
+      "archivedTagLabel": "Archived debt",
+      "paidOffToast": "paid off. Nice."
+    }
+  },
+  "D05_activity": {
+    "expected": {
+      "stats": ["Payments", "Total paid", "Last payment"],
+      "tags": ["Payment", "Received", "Reversal", "Adjust"],
+      "footer": "Payments you make toward this debt. Recorded as expenses tagged with this debt — usually via Add transaction → Expense.",
+      "summaryLabels": ["You owe", "Owed to you"],
+      "summaryAcrossOwe": "Across 2 debts",
+      "summaryAcrossReceivable": "Across 1 debt",
+      "howItWorks": "How it works:",
+      "paymentsCount": "2",
+      "totalPaid": "৳ 12,000",
+      "rowAmounts": ["৳ 5,000", "৳ 7,000"]
+    }
+  },
+  "D06_overpayment": {
+    "outstanding": 20000,
+    "paymentAmount": "25000",
+    "expected": {
+      "paidAfter": "You've paid ৳ 25,000 of ৳ 20,000",
+      "outstandingAfter": "৳ 0",
+      "percentPaid": "100% paid",
+      "toast": "Payment paid — ৳ 25,000",
+      "completedHeading": "Completed (1)",
+      "paidOffLabel": "৳ 20,000 paid off",
+      "totalPaidAfter": "৳ 25,000"
+    }
+  },
+  "D07_repayment": {
+    "debtName": "Lent to Karim",
+    "amount": "5000",
+    "account": "Cash",
+    "expected": {
+      "remainingBefore": "Remaining: ৳ 15,000",
+      "remainingAfter": "Remaining: ৳ 10,000",
+      "paidLine": "They've paid ৳ 5,000 of ৳ 15,000",
+      "percentPaid": "33% paid",
+      "cashBefore": "৳ 5,000",
+      "cashAfter": "৳ 10,000"
+    }
+  }
+}

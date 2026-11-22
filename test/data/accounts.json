@@ -1,0 +1,141 @@
+{
+  "types": [
+    { "value": "cash", "label": "Cash", "tone": "accent" },
+    { "value": "bank", "label": "Bank Account", "tone": "primary" },
+    { "value": "mobile_wallet", "label": "Mobile Wallet", "tone": "info" },
+    { "value": "card", "label": "Card", "tone": "danger" },
+    { "value": "other", "label": "Other", "tone": "muted" }
+  ],
+  "accounts": [
+    { "name": "Cash", "type": "cash", "openingBalance": 5000 },
+    { "name": "Main Bank", "type": "bank", "openingBalance": 120000 },
+    { "name": "bKash", "type": "mobile_wallet", "openingBalance": 2500 },
+    { "name": "Visa Card", "type": "card", "openingBalance": 0 }
+  ],
+  "validation": [
+    {
+      "case": "negative opening balance",
+      "openingBalance": "-500",
+      "expectedError": "Amount must be zero or greater."
+    },
+    {
+      "case": "opening balance of exactly zero",
+      "openingBalance": "0",
+      "expectedError": null
+    }
+  ],
+  "A01_lifecycle": {
+    "created": { "name": "Cash", "type": "cash", "openingBalance": "5000" },
+    "edited": { "name": "Pocket Cash", "openingBalance": "6000" },
+    "expected": {
+      "initialBalance": "৳ 5,000",
+      "initialTypeLabel": "Cash",
+      "editedBalance": "৳ 6,000",
+      "editSubLine": "Changes apply to this account only."
+    }
+  },
+  "A02_typeSweep": {
+    "dropdownOptions": ["cash", "bank", "mobile wallet", "card", "other"],
+    "cardLabels": ["Cash", "Bank Account", "Mobile Wallet", "Card", "Other"],
+    "missingType": "savings",
+    "missingTypeLabel": "Savings Account",
+    "accounts": [
+      { "name": "Cash", "type": "cash" },
+      { "name": "Main Bank", "type": "bank" },
+      { "name": "bKash", "type": "mobile_wallet" },
+      { "name": "Visa Card", "type": "card" },
+      { "name": "Other Account", "type": "other" }
+    ]
+  },
+  "A03_validationSweep": {
+    "nameRequired": {
+      "banner": {
+        "what": "Account name is required",
+        "why": "Accounts without a name cannot be identified in lists or transactions.",
+        "fix": "Enter a name (e.g. \"Cash\", \"Main Bank\")."
+      }
+    },
+    "negativeOpeningBalance": {
+      "openingBalance": "-500",
+      "inlineError": "Amount must be zero or greater."
+    },
+    "emptyOpeningBalanceOnAdd": {
+      "openingBalance": "",
+      "expectedBalance": "৳ 0"
+    },
+    "emptyOpeningBalanceOnEdit": {
+      "openingBalance": "",
+      "inlineError": "Amount must be zero or greater."
+    }
+  },
+  "A04_linkedTransactions": {
+    "accountName": "Cash",
+    "linkedTransactionCount": 3,
+    "banner": {
+      "what": "Can't delete \"Cash\"",
+      "why": "3 transaction(s) still reference this account.",
+      "fix": "Delete the linked transactions first, or archive them."
+    }
+  },
+  "A05_emptyStates": {
+    "accounts": {
+      "title": "No accounts yet",
+      "description": "Open an account for cash, a bank, a wallet, or a card. Each account tracks what's there now.",
+      "cta": "+ Add your first account",
+      "learnMore": "How accounts work →",
+      "overlayTitle": "How accounts work"
+    },
+    "transactions": {
+      "title": "No transactions yet",
+      "description": "Record income, expenses, or transfers. Each one updates the account it touches.",
+      "cta": "+ Add transaction",
+      "learnMore": "How transactions work →",
+      "overlayTitle": "How transactions work"
+    },
+    "goals": {
+      "title": "Save toward something",
+      "description": "Set a target amount and a date. We'll tell you how much to save each month.",
+      "cta": "+ New goal",
+      "learnMore": "How goals work →",
+      "overlayTitle": "How goals work"
+    },
+    "overlay": {
+      "width": "480px",
+      "backdropLabel": "Close dialog",
+      "gotIt": "Got it",
+      "close": "Close"
+    }
+  },
+  "A06_balanceMetadata": {
+    "accountName": "Main Bank",
+    "openingBalance": 120000,
+    "income": 60000,
+    "expense": 18000,
+    "transferOut": 3000,
+    "expected": {
+      "balance": "৳ 1,59,000",
+      "delta": "↑ ৳ 39,000",
+      "deltaSuffix": "vs opening",
+      "idleAccountBalance": "৳ 2,500",
+      "idleAccountName": "bKash",
+      "offsettingAccountName": "Cash",
+      "offsettingBalance": "৳ 5,000",
+      "offsettingDelta": "— no change",
+      "offsettingActivity": "Today · Top up wallet"
+    }
+  },
+  "A07_cancelConfirmation": {
+    "accountName": "Cash",
+    "dialogTitle": "Delete \"Cash\"?"
+  },
+  "T12_negativeBalance": {
+    "accountName": "Cash",
+    "openingBalance": 1000,
+    "expenseAmount": "2500",
+    "expected": {
+      "balance": "৳ -1,500",
+      "netWorth": "−৳ 1,500",
+      "restoredBalance": "৳ 1,000"
+    }
+  }
+}

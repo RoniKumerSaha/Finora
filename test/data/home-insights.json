@@ -1,0 +1,201 @@
+{
+  "H01_home": {
+    "expected": {
+      "heading": "Where is my money?",
+      "metaFormat": "Net worth · across {n} accounts · updated just now",
+      "netWorthCaption": "Assets minus liabilities",
+      "liabilitiesCaption": "Liabilities exceed assets",
+      "netWorthOvertime": "vs last month",
+      "thisMonthLabels": ["Income", "Expenses", "Net saved"],
+      "statLabels": ["Cash", "Receivables", "Debts", "Investments"],
+      "emptyCaptions": {
+        "Cash": "No accounts yet",
+        "Receivables": "no money owed to you",
+        "Debts": "no active debts",
+        "Investments": "none yet"
+      },
+      "accountsLink": "Manage →",
+      "activityLink": "View all",
+      "insightsLink": "See full Insights →",
+      "projectionLabel": "Projection",
+      "projectionCaption": "at maturity"
+    },
+    "figures": {
+      "accountCount": 4,
+      "metaLine": "Net worth · across 4 accounts · updated just now",
+      "netWorth": "৳ 2,15,083",
+      "projection": "+৳ 66,631",
+      "thisMonth": {
+        "income": "৳ 72,000",
+        "expenses": "৳ 19,450",
+        "netSaved": "+৳ 52,550"
+      },
+      "strip": {
+        "Cash": { "value": "৳ 1,75,050", "hint": "Sum of money across 4 accounts" },
+        "Receivables": { "value": "৳ 15,000", "hint": "Owed by 1 person" },
+        "Debts": { "value": "৳ 80,000", "hint": "You owe across 2 debts" },
+        "Investments": { "value": "৳ 1,05,033", "hint": "Locked in 2 active schemes" }
+      },
+      "accounts": [
+        { "name": "Cash", "type": "Cash", "balance": "৳ 800" },
+        { "name": "Main Bank", "type": "Bank Account", "balance": "৳ 1,57,000" },
+        { "name": "bKash", "type": "Mobile Wallet", "balance": "৳ 17,250" },
+        { "name": "Visa Card", "type": "Card", "balance": "৳ 0" }
+      ],
+      "activity": {
+        "rowCount": 4,
+        "relative": "Today",
+        "rows": [
+          { "title": "Top up wallet", "amount": "৳ 3,000", "subtitle": "Today · Cash" },
+          { "title": "Petrol", "amount": "৳ 250", "subtitle": "Today · bKash" },
+          { "title": "Monthly rent", "amount": "৳ 18,000", "subtitle": "Today · Main Bank" },
+          { "title": "Weekly shop", "amount": "৳ 1,200", "subtitle": "Today · Cash" }
+        ]
+      }
+    }
+  },
+  "H05_homeEmpty": {
+    "expected": {
+      "emptyCaptions": {
+        "Cash": "No accounts yet",
+        "Receivables": "no money owed to you",
+        "Debts": "no active debts",
+        "Investments": "none yet"
+      },
+      "netWorthCaption": "Assets minus liabilities",
+      "liabilitiesCaption": "Liabilities exceed assets",
+      "accountsEmpty": {
+        "title": "No accounts yet",
+        "description": "Add an account to track balances, transactions, and net worth.",
+        "cta": "+ Add an account",
+        "learnMore": "How accounts work →"
+      },
+      "transactionsEmpty": {
+        "title": "No transactions yet",
+        "description": "Record income, expenses, or transfers to see them here.",
+        "cta": "+ Add a transaction",
+        "learnMore": "How transactions work →"
+      },
+      "forbiddenText": ["NaN", "Infinity", "undefined"]
+    },
+    "figures": {
+      "netWorth": "৳ 0",
+      "strip": {
+        "Cash": { "value": "৳ 0", "hint": "No accounts yet" },
+        "Receivables": { "value": "৳ 0", "hint": "no money owed to you" },
+        "Debts": { "value": "৳ 0", "hint": "no active debts" },
+        "Investments": { "value": "৳ 0", "hint": "none yet" }
+      }
+    }
+  },
+  "H02_insight": {
+    "ranges": ["This month", "Last 3 months", "Last 6 months", "Last 12 months", "All time"],
+    "defaultRange": "Last 6 months",
+    "storageKey": "finora.insights.range",
+    "rangeKeys": {
+      "This month": "thisMonth",
+      "Last 3 months": "last3",
+      "Last 6 months": "last6",
+      "Last 12 months": "last12",
+      "All time": "all"
+    },
+    "sectionLabels": {
+      "cashFlow": "Cash flow over {range}",
+      "netWorth": "Net worth over {range}",
+      "trends": "Trends over {range}"
+    },
+    "expected": {
+      "heading": "Insight",
+      "cashFlowHeading": "Cash flow",
+      "cashFlowSubLine": "Income & expense by month",
+      "legend": ["Income", "Expense"],
+      "netLineFormat": "Net cash flow {sign}৳X",
+      "truncatedFormat": "Showing last {capped} of {total} months",
+      "spendingHeading": "Spending by category",
+      "spendingTotalFormat": "Total ৳X",
+      "unknownCategory": "Unknown",
+      "otherCategory": "Other",
+      "netWorthHeading": "Net worth",
+      "netWorthNow": "Now",
+      "netWorthHint": "Hover any bar for that month's figure.",
+      "trendsHeading": "Trends",
+      "trendsSubLine": "Aggregates over the chosen range",
+      "footnote": "Goal / Debt / Investment lists live on their own screens",
+      "footnoteLinks": ["Goals", "Debts", "Investments"]
+    },
+    "figures": {
+      "legendIncome": "৳ 80,000",
+      "legendExpense": "৳ 27,050",
+      "netCashFlow": "Net cash flow +৳ 52,950",
+      "spendingTotal": "৳ 27,050",
+      "spendingRows": [
+        "Rent",
+        "Unknown",
+        "Groceries",
+        "Utilities",
+        "Transport",
+        "Phone & Internet",
+        "Other"
+      ],
+      "truncated": { "capped": 12, "total": 15 }
+    }
+  },
+  "H04_trends": {
+    "ranges": ["This month", "Last 3 months", "Last 6 months", "Last 12 months", "All time"],
+    "expected": {
+      "headingFormat": "Trends over {range}",
+      "subLine": "Aggregates over the chosen range",
+      "rows": [
+        { "label": "Average monthly expense", "hint": "Total out across months with activity" },
+        { "label": "Savings rate", "hint": "(income − expense) ÷ income · 0 if no income" },
+        { "label": "Days of runway", "hint": "Cash ÷ daily avg expense · at current burn" },
+        { "label": "Investment growth", "hint": "Active schemes · maturity − contributed" }
+      ],
+      "captionFormat": "{arrow} {x}% vs previous {n} months",
+      "captionsSuppressedOn": ["This month", "All time"],
+      "savingsRateEmpty": "—",
+      "runwayEmpty": "—",
+      "runwayFormat": "N d",
+      "investmentGrowthEmpty": "—",
+      "investmentGrowthHintEmpty": "No active investments yet"
+    },
+    "figures": {
+      "captions": {
+        "Last 3 months": "↑100% vs previous 3 months",
+        "Last 6 months": "↑500% vs previous 6 months",
+        "Last 12 months": "↓30% vs previous 12 months"
+      },
+      "avgMonthlyExpense": {
+        "Last 3 months": "৳ 6,667",
+        "Last 6 months": "৳ 5,000",
+        "Last 12 months": "৳ 2,917"
+      },
+      "runwayPattern": "^\\d+ d$",
+      "savingsRate": "—",
+      "investmentGrowth": "+৳ 71,665",
+      "investmentGrowthHint": "Active schemes · maturity − contributed",
+      "forbiddenText": ["NaN", "undefined"],
+      "forbiddenPatterns": ["(^|\\s)0% vs previous"]
+    }
+  },
+  "H06_insightEmpty": {
+    "expected": {
+      "cashFlowEmpty": "No transactions in this period.",
+      "spendingEmpty": "No expenses in this period.",
+      "netWorthEmpty": "No balance history in this period.",
+      "investmentGrowthEmpty": "—",
+      "investmentGrowthHintEmpty": "No active investments yet",
+      "footnote": "Goal / Debt / Investment lists live on their own screens",
+      "absentWidgets": ["Goals", "Debts", "Investments"]
+    },
+    "figures": {
+      "trendsHeading": "Trends",
+      "investmentGrowthHint": "No active investments yet",
+      "footnoteLinks": ["Goals", "Debts", "Investments"],
+      "recurringPattern": "recurring",
+      "legendIncome": "৳ 0",
+      "legendExpense": "৳ 0",
+      "netCashFlow": "Net cash flow +৳ 0"
+    }
+  }
+}

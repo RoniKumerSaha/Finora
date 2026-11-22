@@ -1,0 +1,79 @@
+{
+  "P01_setPin": {
+    "pin": "123456",
+    "mismatchedPin": "654321",
+    "expected": {
+      "setModalTitle": "Set a 6-digit PIN",
+      "setModalSubLine": "You'll enter this every time you open Finora",
+      "setModalHelper": "Type with your keyboard. Each box accepts one digit.",
+      "confirmModalTitle": "Confirm your PIN",
+      "confirmModalSubLine": "Type the same 6 digits once more",
+      "savePinButton": "Save PIN",
+      "mismatchError": "PINs don't match — try again.",
+      "lockAriaLabel": "Unlock Finora",
+      "lockHeading": "Secure Finora",
+      "lockSubLine": "Enter your 6-digit PIN to unlock",
+      "unlockBanner": "Welcome back",
+      "unlockBannerBody": "PIN accepted.",
+      "unlockBannerFix": "Your accounts are ready."
+    }
+  },
+  "P02_entryMechanics": {
+    "pin": "123456",
+    "wrongPin": "999999",
+    "expected": {
+      "groupLabelFormat": "PIN entry, {n} of 6 digits entered",
+      "digitLabelFormat": "Digit {n}",
+      "wrongPinError": "Wrong PIN. Try again.",
+      "lockoutNotice": "Try again in {n}s",
+      "lockedNotice": "Locked. Reload the page to continue."
+    }
+  },
+  "P03_changePin": {
+    "currentPin": "123456",
+    "wrongCurrentPin": "000000",
+    "newPin": "654321",
+    "mismatchedNewPin": "111111",
+    "expected": {
+      "steps": [
+        { "title": "Enter your current PIN", "subLine": "We need to know it's really you before changing it." },
+        { "title": "Choose a new PIN", "subLine": "Pick a new 6-digit PIN." },
+        { "title": "Confirm the new PIN", "subLine": "Type it once more to confirm." }
+      ],
+      "cancelButton": "Cancel",
+      "wrongCurrentError": "That PIN doesn't match the one on this device.",
+      "mismatchError": "New PINs don't match — try again.",
+      "successToast": "PIN changed",
+      "successToastBody": "Your new PIN is in effect.",
+      "disableConfirmTitle": "Disable PIN lock?",
+      "disableConfirmBody": "You'll be able to open Finora without entering a PIN. You can turn it back on any time.",
+      "disableConfirmButton": "Disable PIN",
+      "disableToast": "PIN disabled",
+      "disableToastBody": "Your app will open without asking.",
+      "disableToastFix": "You can turn PIN protection back on at any time from this card.",
+      "forgotConfirmTitle": "Wipe all data and reset PIN?",
+      "forgotConfirmBody": "This permanently deletes every account, transaction, goal, debt, investment, and plan — and clears the PIN. The app will reset to a clean install. There is no recovery.",
+      "forgotConfirmButton": "Wipe everything",
+      "wipeToast": "All data wiped",
+      "wipeToastBody": "Your local store is now empty.",
+      "wipeToastFix": "Add an account to start tracking again."
+    }
+  },
+  "P04_pinStaysLocal": {
+    "expected": {
+      "exportedKeys": [
+        "accounts",
+        "transactions",
+        "goals",
+        "debts",
+        "investments",
+        "categories",
+        "monthPlans",
+        "eventPlans",
+        "investmentPlans",
+        "loanPlans"
+      ],
+      "forbiddenKeys": ["salt", "hash", "pin", "pinHash", "pinSalt"]
+    }
+  }
+}

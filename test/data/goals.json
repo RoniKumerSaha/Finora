@@ -1,0 +1,123 @@
+{
+  "goals": [
+    {
+      "name": "Emergency fund",
+      "target": 50000,
+      "contributions": [10000],
+      "targetDate": "2027-06-30"
+    }
+  ],
+  "validation": [
+    {
+      "case": "a zero target amount",
+      "target": "0",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "a negative target amount",
+      "target": "-1",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "an empty already-saved amount",
+      "alreadySaved": "",
+      "expectedError": "Amount must be zero or greater."
+    },
+    {
+      "case": "a negative already-saved amount",
+      "alreadySaved": "-500",
+      "expectedError": "Amount must be zero or greater."
+    }
+  ],
+  "G01_lifecycle": {
+    "created": {
+      "name": "Emergency fund",
+      "alreadySaved": "10000",
+      "target": "50000",
+      "targetDate": "2027-06-30"
+    },
+    "edited": { "target": "60000" },
+    "contribution": { "amount": "5000", "note": "December saving" },
+    "expected": {
+      "cardSaved": "৳ 10,000",
+      "cardTarget": "৳ 50,000",
+      "cardDate": "by 30 Jun 2027",
+      "cardRemaining": "Need ৳ 40,000 more",
+      "cardPerMonth": "৳ 10,000/mo",
+      "contributionModalTitle": "Add a contribution",
+      "contributionModalSubLine": "Records the amount you've set aside toward this goal. Your account balance is not changed.",
+      "contributionBanner": "৳ 5,000 toward Emergency fund",
+      "contributionBannerBody": "Saved as a plan entry — your account balance is unchanged.",
+      "contributionBannerFix": "Saved is now ৳ 15,000 of ৳ 50,000.",
+      "updateToast": "Goal updated",
+      "updateWarning": "the \"saved so far\" figure above is the sum of your contributions. Editing this goal doesn't change that — add or remove a contribution instead.",
+      "removeConfirm": "Remove this contribution?",
+      "removeToast": "Contribution removed",
+      "deleteConfirm": "Delete this goal?",
+      "deleteToast": "Goal deleted",
+      "deleteToastBody": "Your accounts and transactions were not touched."
+    }
+  },
+  "G02_validation": {
+    "nameRequired": {
+      "banner": {
+        "what": "Goal name is required",
+        "why": "Goals without a name cannot be tracked.",
+        "fix": "Enter a name (e.g. \"Emergency fund\")."
+      }
+    },
+    "targetError": "Amount must be greater than zero.",
+    "alreadySavedError": "Amount must be zero or greater.",
+    "dateRequired": {
+      "banner": {
+        "what": "Target date is required",
+        "why": "Goals without dates cannot compute the per-month requirement (R5).",
+        "fix": "Pick a date in the future."
+      }
+    },
+    "pastDate": "2020-01-01",
+    "reached": {
+      "name": "Reached goal",
+      "target": 50000,
+      "targetDate": "2027-06-30",
+      "cardText": "Goal reached. Nice.",
+      "detailText": "Goal reached. ৳ 50,000 saved · target ৳ 50,000",
+      "requiredPerMonth": "— done —"
+    },
+    "expired": {
+      "name": "Expired goal",
+      "target": 10000,
+      "saved": 1000,
+      "targetDate": "2020-06-30",
+      "createdAt": "2020-01-01",
+      "contributionDate": "2020-01-01",
+      "pace": "overdue",
+      "detailText": "Target date passed. Either extend it or close the goal.",
+      "requiredPerMonth": "— past due —"
+    }
+  },
+  "G03_pace": {
+    "target": 50000,
+    "targetDate": "2027-06-30",
+    "ahead": { "name": "Emergency fund", "saved": 31000 },
+    "behind": { "name": "Bike fund", "saved": 6000 },
+    "expected": {
+      "aheadPace": "Pace: Ahead",
+      "behindPace": "Pace: Behind",
+      "aheadChipTitle": "62% saved vs target pace",
+      "behindChipTitle": "12% saved vs target pace",
+      "aheadPercent": "62%",
+      "behindPercent": "12%"
+    }
+  },
+  "G04_noLedgerEffect": {
+    "accountName": "Cash",
+    "target": "50000",
+    "contribution": "5000",
+    "expected": {
+      "balanceBefore": "৳ 5,000",
+      "balanceAfter": "৳ 5,000",
+      "savedAfter": "৳ 5,000"
+    }
+  }
+}

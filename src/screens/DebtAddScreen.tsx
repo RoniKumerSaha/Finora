@@ -6,7 +6,7 @@ import * as debts from '../domain/debts';
 import * as transactions from '../domain/transactions';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
-import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { isPositiveMoney, POSITIVE_MONEY_ERROR, POSITIVE_RATE_ERROR, POSITIVE_TERM_ERROR } from '../lib/validation';
 import type { DebtDirection, DebtKind } from '../domain/types';
 
 export function DebtAddScreen() {
@@ -276,7 +276,7 @@ export function DebtAddScreen() {
             <Field
               label="Annual interest rate (%)"
               hint="APR as a percentage, e.g. 12 for 12%."
-              error={rateInvalid ? 'Enter a rate greater than zero.' : undefined}
+              error={rateInvalid ? POSITIVE_RATE_ERROR : undefined}
             >
               <Input
                 type="number"
@@ -298,7 +298,7 @@ export function DebtAddScreen() {
             <Field
               label="Term in months"
               hint="Whole months, e.g. 36 for 3 years. Drives the Pay button's pre-filled EMI."
-              error={termInvalid ? 'Enter a term greater than zero.' : undefined}
+              error={termInvalid ? POSITIVE_TERM_ERROR : undefined}
             >
               <Input
                 type="number"

@@ -1,0 +1,249 @@
+{
+  "filters": [
+    { "label": "All", "value": "all" },
+    { "label": "Income", "value": "income" },
+    { "label": "Expense", "value": "expense" },
+    { "label": "Transfer", "value": "transfer" },
+    { "label": "Payouts", "value": "payout" },
+    { "label": "Debt payments", "value": "debt" },
+    { "label": "This month", "value": "month" },
+    { "label": "Cash", "value": "account" }
+  ],
+  "amountPresets": [
+    { "amount": "50", "label": "৳ 50" },
+    { "amount": "100", "label": "৳ 100" },
+    { "amount": "250", "label": "৳ 250" },
+    { "amount": "500", "label": "৳ 500" },
+    { "amount": "1000", "label": "৳ 1,000" }
+  ],
+  "transactions": [
+    {
+      "id": "tx-income-salary",
+      "type": "income",
+      "amount": 60000,
+      "accountName": "Main Bank",
+      "categoryName": "Salary",
+      "note": "Monthly salary"
+    },
+    {
+      "id": "tx-income-freelance",
+      "type": "income",
+      "amount": 12000,
+      "accountName": "bKash",
+      "categoryName": "Freelance",
+      "note": "Design work"
+    },
+    {
+      "id": "tx-expense-groceries",
+      "type": "expense",
+      "amount": 1200,
+      "accountName": "Cash",
+      "categoryName": "Groceries",
+      "note": "Weekly shop"
+    },
+    {
+      "id": "tx-expense-rent",
+      "type": "expense",
+      "amount": 18000,
+      "accountName": "Main Bank",
+      "categoryName": "Rent",
+      "note": "Monthly rent"
+    },
+    {
+      "id": "tx-expense-fuel",
+      "type": "expense",
+      "amount": 250,
+      "accountName": "bKash",
+      "categoryName": "Fuel",
+      "note": "Petrol"
+    },
+    {
+      "id": "tx-transfer",
+      "type": "transfer",
+      "amount": 3000,
+      "fromAccountName": "Cash",
+      "toAccountName": "bKash",
+      "note": "Top up wallet"
+    }
+  ],
+  "validation": [
+    {
+      "case": "empty amount",
+      "amount": "",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "zero amount",
+      "amount": "0",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "zero with a decimal point",
+      "amount": "0.0",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "negative amount",
+      "amount": "-250",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "whitespace-only amount",
+      "amount": "   ",
+      "expectedError": "Amount must be greater than zero."
+    }
+  ],
+  "rejectedText": [
+    { "case": "a non-numeric amount", "text": "abc" },
+    { "case": "NaN", "text": "NaN" },
+    { "case": "Infinity", "text": "Infinity" }
+  ],
+  "acceptedAmounts": [
+    { "case": "a plain integer", "amount": "250" },
+    { "case": "two decimal places", "amount": "12.50" },
+    { "case": "scientific notation", "amount": "2.5e2" },
+    { "case": "leading zeroes", "amount": "0250" }
+  ],
+  "categories": {
+    "expense": ["Groceries", "Rent", "Fuel"],
+    "income": ["Salary", "Freelance"]
+  },
+  "T01_lifecycle": {
+    "income": { "amount": "60000", "category": "Salary", "account": "Main Bank" },
+    "expense": { "amount": "1200", "category": "Groceries", "account": "Cash" },
+    "transfer": { "amount": "3000", "from": "Cash", "to": "bKash" },
+    "expected": {
+      "rowSubtitles": ["Main Bank · Salary", "Cash · Groceries", "Transfer · Cash → bKash"],
+      "toast": "Transaction added",
+      "toastBody": "Your record is now in the transactions list.",
+      "amountFormat": "৳ 3,500",
+      "balances": {
+        "Main Bank": "৳ 1,80,000",
+        "Cash": "৳ 800",
+        "bKash": "৳ 5,500"
+      }
+    }
+  },
+  "T02_filters": {
+    "expected": {
+      "groupedUnderAll": true,
+      "flatUnderFiltered": true,
+      "noMatchMessage": "No transactions match this filter. Try a different filter, or add a new transaction.",
+      "countFormat": "entries"
+    },
+    "filterBehaviour": {
+      "Cash": "matches transactions touching an account named exactly Cash",
+      "Payouts": "matches a transaction linked to an investment",
+      "Debt payments": "matches a transaction linked to a debt"
+    }
+  },
+  "T03_amounts": {
+    "invalid": [
+      { "case": "empty amount", "amount": "" },
+      { "case": "zero amount", "amount": "0" },
+      { "case": "zero with a decimal point", "amount": "0.0" },
+      { "case": "negative amount", "amount": "-250" },
+      { "case": "a non-numeric amount", "amount": "abc" },
+      { "case": "NaN", "amount": "NaN" },
+      { "case": "Infinity", "amount": "Infinity" },
+      { "case": "a single space", "amount": " " }
+    ],
+    "valid": [
+      { "case": "a plain integer", "amount": "250" },
+      { "case": "two decimal places", "amount": "12.50" },
+      { "case": "scientific notation", "amount": "2.5e2" },
+      { "case": "leading zeroes", "amount": "0250" }
+    ],
+    "inlineError": "Amount must be greater than zero.",
+    "banner": {
+      "what": "Amount must be greater than zero",
+      "why": "Zero or negative amounts produce empty transactions.",
+      "fix": "Enter a positive number, e.g. 1500."
+    },
+    "helper": "Tap a preset chip to autofill common amounts.",
+    "presets": ["৳ 50", "৳ 100", "৳ 250", "৳ 500", "৳ 1,000"],
+    "placeholders": { "expense": "250", "income": "60,000", "transfer": "5,000" }
+  },
+  "T04_categories": {
+    "expenseGroups": [
+      "Housing",
+      "Utilities & bills",
+      "Daily life",
+      "Family & health",
+      "Giving & saving",
+      "Fun & occasions"
+    ],
+    "incomeCategories": ["Salary", "Freelance", "Business", "Gift", "Other Income"],
+    "showAllPattern": "Show all 35 categories",
+    "hideList": "Hide list",
+    "selectedLabel": "Selected",
+    "clearSelectedName": "Clear selected category"
+  },
+  "T05_transfers": {
+    "amount": "1000",
+    "from": "Cash",
+    "to": "bKash",
+    "zeroAmount": "0",
+    "expected": {
+      "cashProjection": "Balance: ৳ 5,000 → projected balance after save: ৳ 4,000",
+      "bKashProjection": "Balance: ৳ 2,500 → projected balance after save: ৳ 3,500"
+    }
+  },
+  "T06_editForm": {
+    "noteLabel": "Note",
+    "noteHint": "Add or change a note. Leave blank to remove.",
+    "categoryLabel": "Category",
+    "deleteLabel": "🗑 Delete"
+  },
+  "T07_editRecalculates": {
+    "originalAmount": "1200",
+    "editedAmount": "1500",
+    "accountName": "Cash",
+    "expected": {
+      "toast": "Transaction saved",
+      "toastBody": "Your changes are now in your records.",
+      "balanceAfterEdit": "৳ 3,500",
+      "balanceAfterDelete": "৳ 5,000",
+      "thisMonthExpenses": "৳ 1,500",
+      "cashBalanceAfterDelete": "৳ 1,000",
+      "deleteBanner": "Transaction deleted",
+      "deleteBannerBody": "The entry is gone from your records.",
+      "deleteBannerFix": "Open Transactions to see the updated list."
+    }
+  },
+  "T08_delete": {
+    "confirmTitle": "Delete this entry?",
+    "confirmBody": "This permanently removes this transaction from your records. This cannot be undone."
+  },
+  "T09_linkDebt": {
+    "debtName": "Loan from Rahim",
+    "amount": "2000",
+    "expected": {
+      "noneOption": "— None —",
+      "hint": "Tag this transaction as a payment toward a debt.",
+      "remainingBefore": "Remaining: ৳ 15,000",
+      "remainingAfter": "Remaining: ৳ 13,000",
+      "paidAfter": "৳ 7,000",
+      "paidLine": "You've paid ৳ 7,000 of ৳ 20,000"
+    }
+  },
+  "T10_linkInvestment": {
+    "investmentName": "DBBL 1-year FDR",
+    "payoutAccount": "Main Bank",
+    "otherAccount": "Cash",
+    "amount": "109000",
+    "expected": {
+      "hint": "Selecting one routes the money to that investment's payout account.",
+      "fdrProjection": "At maturity (projection): ৳ 1,09,000",
+      "fdrMaturityProjection": "At maturity (projection): ৳ 1,09,000",
+      "mismatchWarningHeading": "Heads up:"
+    }
+  },
+  "T11_formatting": {
+    "amounts": [
+      { "amount": 3500, "formatted": "৳ 3,500" },
+      { "amount": 1234567, "formatted": "৳ 12,34,567" }
+    ],
+    "dayHeaderPattern": "\\d{1,2} [A-Z][a-z]{2} \\d{4}"
+  }
+}

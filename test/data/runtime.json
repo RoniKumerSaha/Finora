@@ -1,0 +1,33 @@
+{
+  "R01_persistence": {
+    "expected": {
+      "database": "finora",
+      "store": "kv",
+      "key": "state",
+      "legacyKey": "finora:v1"
+    }
+  },
+  "R02_cleanInstall": {
+    "expected": {
+      "legacyKey": "finora:v1",
+      "clearedKeys": [
+        "finora:v1",
+        "finora.pin.salt",
+        "finora.pin.hash",
+        "finora.pin.attempts",
+        "finora.pin.lockoutUntil"
+      ]
+    }
+  },
+  "R03_accessibility": {
+    "expected": {
+      "progressbarRole": "progressbar",
+      "progressbarValues": { "aria-valuemin": "0", "aria-valuemax": "100" },
+      "confirmFocusTarget": "Cancel",
+      "bannerRole": "alert",
+      "toastRole": "status",
+      "bannerLines": 3,
+      "toastLines": 2
+    }
+  }
+}

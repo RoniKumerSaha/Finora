@@ -1,0 +1,116 @@
+{
+  "H03_roundTrip": {
+    "expected": {
+      "fileNameFormat": "finora-backup-{yyyy}-{mm}-{dd}.json",
+      "bannerFormat": "Downloaded {filename}",
+      "bannerBody": "This file contains every account, transaction, goal, debt, and investment from your local store.",
+      "bannerFix": "Keep it somewhere safe — it's the only way to restore from a wipe.",
+      "envelopeKeys": ["version", "exportedAt", "data"],
+      "version": 1,
+      "dataKeys": [
+        "accounts",
+        "transactions",
+        "goals",
+        "debts",
+        "investments",
+        "categories",
+        "settings",
+        "monthPlans",
+        "eventPlans",
+        "investmentPlans",
+        "loanPlans"
+      ],
+      "settingsKeys": ["theme", "onboardingComplete"],
+      "confirmTitle": "Replace current data with backup?",
+      "confirmBody": "This will overwrite every account, transaction, goal, debt, and investment currently in the app.",
+      "confirmButton": "Replace",
+      "successToast": "Backup restored",
+      "successToastBody": "Your data is now identical to the backup file.",
+      "successToastFix": "Open Home to see the totals."
+    }
+  },
+  "W01_wipe": {
+    "expected": {
+      "dangerWarning": "This action is destructive. Export first if unsure.",
+      "confirmTitle": "Wipe all data?",
+      "signedOutBody": "Every account, transaction, goal, debt, investment, and plan will be deleted from this device. Your cloud copy (if any) is preserved so signing back in will restore the latest snapshot. This cannot be undone.",
+      "signedInBody": "Every account, transaction, goal, debt, investment, and plan will be deleted from THIS DEVICE and from your cloud copy on Supabase. This cannot be undone.",
+      "confirmButton": "Wipe everything",
+      "signedOutToast": "All data wiped",
+      "signedOutToastBody": "Your local store is now empty. Your cloud copy (if any) is preserved — sign back in to restore.",
+      "signedOutToastFix": "Add an account to start tracking again, or sign back in to pull from the cloud.",
+      "signedInToast": "All data wiped",
+      "signedInToastBody": "Your local store and cloud copy are now empty.",
+      "signedInToastFix": "Add an account to start tracking again."
+    }
+  },
+  "W02_failedCloudDelete": {
+    "expected": {
+      "banner": "Couldn't delete cloud copy",
+      "fix": "Check your connection and try again. Local data was NOT wiped."
+    }
+  },
+  "W03_export": {
+    "expected": {
+      "fileNameFormat": "finora-backup-{yyyy}-{mm}-{dd}.json",
+      "bannerFormat": "Downloaded {filename}",
+      "bannerBody": "This file contains every account, transaction, goal, debt, and investment from your local store.",
+      "bannerFix": "Keep it somewhere safe — it's the only way to restore from a wipe.",
+      "envelopeKeys": ["version", "exportedAt", "data"],
+      "version": 1,
+      "dataKeys": [
+        "accounts",
+        "transactions",
+        "goals",
+        "debts",
+        "investments",
+        "categories",
+        "settings",
+        "monthPlans",
+        "eventPlans",
+        "investmentPlans",
+        "loanPlans"
+      ],
+      "settingsKeys": ["theme", "onboardingComplete"]
+    }
+  },
+  "W04_import": {
+    "expected": {
+      "confirmTitle": "Replace current data with backup?",
+      "confirmBody": "This will overwrite every account, transaction, goal, debt, and investment currently in the app.",
+      "confirmButton": "Replace",
+      "successToast": "Backup restored",
+      "successToastBody": "Your data is now identical to the backup file.",
+      "successToastFix": "Open Home to see the totals."
+    }
+  },
+  "W05_importErrors": {
+    "notJson": { "fileName": "not-json.txt", "content": "this is not json" },
+    "wrongShape": {
+      "fileName": "wrong-shape.json",
+      "content": "{ \"version\": 1, \"data\": { \"accounts\": \"not-an-array\" } }"
+    },
+    "expected": {
+      "notJson": {
+        "what": "Backup file is not valid JSON",
+        "why": "The file couldn't be parsed as JSON — it may be corrupted.",
+        "fix": "Re-export from the source device, or check that the file isn't truncated."
+      },
+      "wrongShape": {
+        "whatFormat": "Backup is missing field: {path}",
+        "missingPath": "exportedAt",
+        "why": "The file doesn't match the Finora V1 backup shape.",
+        "fix": "Make sure you exported from Finora V1 (not V0 or V2)."
+      },
+      "unreadable": {
+        "what": "Could not read the file",
+        "why": "The browser couldn't open the file you picked.",
+        "fix": "Try a different file or copy-paste from TextEdit."
+      }
+    }
+  },
+  "W06_noDeleteCloudCopy": {
+    "dangerZoneButtons": ["Wipe all data"],
+    "forbiddenButton": "Delete cloud copy"
+  }
+}

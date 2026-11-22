@@ -1,0 +1,317 @@
+{
+  "investments": [
+    {
+      "name": "DBBL 1-year FDR",
+      "type": "fdr",
+      "principal": 100000,
+      "rate": 9,
+      "termMonths": 12,
+      "payoutAccountName": "Main Bank",
+      "institution": "DBBL"
+    },
+    {
+      "name": "Monthly DPS",
+      "type": "dps",
+      "principal": 0,
+      "monthlyContribution": 5000,
+      "rate": 8,
+      "termMonths": 12,
+      "payoutAccountName": "Main Bank",
+      "institution": "BRAC"
+    }
+  ],
+  "fdr": {
+    "name": "DBBL 1-year FDR",
+    "type": "fdr",
+    "principal": "100000",
+    "rate": "9",
+    "termMonths": "12",
+    "accountName": "Main Bank",
+    "institution": "DBBL",
+    "principalFormatted": "৳ 1,00,000",
+    "maturityFormatted": "৳ 1,09,000",
+    "maturityPreviewRaw": "৳1,09,000",
+    "interestFormatted": "৳ 9,000",
+    "principalNote": "Principal parked in DBBL 1-year FDR"
+  },
+  "dps": {
+    "name": "Monthly DPS",
+    "type": "dps",
+    "monthlyContribution": "5000",
+    "rate": "8",
+    "termMonths": "12",
+    "accountName": "Main Bank",
+    "institution": "BRAC",
+    "monthlyFormatted": "৳ 5,000/mo",
+    "maturityFormatted": "৳ 62,665",
+    "maturityPreviewRaw": "৳62,665",
+    "interestFormatted": "৳ 2,665"
+  },
+  "I01_fdrLifecycle": {
+    "created": {
+      "name": "DBBL 1-year FDR",
+      "type": "FDR (lump-sum, fixed term)",
+      "principal": "100000",
+      "rate": "9",
+      "term": "12",
+      "account": "Main Bank",
+      "institution": "DBBL"
+    },
+    "expected": {
+      "typePill": "FDR",
+      "termsLine": "9% · 12mo · DBBL",
+      "principalLine": "Principal ৳ 1,00,000",
+      "maturesIn": "Matures in ~1.0y",
+      "nowValue": "৳ 1,00,000",
+      "nowLabel": "NOW",
+      "maturityLabel": "AT MATURITY",
+      "maturityValue": "৳ 1,09,000",
+      "reviewLead": "You'll receive about",
+      "reviewNote": "(projection — actual payout may differ).",
+      "reviewFormula": "Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.",
+      "detailStatusChip": "active",
+      "maturityCaption": "Matures on",
+      "moneyCardHeading": "Maturity",
+      "moneyCardStats": ["Principal", "Maturity value", "Expected interest", "Rate"],
+      "rateStat": "9% / yr",
+      "simpleInterestLine": "Maturity uses simple interest: principal × (1 + rate × years). No compounding.",
+      "payoutAmount": "109000",
+      "payoutNote": "maturity payout — DBBL 1-year FDR",
+      "deleteConfirm": "Delete this investment?",
+      "deleteConfirmButton": "Delete investment",
+      "deleteToast": "Investment deleted",
+      "deleteToastWhy": "Linked contributions remain in your transactions.",
+      "deleteToastFix": "Open Home or Transactions to see them."
+    }
+  },
+  "I02_dpsLifecycle": {
+    "created": {
+      "name": "Monthly DPS",
+      "type": "DPS (monthly installment)",
+      "monthlyContribution": "5000",
+      "rate": "8",
+      "term": "12",
+      "account": "Main Bank"
+    },
+    "contribution": { "amount": "5000", "note": "October installment" },
+    "expected": {
+      "typePill": "DPS",
+      "termsLine": "8% · 12mo",
+      "monthlyLine": "৳ 5,000/mo",
+      "nowValue": "৳ 0",
+      "maturityValue": "৳ 62,665",
+      "balanceBefore": "৳ 1,20,000",
+      "balanceAfter": "৳ 1,15,000",
+      "moneyCardHeading": "Plan vs progress",
+      "contributedStat": "৳ 0",
+      "estimatedPayoutStat": "৳ 62,665",
+      "calloutNow": "What you have now:",
+      "calloutCompounded": "(compounded to today).",
+      "calloutAtMaturity": "At maturity:",
+      "calloutProjection": "(projection if every installment is paid).",
+      "formulaLine": "Maturity uses annuity-due: ৳ 5,000 × ((1 + r)^T − 1) / r × (1 + r) where r = 8%/12 and T = 12 months.",
+      "formulaRate": "r = 8%/12",
+      "formulaTerm": "T = 12 months",
+      "contributionModalTitle": "Add a contribution",
+      "contributionModalBody": "Records an expense from the chosen account and links it to this DPS.",
+      "contributionPlanHint": "Plan: ৳ 5,000 / month",
+      "contributionBanner": "৳ 5,000 toward Monthly DPS",
+      "contributionBannerWhy": "Recorded as an expense transaction linked to this investment.",
+      "contributionBannerFix": "৳ 5,000 contributed so far."
+    }
+  },
+  "I03_validation": {
+    "nameRequired": {
+      "banner": {
+        "what": "Investment name is required",
+        "why": "Investments without a name cannot be tracked.",
+        "fix": "Enter a name (e.g. \"DPS #1\")."
+      }
+    },
+    "amountError": "Amount must be greater than zero.",
+    "rateError": {
+      "banner": {
+        "what": "Rate must be a non-negative number",
+        "why": "Negative rates aren't supported in V1.",
+        "fix": "Enter 0 or a positive percent."
+      }
+    },
+    "termError": {
+      "banner": {
+        "what": "Term must be a positive number of months",
+        "why": "A zero-month term has no maturity date.",
+        "fix": "Enter the term in months, e.g. 12 for 1 year."
+      }
+    },
+    "accountRequired": {
+      "banner": {
+        "what": "Account is required for FDR and savings",
+        "why": "The principal is deducted from this account on creation — without one, the money would silently appear in both the account and the investment.",
+        "fix": "Pick the account you're parking the money in."
+      }
+    },
+    "daysFormula": "Formula: principal × (1 + rate/100 × termDays/365). Simple interest, no compounding.",
+    "acceptedZeroRate": {
+      "rate": "0",
+      "maturityPreviewRaw": "৳1,00,000",
+      "maturityFormatted": "৳ 1,00,000"
+    },
+    "acceptedHighRate": {
+      "rate": "150",
+      "maturityPreviewRaw": "৳2,50,000",
+      "maturityFormatted": "৳ 2,50,000"
+    },
+    "shortTerm": {
+      "termDays": "15",
+      "maturityPreviewRaw": "৳1,00,370"
+    }
+  },
+  "validation": [
+    {
+      "case": "a zero principal",
+      "type": "fdr",
+      "amount": "0",
+      "rate": "9",
+      "term": "12",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "a zero monthly contribution",
+      "type": "dps",
+      "amount": "0",
+      "rate": "8",
+      "term": "12",
+      "expectedError": "Amount must be greater than zero."
+    },
+    {
+      "case": "a negative rate",
+      "type": "fdr",
+      "amount": "100000",
+      "rate": "-1",
+      "term": "12",
+      "expectedError": null
+    },
+    {
+      "case": "a zero term",
+      "type": "fdr",
+      "amount": "100000",
+      "rate": "9",
+      "term": "0",
+      "expectedError": null
+    }
+  ],
+  "variants": [
+    {
+      "case": "a zero rate",
+      "type": "fdr",
+      "amount": "100000",
+      "rate": "0",
+      "term": "12",
+      "maturityPreviewRaw": "৳1,00,000",
+      "maturityFormatted": "৳ 1,00,000",
+      "showsMaturity": false
+    },
+    {
+      "case": "a rate above 100",
+      "type": "fdr",
+      "amount": "100000",
+      "rate": "150",
+      "term": "12",
+      "maturityPreviewRaw": "৳2,50,000",
+      "maturityFormatted": "৳ 2,50,000",
+      "showsMaturity": true
+    }
+  ],
+  "shortTerm": {
+    "case": "a 15-day FDR",
+    "type": "fdr",
+    "principal": "100000",
+    "rate": "9",
+    "termDays": "15",
+    "maturityPreviewRaw": "৳1,00,370"
+  },
+  "I04_principalDeduction": {
+    "accountName": "Main Bank",
+    "principal": "100000",
+    "expected": {
+      "balanceBefore": "৳ 1,20,000",
+      "balanceAfter": "৳ 20,000",
+      "transactionNote": "Principal parked in DBBL 1-year FDR",
+      "transactionAmount": "৳ 1,00,000",
+      "transactionSubtitle": "Main Bank · Investment",
+      "tagLabel": "category: payout",
+      "payoutsFilter": "Payouts"
+    }
+  },
+  "I05_maturity": {
+    "rolloverConfirm": "Roll over into a new term?",
+    "rolloverConfirmButton": "Roll over",
+    "rolloverConfirmBody": "A new investment is created starting the day after this one matures. Terms and rate carry over.",
+    "closeConfirm": "Close this investment?",
+    "closeConfirmButton": "Close investment",
+    "closeConfirmBody": "Marks the investment as closed. The record stays for history, but it won't appear in active summaries.",
+    "expected": {
+      "maturedCaption": "Matured on",
+      "maturedChip": "matured",
+      "rolledOverChip": "rolled_over",
+      "closedChip": "closed",
+      "closedGroup": "Closed",
+      "rolledOverBanner": "DBBL 1-year FDR rolled over",
+      "rolledOverBannerWhy": "A new investment with the same terms starts after maturity.",
+      "closedBanner": "Monthly DPS closed",
+      "closedBannerWhy": "It's been moved out of the active list."
+    }
+  },
+  "I06_currentVsMaturity": {
+    "dps": {
+      "contributed": "5000",
+      "rate": "8",
+      "term": "12",
+      "contributedMonthsAgo": 3,
+      "currentValue": "৳ 5,101",
+      "maturityValue": "৳ 62,665"
+    },
+    "fdr": {
+      "principal": "100000",
+      "rate": "9",
+      "term": "12",
+      "currentValue": "৳ 1,00,000",
+      "maturityValue": "৳ 1,09,000"
+    },
+    "expected": {
+      "summaryCurrentLabel": "Current value",
+      "summaryMaturityLabel": "At maturity",
+      "summaryCurrentCaption": "Money tied up right now",
+      "summaryMaturityCaption": "If every term completes",
+      "summaryCurrentValue": "৳ 1,05,101",
+      "summaryMaturityValue": "৳ 1,71,665",
+      "homeProjectionLabel": "Projection",
+      "homeProjectionCaption": "at maturity"
+    }
+  },
+  "I07_payout": {
+    "payoutAmount": "108000",
+    "calculatedMaturity": "109000",
+    "expected": {
+      "note": "maturity payout — DBBL 1-year FDR",
+      "balanceBefore": "৳ 20,000",
+      "balanceAfter": "৳ 1,28,000",
+      "statusChip": "matured",
+      "payoutTagLabel": "category: payout",
+      "closedBanner": "DBBL 1-year FDR closed",
+      "closedBannerWhy": "It's been moved out of the active list."
+    }
+  },
+  "I08_deleteLeavesTransactions": {
+    "accountName": "Main Bank",
+    "expected": {
+      "confirmTitle": "Delete this investment?",
+      "confirmBody": "1 linked contribution transactions stay in your records. Only the investment record is removed.",
+      "banner": "Investment deleted",
+      "bannerWhy": "Linked contributions remain in your transactions.",
+      "bannerFix": "Open Home or Transactions to see them.",
+      "balanceBefore": "৳ 20,000",
+      "balanceAfter": "৳ 20,000"
+    }
+  }
+}

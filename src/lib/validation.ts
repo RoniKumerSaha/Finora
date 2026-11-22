@@ -19,6 +19,12 @@
 export const POSITIVE_MONEY_ERROR = 'Amount must be greater than zero.';
 export const NON_NEGATIVE_MONEY_ERROR = 'Amount must be zero or greater.';
 
+/** The loan-kind debt rate field's error. */
+export const POSITIVE_RATE_ERROR = 'Enter a rate greater than zero.';
+
+/** The loan-kind debt term field's error. */
+export const POSITIVE_TERM_ERROR = 'Enter a term greater than zero.';
+
 /**
  * Strictly positive money amount.
  *
