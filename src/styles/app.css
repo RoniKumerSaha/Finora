@@ -103,6 +103,54 @@ input::placeholder, textarea::placeholder {
 .row-hover { transition: background-color 120ms ease; }
 .row-hover:hover { background: var(--surface-2); }
 
+/* ============================================================
+   Transaction row — "1d" desktop ledger column (2026-11-24).
+
+   On wide screens the account moves out of the row subtitle and
+   into its own right-aligned column, so account names line up
+   down the list. Below 768px the column is hidden and the
+   account folds back into the subtitle, restoring the original
+   compact two-line row.
+
+   Both subtitle variants are rendered by the component; CSS picks
+   which one is visible. Nothing is reflowed on resize — the
+   switch is display-only.
+
+   Breakpoint (768px) matches the app's md: breakpoint used for
+   the sticky filter bar and the shell layout.
+   ============================================================ */
+
+/* Mobile default: the account lives in the subtitle. */
+.tx-acct-col {
+  display: none;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--muted);
+  text-align: right;
+  max-width: 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tx-sub-col {
+  display: none;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--muted);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tx-sub-inline { display: block; }
+
+@media (min-width: 768px) {
+  /* Desktop: account column visible, subtitle shows category only. */
+  .tx-acct-col  { display: block; }
+  .tx-sub-col   { display: block; }
+  .tx-sub-inline { display: none; }
+}
+
 /* Card link — applied to .card surfaces that are clickable. Subtle
    1px upward translate + shadow tightens from card → modal on hover.
    Decorative only; keyboard focus is already covered by .focus-ring.
@@ -165,6 +213,53 @@ main > * {
   /* Strip Insights chart animations — polylines and bars render in
      their final state. */
   [data-cashflow-line], [data-networth-bar] { animation: none !important; }
+}
+
+/* ── Arrow-of-blocks Flow mark ─────────────────────────────────────────
+   The Monthly statement's Flow column draws each month as a shaft of
+   small blocks (green = income, red = expense), sized as a share of
+   the column's width.
+
+   Colours are slightly MUTED against the live --primary / --danger
+   tokens: the blocks sit shoulder-to-shoulder and read as a texture,
+   so a full set of them at full saturation would out-compete the
+   Income/Expense figures in the columns to the right. But they still
+   have to read as clearly green / red at a glance — muted too far and
+   the shaft turns to mud.
+
+   The blocks mix toward the panel surface rather than toward black —
+   mixing toward black would punch dark holes in the card, while
+   mixing toward the surface makes the blocks sit ON it as a texture.
+
+   Each segment is a repeating linear-gradient of hard-edged bars, so
+   the "blocks" are drawn by the background rather than by N elements —
+   the segment can be any width without a DOM node per block. */
+.flow-blocks {
+  display: flex;
+  align-items: center;
+  height: 12px;
+}
+.flow-blocks .blk-group {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background-repeat: repeat-x;
+  background-size: 7px 100%;
+  background-position: left center;
+}
+.flow-blocks .blk-in {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--primary) 78%, var(--surface-2)) 0 5px,
+    transparent 5px 7px
+  );
+}
+.flow-blocks .blk-out {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--danger) 78%, var(--surface-2)) 0 5px,
+    transparent 5px 7px
+  );
 }
 
 /* Banner slide-in keyframe — paired with RoleAlertBanner's transition.

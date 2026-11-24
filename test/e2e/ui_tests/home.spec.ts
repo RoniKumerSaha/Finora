@@ -24,8 +24,6 @@ import {
   homeLedgerState,
   insightsRangeState,
   negativeNetWorthState,
-  trendsNoPreviousState,
-  trendsState,
 } from '../fixtures/seed-data';
 import homeInsightsJson from '../../data/home-insights.json' with { type: 'json' };
 
@@ -184,9 +182,9 @@ test.describe('Home and Insights', () => {
             'aria-label',
             h02.sectionLabels.netWorth.replace('{range}', range),
           );
-          await expect(insights.trendsSection).toHaveAttribute(
+          await expect(insights.statementSection).toHaveAttribute(
             'aria-label',
-            h02.sectionLabels.trends.replace('{range}', range),
+            h02.sectionLabels.statement.replace('{range}', range),
           );
         });
       }
@@ -222,7 +220,7 @@ test.describe('Home and Insights', () => {
       await expect(insights.activeRangePill).toHaveText(h02.defaultRange);
     });
 
-    await test.step('Read the four cards', async () => {
+    await test.step('Read the cards', async () => {
       // "Cash flow" — sub-line, legend, net line.
       await expect(insights.cashFlowHeading).toHaveText(h02.expected.cashFlowHeading);
       await expect(insights.cashFlowSubLine).toHaveText(
@@ -237,25 +235,32 @@ test.describe('Home and Insights', () => {
       );
       await expect(insights.netCashFlow).toHaveText(h02.figures.netCashFlow);
 
-      // "Spending by category" — the total plus the top categories.
-      await expect(insights.spendingCard.getByRole('heading')).toHaveText(
-        h02.expected.spendingHeading,
+      // "What stands out" — the generated insight feed.
+      await expect(insights.insightFeedHeading).toHaveText(
+        h02.expected.insightFeedHeading,
       );
-      await expect(insights.spendingTotal).toHaveText(
-        h02.figures.spendingTotal,
+      await expect(insights.insightFeedSubLine).toHaveText(
+        h02.expected.insightFeedSubLine,
       );
-      for (const category of h02.figures.spendingRows) {
-        await expect(insights.spendingRow(category)).toBeVisible();
-      }
+      expect(await insights.insightItems.count()).toBeGreaterThan(0);
 
-      // "Net worth" — the "Now" label and the hover hint.
-      await expect(insights.netWorthHeading).toHaveText(h02.expected.netWorthHeading);
-      await expect(insights.netWorthNowLabel).toHaveText(h02.expected.netWorthNow);
-      await expect(insights.netWorthHint).toHaveText(h02.expected.netWorthHint);
+      // "Where your money sits" — the composition donut.
+      await expect(insights.compositionHeading).toHaveText(
+        h02.expected.compositionHeading,
+      );
+      await expect(insights.compositionRing).toBeVisible();
+      expect(await insights.compositionSlices.count()).toBeGreaterThan(0);
 
-      // "Trends".
-      await expect(insights.trendsHeading).toHaveText(h02.expected.trendsHeading);
-      await expect(insights.trendsSubLine).toHaveText(h02.expected.trendsSubLine);
+      // "Investments" and "Loans" — the two summaries.
+      await expect(insights.investmentsHeading).toHaveText(
+        h02.expected.investmentsHeading,
+      );
+      await expect(insights.loansHeading).toHaveText(h02.expected.loansHeading);
+
+      // "Monthly statement".
+      await expect(insights.statementHeading).toHaveText(
+        h02.expected.statementHeading,
+      );
     });
 
     await test.step('The "All time" chart is truncated to the last 12 months', async () => {
@@ -277,130 +282,88 @@ test.describe('Home and Insights', () => {
       await expect(insights.cashFlowTooltip).toBeVisible();
     });
 
-    await test.step('Hover a net-worth bar', async () => {
-      await insights.hoverNetWorthMonth(5);
+    await test.step('The Monthly statement always runs January to December', async () => {
+      // The statement is a fixed yearly ledger — the range pills do
+      // not change it.
+      for (const range of h02.ranges) {
+        await insights.selectRange(range as 'All time');
 
-      // The caption under the chart replaces the hover hint.
-      await expect(insights.netWorthHint).toHaveCount(0);
+        await expect(insights.statementRows).toHaveCount(12);
+
+        const labels = await insights.statementRows.evaluateAll((els) =>
+          els.map((e) => e.getAttribute('data-statement-row') ?? ''),
+        );
+        expect(labels[0]).toMatch(/^Jan /);
+        expect(labels[labels.length - 1]).toMatch(/^Dec /);
+      }
     });
 
-    await test.step('The footnote links to Goals, Debts and Investments', async () => {
-      await expect(insights.trendsFootnote).toHaveText(h02.expected.footnote);
-      for (const link of h02.expected.footnoteLinks) {
-        await expect(
-          insights.trendsFootnoteLink(link as 'Goals'),
-        ).toBeVisible();
-      }
+    await test.step('Each statement row carries a Flow bar', async () => {
+      await insights.selectRange('Last 6 months');
+
+      await expect(insights.flowBars).toHaveCount(12);
     });
   });
 
   // ─────────────────────────────────────────────────────────────────
-  // FIN-H04 — the Trends rows and the period-comparison caption
+  // FIN-H04 — the Monthly statement is a fixed January-to-December ledger
   // ─────────────────────────────────────────────────────────────────
 
-  test('FIN-H04 The Insights trends rows and the period-comparison caption', { tag: '@smoke' }, async ({ page }) => {
-    const h04 = data.H04_trends;
-    await seedState(page, trendsState());
+  test('FIN-H04 The Monthly statement runs January to December', { tag: '@smoke' }, async ({ page }) => {
+    const h04 = data.H04_statement;
+    await seedState(page, insightsRangeState());
 
-    await test.step('Open Insight and read the "Trends over …" card', async () => {
+    await test.step('Open Insight and read the "Monthly statement over …" card', async () => {
       await insights.goto();
 
       // The app's default range is "Last 6 months" — the third pill.
-      await expect(insights.trendsSection).toHaveAttribute(
+      await expect(insights.statementSection).toHaveAttribute(
         'aria-label',
-        h04.expected.headingFormat.replace('{range}', h04.ranges[2]),
+        h04.expected.sectionHeading.replace('{range}', h04.ranges[2]),
       );
-      await expect(insights.trendsSubLine).toHaveText(h04.expected.subLine);
+      await expect(insights.statementHeading).toHaveText(h04.expected.heading);
     });
 
-    await test.step('Read the four stacked rows', async () => {
-      for (const row of h04.expected.rows) {
-        await expect(
-          insights.trendRow(row.label as 'Savings rate'),
-        ).toBeVisible();
-        await expect(
-          insights.trendHint(row.label as 'Savings rate'),
-        ).toHaveText(row.hint);
-      }
+    await test.step('The statement has exactly twelve rows, January first', async () => {
+      await expect(insights.statementRows).toHaveCount(h04.expected.rowCount);
+
+      const labels = await insights.statementRows.evaluateAll((els) =>
+        els.map((e) => e.getAttribute('data-statement-row') ?? ''),
+      );
+      expect(labels[0].startsWith(h04.expected.firstMonth)).toBe(true);
+      expect(labels[labels.length - 1].startsWith(h04.expected.lastMonth)).toBe(true);
     });
 
-    await test.step('Switch to Last 3 months, then Last 6 months, then Last 12 months', async () => {
-      for (const range of ['Last 3 months', 'Last 6 months', 'Last 12 months'] as const) {
+    await test.step('The range pills do not change the statement', async () => {
+      for (const range of h04.ranges) {
         await test.step(`Switch to ${range}`, async () => {
-          await insights.selectRange(range);
+          await insights.selectRange(range as 'All time');
 
-          // The comparison caption reads "↑ X% vs previous N months".
-          await expect(
-            insights.trendCaption('Average monthly expense'),
-          ).toHaveText(h04.figures.captions[range]);
-
-          // The average itself follows the range.
-          await expect(
-            insights.trendValue('Average monthly expense'),
-          ).toHaveText(h04.figures.avgMonthlyExpense[range]);
+          await expect(insights.statementRows).toHaveCount(h04.expected.rowCount);
         });
       }
     });
 
-    await test.step('Switch to This month and All time', async () => {
-      for (const range of ['This month', 'All time'] as const) {
-        await test.step(`Switch to ${range}`, async () => {
-          await insights.selectRange(range);
-
-          // The caption is SUPPRESSED — never shown as "0%" and never
-          // as "NaN%".
-          await expect(insights.trendCaption('Average monthly expense')).toHaveCount(0);
-        });
-      }
-    });
-
-    await test.step('Only the "Average monthly expense" row carries a comparison caption', async () => {
+    await test.step('Every row carries a Flow bar', async () => {
       await insights.selectRange('Last 6 months');
 
-      for (const row of ['Savings rate', 'Days of runway', 'Investment growth'] as const) {
-        await expect(insights.trendCaption(row)).toHaveCount(0);
-      }
+      await expect(insights.flowBars).toHaveCount(h04.expected.rowCount);
     });
 
-    await test.step('The caption is suppressed when the previous window has no data', async () => {
-      await reseedState(page, trendsNoPreviousState());
-      await insights.goto();
-      await insights.selectRange('Last 6 months');
+    await test.step('A month with activity has both an income and an expense segment', async () => {
+      // The seeded salary lands in one month; the Flow bar splits into
+      // an income segment and an expense segment.
+      const incomeSegments = await page.locator('[data-flow-segment="income"]').count();
+      const expenseSegments = await page.locator('[data-flow-segment="expense"]').count();
 
-      await expect(insights.trendCaption('Average monthly expense')).toHaveCount(0);
+      expect(incomeSegments).toBeGreaterThan(0);
+      expect(expenseSegments).toBeGreaterThan(0);
     });
 
-    await test.step('Read the "Savings rate", "Days of runway" and "Investment growth" rows', async () => {
-      await reseedState(page, trendsState());
-      await insights.goto();
-
-      // No income in the fixture → the savings rate renders "—".
-      await expect(insights.trendValue('Savings rate')).toHaveText(
-        h04.figures.savingsRate,
-      );
-
-      // There IS spend data → the runway is a real "N d" figure.
-      await expect(insights.trendValue('Days of runway')).toHaveText(
-        new RegExp(h04.figures.runwayPattern),
-      );
-
-      await expect(insights.trendValue('Investment growth')).toHaveText(
-        h04.figures.investmentGrowth,
-      );
-      await expect(insights.trendHint('Investment growth')).toHaveText(
-        h04.figures.investmentGrowthHint,
-      );
-    });
-
-    await test.step('No "NaN" or "0% vs previous" artefact appears', async () => {
-      const body = await insights.trendsSection.innerText();
+    await test.step('No "NaN" or "undefined" artefact appears', async () => {
+      const body = await insights.statementSection.innerText();
       for (const forbidden of h04.figures.forbiddenText) {
         expect(body).not.toContain(forbidden);
-      }
-      // A bare "0% vs previous" caption would mean the comparison
-      // fired on an empty previous window.
-      for (const pattern of h04.figures.forbiddenPatterns) {
-        expect(body).not.toMatch(new RegExp(pattern, 'm'));
       }
     });
   });
@@ -473,7 +436,7 @@ test.describe('Home and Insights', () => {
       await insights.goto();
     });
 
-    await test.step('Read the cash-flow, spending and net-worth cards', async () => {
+    await test.step('Read the cash-flow card', async () => {
       // The cash-flow card keeps its chart on an empty profile: the
       // month window is always populated, so the legend totals and
       // the net line read zero rather than the card vanishing.
@@ -485,38 +448,30 @@ test.describe('Home and Insights', () => {
         h06.figures.legendExpense,
       );
       await expect(insights.netCashFlow).toHaveText(h06.figures.netCashFlow);
-
-      await expect(insights.spendingEmptyState).toHaveText(
-        h06.expected.spendingEmpty,
-      );
-      await expect(insights.netWorthEmptyState).toHaveText(
-        h06.expected.netWorthEmpty,
-      );
     });
 
-    await test.step('On the profile with no investments, read the "Investment growth" row', async () => {
-      await expect(insights.trendValue('Investment growth')).toHaveText(
-        h06.expected.investmentGrowthEmpty,
-      );
-      await expect(insights.trendHint('Investment growth')).toHaveText(
-        h06.expected.investmentGrowthHintEmpty,
-      );
+    await test.step('Read the empty composition, investments and loans cards', async () => {
+      await expect(
+        insights.netWorthSection.getByText(h06.expected.compositionEmpty, {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        insights.investmentsHeading
+          .locator('xpath=ancestor::div[contains(@class,"card")]')
+          .getByText(h06.expected.investmentsEmpty, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        insights.loansHeading
+          .locator('xpath=ancestor::div[contains(@class,"card")]')
+          .getByText(h06.expected.loansEmpty, { exact: true }),
+      ).toBeVisible();
     });
 
-    await test.step('Look for goals, debts and investments widgets on the Insight screen', async () => {
-      // The footnote links to the three screens, but NO widget cards
-      // are rendered for them.
+    await test.step('Look for a goals widget on the Insight screen', async () => {
+      // Goals live on their own screen — no widget card here.
       for (const widget of h06.expected.absentWidgets) {
         await expect(insights.headingNamed(widget)).toHaveCount(0);
-      }
-    });
-
-    await test.step('The footnote is present with links to Goals, Debts and Investments', async () => {
-      await expect(insights.trendsFootnote).toHaveText(h06.expected.footnote);
-      for (const link of h06.figures.footnoteLinks) {
-        await expect(
-          insights.trendsFootnoteLink(link as 'Goals'),
-        ).toBeVisible();
       }
     });
 

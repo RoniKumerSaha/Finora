@@ -7,13 +7,15 @@
  *   - five range pills: This month · Last 3 months · Last 6 months ·
  *     Last 12 months · All time. The default is "Last 6 months" and
  *     the choice persists to `localStorage["finora.insights.range"]`.
- *   - three labelled sections: `Cash flow over {range}`,
- *     `Net worth over {range}` and `Trends over {range}`.
- *   - the Trends card renders four rows — "Average monthly expense",
- *     "Savings rate", "Days of runway", "Investment growth" — each
- *     with an optional "vs previous N months" caption under the value.
+ *   - four labelled sections: `Cash flow over {range}`,
+ *     `Net worth over {range}`, `Monthly statement over {range}` and
+ *     the Investments/Loans row (which carries no aria-label).
+ *   - the "What stands out" card renders a generated feed of insights.
+ *   - the "Where your money sits" card is a donut of the net worth.
+ *   - the Investments and Loans cards summarise those two areas.
+ *   - the Monthly statement is a fixed Jan–Dec calendar of 12 rows.
  */
-import { expect, type Locator } from '@playwright/test';
+import { type Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export type RangeLabel =
@@ -22,12 +24,6 @@ export type RangeLabel =
   | 'Last 6 months'
   | 'Last 12 months'
   | 'All time';
-
-export type TrendLabel =
-  | 'Average monthly expense'
-  | 'Savings rate'
-  | 'Days of runway'
-  | 'Investment growth';
 
 export class InsightsPage extends BasePage {
   /** The screen's H1 — "Insight" (singular). */
@@ -60,48 +56,17 @@ export class InsightsPage extends BasePage {
     return this.page.locator('section[aria-label^="Cash flow over"]');
   }
 
-  /** The "Net worth over {range}" section. */
+  /** The "Net worth over {range}" section — now the composition donut. */
   get netWorthSection(): Locator {
     return this.page.locator('section[aria-label^="Net worth over"]');
   }
 
-  /** The "Trends over {range}" section. */
-  get trendsSection(): Locator {
-    return this.page.locator('section[aria-label^="Trends over"]');
+  /** The "Monthly statement over {range}" section. */
+  get statementSection(): Locator {
+    return this.page.locator('section[aria-label^="Monthly statement over"]');
   }
 
-  /** The "Spending by category" card. */
-  get spendingCard(): Locator {
-    return this.page.locator('div.card').filter({ hasText: 'Spending by category' }).first();
-  }
-
-  /**
-   * A Trends row, addressed by its label.
-   *
-   * `TrendRow` renders label + hint on the left and value (+ optional
-   * caption) on the right, inside a bordered grid row. Scoping to the
-   * label's grandparent row keeps the value and the caption together.
-   */
-  trendRow(label: TrendLabel): Locator {
-    return this.trendsSection
-      .getByText(label, { exact: true })
-      .locator('xpath=../..');
-  }
-
-  /** A Trends row's hint line. */
-  trendHint(label: TrendLabel): Locator {
-    return this.trendRow(label).locator('div.text-\\[11\\.5px\\]');
-  }
-
-  /** A Trends row's value figure. */
-  trendValue(label: TrendLabel): Locator {
-    return this.trendRow(label).locator('div.text-\\[16px\\], div.text-\\[18px\\]');
-  }
-
-  /** A Trends row's optional "vs previous N months" caption. */
-  trendCaption(label: TrendLabel): Locator {
-    return this.trendRow(label).locator('div.text-\\[11px\\]');
-  }
+  // ---------- Cash flow ----------
 
   /** The "Cash flow" card heading. */
   get cashFlowHeading(): Locator {
@@ -186,141 +151,146 @@ export class InsightsPage extends BasePage {
     return this.cashFlowSection.getByText('No transactions in this period.', { exact: true });
   }
 
-  /**
-   * The "Spending by category" card's total figure.
-   *
-   * The header renders the caption as
-   * `Total <span class="text-ink font-semibold">৳X</span>`, so the
-   * figure is the one `<span>` inside the caption div.
-   */
-  get spendingTotal(): Locator {
-    return this.spendingCard
-      .locator('div.text-\\[13px\\].text-muted')
-      .locator('span.font-semibold');
+  // ---------- "What stands out" feed ----------
+
+  /** The "What stands out" card heading. */
+  get insightFeedHeading(): Locator {
+    return this.page.getByRole('heading', { name: 'What stands out' });
   }
 
-  /** The "Spending by category" card's total caption, label included. */
-  get spendingTotalCaption(): Locator {
-    return this.spendingCard.locator('div.text-\\[13px\\].text-muted');
+  /** The feed's sub-line. */
+  get insightFeedSubLine(): Locator {
+    return this.page.getByText('Generated from the chosen range', { exact: true });
   }
 
-  /** The "Spending by category" card's empty-state message. */
-  get spendingEmptyState(): Locator {
-    return this.spendingCard.getByText('No expenses in this period.', { exact: true });
+  /** Every insight in the feed. */
+  get insightItems(): Locator {
+    return this.page.locator('[data-insight-item]');
   }
 
-  /**
-   * A Spending-by-category row, by the category name.
-   *
-   * The row is name + amount on one line and a progress bar below, so
-   * the name's parent is the row's text line.
-   */
-  spendingRow(category: string): Locator {
-    return this.spendingCard.getByText(category, { exact: true }).locator('..');
+  /** One insight in the feed, by its heading text. */
+  insightItem(label: string): Locator {
+    return this.page.locator('[data-insight-item]').filter({ hasText: label });
   }
 
-  /** The "Net worth" card heading. */
-  get netWorthHeading(): Locator {
-    return this.page.getByRole('heading', { name: 'Net worth' });
+  // ---------- Composition donut ----------
+
+  /** The "Where your money sits" card heading. */
+  get compositionHeading(): Locator {
+    return this.page.getByRole('heading', { name: 'Where your money sits' });
   }
 
-  /** The Net worth card's "Now" label. */
-  get netWorthNowLabel(): Locator {
-    return this.netWorthSection.getByText('Now', { exact: true });
+  /** The composition donut's SVG. */
+  get compositionRing(): Locator {
+    return this.page.locator('[data-composition-ring]');
   }
 
-  /**
-   * The Net worth card's "Now" figure.
-   *
-   * The label and the figure are siblings inside the right-hand
-   * column, so the figure is the label's next sibling.
-   */
-  get netWorthNowValue(): Locator {
-    return this.netWorthNowLabel.locator('..').locator('div.text-\\[22px\\]');
+  /** Every slice in the donut legend. */
+  get compositionSlices(): Locator {
+    return this.page.locator('[data-composition-slice]');
   }
 
-  /** The Net worth card's hover hint. */
-  get netWorthHint(): Locator {
-    return this.netWorthSection.getByText("Hover any bar for that month's figure.", {
-      exact: true,
-    });
+  /** One slice of the donut legend, by its key (cash, savings, ...). */
+  compositionSlice(key: string): Locator {
+    return this.page.locator(`[data-composition-slice="${key}"]`);
   }
 
-  /** The Net worth card's empty-state message. */
-  get netWorthEmptyState(): Locator {
-    return this.netWorthSection.getByText('No balance history in this period.', {
-      exact: true,
-    });
+  /** The donut's core figure — the net worth. */
+  get compositionCoreValue(): Locator {
+    return this.page.locator('[data-composition-ring]').locator('text');
   }
 
-  /**
-   * A net-worth chart hit strip — the invisible `<rect>` that raises
-   * the hover label for one month.
-   */
-  netWorthHitStrip(index: number): Locator {
-    return this.netWorthSection.locator('svg[role="img"] rect[fill="transparent"]').nth(index);
+  /** The closing sentence under the donut. */
+  get compositionSummary(): Locator {
+    return this.netWorthSection.getByText(/Cash covers \d+% of what you own\./);
   }
 
-  /**
-   * The Net worth chart's hovered-month caption.
-   *
-   * It replaces the "Hover any bar …" hint while a bar is hovered, so
-   * its presence IS the hover signal.
-   */
-  get netWorthHoveredCaption(): Locator {
-    return this.netWorthSection.locator('div.text-\\[11px\\].text-muted.mt-2.tabular');
+  // ---------- Investments ----------
+
+  /** The "Investments" card heading. */
+  get investmentsHeading(): Locator {
+    return this.page.getByRole('heading', { name: 'Investments' });
   }
 
-  /**
-   * Hover one month of the net-worth chart.
-   *
-   * The hit strip is painted first, so the bar sits on top of it and
-   * would swallow the pointer. The strip spans the whole month
-   * column, so the pointer lands at the column's left edge — clear
-   * of the bar, still inside the strip.
-   */
-  async hoverNetWorthMonth(index: number): Promise<void> {
-    const strip = this.netWorthHitStrip(index);
-    const box = await strip.boundingBox();
-    if (!box) throw new Error(`Net-worth hit strip ${index} has no bounding box`);
-    await strip.hover({ position: { x: 2, y: Math.round(box.height / 2) } });
-    await expect(this.netWorthHoveredCaption).toBeVisible();
+  /** The Investments card's scheme rows. */
+  get investmentRows(): Locator {
+    return this.page.locator('[data-investment-row]');
   }
 
-  /** The "Trends" card heading. */
-  get trendsHeading(): Locator {
-    return this.page.getByRole('heading', { name: 'Trends' });
+  /** The Investments card's "See all" link. */
+  get investmentsSeeAll(): Locator {
+    return this.page.getByRole('link', { name: 'See all', exact: true });
   }
 
-  /** The Trends card's sub-line — "Aggregates over the chosen range". */
-  get trendsSubLine(): Locator {
-    return this.page.getByText('Aggregates over the chosen range', { exact: true });
+  /** The Investments card's "+N more schemes" line, when it renders. */
+  get investmentsMoreLine(): Locator {
+    return this.page.getByText(/^\+\d+ more scheme/, { exact: false });
   }
 
-  /** The Trends card's footnote. */
-  get trendsFootnote(): Locator {
-    return this.trendsSection.getByText(
-      'Goal / Debt / Investment lists live on their own screens',
-      { exact: true },
-    );
+  // ---------- Loans ----------
+
+  /** The "Loans" card heading. */
+  get loansHeading(): Locator {
+    return this.page.getByRole('heading', { name: 'Loans' });
   }
 
-  /** The Trends footnote's cross-links. */
-  get trendsFootnoteLinks(): Locator {
-    return this.trendsSection.getByRole('link');
+  /** The Loans card's loan rows. */
+  get loanRows(): Locator {
+    return this.page.locator('[data-loan-row]');
   }
 
-  /** A Trends footnote link, by its label. */
-  trendsFootnoteLink(label: 'Goals' | 'Debts' | 'Investments'): Locator {
-    return this.trendsSection.getByRole('link', { name: label, exact: true });
+  /** The Loans card's "+N more loans" line, when it renders. */
+  get loansMoreLine(): Locator {
+    return this.page.getByText(/^\+\d+ more loan/, { exact: false });
+  }
+
+  // ---------- Monthly statement ----------
+
+  /** The "Monthly statement" card heading. */
+  get statementHeading(): Locator {
+    return this.page.getByRole('heading', { name: 'Monthly statement' });
+  }
+
+  /** Every row of the Monthly statement. */
+  get statementRows(): Locator {
+    return this.page.locator('[data-statement-row]');
+  }
+
+  /** One row of the Monthly statement, by its "Mon YYYY" label. */
+  statementRow(label: string): Locator {
+    return this.page.locator(`[data-statement-row="${label}"]`);
+  }
+
+  /** The Monthly statement's Flow bars — one per row. */
+  get flowBars(): Locator {
+    return this.page.locator('[data-flow-bar]');
+  }
+
+  /** One row's Flow bar. */
+  flowBar(label: string): Locator {
+    return this.page.locator(`[data-statement-row="${label}"]`).locator('[data-flow-bar]');
+  }
+
+  /** The income segment of a row's Flow bar. */
+  flowIncomeSegment(label: string): Locator {
+    return this.flowBar(label).locator('[data-flow-segment="income"]');
+  }
+
+  /** The expense segment of a row's Flow bar. */
+  flowExpenseSegment(label: string): Locator {
+    return this.flowBar(label).locator('[data-flow-segment="expense"]');
+  }
+
+  /** The Monthly statement's "Total" row. */
+  get statementTotalRow(): Locator {
+    return this.statementSection.getByText('Total', { exact: true }).locator('..');
   }
 
   /**
    * A heading with an exact accessible name.
    *
    * The Insight screen is asserted for the widgets it does NOT
-   * render — Goals, Debts and Investments each get their own screen
-   * — so the absence of a heading by name is the assertion.
+   * render, so the absence of a heading by name is the assertion.
    */
   headingNamed(name: string): Locator {
     return this.page.getByRole('heading', { name, exact: true });
@@ -341,6 +311,6 @@ export class InsightsPage extends BasePage {
    */
   async selectRange(label: RangeLabel): Promise<void> {
     await this.rangePill(label).click();
-    await this.trendsSection.waitFor({ state: 'visible' });
+    await this.cashFlowSection.waitFor({ state: 'visible' });
   }
 }

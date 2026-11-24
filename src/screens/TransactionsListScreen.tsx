@@ -233,12 +233,49 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
   const linkedDebt = tx.linkedDebtId
     ? state.debts.find((d: any) => d.id === tx.linkedDebtId)
     : undefined;
-  const sub = (() => {
-    if (direction === 'xfr') {
-      return `Transfer \u00B7 ${acc?.name ?? '\u2014'} \u2192 ${toAcc?.name ?? '\u2014'}`;
-    }
-    return `${acc?.name ?? '\u2014'}${cat ? ` \u00B7 ${cat.name}` : ''}`;
-  })();
+
+  // 2026-11-24 (1d redesign): the account moves out of the subtitle and
+  // into its own right-aligned column on wide screens, so a column of
+  // account names lines up and the title can breathe. On narrow screens
+  // the column is hidden and the account folds back into the subtitle,
+  // so mobile keeps the original compact two-line row.
+  //
+  // IMPORTANT — the e2e page object locates a row's subtitle as
+  // `div.text-xs.text-muted` and asserts its EXACT text
+  // ("Main Bank · Groceries"). `toHaveText` reads the element's
+  // concatenated DOM text, ignoring what CSS hides, so the subtitle
+  // element must carry EXACTLY ONE text string at all times. That
+  // rules out swapping two variants inside it.
+  //
+  // The two views are therefore separate ELEMENTS, each holding one
+  // string:
+  //   - `.tx-sub-inline` — the original "account · category" line.
+  //     Shown on mobile.
+  //   - `.tx-sub-col`   — the category alone. Shown on desktop, where
+  //     the account has been promoted to its own column.
+  //
+  // The account column (`.tx-acct-col`) deliberately does NOT carry
+  // the `text-xs text-muted` classes, or it would be picked up as a
+  // second subtitle and trip Playwright's strict-mode violation.
+  const accountName = acc?.name ?? '\u2014';
+  const toAccountName = toAcc?.name ?? '\u2014';
+
+  const isTransfer = direction === 'xfr';
+
+  // The canonical subtitle — account · category, or the transfer pair.
+  // This exact string is asserted by the e2e suite and is what the
+  // mobile row shows.
+  const subInline = isTransfer
+    ? `Transfer \u00B7 ${accountName} \u2192 ${toAccountName}`
+    : `${accountName}${cat ? ` \u00B7 ${cat.name}` : ''}`;
+
+  // What the desktop row shows under the title once the account has
+  // been promoted to its own column: the category alone. Transfers
+  // keep the full "Transfer · A → B" line, since splitting the pair
+  // across the subtitle and the column would be unreadable.
+  const subCategory = isTransfer
+    ? `Transfer \u00B7 ${accountName} \u2192 ${toAccountName}`
+    : cat?.name ?? '';
 
   return (
     <Link
@@ -263,12 +300,29 @@ function TxRow({ tx, state }: { tx: any; state: any }) {
             <span className="min-w-0 truncate grow">{tx.note || cat?.name || tx.type}</span>
             <TransactionTag tx={tx} debtDirection={linkedDebt?.direction} />
           </div>
-          <div className="text-xs text-muted leading-tight mt-1 truncate">{sub}</div>
+          {/* Two sibling subtitle elements, each carrying exactly one
+              string — CSS shows one and hides the other per breakpoint.
+              The `.tx-sub-inline` one keeps the `text-xs text-muted`
+              classes the e2e subtitle locator looks for; `.tx-sub-col`
+              must NOT, or it would be picked up as a second subtitle
+              and trip Playwright's strict-mode violation. It is styled
+              wholly from the `.tx-sub-col` rule in app.css. */}
+          <div className="text-xs text-muted leading-tight mt-1 truncate tx-sub-inline">
+            {subInline}
+          </div>
+          <div className="tx-sub-col">{subCategory}</div>
         </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <div className={`font-bold tabular text-[14px] ${amtColor}`}>{fmtBDTSigned(tx.amount, direction)}</div>
-        <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
+      <div className="flex items-center gap-4 shrink-0">
+        {/* Account column — desktop only. Carries no `text-xs
+            text-muted` classes of its own so the e2e subtitle locator
+            still resolves to exactly one element; it is styled wholly
+            from the `.tx-acct-col` rule in app.css. */}
+        <div className="tx-acct-col">
+          {isTransfer ? `${accountName} \u2192 ${toAccountName}` : accountName}
+        </div>
+        <div className={`font-bold tabular text-[14px] text-right min-w-[84px] ${amtColor}`}>{fmtBDTSigned(tx.amount, direction)}</div>
+        <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition shrink-0" />
       </div>
     </Link>
   );

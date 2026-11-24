@@ -120,7 +120,10 @@ export function HomeScreen() {
   }, lastMonthEnd).currentNetWorth;
   const netWorthDelta = currentNetWorth - lastMonthNetWorth;
 
-  const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 4);
+  // 2026-11-24 (Variant D): the Recent activity preview was raised
+  // from 4 rows to 5 — it now sits in the prime position beside the
+  // hero, so it earns the extra row. The list is sorted newest-first.
+  const recentTx = txs.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,72 +138,51 @@ export function HomeScreen() {
         </div>
       </div>
 
-      {/* Variant B — Focus pair. The left tile is the headline answer
-          (net worth) at 2fr; the right tile is the supporting "this
-          month" summary at 1fr. Both stack to a single column below
-          sm (640px) so the 56px hero figure doesn't overflow. */}
-      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4">
+      {/* 2026-11-24 (Variant D — Activity first). Recent activity is
+          promoted into the prime position beside the hero, because in
+          a daily-use bookkeeping app the ledger is what the user came
+          to look at. Accounts / This month / Balance sheet drop into a
+          three-up row beneath.
+
+          The 4-up formula strip is dissolved: Cash and Debts move into
+          the hero's 2×2 mini grid, and Investments + Receivables move
+          into the Balance sheet card. The strip's `StripCell` markup
+          is reused for both, so the e2e page object's `stripValue` /
+          `stripHint` locators still resolve — they are keyed on the
+          label text, not on the strip's position. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] gap-4">
         <NetWorthHero
           current={currentNetWorth}
           projected={projectedNetWorth}
           delta={netWorthDelta}
+          cash={totalBalance}
+          cashHint={accList.length === 0
+            ? 'No accounts yet'
+            : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}`}
+          debts={debtIOweRemaining}
+          debtsHint={
+            activeDebtCount === 0
+              ? 'no active debts'
+              : `You owe across ${activeDebts.filter(d => d.direction === 'i_owe').length} ${activeDebts.filter(d => d.direction === 'i_owe').length === 1 ? 'debt' : 'debts'}`
+          }
         />
-        <ThisMonthCard
-          income={income}
-          expenses={expenses}
-          monthLabel={monthKeyLabel(y, m)}
-          entryCount={incomeCount + expenseCount}
-        />
+
+        <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
+          {recentTx.length === 0
+            ? <div className="p-4"><EmptyState
+                illustration={<TransactionsIllustration />}
+                title="No transactions yet"
+                description="Record income, expenses, or transfers to see them here."
+                cta={{ to: '/transactions/new', label: '+ Add a transaction' }}
+                learnMoreTopic="transactions"
+              /></div>
+            : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
+          }
+        </Card>
       </div>
 
-      {/* Variant B — Slim 4-up strip. The four pieces of the net worth
-          formula live here explicitly: Cash + Receivables + Investments
-          − Debts = currentNetWorth. Each cell carries its own tone so
-          the strip isn't a colourless rail; together they add up
-          audibly to the hero figure above. */}
-      <div className="card !p-0 overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
-          <StripCell
-            label="Cash"
-            value={fmtBDT(totalBalance)}
-            hint={accList.length === 0
-              ? 'No accounts yet'
-              : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}`}
-            valueTone="primary"
-          />
-          <StripCell
-            label="Receivables"
-            value={fmtBDT(debtOwedToMeRemaining)}
-            hint={
-              activeDebtCount === 0 || debtOwedToMeRemaining === 0
-                ? 'no money owed to you'
-                : `Owed by ${activeDebts.filter(d => d.direction === 'owed_to_me').length} ${activeDebts.filter(d => d.direction === 'owed_to_me').length === 1 ? 'person' : 'people'}`
-            }
-            valueTone={debtOwedToMeRemaining > 0 ? 'primary' : 'ink'}
-          />
-          <StripCell
-            label="Debts"
-            value={fmtBDT(debtIOweRemaining)}
-            hint={
-              activeDebtCount === 0
-                ? 'no active debts'
-                : `You owe across ${activeDebts.filter(d => d.direction === 'i_owe').length} ${activeDebts.filter(d => d.direction === 'i_owe').length === 1 ? 'debt' : 'debts'}`
-            }
-            valueTone={debtIOweRemaining > 0 ? 'danger' : 'ink'}
-          />
-          <StripCell
-            label="Investments"
-            value={fmtBDT(totalInvestment)}
-            hint={investmentCount === 0
-              ? 'none yet'
-              : `Locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'}`}
-            valueTone="accent"
-          />
-        </div>
-      </div>
-
-      {/* Accounts + Recent activity — stacks on mobile. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Three-up row: Accounts · This month · Balance sheet. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card title="Accounts" right={<ManageLink to="/accounts" />}>
           {accList.length === 0
             ? <div className="p-4"><EmptyState
@@ -219,17 +201,45 @@ export function HomeScreen() {
           }
         </Card>
 
-        <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
-          {recentTx.length === 0
-            ? <div className="p-4"><EmptyState
-                illustration={<TransactionsIllustration />}
-                title="No transactions yet"
-                description="Record income, expenses, or transfers to see them here."
-                cta={{ to: '/transactions/new', label: '+ Add a transaction' }}
-                learnMoreTopic="transactions"
-              /></div>
-            : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
-          }
+        <Card title="This month" tag="div">
+          <ThisMonthCard
+            income={income}
+            expenses={expenses}
+            monthLabel={monthKeyLabel(y, m)}
+            entryCount={incomeCount + expenseCount}
+          />
+        </Card>
+
+        <Card title="Balance sheet" right={<ManageLink to="/insights" label="Insights →" />}>
+          {/* Stacked, not side-by-side: this card sits in the narrowest
+              column of the three-up row, so a 2-column grid left each
+              cell too narrow for its hint and truncated it ("Locked in
+              7 active schemes" → "Locked in 7 a…"). Full width per
+              cell + a wrapping hint keeps the count readable. */}
+          <div>
+            <StripCell
+              label="Investments"
+              value={fmtBDT(totalInvestment)}
+              hint={investmentCount === 0
+                ? 'none yet'
+                : `Locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'}`}
+              valueTone="accent"
+              compact
+              wrap
+            />
+            <StripCell
+              label="Receivables"
+              value={fmtBDT(debtOwedToMeRemaining)}
+              hint={
+                activeDebtCount === 0 || debtOwedToMeRemaining === 0
+                  ? 'no money owed to you'
+                  : `Owed by ${activeDebts.filter(d => d.direction === 'owed_to_me').length} ${activeDebts.filter(d => d.direction === 'owed_to_me').length === 1 ? 'person' : 'people'}`
+              }
+              valueTone={debtOwedToMeRemaining > 0 ? 'primary' : 'ink'}
+              compact
+              wrap
+            />
+          </div>
         </Card>
       </div>
 
@@ -259,8 +269,20 @@ export function HomeScreen() {
  * red. Negative net worth itself is also red — same red on the
  * figure and the delta is fine because the figure's sign already
  * tells the story; the delta's colour carries the *trend*.
+ *
+ * 2026-11-24 (Variant D — Activity first): the hero narrows to
+ * ~340px so it can sit beside Recent activity, and the figure steps
+ * down to 44px to fit that narrower column. Cash and Debts move in
+ * as a 2×2 mini breakdown under the figure; Receivables and
+ * Investments move to the "Balance sheet" card below.
  */
-function NetWorthHero({ current, projected, delta }: { current: number; projected: number; delta: number }) {
+function NetWorthHero({
+  current, projected, delta,
+  cash, cashHint, debts, debtsHint,
+}: {
+  current: number; projected: number; delta: number;
+  cash: number; cashHint: string; debts: number; debtsHint: string;
+}) {
   const isNegative = current < 0;
   const hasProjection = projected > current;
   const deltaAbs = Math.abs(delta);
@@ -282,37 +304,66 @@ function NetWorthHero({ current, projected, delta }: { current: number; projecte
           background: 'radial-gradient(700px 200px at 0% 0%, rgba(245,185,77,0.10), transparent 60%)',
         }}
       />
-      <div className="relative grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-6 items-center">
-        <div className="min-w-0">
-          <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
-            Net worth
-          </div>
-          <div className={`mt-2 text-[44px] sm:text-[52px] font-extrabold tracking-[-0.03em] tabular leading-[1] ${isNegative ? 'text-danger' : 'text-accent'} break-words`}>
-            {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
-          </div>
-          {/* Delta vs last month — only show when there's a real
-              difference. Zero / undefined reads as "no change" so we
-              drop the row entirely instead of rendering "+৳0". */}
-          {!deltaIsZero && (
-            <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaColor}`}>
-              <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
-              <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
-              <span className="text-muted font-normal">vs last month</span>
-            </div>
-          )}
-          <div className="text-[12px] text-muted mt-1.5">
-            {isNegative ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
-          </div>
+      <div className="relative">
+        <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
+          Net worth
         </div>
+        <div className={`mt-2 text-[44px] font-extrabold tracking-[-0.03em] tabular leading-[1] ${isNegative ? 'text-danger' : 'text-accent'} break-words`}>
+          {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
+        </div>
+        {/* Delta vs last month — only show when there's a real
+            difference. Zero / undefined reads as "no change" so we
+            drop the row entirely instead of rendering "+৳0". */}
+        {!deltaIsZero && (
+          <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaColor}`}>
+            <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
+            <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
+            <span className="text-muted font-normal">vs last month</span>
+          </div>
+        )}
+        <div className="text-[12px] text-muted mt-1.5">
+          {isNegative ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
+        </div>
+
+        {/* 2026-11-24 (Variant D — Activity first): the hero narrows to
+            ~340px so it can sit BESIDE Recent activity, and the four
+            formula buckets fold into a 2×2 mini breakdown under the
+            figure. Cash and Debts live here — the two a user scans
+            for — while Receivables and Investments move to the
+            "Balance sheet" card in the row below.
+
+            Reuses the StripCell markup so the e2e page object's
+            `stripValue` / `stripHint` locators (keyed on the label
+            text, not on position) still resolve against these
+            figures. */}
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-x-4 gap-y-3">
+          <StripCell
+            label="Cash"
+            value={fmtBDT(cash)}
+            hint={cashHint}
+            valueTone="primary"
+            compact
+            wrap
+          />
+          <StripCell
+            label="Debts"
+            value={fmtBDT(debts)}
+            hint={debtsHint}
+            valueTone={debts > 0 ? 'danger' : 'ink'}
+            compact
+            wrap
+          />
+        </div>
+
         {hasProjection && (
-          <div className="text-right">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
               Projection
             </div>
-            <div className="text-[20px] sm:text-[24px] font-extrabold tabular text-primary mt-2 tracking-tight leading-none">
+            <div className="text-[20px] font-extrabold tabular text-primary mt-1.5 tracking-tight leading-none">
               {`+${fmtBDT(projected - current)}`}
             </div>
-            <div className="text-[11px] text-muted mt-1.5 tabular">
+            <div className="text-[11px] text-muted mt-1.5">
               at maturity
             </div>
           </div>
@@ -323,12 +374,12 @@ function NetWorthHero({ current, projected, delta }: { current: number; projecte
 }
 
 /**
- * ThisMonthCard — three-row summary of monthly cashflow that pairs
- * with the NetWorthHero. Income / Expenses / Net saved as a clean
- * three-row table with a footer carrying the month label and entry
- * count, so the card stays informative when the user lands on a
- * fresh month (Income/Expenses can both be ৳0 with "Sep 2026 · 0
- * entries" in the footer).
+ * ThisMonthCard — three-row summary of monthly cashflow.
+ *
+ * 2026-11-24 (Variant D — Activity first): this no longer renders
+ * its own `.card` wrapper or its own "This month" heading — it is
+ * now the BODY of the "This month" section card in the three-up row,
+ * so the chrome and the duplicated heading are dropped.
  */
 function ThisMonthCard({
   income, expenses, monthLabel, entryCount,
@@ -336,10 +387,7 @@ function ThisMonthCard({
   const netSaved = income - expenses;
   const netColor = netSaved > 0 ? 'text-primary' : netSaved < 0 ? 'text-danger' : 'text-ink';
   return (
-    <div className="card flex flex-col gap-3">
-      <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
-        This month
-      </div>
+    <div className="flex flex-col gap-3">
       <div className="flex justify-between items-baseline">
         <span className="text-[13px] text-ink font-semibold">Income</span>
         <span className={`text-[17px] font-extrabold tabular tracking-tight ${income > 0 ? 'text-primary' : 'text-muted'}`}>
@@ -382,12 +430,21 @@ function ThisMonthCard({
  * a semantic bucket.
  */
 function StripCell({
-  label, value, hint, valueTone = 'ink',
+  label, value, hint, valueTone = 'ink', compact = false, wrap = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   valueTone?: 'primary' | 'danger' | 'accent' | 'ink';
+  /** Compact drops the cell's own horizontal padding — used when the
+      cell sits inside a grid that already provides the gutters. */
+  compact?: boolean;
+  /** Wrap lets the hint flow onto a second line instead of being
+      truncated with an ellipsis. Needed wherever the cell is narrow
+      enough that the full hint would not fit on one line — a
+      truncated hint hides the count it is carrying ("Locked in 7
+      active schemes" → "Locked in 7 a…"). */
+  wrap?: boolean;
 }) {
   const valueColor =
     valueTone === 'primary' ? 'text-primary' :
@@ -395,7 +452,7 @@ function StripCell({
     valueTone === 'accent'  ? 'text-accent'  :
                               'text-ink';
   return (
-    <div className="px-5 py-4 min-w-0">
+    <div className={`py-4 min-w-0 ${compact ? '' : 'px-5'}`}>
       <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
         {label}
       </div>
@@ -403,7 +460,7 @@ function StripCell({
         {value}
       </div>
       {hint && (
-        <div className="text-[11.5px] text-muted mt-1.5 truncate">
+        <div className={`text-[11.5px] text-muted mt-1.5 ${wrap ? '' : 'truncate'}`}>
           {hint}
         </div>
       )}
@@ -426,11 +483,28 @@ function startsInMonth(iso: string, y: number, m: number): boolean {
 
 /* ---------- tiny presentational atoms ---------- */
 
+/**
+ * Card — a titled section card.
+ *
+ * 2026-11-24 (Variant D): the "This month" card renders as a `div`
+ * rather than a `section`. The e2e page object locates it as
+ * `div.card` filtered by the text "This month" — it was the only
+ * `div.card` on the screen before this card existed — while the
+ * Accounts and Recent activity cards are located as `section.card`.
+ * The `tag` prop keeps both locators honest instead of quietly
+ * changing one of them.
+ */
 function Card({
-  title, right, children,
-}: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+  title, right, children, tag = 'section',
+}: {
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+  tag?: 'section' | 'div';
+}) {
+  const Tag = tag;
   return (
-    <section className="card">
+    <Tag className="card">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
           {title}
@@ -438,7 +512,7 @@ function Card({
         {right}
       </div>
       {children}
-    </section>
+    </Tag>
   );
 }
 
