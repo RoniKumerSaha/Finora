@@ -711,9 +711,9 @@ function InsightFeedCard({ items }: { items: InsightItem[] }) {
 const COMPOSITION_COLORS: Record<CompositionSlice['key'], string> = {
   cash: 'var(--primary)',
   savings: 'var(--warn)',
-  dps: 'var(--danger)',
+  dps: 'var(--info)',
   receivables: 'var(--accent)',
-  debt: 'var(--info)',
+  debt: 'var(--danger)',
   other: 'var(--surface-3)',
 };
 
