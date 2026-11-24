@@ -433,11 +433,26 @@ test.describe('Goals', () => {
     const transactions = new TransactionsPage(page);
     const home = new HomePage(page);
 
+    // The Home Cash figure, read before the contribution, so the
+    // after-read can assert it did not move.
+    let cashBefore = '';
+
     await test.step('Read the balance of Cash on Accounts', async () => {
       await accounts.goto();
       await expect(accounts.balanceValue(ledger.accountName)).toHaveText(
         ledger.expected.balanceBefore,
       );
+    });
+
+    await test.step('Read the Home status bar BEFORE the contribution', async () => {
+      await home.goto();
+
+      // The Cash figure is the sum of every account balance — this is
+      // the value the contribution must not move.
+      //
+      // (The "This month" card this case used to read was removed on
+      // 2026-11-24, Variant H — The board.)
+      cashBefore = (await home.stripValue('Cash').innerText()).trim();
     });
 
     await test.step('Create a goal with target 50000 and contribute 5000 to it', async () => {
@@ -477,11 +492,12 @@ test.describe('Goals', () => {
       await expect(transactions.rows).toHaveCount(0);
     });
 
-    await test.step('Read the Home "This month" card', async () => {
+    await test.step('Read the Home status bar', async () => {
       await home.goto();
 
-      // No expense from the contribution.
-      await expect(home.thisMonthValue('Expenses')).toHaveText(fmtBDT(0));
+      // A contribution is plan data, not a transaction — so the
+      // account balance the Cash figure is built from is unchanged.
+      await expect(home.stripValue('Cash')).toHaveText(cashBefore);
     });
 
     await test.step('The goal\'s own saved figure does rise', async () => {

@@ -716,18 +716,23 @@ test.describe('Investments', () => {
       ).toHaveText(split.dps.maturityValue);
     });
 
-    await test.step('Read the Home net-worth tile', async () => {
+    await test.step('Read the Home status bar', async () => {
       await home.goto();
 
-      // The hero carries the CURRENT net worth, and the projection
-      // sits in its own clearly-labelled column.
+      // The status bar carries the CURRENT net worth — a DPS's full
+      // mature amount must not skew the headline.
+      //
+      // The projection column was removed from Home on 2026-11-24
+      // (Variant H — The board); the Investments screen's Summary
+      // card, read in the next step, carries the current/maturity
+      // split.
       await expect(home.netWorthFigure).toBeVisible();
       await expect(
         home.textExact(split.expected.homeProjectionLabel),
-      ).toBeVisible();
+      ).toHaveCount(0);
       await expect(
         home.textExact(split.expected.homeProjectionCaption),
-      ).toBeVisible();
+      ).toHaveCount(0);
     });
 
     await test.step('Read the Summary card on the Investments screen', async () => {

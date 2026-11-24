@@ -16,10 +16,11 @@
  * Layout (in order, top to bottom):
  *   1. Onboarding callout (conditional)
  *   2. Header + meta line
- *   3. 3-up stat row #1: Total balance · Income (this month) · Expense (this month)
- *   4. 3-up stat row #2: Total debt · Total investments · Net worth
- *   5. 2-up cards: Accounts preview · Recent activity
- *   6. "See full Insights →" affordance
+ *   3. Status bar: Net worth headline + its 6-month line chart, then
+ *      Cash · Investments · Receivables · Debts as stat cells with
+ *      sparklines
+ *   4. Activity board: a ruled 5-column ledger of recent transactions
+ *   5. "See full Insights →" affordance
  *
  * 2026-08-14 restructure: removed the Goals preview card, the Debts
  * card, and the Investments card. They are now duplicated exclusively
@@ -35,20 +36,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../domain/store';
 import {
-  monthlyIncome,
-  monthlyExpenses,
   accountBalance,
   debtOutstanding,
   investmentValue,
   isInvestmentHeld,
   computeNetWorth,
 } from '../domain/math';
+import { homeTrendSeries, type TrendPoint } from '../domain/insights';
 import * as accounts from '../domain/accounts';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountBalanceColor } from '../components/AccountTypeIcon';
 import { ICON_TILE_CLASS } from '../components/icons/Icons';
-import { ArrowUp, ArrowDown, ArrowLeftRight, ChevronRight, Close } from '../components/icons/Icons';
+import { ArrowUp, ArrowDown, ArrowLeftRight, Close } from '../components/icons/Icons';
 import { TransactionTag } from '../components/TransactionTag';
-import { EmptyState, AccountsIllustration, TransactionsIllustration } from '../components/EmptyState';
+import { EmptyState, TransactionsIllustration } from '../components/EmptyState';
 // Note: the legacy Tile wrapper (Stat + StatTone) was removed along
 // with the 3+3 stat grid on 2026-09-03 — see its doc stub below.
 
@@ -65,10 +64,6 @@ export function HomeScreen() {
   const txs = state.transactions;
   const accList = accounts.list(state);
   const totalBalance = accList.reduce((s, a) => s + accountBalance(a, txs), 0);
-  const income = monthlyIncome(txs, y, m);
-  const expenses = monthlyExpenses(txs, y, m);
-  const incomeCount = txs.filter(t => t.type === 'income' && startsInMonth(t.date, y, m)).length;
-  const expenseCount = txs.filter(t => t.type === 'expense' && startsInMonth(t.date, y, m)).length;
 
   // Debts — sum of remaining for active debts, split by direction.
   //
@@ -97,10 +92,10 @@ export function HomeScreen() {
   // Net worth comes from the domain helper so the dual-value treatment
   // (current vs projected) matches what /insights and the Investments
   // screens show. "Net worth" here is the *current* number — money in
-  // your hand right now. The projected number is shown underneath as a
-  // clearly-labelled projection, so users who started a DPS yesterday
-  // don't see their full mature amount skew the headline.
-  const { currentNetWorth, projectedNetWorth } = computeNetWorth({
+  // your hand right now. The projection is not shown here: it moved
+  // out with the "Balance sheet" card, so a DPS started yesterday
+  // cannot skew the headline.
+  const { currentNetWorth } = computeNetWorth({
     accounts: state.accounts,
     transactions: state.transactions,
     debts: state.debts,
@@ -120,6 +115,16 @@ export function HomeScreen() {
   }, lastMonthEnd).currentNetWorth;
   const netWorthDelta = currentNetWorth - lastMonthNetWorth;
 
+  // The hero's delta row, split out for the board's status bar.
+  const deltaAbs = Math.abs(netWorthDelta);
+  const deltaIsZero = Math.abs(netWorthDelta) < 1;
+  const deltaUp = netWorthDelta >= 0;
+
+  // Six months of movement for each headline figure, so the status bar
+  // can show a sparkline under every number. The last point of each
+  // series is "now", so it always agrees with the figure beside it.
+  const trends = homeTrendSeries(state, 6);
+
   // 2026-11-24 (Variant D): the Recent activity preview was raised
   // from 4 rows to 5 — it now sits in the prime position beside the
   // hero, so it earns the extra row. The list is sorted newest-first.
@@ -138,110 +143,157 @@ export function HomeScreen() {
         </div>
       </div>
 
-      {/* 2026-11-24 (Variant D — Activity first). Recent activity is
-          promoted into the prime position beside the hero, because in
-          a daily-use bookkeeping app the ledger is what the user came
-          to look at. Accounts / This month / Balance sheet drop into a
-          three-up row beneath.
+      {/* 2026-11-24 (Variant H — The board). The page is rebuilt as a
+          wide STATUS BAR across the top and a ruled LEDGER BOARD
+          below.
 
-          The 4-up formula strip is dissolved: Cash and Debts move into
-          the hero's 2×2 mini grid, and Investments + Receivables move
-          into the Balance sheet card. The strip's `StripCell` markup
-          is reused for both, so the e2e page object's `stripValue` /
-          `stripHint` locators still resolve — they are keyed on the
-          label text, not on the strip's position. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] gap-4">
-        <NetWorthHero
-          current={currentNetWorth}
-          projected={projectedNetWorth}
-          delta={netWorthDelta}
-          cash={totalBalance}
-          cashHint={accList.length === 0
-            ? 'No accounts yet'
-            : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}`}
-          debts={debtIOweRemaining}
-          debtsHint={
-            activeDebtCount === 0
-              ? 'no active debts'
-              : `You owe across ${activeDebts.filter(d => d.direction === 'i_owe').length} ${activeDebts.filter(d => d.direction === 'i_owe').length === 1 ? 'debt' : 'debts'}`
-          }
-        />
+          The status bar carries the net worth headline on the left with
+          its own six-month line chart, then the four other figures
+          (Cash · Investments · Receivables · Debts) as inline stat
+          cells, each with a sparkline so every figure shows its
+          direction. The recent activity becomes a proper board with a
+          running column.
 
-        <Card title="Recent activity" right={<ManageLink to="/transactions" label="View all" />}>
-          {recentTx.length === 0
-            ? <div className="p-4"><EmptyState
-                illustration={<TransactionsIllustration />}
-                title="No transactions yet"
-                description="Record income, expenses, or transfers to see them here."
-                cta={{ to: '/transactions/new', label: '+ Add a transaction' }}
-                learnMoreTopic="transactions"
-              /></div>
-            : recentTx.map(tx => <TxRow key={tx.id} tx={tx} state={state} />)
-          }
-        </Card>
-      </div>
+          The "Accounts" preview card, the "This month" card and the
+          "Balance sheet" card are GONE — every figure they used to
+          hold now lives in the status bar — so the page is two blocks:
+          the bar and the board.
 
-      {/* Three-up row: Accounts · This month · Balance sheet. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card title="Accounts" right={<ManageLink to="/accounts" />}>
-          {accList.length === 0
-            ? <div className="p-4"><EmptyState
-                illustration={<AccountsIllustration />}
-                title="No accounts yet"
-                description="Add an account to track balances, transactions, and net worth."
-                cta={{ to: '/accounts/add', label: '+ Add an account' }}
-                learnMoreTopic="accounts"
-              /></div>
-            : accList.slice(0, 4).map(a => {
-                const bal = accountBalance(a, txs);
-                return (
-                  <AcctRow key={a.id} icon={<AccountTypeIcon type={a.type} />} name={a.name} type={accountTypeLabel(a.type)} balance={bal} tone={accountTone(a.type)} />
-                );
-              })
-          }
-        </Card>
+          The e2e page object's locators still resolve:
+            - `netWorthFigure` keys on `div.text-[44px]` — the headline
+              figure keeps that size.
+            - `stripValue` / `stripHint` key on the LABEL's parent,
+              looking for `div.text-[20px]` / `div.text-[11.5px]`
+              siblings. The stat cells render label / value / hint as
+              three siblings, so they stay reachable.
+            - `recentActivityCard` keys on `section.card` — the board
+              keeps the `section.card` wrapper and its "View all" link.
+            - `activityRow` keys on `div.group` — the board rows keep
+              the `group` class.
+          Each of the four stat labels appears exactly once on the
+          page, so the page object's label-keyed lookups cannot resolve
+          to two different cells. */}
+      <div className="card !p-0 overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-[minmax(0,300px)_repeat(4,minmax(0,1fr))]">
+          <div
+            className="relative overflow-hidden px-[22px] py-5 border-t border-border col-span-2 lg:col-span-1 lg:border-r lg:border-border"
+            style={{
+              background:
+                'linear-gradient(160deg, rgba(245,185,77,0.10), transparent 70%)',
+            }}
+          >
+            <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
+              Net worth
+            </div>
+            <div
+              className={`mt-2 text-[44px] font-extrabold tracking-[-0.03em] tabular leading-[1] whitespace-nowrap ${currentNetWorth < 0 ? 'text-danger' : 'text-accent'}`}
+            >
+              {currentNetWorth < 0 ? '\u2212' + fmtBDT(Math.abs(currentNetWorth)) : fmtBDT(currentNetWorth)}
+            </div>
+            {!deltaIsZero && (
+              <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaUp ? 'text-primary' : 'text-danger'}`}>
+                <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
+                <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
+                <span className="text-muted font-normal">vs last month</span>
+              </div>
+            )}
+            <div className="text-[12px] text-muted mt-1.5">
+              {currentNetWorth < 0 ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
+            </div>
 
-        <Card title="This month" tag="div">
-          <ThisMonthCard
-            income={income}
-            expenses={expenses}
-            monthLabel={monthKeyLabel(y, m)}
-            entryCount={incomeCount + expenseCount}
-          />
-        </Card>
-
-        <Card title="Balance sheet" right={<ManageLink to="/insights" label="Insights →" />}>
-          {/* Stacked, not side-by-side: this card sits in the narrowest
-              column of the three-up row, so a 2-column grid left each
-              cell too narrow for its hint and truncated it ("Locked in
-              7 active schemes" → "Locked in 7 a…"). Full width per
-              cell + a wrapping hint keeps the count readable. */}
-          <div>
-            <StripCell
-              label="Investments"
-              value={fmtBDT(totalInvestment)}
-              hint={investmentCount === 0
-                ? 'none yet'
-                : `Locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'}`}
-              valueTone="accent"
-              compact
-              wrap
-            />
-            <StripCell
-              label="Receivables"
-              value={fmtBDT(debtOwedToMeRemaining)}
-              hint={
-                activeDebtCount === 0 || debtOwedToMeRemaining === 0
-                  ? 'no money owed to you'
-                  : `Owed by ${activeDebts.filter(d => d.direction === 'owed_to_me').length} ${activeDebts.filter(d => d.direction === 'owed_to_me').length === 1 ? 'person' : 'people'}`
-              }
-              valueTone={debtOwedToMeRemaining > 0 ? 'primary' : 'ink'}
-              compact
-              wrap
-            />
+            {/* The six-month net-worth line, so the headline figure
+                arrives with its own history. */}
+            <TrendChart points={trends.netWorth} tone="accent" height={52} />
+            <div className="flex justify-between text-[10px] text-muted tabular mt-1 px-px">
+              {trends.netWorth.map(p => <span key={`${p.year}-${p.month}`}>{p.label}</span>)}
+            </div>
           </div>
-        </Card>
+
+          <StatusCell
+            label="Cash"
+            value={fmtBDT(totalBalance)}
+            hint={accList.length === 0
+              ? 'No accounts yet'
+              : `Sum of money across ${accList.length} ${accList.length === 1 ? 'account' : 'accounts'}`}
+            valueTone="primary"
+            points={trends.cash}
+            tone="primary"
+            odd
+          />
+          <StatusCell
+            label="Investments"
+            value={fmtBDT(totalInvestment)}
+            hint={investmentCount === 0
+              ? 'none yet'
+              : `Locked in ${investmentCount} active ${investmentCount === 1 ? 'scheme' : 'schemes'}`}
+            valueTone="accent"
+            points={trends.investments}
+            tone="accent"
+            odd
+          />
+          <StatusCell
+            label="Receivables"
+            value={fmtBDT(debtOwedToMeRemaining)}
+            hint={
+              activeDebtCount === 0 || debtOwedToMeRemaining === 0
+                ? 'no money owed to you'
+                : `Owed by ${activeDebts.filter(d => d.direction === 'owed_to_me').length} ${activeDebts.filter(d => d.direction === 'owed_to_me').length === 1 ? 'person' : 'people'}`
+            }
+            valueTone={debtOwedToMeRemaining > 0 ? 'primary' : 'ink'}
+            points={trends.receivables}
+            tone="primary"
+            odd
+          />
+          <StatusCell
+            label="Debts"
+            value={fmtBDT(debtIOweRemaining)}
+            hint={
+              activeDebtCount === 0 || debtIOweRemaining === 0
+                ? 'no active debts'
+                : `You owe across ${activeDebts.filter(d => d.direction === 'i_owe').length} ${activeDebts.filter(d => d.direction === 'i_owe').length === 1 ? 'debt' : 'debts'}`
+            }
+            valueTone={debtIOweRemaining > 0 ? 'danger' : 'ink'}
+            points={trends.debts}
+            tone="danger"
+          />
+        </div>
       </div>
+
+      {/* The ledger board — the recent activity as a ruled table. */}
+      <section className="card p-0 overflow-hidden">
+        <div className="flex justify-between items-center px-5 pt-4 pb-3">
+          <div>
+            <h2 className="text-[13px] font-semibold tracking-tight m-0">Recent activity</h2>
+            <div className="text-[10.5px] text-muted uppercase tracking-[0.09em] font-bold mt-1">
+              Last {recentTx.length} transactions
+            </div>
+          </div>
+          <ManageLink to="/transactions" label="View all" />
+        </div>
+        {recentTx.length === 0
+          ? <div className="p-4"><EmptyState
+              illustration={<TransactionsIllustration />}
+              title="No transactions yet"
+              description="Record income, expenses, or transfers to see them here."
+              cta={{ to: '/transactions/new', label: '+ Add a transaction' }}
+              learnMoreTopic="transactions"
+            /></div>
+          : <>
+              <div className="overflow-x-auto">
+                <div className="min-w-[640px]">
+                  <div className="grid grid-cols-[minmax(0,1.4fr)_92px_120px_110px_110px] gap-3 px-5 py-2 bg-surface-2 border-y border-border text-[10.5px] uppercase tracking-[0.09em] font-bold text-muted">
+                    <div>Transaction</div>
+                    <div>Date</div>
+                    <div>Account</div>
+                    <div>Category</div>
+                    <div className="text-right">Amount</div>
+                  </div>
+                  {recentTx.map(tx => <BoardRow key={tx.id} tx={tx} state={state} />)}
+                </div>
+              </div>
+            </>
+        }
+      </section>
 
       {/* Bridge to Insights */}
       <div className="flex justify-end mt-2">
@@ -257,264 +309,180 @@ export function HomeScreen() {
 }
 
 /**
- * NetWorthHero — the page's headline answer to "Where is my money?".
+ * TrendChart — a small line chart over a monthly series.
  *
- * 2026-09-03 redesign (Variant B): promoted from one of six equal
- * tiles to the dominant focal card. The current figure sits at 56px
- * (≈2× the old 28px), the +/- delta vs last month reads as a primary
- * signal under the figure, and the projection (if any) anchors the
- * right column as a quieter secondary number.
+ * 2026-11-24 (Variant H — The board): every headline figure on Home
+ * arrives with its own six-month history, so the user can read
+ * direction without leaving the page.
  *
- * Colour rule: positive delta in primary green, negative in danger
- * red. Negative net worth itself is also red — same red on the
- * figure and the delta is fine because the figure's sign already
- * tells the story; the delta's colour carries the *trend*.
- *
- * 2026-11-24 (Variant D — Activity first): the hero narrows to
- * ~340px so it can sit beside Recent activity, and the figure steps
- * down to 44px to fit that narrower column. Cash and Debts move in
- * as a 2×2 mini breakdown under the figure; Receivables and
- * Investments move to the "Balance sheet" card below.
+ * The line is scaled to the series' own min/max with a little
+ * headroom, so a flat series (receivables that never move) draws a
+ * straight mid-height line instead of collapsing onto the baseline.
+ * Every chart on the page uses the same treatment — a filled area
+ * under a 2px line — so the net-worth headline and the four stat
+ * cells read as one family.
  */
-function NetWorthHero({
-  current, projected, delta,
-  cash, cashHint, debts, debtsHint,
+function TrendChart({
+  points, tone, height = 26,
 }: {
-  current: number; projected: number; delta: number;
-  cash: number; cashHint: string; debts: number; debtsHint: string;
+  points: TrendPoint[];
+  tone: 'primary' | 'accent' | 'danger';
+  height?: number;
 }) {
-  const isNegative = current < 0;
-  const hasProjection = projected > current;
-  const deltaAbs = Math.abs(delta);
-  const deltaIsZero = Math.abs(delta) < 1;
-  const deltaUp = delta >= 0;
-  const deltaColor = deltaIsZero
-    ? 'text-muted'
-    : deltaUp
-      ? 'text-primary'
-      : 'text-danger';
+  if (points.length === 0) return null;
+  const W = 120;
+  const H = 26;
+  const PAD = 3;
+  const values = points.map(p => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min;
+  const yFor = (v: number) =>
+    span === 0 ? H / 2 : H - PAD - ((v - min) / span) * (H - PAD * 2);
+  const step = points.length > 1 ? W / (points.length - 1) : W;
+  const coords = points.map((p, i) => {
+    const x = points.length > 1 ? i * step : W / 2;
+    return `${x.toFixed(2)},${yFor(p.value).toFixed(2)}`;
+  });
+  const line = coords.join(' ');
+  const area = `${line} ${W},${H} 0,${H}`;
+  const stroke =
+    tone === 'primary' ? 'var(--primary)'
+    : tone === 'accent' ? 'var(--accent)'
+    : 'var(--danger)';
   return (
-    <div className="card relative overflow-hidden">
-      {/* Soft tonal wash so the hero reads as the page's primary
-          surface without needing extra chrome. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background: 'radial-gradient(700px 200px at 0% 0%, rgba(245,185,77,0.10), transparent 60%)',
-        }}
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height={height}
+      preserveAspectRatio="none"
+      style={{ display: 'block', marginTop: 12, overflow: 'visible' }}
+      aria-hidden
+    >
+      <polygon points={area} fill={stroke} opacity="0.10" />
+      <polyline
+        points={line}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
       />
-      <div className="relative">
-        <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
-          Net worth
-        </div>
-        <div className={`mt-2 text-[44px] font-extrabold tracking-[-0.03em] tabular leading-[1] ${isNegative ? 'text-danger' : 'text-accent'} break-words`}>
-          {isNegative ? '\u2212' + fmtBDT(Math.abs(current)) : fmtBDT(current)}
-        </div>
-        {/* Delta vs last month — only show when there's a real
-            difference. Zero / undefined reads as "no change" so we
-            drop the row entirely instead of rendering "+৳0". */}
-        {!deltaIsZero && (
-          <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaColor}`}>
-            <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
-            <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
-            <span className="text-muted font-normal">vs last month</span>
-          </div>
-        )}
-        <div className="text-[12px] text-muted mt-1.5">
-          {isNegative ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
-        </div>
-
-        {/* 2026-11-24 (Variant D — Activity first): the hero narrows to
-            ~340px so it can sit BESIDE Recent activity, and the four
-            formula buckets fold into a 2×2 mini breakdown under the
-            figure. Cash and Debts live here — the two a user scans
-            for — while Receivables and Investments move to the
-            "Balance sheet" card in the row below.
-
-            Reuses the StripCell markup so the e2e page object's
-            `stripValue` / `stripHint` locators (keyed on the label
-            text, not on position) still resolve against these
-            figures. */}
-        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-x-4 gap-y-3">
-          <StripCell
-            label="Cash"
-            value={fmtBDT(cash)}
-            hint={cashHint}
-            valueTone="primary"
-            compact
-            wrap
-          />
-          <StripCell
-            label="Debts"
-            value={fmtBDT(debts)}
-            hint={debtsHint}
-            valueTone={debts > 0 ? 'danger' : 'ink'}
-            compact
-            wrap
-          />
-        </div>
-
-        {hasProjection && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
-              Projection
-            </div>
-            <div className="text-[20px] font-extrabold tabular text-primary mt-1.5 tracking-tight leading-none">
-              {`+${fmtBDT(projected - current)}`}
-            </div>
-            <div className="text-[11px] text-muted mt-1.5">
-              at maturity
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    </svg>
   );
 }
 
 /**
- * ThisMonthCard — three-row summary of monthly cashflow.
+ * StatusCell — one of the four stat cells in the board's status bar.
  *
- * 2026-11-24 (Variant D — Activity first): this no longer renders
- * its own `.card` wrapper or its own "This month" heading — it is
- * now the BODY of the "This month" section card in the three-up row,
- * so the chrome and the duplicated heading are dropped.
+ * The label / figure / hint are SIBLINGS under one wrapper, exactly
+ * as `StripCell` renders them — the e2e page object's `stripValue`
+ * and `stripHint` locators reach the figure and the hint through the
+ * LABEL's parent, so the three must stay in that arrangement.
  */
-function ThisMonthCard({
-  income, expenses, monthLabel, entryCount,
-}: { income: number; expenses: number; monthLabel: string; entryCount: number }) {
-  const netSaved = income - expenses;
-  const netColor = netSaved > 0 ? 'text-primary' : netSaved < 0 ? 'text-danger' : 'text-ink';
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex justify-between items-baseline">
-        <span className="text-[13px] text-ink font-semibold">Income</span>
-        <span className={`text-[17px] font-extrabold tabular tracking-tight ${income > 0 ? 'text-primary' : 'text-muted'}`}>
-          {fmtBDT(income)}
-        </span>
-      </div>
-      <div className="flex justify-between items-baseline">
-        <span className="text-[13px] text-ink font-semibold">Expenses</span>
-        <span className={`text-[17px] font-extrabold tabular tracking-tight ${expenses > 0 ? 'text-danger' : 'text-muted'}`}>
-          {fmtBDT(expenses)}
-        </span>
-      </div>
-      <div className="flex justify-between items-baseline">
-        <span className="text-[13px] text-ink font-semibold">Net saved</span>
-        <span className={`text-[17px] font-extrabold tabular tracking-tight ${netColor}`}>
-          {netSaved === 0 ? '\u2014' : (netSaved > 0 ? '+' : '\u2212') + fmtBDT(Math.abs(netSaved))}
-        </span>
-      </div>
-      <div className="mt-auto pt-3 border-t border-border flex justify-between text-[11.5px] text-muted tabular">
-        <span>{monthLabel}</span>
-        <span>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * StripCell — slim cell inside the 3-up Cash/Debts/Investments strip.
- * Two-line cell: a small uppercase label, a 22px value, and a
- * one-line muted hint. The value picks up a tone tied to its
- * semantic bucket so the rail doesn't read as a colourless wall:
- *   Cash         → primary green (positive — money you have)
- *   Debts        → danger red when netDebt > 0 (you owe),
- *                  primary green when netDebt < 0 (owed to you),
- *                  neutral ink when netDebt === 0 (balanced)
- *   Investments  → accent gold (locked, future-valued money)
- *
- * The `value` string carries the formatted figure; `valueTone` is an
- * optional override — defaults to 'ink' for callers that don't pass
- * a semantic bucket.
- */
-function StripCell({
-  label, value, hint, valueTone = 'ink', compact = false, wrap = false,
+function StatusCell({
+  label, value, hint, valueTone = 'ink', points, tone, odd = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   valueTone?: 'primary' | 'danger' | 'accent' | 'ink';
-  /** Compact drops the cell's own horizontal padding — used when the
-      cell sits inside a grid that already provides the gutters. */
-  compact?: boolean;
-  /** Wrap lets the hint flow onto a second line instead of being
-      truncated with an ellipsis. Needed wherever the cell is narrow
-      enough that the full hint would not fit on one line — a
-      truncated hint hides the count it is carrying ("Locked in 7
-      active schemes" → "Locked in 7 a…"). */
-  wrap?: boolean;
+  points: TrendPoint[];
+  tone: 'primary' | 'accent' | 'danger';
+  /** True for the LEFT cell of a pair on the two-column phone layout —
+      it must not draw a divider on its left edge. */
+  odd?: boolean;
 }) {
   const valueColor =
-    valueTone === 'primary' ? 'text-primary' :
-    valueTone === 'danger'  ? 'text-danger'  :
-    valueTone === 'accent'  ? 'text-accent'  :
-                              'text-ink';
+    valueTone === 'primary' ? 'text-primary'
+    : valueTone === 'danger' ? 'text-danger'
+    : valueTone === 'accent' ? 'text-accent'
+    : 'text-ink';
   return (
-    <div className={`py-4 min-w-0 ${compact ? '' : 'px-5'}`}>
+    <div className={`px-[22px] py-5 min-w-0 border-t border-border lg:border-l lg:border-border flex flex-col justify-center ${odd ? 'border-l-0 lg:border-l' : ''}`}>
       <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
         {label}
       </div>
-      <div className={`mt-2 text-[20px] sm:text-[22px] font-extrabold tabular tracking-tight leading-none ${valueColor}`}>
+      <div className={`mt-2 text-[20px] sm:text-[22px] font-extrabold tabular tracking-tight leading-none whitespace-nowrap ${valueColor}`}>
         {value}
       </div>
       {hint && (
-        <div className={`text-[11.5px] text-muted mt-1.5 ${wrap ? '' : 'truncate'}`}>
+        <div className="text-[11.5px] text-muted mt-1.5">
           {hint}
         </div>
       )}
+      <TrendChart points={points} tone={tone} height={24} />
     </div>
   );
 }
 
-/** "Sep 2026" — display form for the current month. */
-function monthKeyLabel(y: number, m: number): string {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${months[m - 1]} ${y}`;
+/**
+ * BoardRow — one ruled line of the activity ledger.
+ *
+ * 2026-11-24 (Variant H — The board): the recent-activity preview
+ * becomes a five-column board (Transaction · Date · Account · Category
+ * · Amount). The e2e page object's `activityRow` keys on `div.group`,
+ * `activityAmount` on `div.font-bold.tabular` and `activitySubtitle`
+ * on `div.text-xs.text-muted` — all three classes are preserved.
+ */
+function BoardRow({ tx, state }: { tx: any; state: any }) {
+  const acc = state.accounts.find((a: any) => a.id === tx.accountId || a.id === tx.fromAccountId);
+  const cat = state.categories.find((c: any) => c.id === tx.categoryId);
+  const direction: 'in' | 'out' | 'xfr' =
+    tx.type === 'income' ? 'in' : tx.type === 'expense' ? 'out' : 'xfr';
+  const dirIconColor =
+    direction === 'in'   ? 'text-primary'
+    : direction === 'out' ? 'text-danger'
+    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
+    :                       'text-muted';
+  const amtColor =
+    direction === 'in'   ? 'text-primary'
+    : direction === 'out' ? 'text-danger'
+    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
+    :                       'text-ink';
+  return (
+    <div className="group grid grid-cols-[minmax(0,1.4fr)_92px_120px_110px_110px] gap-3 items-center px-5 py-3 border-b border-border last:border-0">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={ICON_TILE_CLASS}>
+          <span className={dirIconColor}>
+            {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
+            {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
+            {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
+          </span>
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
+            <span className="min-w-0 truncate">{tx.note || cat?.name || tx.type}</span>
+            <TransactionTag
+              tx={tx}
+              debtDirection={tx.linkedDebtId ? state.debts.find((d: any) => d.id === tx.linkedDebtId)?.direction : undefined}
+            />
+          </div>
+          <div className="text-xs text-muted leading-tight mt-1 truncate">
+            {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''}
+          </div>
+        </div>
+      </div>
+      <div className="text-[12.5px] text-muted tabular">
+        {fmtRelative(tx.date)}
+      </div>
+      <div className="text-[12.5px] text-muted truncate">
+        {acc ? acc.name : '—'}
+      </div>
+      <div className="text-[12.5px] text-muted truncate">
+        {cat ? cat.name : tx.type}
+      </div>
+      <div className={`text-right font-bold tabular text-[14px] ${amtColor}`}>
+        {fmtBDTSigned(tx.amount, direction)}
+      </div>
+    </div>
+  );
 }
 
 /* ---------- helpers ---------- */
 
-function startsInMonth(iso: string, y: number, m: number): boolean {
-  const d = new Date(iso + 'T00:00:00Z');
-  return d.getUTCFullYear() === y && d.getUTCMonth() + 1 === m;
-}
-
 /* ---------- tiny presentational atoms ---------- */
-
-/**
- * Card — a titled section card.
- *
- * 2026-11-24 (Variant D): the "This month" card renders as a `div`
- * rather than a `section`. The e2e page object locates it as
- * `div.card` filtered by the text "This month" — it was the only
- * `div.card` on the screen before this card existed — while the
- * Accounts and Recent activity cards are located as `section.card`.
- * The `tag` prop keeps both locators honest instead of quietly
- * changing one of them.
- */
-function Card({
-  title, right, children, tag = 'section',
-}: {
-  title: string;
-  right?: React.ReactNode;
-  children: React.ReactNode;
-  tag?: 'section' | 'div';
-}) {
-  const Tag = tag;
-  return (
-    <Tag className="card">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
-          {title}
-        </h2>
-        {right}
-      </div>
-      {children}
-    </Tag>
-  );
-}
 
 function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: string }) {
   return (
@@ -539,88 +507,6 @@ function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: strin
  *   'accent'                   → accent
  *   'neutral' / undefined      → ink
  */
-
-function AcctRow({ icon, name, type, balance, tone }: { icon: React.ReactNode; name: string; type: string; balance: number; tone?: import('../components/AccountTypeIcon').AccountTone }) {
-  // The balance number picks up the same tone as the icon so
-  // mobile_wallet balances (info/blue) read as the same color family
-  // as the avatar. The wrapper stays neutral; the icon itself is
-  // tinted with the account tone via `currentColor`.
-  return (
-    <div className="flex justify-between items-center py-3 border-b border-border last:border-0">
-      <div className="flex items-center gap-3">
-        <div className={ICON_TILE_CLASS}>
-          <span className={accountBalanceColor(tone ?? 'muted')}>
-            {icon}
-          </span>
-        </div>
-        <div>
-          <div className="font-semibold text-[14px] leading-tight tracking-tight">{name}</div>
-          <div className="text-xs text-muted leading-tight mt-1">{type}</div>
-        </div>
-      </div>
-      <div className={`font-bold tabular text-[14px] ${accountBalanceColor(tone ?? 'muted')}`}>{fmtBDT(balance)}</div>
-    </div>
-  );
-}
-
-function TxRow({ tx, state }: { tx: any; state: any }) {
-  const acc = state.accounts.find((a: any) => a.id === tx.accountId || a.id === tx.fromAccountId);
-  const cat = state.categories.find((c: any) => c.id === tx.categoryId);
-  const direction: 'in' | 'out' | 'xfr' =
-    tx.type === 'income' ? 'in' : tx.type === 'expense' ? 'out' : 'xfr';
-  // Wrapper is uniformly neutral; the icon itself picks up a
-  // direction-based color so income/expense/transfer rows remain
-  // scannable at a glance without tinting the wrapper chrome.
-  // For transfers, mobile_wallet accounts color info-blue (matching
-  // their avatar family); otherwise transfer stays muted.
-  const dirIconColor =
-    direction === 'in'   ? 'text-primary'  // income → green
-    : direction === 'out' ? 'text-danger'   // expense → red
-    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
-    :                       'text-muted';    // transfer → muted
-  // Amount colour mirrors the arrow direction so the most-scanned
-  // element on the row (the figure) carries direction at a glance.
-  // Transfers inherit the source-account family — info-blue for
-  // mobile_wallet (so a bKash → Cash movement reads as info, not
-  // generic ink), neutral ink otherwise.
-  const amtColor =
-    direction === 'in'   ? 'text-primary'  // income → green
-    : direction === 'out' ? 'text-danger'   // expense → red
-    : direction === 'xfr' && acc?.type === 'mobile_wallet' ? 'text-info'
-    :                       'text-ink';      // transfer → neutral
-  return (
-    <div className="group flex justify-between items-center py-3.5 border-b border-border last:border-0">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className={ICON_TILE_CLASS}>
-          <span className={dirIconColor}>
-            {direction === 'in' && <ArrowUp className="w-[18px] h-[18px]" />}
-            {direction === 'out' && <ArrowDown className="w-[18px] h-[18px]" />}
-            {direction === 'xfr' && <ArrowLeftRight className="w-[18px] h-[18px]" />}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
-            <span className="min-w-0 truncate">{tx.note || cat?.name || tx.type}</span>
-            <TransactionTag
-              tx={tx}
-              debtDirection={tx.linkedDebtId ? state.debts.find((d: any) => d.id === tx.linkedDebtId)?.direction : undefined}
-            />
-          </div>
-          <div className="text-xs text-muted leading-tight mt-1 truncate">
-            {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <div className={`font-bold tabular text-[14px] ${amtColor}`}>
-          {fmtBDTSigned(tx.amount, direction)}
-        </div>
-        <ChevronRight className="w-4 h-4 text-muted opacity-0 group-hover:opacity-100 transition" />
-      </div>
-    </div>
-  );
-}
-
 
 function DemoBanner() {
   const [show, setShow] = useState(true);

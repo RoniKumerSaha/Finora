@@ -614,12 +614,15 @@ test.describe('Transactions', () => {
       await expect(accounts.balanceValue(recalc.accountName)).toHaveText('৳ -500');
     });
 
-    await test.step('Read the "This month" card on Home', async () => {
-      const home = new HomePage(page);
-      await home.goto();
+    await test.step('Read the edited amount on the Transactions list', async () => {
+      await transactions.goto();
 
-      // The expense figure follows the edit — 1500, not 2500.
-      await expect(home.thisMonthValue('Expenses')).toHaveText(recalc.expected.thisMonthExpenses);
+      // The listed figure follows the edit — 1500, not 2500.
+      //
+      // (This used to read the Home "This month" card, which was
+      // removed on 2026-11-24, Variant H — The board. The ledger
+      // row carries the same figure now.)
+      await expect(transactions.rowByAmount(recalc.expected.thisMonthExpenses)).toBeVisible();
     });
 
     await test.step('Reopen the transaction and delete it', async () => {

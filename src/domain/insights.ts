@@ -473,6 +473,85 @@ function netWorthAt(state: StateLike, asOf: Date): number {
   return computeNetWorth(cutoffState, cutoff).currentNetWorth;
 }
 
+/* ---------- Home trend series (the board's charts) ---------- */
+
+export interface TrendPoint {
+  year: number;
+  month: number;
+  /** "Jun" — the short month name. */
+  label: string;
+  value: number;
+}
+
+/**
+ * The six-month series behind the Home board's charts.
+ *
+ * The board puts a sparkline under each of the five headline figures,
+ * so the user can see *which way* each one is moving without leaving
+ * the screen. This returns one series per bucket, all sampled on the
+ * SAME six month-ends, so the charts are directly comparable.
+ *
+ * Sampling rules:
+ *   - The LAST point is "today" against the unfiltered state, so it
+ *     equals the figure shown in the same row. A chart whose endpoint
+ *     disagreed with the number beside it would be a bug.
+ *   - Earlier points are end-of-month snapshots with future-dated
+ *     transactions filtered out, so history stays accurate.
+ *
+ * `cash` is the account total; `investments` and `receivables` are
+ * the asset buckets; `debts` is what the user still owes.
+ */
+export function homeTrendSeries(
+  state: StateLike,
+  months = 6,
+  now: string | Date = new Date()
+): {
+  netWorth: TrendPoint[];
+  cash: TrendPoint[];
+  investments: TrendPoint[];
+  receivables: TrendPoint[];
+  debts: TrendPoint[];
+} {
+  const todayDate = parseISODate(now);
+  const todayISO = todayDate.toISOString().slice(0, 10);
+  const thisMonth = new Date(Date.UTC(todayDate.getUTCFullYear(), todayDate.getUTCMonth(), 1));
+
+  const buckets = {
+    netWorth: [] as TrendPoint[],
+    cash: [] as TrendPoint[],
+    investments: [] as TrendPoint[],
+    receivables: [] as TrendPoint[],
+    debts: [] as TrendPoint[],
+  };
+
+  for (let i = months - 1; i >= 0; i--) {
+    const monthStart = new Date(Date.UTC(thisMonth.getUTCFullYear(), thisMonth.getUTCMonth() - i, 1));
+    const endOfMonth = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0));
+    const isCurrentMonth = i === 0;
+
+    // Past months: snapshot the ledger as it stood at that month-end.
+    // The current month: use "now" against the unfiltered state so the
+    // final point matches the headline figure exactly.
+    const cutoffISO = isCurrentMonth ? todayISO : endOfMonth.toISOString().slice(0, 10);
+    const cutoffState: StateLike = isCurrentMonth
+      ? state
+      : { ...state, transactions: state.transactions.filter(t => t.date <= cutoffISO) };
+
+    const nw = computeNetWorth(cutoffState, cutoffISO);
+    const y = monthStart.getUTCFullYear();
+    const m = monthStart.getUTCMonth() + 1;
+    const label = MONTHS_SHORT[m - 1];
+
+    buckets.netWorth.push({ year: y, month: m, label, value: nw.currentNetWorth });
+    buckets.cash.push({ year: y, month: m, label, value: nw.cash });
+    buckets.investments.push({ year: y, month: m, label, value: nw.invCurrent });
+    buckets.receivables.push({ year: y, month: m, label, value: nw.receivables });
+    buckets.debts.push({ year: y, month: m, label, value: nw.oweRemaining });
+  }
+
+  return buckets;
+}
+
 // ---------- Goals widget ----------
 
 export interface GoalRow {

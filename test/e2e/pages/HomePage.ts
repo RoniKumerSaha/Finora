@@ -4,15 +4,19 @@
  * `src/screens/HomeScreen.tsx`:
  *   - H1 "Where is my money?" and a meta line
  *     "Net worth · across N accounts · updated just now".
- *   - a "Net worth" hero with the figure and the caption
- *     "Assets minus liabilities" (or "Liabilities exceed assets").
- *   - a "This month" card with "Income", "Expenses" and "Net saved".
- *   - a four-cell strip: "Cash", "Receivables", "Debts",
- *     "Investments" — each a label + figure + hint.
- *   - "Accounts" and "Recent activity" cards, then the
+ *   - a STATUS BAR: the "Net worth" headline with the figure, the
+ *     caption "Assets minus liabilities" (or "Liabilities exceed
+ *     assets"), the "vs last month" delta and the projection.
+ *   - four stat cells beside it: "Cash", "Investments",
+ *     "Receivables", "Debts" — each a label + figure + hint.
+ *   - a "Recent activity" ledger board, then the
  *     "See full Insights →" link.
  *
- * The strip cells render label / value / hint as three siblings, so a
+ * 2026-11-24 (Variant H — The board): the "Accounts" preview card and
+ * the "This month" card were removed — every figure they held now
+ * lives in the status bar — so their locators went with them.
+ *
+ * The stat cells render label / value / hint as three siblings, so a
  * figure is reached through the label's parent.
  */
 import type { Locator } from '@playwright/test';
@@ -97,38 +101,27 @@ export class HomePage extends BasePage {
     return this.page.getByText('at maturity', { exact: true });
   }
 
-  /** The "This month" card. */
+  /**
+   * The "This month" card.
+   *
+   * Removed from Home on 2026-11-24 (Variant H — The board) — the
+   * locator stays so the suite can assert the card is ABSENT.
+   */
   get thisMonthCard(): Locator {
     return this.page.locator('div.card').filter({ hasText: 'This month' }).first();
   }
 
   /**
-   * A figure from the "This month" card, by its row label.
+   * The "Accounts" preview card.
    *
-   * "Income", "Expenses" and "Net saved" each sit in a flex row next
-   * to their figure. The row's parent holds BOTH the label's own
-   * `<span>` and the figure's `<span>`, so the figure is picked out
-   * by its own type — the label is `text-[13px]`, the figure is
-   * `text-[17px]`.
+   * Removed from Home on 2026-11-24 (Variant H — The board) — the
+   * locator stays so the suite can assert the card is ABSENT.
    */
-  thisMonthValue(label: 'Income' | 'Expenses' | 'Net saved'): Locator {
-    return this.thisMonthCard
-      .getByText(label, { exact: true })
-      .locator('..')
-      .locator('span.text-\\[17px\\]');
-  }
-
-  /** The "This month" card's footer — the month label and the entry count. */
-  get thisMonthFooter(): Locator {
-    return this.thisMonthCard.locator('div.border-t');
-  }
-
-  /** The "Accounts" preview card. */
   get accountsCard(): Locator {
     return this.page.locator('section.card').filter({ hasText: 'Manage →' }).first();
   }
 
-  /** The "Recent activity" card. */
+  /** The "Recent activity" ledger board. */
   get recentActivityCard(): Locator {
     return this.page.locator('section.card').filter({ hasText: 'View all' }).first();
   }
@@ -139,34 +132,9 @@ export class HomePage extends BasePage {
   }
 
   /**
-   * An account row in the Accounts preview, by name.
+   * A row in the Recent activity board, by its title.
    *
-   * `AcctRow` renders a flex line: a left column (icon + name + type)
-   * and the balance as its sibling. The row is found by the name's
-   * own text rather than by counting levels, so a markup change in
-   * the left column cannot silently re-target the balance.
-   */
-  accountRow(name: string): Locator {
-    return this.accountsCard
-      .locator('div.flex.justify-between.items-center.py-3')
-      .filter({ hasText: name })
-      .first();
-  }
-
-  /** An account row's balance figure. */
-  accountBalance(name: string): Locator {
-    return this.accountRow(name).locator('div.font-bold.tabular');
-  }
-
-  /** An account row's type label — "Bank Account", "Card", … */
-  accountTypeLabel(name: string): Locator {
-    return this.accountRow(name).locator('div.text-xs.text-muted');
-  }
-
-  /**
-   * A row in the Recent activity preview, by its title.
-   *
-   * `TxRow` renders a `div.group` wrapper: a left column (icon +
+   * `BoardRow` renders a `div.group` wrapper: a left column (icon +
    * title + date) and the amount as its sibling. The title text sits
    * inside a `<span>` four levels below the wrapper, so the wrapper
    * is found by its own `group` class rather than by counting.
@@ -212,7 +180,7 @@ export class HomePage extends BasePage {
   }
 
   /**
-   * A figure from the four-cell strip, by its label.
+   * A figure from the status bar's stat cells, by its label.
    *
    * The label, value and hint are three siblings inside the cell.
    */

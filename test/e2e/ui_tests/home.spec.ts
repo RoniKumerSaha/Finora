@@ -1,8 +1,8 @@
 /**
  * home.spec.ts — FIN-H01, FIN-H02, FIN-H04, FIN-H05, FIN-H06.
  *
- * The Home and Insights domain: the Home dashboard's hero, the
- * "This month" card, the four-cell strip and the two preview cards;
+ * The Home and Insights domain: the Home dashboard's status bar (the
+ * net-worth headline and the four stat cells) and its activity board;
  * the Insights screen's range pills and four cards; the Trends rows
  * and their period-comparison caption; and the empty states on both
  * screens.
@@ -68,25 +68,16 @@ test.describe('Home and Insights', () => {
         home1.expected.netWorthOvertime,
       );
 
-      // The projection column only renders when the projected net
-      // worth exceeds the current one.
-      await expect(home.projectionLabel).toHaveText(home1.expected.projectionLabel);
-      await expect(home.projectionCaption).toHaveText(home1.expected.projectionCaption);
+      // The projection block was removed from Home on 2026-11-24
+      // (Variant H — The board) — the status bar carries the headline
+      // and the four other figures, and nothing else.
+      await expect(home.projectionLabel).toHaveCount(0);
+      await expect(home.projectionCaption).toHaveCount(0);
     });
 
-    await test.step('Read the "This month" card', async () => {
-      for (const label of home1.expected.thisMonthLabels) {
-        await expect(home.thisMonthValue(label as 'Income')).toBeVisible();
-      }
-      await expect(home.thisMonthValue('Income')).toHaveText(
-        home1.figures.thisMonth.income,
-      );
-      await expect(home.thisMonthValue('Expenses')).toHaveText(
-        home1.figures.thisMonth.expenses,
-      );
-      await expect(home.thisMonthValue('Net saved')).toHaveText(
-        home1.figures.thisMonth.netSaved,
-      );
+    await test.step('The "This month" card is gone', async () => {
+      // Removed on 2026-11-24 (Variant H — The board).
+      await expect(home.thisMonthCard).toHaveCount(0);
     });
 
     await test.step('Read the stat strip', async () => {
@@ -101,17 +92,10 @@ test.describe('Home and Insights', () => {
       }
     });
 
-    await test.step('Read the Accounts preview', async () => {
-      await expect(home.accountsCard.getByRole('link', { name: home1.expected.accountsLink })).toBeVisible();
-
-      // The preview shows AT MOST four accounts.
-      for (const account of home1.figures.accounts) {
-        await expect(home.accountBalance(account.name)).toHaveText(account.balance);
-        await expect(home.accountTypeLabel(account.name)).toHaveText(account.type);
-      }
-      await expect(
-        home.accountsCard.getByRole('link', { name: home1.expected.accountsLink }),
-      ).toHaveCount(1);
+    await test.step('The Accounts preview card is gone', async () => {
+      // Removed on 2026-11-24 (Variant H — The board) — the accounts
+      // live on their own screen, and Home carries only the figures.
+      await expect(home.accountsCard).toHaveCount(0);
     });
 
     await test.step('Read the Recent activity preview', async () => {
@@ -392,12 +376,10 @@ test.describe('Home and Insights', () => {
       }
     });
 
-    await test.step('Read the empty Accounts card', async () => {
-      const empty = h05.expected.accountsEmpty;
-      await expect(home.emptyStateTitle(empty.title)).toBeVisible();
-      await expect(home.accountsCard.getByText(empty.description, { exact: true })).toBeVisible();
-      await expect(home.accountsCard.getByRole('link', { name: empty.cta })).toBeVisible();
-      await expect(home.accountsCard.getByRole('button', { name: empty.learnMore })).toBeVisible();
+    await test.step('The empty Accounts card is gone', async () => {
+      // Removed on 2026-11-24 (Variant H — The board).
+      await expect(home.accountsCard).toHaveCount(0);
+      await expect(home.emptyStateTitle(h05.expected.accountsEmpty.title)).toHaveCount(0);
     });
 
     await test.step('Read the empty Transactions card', async () => {

@@ -380,32 +380,29 @@ test.describe('Accounts', () => {
       await overlay.dismissWithGotIt();
     });
 
-    await test.step('On Home, check the empty Accounts and Transactions cards', async () => {
+    await test.step('On Home, check the empty Transactions card', async () => {
       await accounts.gotoRoute('/home');
       await accounts.waitForAppReady();
 
       // Home reuses the shared empty state — but with its OWN copy:
       // the description and CTA differ from the list screens'.
       //
-      // ⚠️ "No accounts yet" appears TWICE on Home — once as the
-      // four-cell strip's "Cash" caption and once as the empty
-      // Accounts card's title. The title is the 15px semibold node;
-      // the caption is the 11.5px muted one. Scope to the title.
-      await expect(accounts.homeEmptyTitle('No accounts yet')).toBeVisible();
+      // The empty ACCOUNTS card was removed on 2026-11-24 (Variant H
+      // — The board) — the status bar's "Cash" cell carries the
+      // "No accounts yet" caption instead — so only the empty
+      // Transactions card remains.
+      await expect(accounts.homeEmptyTitle('No accounts yet')).toHaveCount(0);
       await expect(
         accounts.homeEmptyDescription(
           'Add an account to track balances, transactions, and net worth.',
         ),
-      ).toBeVisible();
-      await expect(accounts.homeEmptyCta('+ Add an account')).toBeVisible();
+      ).toHaveCount(0);
+      await expect(accounts.homeEmptyCta('+ Add an account')).toHaveCount(0);
 
       await expect(accounts.homeEmptyTitle('No transactions yet')).toBeVisible();
       await expect(accounts.homeEmptyCta('+ Add a transaction')).toBeVisible();
 
-      // …including the learn-more links.
-      await expect(
-        accounts.learnMoreButton(empty.accounts.learnMore),
-      ).toBeVisible();
+      // …including the learn-more link.
       await expect(
         accounts.learnMoreButton(empty.transactions.learnMore),
       ).toBeVisible();
