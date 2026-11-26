@@ -1,13 +1,34 @@
 /**
- * GoalDetailScreen — single detail + edit screen for a savings goal.
+ * GoalDetailScreen — one goal, read as a receipt.
  *
  * Goals are a *plan-only* scratchpad. Contributions here do NOT create
  * transactions and do NOT touch account balances. The user is just
  * recording "how much of the target have I set aside so far?" — the
  * real money lives in their accounts, tracked separately.
  *
+ * 2026-11-26 redesign (variant G4, "the receipt"): the goal LIST is
+ * a row of small receipts, so the DETAIL is one big receipt you can
+ * read at arm's length — the same grammar at a larger scale. The
+ * page is a bundle of slips in two columns:
+ *
+ *   left   the statement — saved / target / remaining / target date,
+ *          the FILL LINE (how close you are, the one thing a receipt
+ *          never had), the per-month total, and a footnote in plain
+ *          words saying when the target lands.
+ *   right  "By the numbers" — the facts the form cannot change.
+ *
+ * The edit pass writes the new terms onto the SAME slip: the name,
+ * target and date are re-written in place, under an EDITING stamp.
+ * The contribution history hangs below as the itemised list of
+ * everything paid in, totalled at the foot.
+ *
+ * THE TONE FOLLOWS THE GOAL. One slip, three states — mint while it
+ * runs, sage once reached, coral once the date has passed. The wash
+ * is a low mix of the state's colour into the paper, so the state is
+ * legible before a single word is read.
+ *
  * Two modes:
- *   - View (default): read-only progress, required-per-month, full
+ *   - View (default): read-only statement, required-per-month, full
  *     contribution history, edit + delete affordances.
  *   - Edit (toggled inline): name, target, targetDate. The "saved"
  *     amount is recomputed from `goal.contributions` and is not
@@ -24,20 +45,54 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
 import {
-  goalSaved,
-  goalProgress,
   goalRequiredPerMonth,
+  goalSaved,
   isGoalCompleted,
   isGoalExpired,
+  monthsBetween,
+  today,
 } from '../domain/math';
-import { fmtBDT, fmtDate, fmtDateShort } from '../lib/format';
+import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
-import { ProgressBar } from '../components/ProgressBar';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
 
 const MIDDOT = '\u00B7';
+
+/**
+ * The goal's STATE, and the tone each state wears.
+ *
+ * The three states are mutually exclusive and exhaustive: a goal is
+ * reached, or it is past its date, or it is still running. Which one
+ * it is decides the stamp's wording, the stamp's colour and the wash
+ * of the paper.
+ */
+type GoalState = 'active' | 'reached' | 'overdue';
+
+const STATE_STAMP: Record<GoalState, string> = {
+  active: 'Active',
+  reached: 'Reached',
+  overdue: 'Past due',
+};
+
+const STATE_COLOR: Record<GoalState, string> = {
+  active: 'var(--primary)',
+  reached: 'var(--success)',
+  overdue: 'var(--danger)',
+};
+
+/**
+ * Classify the goal into one of its three states.
+ *
+ * Reaching the target beats the date: a goal saved in full on the
+ * last day is reached, not overdue.
+ */
+function stateOf(completed: boolean, expired: boolean): GoalState {
+  if (completed) return 'reached';
+  if (expired) return 'overdue';
+  return 'active';
+}
 
 export function GoalDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -69,12 +124,58 @@ export function GoalDetailScreen() {
   }
 
   const saved = goalSaved(goal);
-  const progress = goalProgress(goal);
-  const pct = Math.round(progress * 100);
+  const goalId = goal.id;
+  const goalName = goal.name;
+  const targetAmount = Number(goal.target) || 0;
+  const pct = targetAmount > 0 ? Math.min(100, Math.round((saved / targetAmount) * 100)) : 0;
+  const remaining = Math.max(0, targetAmount - saved);
   const completed = isGoalCompleted(goal, saved);
   const expired = isGoalExpired(goal);
   const requiredPerMonth = completed ? 0 : goalRequiredPerMonth(goal, saved);
   const contributions = goal.contributions;
+  const monthsLeft = goal.targetDate ? monthsBetween(today(), goal.targetDate) : 0;
+
+  // The state — and with it the stamp and the wash. Computed once so
+  // the receipt, the side card and the footnote all agree.
+  const gstate = stateOf(completed, expired);
+  const tone = STATE_COLOR[gstate];
+
+  // The pace footnote, in plain words. Three cases:
+  //   reached  → the goal is met, so there is no monthly plan to state
+  //   overdue  → the date has passed and the target is not met
+  //   active   → how long is left, what a month costs, when it lands
+  let paceNote: React.ReactNode = null;
+  if (completed) {
+    paceNote = (
+      <>
+        <b>Goal reached.</b> You set aside {fmtBDT(saved)} of {fmtBDT(targetAmount)} — there is
+        nothing left to save. The history below is the full record.
+      </>
+    );
+  } else if (expired) {
+    paceNote = (
+      <>
+        <b>Target date passed.</b> {fmtBDT(remaining)} is still needed for{' '}
+        {fmtBDT(targetAmount)}. Either extend the date or close the goal.
+      </>
+    );
+  } else if (Number.isFinite(requiredPerMonth) && monthsLeft > 0) {
+    paceNote = (
+      <>
+        <b>{monthsLeft} month{monthsLeft === 1 ? '' : 's'}</b> remain before the target date.
+        At {fmtBDT(Math.round(requiredPerMonth))} a month you reach {fmtBDT(targetAmount)} on{' '}
+        <b>{fmtDate(goal.targetDate)}</b>
+        {requiredPerMonth * monthsLeft >= remaining ? ' — just in time.' : ' — a little short, so save more.'}
+      </>
+    );
+  } else if (Number.isFinite(requiredPerMonth)) {
+    paceNote = (
+      <>
+        <b>{fmtBDT(Math.round(requiredPerMonth))}</b> a month reaches {fmtBDT(targetAmount)} by{' '}
+        <b>{fmtDate(goal.targetDate)}</b>.
+      </>
+    );
+  }
 
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard). Pre-populated
   // value is valid; user can break it by typing a negative target.
@@ -98,7 +199,7 @@ export function GoalDetailScreen() {
       return;
     }
     try {
-      update(s => goals.update(s, goal!.id, {
+      update(s => goals.update(s, goalId, {
         name: name.trim(),
         target: Number(target),
         targetDate,
@@ -118,7 +219,7 @@ export function GoalDetailScreen() {
       danger: true,
     });
     if (!ok) return;
-    update(s => goals.remove(s, goal!.id));
+    update(s => goals.remove(s, goalId));
     showBanner({
       kind: 'success',
       what: 'Goal deleted',
@@ -136,7 +237,7 @@ export function GoalDetailScreen() {
     }
     try {
       const amount = Number(contribAmount);
-      update(s => goals.addContribution(s, goal!.id, {
+      update(s => goals.addContribution(s, goalId, {
         amount,
         date: contribDate,
         note: contribNote.trim() || undefined,
@@ -144,9 +245,9 @@ export function GoalDetailScreen() {
       const newSaved = saved + amount;
       showBanner({
         kind: 'success',
-        what: `${fmtBDT(contribAmount)} toward ${goal!.name}`,
+        what: `${fmtBDT(contribAmount)} toward ${goalName}`,
         why: 'Saved as a plan entry — your account balance is unchanged.',
-        fix: `Saved is now ${fmtBDT(newSaved)} of ${fmtBDT(goal!.target)}.`,
+        fix: `Saved is now ${fmtBDT(newSaved)} of ${fmtBDT(targetAmount)}.`,
       });
       // Close the modal and clear the form so a second contribution
       // starts from scratch. State is reset AFTER the success banner so
@@ -168,7 +269,7 @@ export function GoalDetailScreen() {
       danger: true,
     });
     if (!ok) return;
-    update(s => goals.removeContribution(s, goal!.id, contributionId));
+    update(s => goals.removeContribution(s, goalId, contributionId));
     showBanner({
       kind: 'success',
       what: 'Contribution removed',
@@ -178,7 +279,7 @@ export function GoalDetailScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-[18px] max-w-[640px]">
+    <div className="flex flex-col gap-[18px]">
       {/* Top-row back link — same arrow text-link used by every
           "planner" surface so goals and planners share one back
           affordance. */}
@@ -194,6 +295,9 @@ export function GoalDetailScreen() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <h1 className="heading h1-screen">{goal.name}</h1>
+          <div className="text-muted text-[13px] mt-1.5">
+            A plan-only scratchpad. Contributions here never touch your accounts.
+          </div>
         </div>
         {mode === 'view' && (
           <div className="flex flex-wrap gap-2">
@@ -212,147 +316,240 @@ export function GoalDetailScreen() {
         )}
       </div>
 
-      {/* Progress card */}
-      <section className="card">
-        <div className="flex justify-between items-center mb-3">
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Saved so far</div>
-            <div className="text-3xl font-extrabold text-primary tabular mt-1">{fmtBDT(saved)}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11px] text-muted uppercase tracking-wider">Target</div>
-            <div className="text-3xl font-extrabold text-ink tabular mt-1">{fmtBDT(goal.target)}</div>
-          </div>
-        </div>
-        <ProgressBar value={pct} height={10} animateOnMount animationDelay={120} />
-        <div className="flex justify-between text-xs text-muted mt-2">
-          <span>{pct}% complete</span>
-          <span>{fmtBDT(Math.max(0, goal.target - saved))} remaining</span>
-        </div>
-        {completed && (
-          <div className="mt-4 text-[13px] text-success bg-success-callout-bg border border-success rounded-lg px-3 py-2">
-            Goal reached. {fmtBDT(saved)} saved {MIDDOT} target {fmtBDT(goal.target)}
-          </div>
-        )}
-        {!completed && expired && (
-          <div className="mt-4 text-[13px] text-danger bg-danger-soft border border-danger rounded-lg px-3 py-2">
-            Target date passed. Either extend it or close the goal.
-          </div>
-        )}
-      </section>
-
-      {/* Math summary */}
-      <section className="card">
-        <h2 className="heading h3-modal mb-4">By the numbers</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Required per month</div>
-            <div className="text-xl font-bold text-accent tabular mt-1">
-              {requiredPerMonth === Infinity
-                ? '— past due —'
-                : completed ? '— done —'
-                : fmtBDT(requiredPerMonth)}
+      <div className="goal-detail">
+        {/* ═══ THE RECEIPT ═══════════════════════════════════ */}
+        <div className="goal-detail__col">
+          <section
+            className="goal-receipt"
+            data-tone={gstate}
+            style={{ ['--tone' as string]: tone, ['--stamp' as string]: tone }}
+          >
+            <div className="goal-receipt__head">
+              <span className="goal-receipt__name">{goal.name}</span>
+              <span className="goal-receipt__stamp">{STATE_STAMP[gstate]}</span>
             </div>
-          </div>
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Target date</div>
-            <div className="text-xl font-bold text-ink tabular mt-1">{fmtDate(goal.targetDate)}</div>
-          </div>
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Contributions</div>
-            <div className="text-xl font-bold text-ink tabular mt-1">{contributions.length}</div>
-          </div>
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Created</div>
-            <div className="text-xl font-bold text-ink tabular mt-1">{fmtDateShort(goal.createdAt)}</div>
+
+            <div className="goal-receipt__rule" />
+
+            <div className="goal-receipt__row">
+              <span>Saved so far</span>
+              <b>{fmtBDT(saved)}</b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Target</span>
+              <b>{fmtBDT(targetAmount)}</b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Remaining</span>
+              <b>{fmtBDT(remaining)}</b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Target date</span>
+              <b>{goal.targetDate ? fmtDate(goal.targetDate) : '—'}</b>
+            </div>
+
+            {/* The fill line — how much of the slip is written in.
+                The one thing a receipt never had: the distance to the
+                target, drawn rather than stated. */}
+            <div
+              className="goal-fill"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${goal.name} saved toward target`}
+            >
+              <i style={{ width: `${pct}%` }} />
+            </div>
+            <div className="goal-fillhint">
+              <span><b>{pct}%</b> complete</span>
+              <span>{fmtBDT(remaining)} to go</span>
+            </div>
+
+            {/* The total — the per-month ask. It is the one number the
+                user acts on, so it gets the receipt's total row. */}
+            <div className="goal-receipt__row goal-receipt__row--total">
+              <span>Required per month</span>
+              <b>
+                {completed
+                  ? '— done —'
+                  : Number.isFinite(requiredPerMonth)
+                    ? fmtBDT(Math.round(requiredPerMonth))
+                    : '— past due —'}
+              </b>
+            </div>
+
+            {/* The footnote — the pace, in plain words. */}
+            {paceNote && <div className="goal-pace">{paceNote}</div>}
+          </section>
+
+          {/* ═══ THE EDIT PASS ═════════════════════════════════ */}
+          {mode === 'edit' && (
+            <form
+              onSubmit={onSaveEdit}
+              className="goal-receipt"
+              data-tone={gstate}
+              style={{ ['--tone' as string]: tone, ['--stamp' as string]: 'var(--warn)' }}
+            >
+              <div className="goal-receipt__head">
+                <span className="goal-receipt__name">Edit goal</span>
+                <span className="goal-receipt__stamp">Editing</span>
+              </div>
+
+              <div className="goal-receipt__rule" />
+
+              <div className="goal-warnbox" style={{ margin: '12px 0 4px' }}>
+                <strong>Heads up:</strong> the "saved so far" figure above is the sum of your
+                contributions. Editing this goal doesn&apos;t change that — add or remove a
+                contribution instead.
+              </div>
+
+              <div className="goal-editfields" style={{ marginTop: 14 }}>
+                <Field label="Name">
+                  <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
+                </Field>
+                <Field label="Target amount" error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={target}
+                    onChange={e => setTarget(e.target.value)}
+                    aria-invalid={targetInvalid || undefined}
+                    className={targetErrorClass}
+                  />
+                </Field>
+                <Field label="Target date">
+                  <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
+                </Field>
+              </div>
+
+              <div className="flex flex-wrap gap-2" style={{ marginTop: 16 }}>
+                <Button
+                  variant="outlined-primary"
+                  type="submit"
+                  disabled={targetInvalid || !name.trim() || !targetDate}
+                >
+                  Save changes
+                </Button>
+                <Button variant="outlined-ghost" onClick={() => setMode('view')}>Cancel</Button>
+              </div>
+            </form>
+          )}
+
+          {/* ═══ HISTORY ════════════════════════════════════════ */}
+          {contributions.length > 0 && (
+            <section
+              className="goal-receipt"
+              data-tone={gstate}
+              style={{ ['--tone' as string]: tone, ['--stamp' as string]: 'var(--muted)' }}
+            >
+              <div className="goal-receipt__head">
+                <span className="goal-receipt__name">Contribution history</span>
+                <span className="goal-receipt__stamp">
+                  {contributions.length} {contributions.length === 1 ? 'entry' : 'entries'}
+                </span>
+              </div>
+
+              <div className="goal-receipt__rule" />
+
+              <div className="goal-history">
+                {contributions
+                  .slice()
+                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .map(c => (
+                    <div key={c.id} className="goal-hrow">
+                      <div className="min-w-0">
+                        <div className="ha">{fmtBDT(c.amount)}</div>
+                        <div className="hd">
+                          {fmtDate(c.date)}{c.note ? ` ${MIDDOT} ${c.note}` : ''}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveContribution(c.id)}
+                        aria-label="Remove contribution"
+                        className="goal-hremove"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="goal-receipt__row goal-receipt__row--total">
+                <span>Total contributed</span>
+                <b>{fmtBDT(saved)}</b>
+              </div>
+            </section>
+          )}
+
+          {/* ═══ DANGER ══════════════════════════════════════════ */}
+          <section
+            className="rounded-card p-6"
+            style={{
+              background: 'var(--danger-callout-bg)',
+              border: '1px solid var(--danger)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
+            }}
+          >
+            <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
+            <p className="text-[13px] text-muted mb-4">
+              Removes the goal and its {contributions.length} contribution {contributions.length === 1 ? 'entry' : 'entries'}. Your accounts and transactions are not touched.
+            </p>
+            <Button variant="outlined-danger" onClick={onDelete}>Delete goal</Button>
+          </section>
+        </div>
+
+        {/* ═══ THE SIDE COLUMN ════════════════════════════════ */}
+        <div className="goal-detail__col">
+          <div className="goal-detail__sect">By the numbers</div>
+
+          <section
+            className="goal-receipt"
+            data-tone={gstate}
+            style={{ ['--tone' as string]: tone, ['--stamp' as string]: tone }}
+          >
+            <div className="goal-receipt__head">
+              <span className="goal-receipt__name">{goal.name}</span>
+            </div>
+
+            <div className="goal-receipt__rule" />
+
+            <div className="goal-receipt__row">
+              <span>Required per month</span>
+              <b>
+                {completed
+                  ? '— done —'
+                  : Number.isFinite(requiredPerMonth)
+                    ? fmtBDT(Math.round(requiredPerMonth))
+                    : '— past due —'}
+              </b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Target date</span>
+              <b>{goal.targetDate ? fmtDate(goal.targetDate) : '—'}</b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Contributions</span>
+              <b>{contributions.length}</b>
+            </div>
+            <div className="goal-receipt__row">
+              <span>Created</span>
+              <b>{fmtDate(goal.createdAt)}</b>
+            </div>
+            <div className="goal-receipt__row goal-receipt__row--total">
+              <span>Months remaining</span>
+              <b>{completed ? '—' : Math.max(0, monthsLeft)}</b>
+            </div>
+          </section>
+
+          <div className="goal-note">
+            <strong>One slip, three states.</strong> The receipt&apos;s tone follows the goal: mint
+            while it&apos;s running, sage once it&apos;s reached, coral once the date has passed. The
+            stamp names the state in plain words.
           </div>
         </div>
-      </section>
-
-      {/* Edit form (inline) */}
-      {mode === 'edit' && (
-        <form onSubmit={onSaveEdit} className="card flex flex-col gap-5">
-          <h2 className="heading h3-modal">Edit goal</h2>
-          <div className="text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-            <strong>Heads up:</strong> the "saved so far" figure above is the sum of your contributions.
-            Editing this goal doesn't change that — add or remove a contribution instead.
-          </div>
-          <Field label="Name">
-            <Input value={name} onChange={e => setName(e.target.value)} autoFocus />
-          </Field>
-          <Field label="Target amount" error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={target}
-              onChange={e => setTarget(e.target.value)}
-              aria-invalid={targetInvalid || undefined}
-              className={targetErrorClass}
-            />
-          </Field>
-          <Field label="Target date">
-            <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
-          </Field>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outlined-primary"
-              type="submit"
-              disabled={targetInvalid || !name.trim() || !targetDate}
-            >
-              Save changes
-            </Button>
-            <Button variant="outlined-ghost" onClick={() => setMode('view')}>Cancel</Button>
-          </div>
-        </form>
-      )}
-
-      {/* Add contribution is rendered as a modal (see ContributeModal at end of file). */}
-
-      {/* Contribution history */}
-      {contributions.length > 0 && (
-        <section className="card">
-          <h2 className="heading h3-modal mb-4">Contribution history</h2>
-          <div className="divide-y divide-border">
-            {contributions
-              .slice()
-              .sort((a, b) => b.date.localeCompare(a.date))
-              .map(c => (
-                <div key={c.id} className="py-2.5 flex justify-between items-center gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold tabular">{fmtBDT(c.amount)}</div>
-                    <div className="text-[11px] text-muted">
-                      {fmtDate(c.date)}{c.note ? ` ${MIDDOT} ${c.note}` : ''}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveContribution(c.id)}
-                    aria-label="Remove contribution"
-                    className="shrink-0 text-[11px] text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-          </div>
-        </section>
-      )}
-
-      {/* Footer: delete */}
-      <section
-        className="rounded-card p-6"
-        style={{
-          background: 'var(--danger-callout-bg)',
-          border: '1px solid var(--danger)',
-          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
-        }}
-      >
-        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-        <p className="text-[13px] text-muted mb-4">
-          Removes the goal and its {contributions.length} contribution {contributions.length === 1 ? 'entry' : 'entries'}. Your accounts and transactions are not touched.
-        </p>
-        <Button variant="outlined-danger" onClick={onDelete}>Delete goal</Button>
-      </section>
+      </div>
 
       {dialog}
       {!completed && mode === 'view' && showContributeForm && (

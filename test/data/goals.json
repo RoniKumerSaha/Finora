@@ -81,7 +81,7 @@
       "target": 50000,
       "targetDate": "2027-06-30",
       "cardText": "Goal reached. Nice.",
-      "detailText": "Goal reached. ৳ 50,000 saved · target ৳ 50,000",
+      "detailText": "Goal reached. You set aside ৳ 50,000 of ৳ 50,000 — there is nothing left to save. The history below is the full record.",
       "requiredPerMonth": "— done —"
     },
     "expired": {
@@ -93,7 +93,7 @@
       "contributionDate": "2020-01-01",
       "pace": "Overdue — no monthly plan",
       "stamp": "Overdue",
-      "detailText": "Target date passed. Either extend it or close the goal.",
+      "detailText": "Target date passed. ৳ 9,000 is still needed for ৳ 10,000. Either extend the date or close the goal.",
       "requiredPerMonth": "— past due —"
     }
   },

@@ -15,7 +15,12 @@
  * `src/screens/GoalAddScreen.tsx` — fields "Name", "Already saved",
  * "Target amount", "Target date"; the submit button says "Save goal".
  *
- * `src/screens/GoalDetailScreen.tsx` — the H1 is the goal's name.
+ * `src/screens/GoalDetailScreen.tsx` — the H1 is the goal's name, and
+ * the page below it is a bundle of RECEIPTS: the statement receipt
+ * (saved / target / remaining / target date, the fill line, and the
+ * per-month total), the "By the numbers" receipt, the edit pass, and
+ * the contribution history receipt. The receipt's tone follows the
+ * goal — mint while it runs, sage once reached, coral once overdue.
  * Contributions live in a `role="dialog"` modal titled
  * "Add a contribution" with fields Amount / Date / Note (optional).
  * Delete lives in a "Danger zone" section.
@@ -223,24 +228,54 @@ export class GoalsPage extends BasePage {
 
   // ── Detail screen ──
 
-  /** The "Saved so far" figure on the detail screen's progress card. */
+  /**
+   * The detail screen's STATEMENT receipt — the big slip on the left
+   * carrying the saved / target / remaining / target-date rows.
+   */
+  get statementReceipt(): Locator {
+    return this.page.locator('section.goal-receipt').first();
+  }
+
+  /**
+   * A figure on the statement receipt, found by its row label.
+   *
+   * The receipt states each fact on its own row, so the figure is
+   * the row's `<b>` sibling of the label.
+   */
+  private receiptValue(label: string): Locator {
+    return this.statementReceipt
+      .locator('.goal-receipt__row')
+      .filter({ hasText: label })
+      .locator('> b')
+      .first();
+  }
+
+  /** The "Saved so far" figure on the detail screen's statement receipt. */
   get savedSoFarValue(): Locator {
-    return this.page.locator('div.text-3xl.font-extrabold.text-primary');
+    return this.receiptValue('Saved so far');
   }
 
-  /** The "Target" figure on the detail screen's progress card. */
+  /** The "Target" figure on the detail screen's statement receipt. */
   get targetValue(): Locator {
-    return this.page.locator('div.text-3xl.font-extrabold.text-ink');
+    return this.receiptValue('Target');
   }
 
-  /** The "{n}% complete" line. */
+  /** The "{n}% complete" line — the fill hint under the fill line. */
   get percentComplete(): Locator {
     return this.page.getByText('% complete', { exact: false });
   }
 
-  /** The "{amount} remaining" line. */
+  /** The "{amount} to go" line — the other half of the fill hint. */
   get remainingLabel(): Locator {
-    return this.page.getByText('remaining', { exact: false });
+    return this.page.getByText('to go', { exact: false });
+  }
+
+  /**
+   * The receipt's pace FOOTNOTE — the plain-words note under the
+   * total row. It states the goal's status in a sentence.
+   */
+  get paceNote(): Locator {
+    return this.page.locator('.goal-pace').first();
   }
 
   /** The "Goal reached." banner on a completed goal. */
@@ -251,34 +286,41 @@ export class GoalsPage extends BasePage {
   /**
    * The completed-goal callout's FULL text.
    *
-   * It reads "Goal reached. ৳ 50,000 saved · target ৳ 50,000" — the
-   * `goalReachedBanner` locator matches only its first clause.
+   * The receipt's footnote opens "Goal reached." and then states what
+   * was set aside against the target — the `goalReachedBanner`
+   * locator matches only its first clause.
    */
   get goalReachedDetail(): Locator {
-    return this.page.getByText('saved · target', { exact: false });
-  }
-
-  /** The "Target date passed." banner on an expired goal. */
-  get goalExpiredBanner(): Locator {
-    return this.page.getByText('Target date passed.', { exact: false });
-  }
-
-  /** The "Required per month" figure in the "By the numbers" card. */
-  get requiredPerMonthValue(): Locator {
     return this.page
-      .getByText('Required per month', { exact: true })
-      .locator('..')
-      .locator('div.text-xl');
+      .getByText('Goal reached.', { exact: false })
+      .locator('..');
   }
+
+  /**
+   * The "Target date passed." banner on an expired goal.
+   */
+  get goalExpiredBanner(): Locator {
+    return this.page
+      .getByText('Target date passed.', { exact: false })
+      .locator('..');
+  }
+
+  /** The "Required per month" figure — the receipt's total row. */
+  get requiredPerMonthValue(): Locator {
+    return this.statementReceipt
+      .locator('.goal-receipt__row--total > b')
+      .first();
+  }
+
 
   /**
    * The inline edit form's "Heads up:" warning.
    *
-   * The heading itself is a `<strong>`, so the warning's PARENT is
-   * the unit that carries the whole message.
+   * The warning is a `<strong>` inside the receipt's warn box, so
+   * the BOX is the unit that carries the whole message.
    */
   get editHeadsUpWarning(): Locator {
-    return this.page.getByText('Heads up:', { exact: false }).locator('..');
+    return this.page.locator('.goal-warnbox');
   }
 
   /** The inline edit form's submit button. */
@@ -291,9 +333,12 @@ export class GoalsPage extends BasePage {
     return this.page.getByRole('button', { name: 'Cancel', exact: true });
   }
 
-  /** The contribution history card's rows. */
+  /** The contribution history receipt. */
   get contributionHistoryCard(): Locator {
-    return this.page.locator('section.card').filter({ hasText: 'Contribution history' }).first();
+    return this.page
+      .locator('section.goal-receipt')
+      .filter({ hasText: 'Contribution history' })
+      .first();
   }
 
   // ── Contribution modal ──
@@ -415,10 +460,14 @@ export class GoalsPage extends BasePage {
    * Open the inline edit form.
    *
    * The form replaces the view mode in place — the H1 stays the goal's
-   * name, so the "Edit goal" heading is the reliable signal.
+   * name, so the "Edit goal" receipt title is the reliable signal.
    */
   async openEditForm(): Promise<void> {
     await this.editButton.click();
-    await this.page.getByRole('heading', { name: 'Edit goal' }).waitFor({ state: 'visible' });
+    await this.page
+      .locator('.goal-receipt__name')
+      .filter({ hasText: 'Edit goal' })
+      .first()
+      .waitFor({ state: 'visible' });
   }
 }

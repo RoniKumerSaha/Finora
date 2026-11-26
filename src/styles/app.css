@@ -988,6 +988,244 @@ main > * {
 }
 
 /* ============================================================
+   THE GOAL DETAIL PAGE (.goal-detail)
+   ============================================================
+   The goal LIST is a row of small receipts. The DETAIL is one big
+   receipt you can read at arm's length, so the same grammar is
+   reused at a larger scale: a statement of line items, a fill line
+   for the progress, a dashed total, and a footnote in plain words.
+
+   The page is two columns — the receipt on the left, the facts on
+   the right — and both are receipts, so the page reads as a small
+   bundle of slips rather than a form with a sidebar.
+
+   THE TONE FOLLOWS THE GOAL. One slip, three states:
+     active   → mint   (the goal is running)
+     reached  → sage   (the target is met)
+     overdue  → coral  (the date has passed)
+   The wash is a low mix of the state's colour into the paper, so
+   the state is legible before a single word is read.
+   ============================================================ */
+
+/* The two-column page. The receipt column is wider — it carries the
+   statement — and the facts column takes the rest. */
+.goal-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.goal-detail__col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+@media (max-width: 1080px) {
+  .goal-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A section label in the side column — "BY THE NUMBERS". It sits
+   outside any card, in the page's own ink, so it reads as a heading
+   for the slips below rather than part of one. */
+.goal-detail__sect {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: -8px;
+}
+
+/* The receipt's TONE. One slip, three states — see the note above.
+   The wash is a mix of the state's colour into the paper, so the
+   state shows before any word is read. */
+.goal-receipt[data-tone='active'] {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--primary) 7%, var(--surface-3)) 0%,
+      color-mix(in srgb, var(--primary) 3%, var(--surface-3)) 55%,
+      var(--surface-3) 100%
+    );
+}
+.goal-receipt[data-tone='reached'] {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--success) 9%, var(--surface-3)) 0%,
+      color-mix(in srgb, var(--success) 3%, var(--surface-3)) 55%,
+      var(--surface-3) 100%
+    );
+}
+.goal-receipt[data-tone='overdue'] {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--danger) 9%, var(--surface-3)) 0%,
+      color-mix(in srgb, var(--danger) 3%, var(--surface-3)) 55%,
+      var(--surface-3) 100%
+    );
+}
+
+/* The FILL LINE — how much of the slip is written in. The one thing
+   a receipt never had, and the reason the detail screen exists: the
+   list card says how much is saved, the detail says how CLOSE. */
+.goal-fill {
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.30);
+  overflow: hidden;
+  margin: 14px 0 8px;
+  border: 1px solid var(--border);
+}
+.goal-fill > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--tone, var(--primary)),
+    color-mix(in srgb, var(--tone, var(--primary)) 65%, #fff)
+  );
+}
+.goal-fillhint {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.goal-fillhint b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The pace note — the receipt's footnote. It says in plain words
+   what the numbers imply: how long is left, what a month costs, and
+   when the target lands. */
+.goal-pace {
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--divider);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.65;
+  font-family: var(--font-body);
+}
+.goal-pace b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The contribution history — the itemised list of everything paid
+   in. Each row is a line item: the amount in ink, the date and note
+   beneath it in muted type. */
+.goal-history {
+  display: flex;
+  flex-direction: column;
+}
+.goal-hrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.goal-hrow:last-child {
+  border-bottom: 0;
+}
+.goal-hrow .ha {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.goal-hrow .hd {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.goal-hremove {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  flex: none;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.goal-hremove:hover {
+  color: var(--danger-title);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+.goal-hremove:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+/* The edit pass — the fields written onto the same slip. Two fields
+   share a row on a wide slip and stack on a narrow one. */
+.goal-editfields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.goal-editfields > :first-child {
+  grid-column: 1 / -1;
+}
+@media (max-width: 560px) {
+  .goal-editfields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The receipt's warn box — the "heads up" note in the edit pass. It
+   is the only warm element on the slip, so it reads as a caution
+   pinned to the form rather than as another field's error. */
+.goal-warnbox {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-family: var(--font-body);
+}
+.goal-warnbox strong {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+/* The note box at the foot of the side column — the page's own
+   small print, explaining the three states in one sentence. */
+.goal-note {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: var(--font-body);
+}
+.goal-note strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ============================================================
    THE INVESTMENT CERTIFICATE (.inv-cert)
    ============================================================
    An investment is a contract with a bank, so the card IS the
