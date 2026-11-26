@@ -151,6 +151,366 @@ input::placeholder, textarea::placeholder {
   .tx-sub-inline { display: none; }
 }
 
+/* ============================================================
+   THE TRANSACTION BOOK — running balance (2026-11-26).
+
+   The list as a BANK BOOK: every row carries the balance AFTER
+   that entry, so the number that actually matters — how much do
+   I have — is attached to every line instead of living somewhere
+   else on the page. The rows become a staircase: you can watch
+   the balance climb and fall.
+
+   The whole design rests on one assumption that has to be stated
+   in the UI: a running balance only means something for a SINGLE
+   account. So the book is scoped to one account, and the account
+   picker sits in the header. Without that scope the numbers are
+   meaningless, so the scope is never implicit.
+   ============================================================ */
+
+.txbook {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card), var(--card-inset);
+  overflow: hidden;
+}
+
+/* ---- the header band ---------------------------------------- */
+.txbook__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 20px 22px 18px;
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(160deg, rgba(63, 181, 146, 0.08), transparent 60%),
+    var(--surface-2);
+}
+.txbook__hero { min-width: 0; }
+.txbook__k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.txbook__v {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.txbook__d {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.txbook__d b { color: var(--primary); font-weight: 700; }
+
+/* The four leading numbers, set as a ruled strip. */
+.txbook__figs {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.txbook__figs .txfig + .txfig {
+  padding-left: 22px;
+  border-left: 1px solid var(--border);
+}
+.txfig { min-width: 0; }
+.txfig__k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.txfig__v {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.txfig__v--in { color: var(--primary); }
+.txfig__v--out { color: var(--danger); }
+.txfig__v--ink { color: var(--ink); }
+.txfig__n {
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-top: 3px;
+}
+
+/* ---- the account scope --------------------------------------- */
+/* Which account the book is about. A row of pills, not a <select>:
+   the list carries no dropdown control, and the pills read as a set
+   of books you can step between. */
+.txbook__scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.txbook__scope-l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted-2);
+  margin-right: 2px;
+}
+/* The book tabs. They sit on the strip's bottom rule like tabs in a
+   ledger, and the active one is marked by a filled pill — deliberately
+   NOT the `rounded-pill` shape the filter chips use, so the two
+   families never read as the same control. */
+.txbook__scopebtn {
+  padding: 4px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  cursor: pointer;
+}
+.txbook__scopebtn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.txbook__scopebtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.txbook__scopebtn--on {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+/* The word "book" is set quieter than the account name — it is the
+   qualifier that tells the two families of control apart, not the
+   subject. */
+.txbook__scopebtn-s {
+  color: var(--muted-2);
+  font-weight: 500;
+}
+.txbook__scopebtn--on .txbook__scopebtn-s {
+  color: color-mix(in srgb, var(--primary) 65%, var(--muted-2));
+}
+
+/* ---- the book ------------------------------------------------ */
+.txbook__rows { padding: 4px 22px 14px; }
+
+/* The day rule — a ledger line naming the day a run of rows belongs
+   to. It is sticky, so the day being read never leaves the screen. */
+.txbook__dayhead {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+  padding: 10px 0 6px;
+  margin: 0 -22px;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+.txbook__day:first-child .txbook__dayhead { padding-top: 6px; }
+
+.txrow {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) 128px 176px;
+  gap: 14px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.txrow:last-child { border-bottom: 0; }
+/* Without a per-row date stamp — the day rule above already names the
+   day — the date column collapses and the title takes the space. The
+   date cell is not rendered at all in that case, so the grid has to
+   drop the column with it. */
+.txbook__rows--nodate .txrow { grid-template-columns: minmax(0, 1fr) 128px 176px; }
+.txrow__d {
+  font-size: 11px;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.txrow__amt {
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* The row's title and amount carry the e2e page object's class hooks
+   (`div.font-semibold span.min-w-0`, `div.font-bold.tabular`), so the
+   book's own type is layered ON TOP of those utilities rather than
+   replacing them. These rules win on specificity. */
+.txrow .txname { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.txrow .txrow__amt { font-size: 13.5px; }
+/* The balance column is drawn as a bar — the staircase. The balance
+   and the bar sit on one line; the account name drops below them, so
+   it gets the column's full width instead of being squeezed to an
+   ellipsis. */
+.txrow__balwrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.txrow__bal {
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink);
+}
+/* The account a row's balance belongs to — only shown in the mixed
+   "all accounts" book, where each row's balance is a different
+   account's. It sits on its own line under the balance, so it can
+   spell the account out in full. */
+.txrow__balacct {
+  flex-basis: 100%;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -4px;
+}
+.txrow__bar {
+  width: 54px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+  flex: none;
+}
+.txrow__bar > i {
+  display: block;
+  width: var(--w, 100%);
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+}
+.txrow__bar > i.low { background: var(--danger); }
+.txrow__bar > i.mid { background: var(--warn); }
+
+/* The row's left cluster: glyph + title + subtitle. */
+.txleft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.txleft__glyph {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.txleft__glyph svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.txleft__glyph--in { color: var(--primary); background: rgba(63, 181, 146, 0.14); }
+.txleft__glyph--out { color: var(--danger); background: rgba(210, 106, 92, 0.14); }
+.txleft__glyph--xfr { color: var(--info); background: rgba(47, 117, 188, 0.14); }
+.txname {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.txsub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+/* The subtitle on a book row: the account · category line on mobile,
+   the category alone on desktop. Both are `.txsub` for sizing. */
+.txbook__rows .tx-sub-inline,
+.txbook__rows .tx-sub-col {
+  font-size: 11.5px;
+  line-height: 1.3;
+  margin-top: 3px;
+}
+
+@media (max-width: 760px) {
+  .txbook__head { padding: 16px 14px 14px; gap: 14px; }
+  .txbook__v { font-size: 27px; }
+  /* The four figures become a two-column grid on a phone. A flex row
+     would either squeeze them or push the last one onto a line of
+     its own with a stray left rule — the grid keeps them paired. */
+  .txbook__figs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    width: 100%;
+  }
+  .txbook__figs .txfig + .txfig {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .txfig__v { font-size: 15px; }
+  .txbook__scope { padding: 10px 14px; gap: 6px; }
+  .txbook__rows { padding: 2px 14px 10px; }
+
+  .txrow { grid-template-columns: minmax(0, 1fr) 104px; }
+  /* The nodate variant has to be matched on specificity, or the
+     desktop three-column rule wins and squeezes the title out. */
+  .txbook__rows--nodate .txrow { grid-template-columns: minmax(0, 1fr) 104px; }
+  .txrow__d { display: none; }
+  /* The balance is the whole point of this design, so on a phone it
+     stays — it moves UNDER the amount, where there's room for it.
+     The bar goes with it. */
+  .txrow__balwrap {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .txrow__bal { font-size: 12px; }
+  .txrow__bar { width: 100%; }
+  .txrow__balacct {
+    text-align: right;
+    font-size: 10px;
+    margin-top: 0;
+  }
+  .txrow .txrow__amt { font-size: 12.5px; }
+  .txleft__glyph { width: 30px; height: 30px; border-radius: 8px; }
+  .txleft__glyph svg { width: 15px; height: 15px; }
+  .txleft { gap: 9px; }
+  .txrow .txname { font-size: 12.5px; }
+  .txbook__rows .tx-sub-inline,
+  .txbook__rows .tx-sub-col { font-size: 10.5px; }
+}
+
 /* Card link — applied to .card surfaces that are clickable. Subtle
    1px upward translate + shadow tightens from card → modal on hover.
    Decorative only; keyboard focus is already covered by .focus-ring.

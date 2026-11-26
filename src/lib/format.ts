@@ -55,6 +55,20 @@ export function fmtDateShort(iso: string | Date): string {
   return `${mon} ${day}`;
 }
 
+/**
+ * "26 Nov" — day first, month, no year.
+ *
+ * Used by the transaction book's date column, which sits in a narrow
+ * gutter and reads as a ledger stamp rather than a date. The year
+ * lives in the page header context instead.
+ */
+export function fmtDayMonth(iso: string | Date): string {
+  const d = typeof iso === 'string' ? new Date(iso + 'T00:00:00Z') : iso;
+  if (isNaN(d.getTime())) return String(iso);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
+}
+
 /** Today / Yesterday / N days ago — for compact hover labels. */
 export function fmtRelative(iso: string | Date, now: Date = new Date()): string {
   const d = typeof iso === 'string' ? new Date(iso + 'T00:00:00Z') : iso;
