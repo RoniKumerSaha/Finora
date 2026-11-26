@@ -1147,3 +1147,157 @@
   margin-top: -3px;
 }
 
+
+/* ============================================================
+   THE ACCOUNT CERTIFICATE (.acct-cert)
+   Extracted verbatim from src/styles/app.css. An account is an
+   instrument you hold — a passbook, a wallet, a card — so the
+   sheet carries the same perforated edge and monospaced engraving
+   as the other three families.
+   ============================================================ */
+.acct-cert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 22px 22px 24px;
+  container-type: inline-size;
+  container-name: acctcert;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--tone) 7%, #1E2A24) 0%,
+      color-mix(in srgb, var(--tone) 4%, #22302A) 55%,
+      #1A241F 100%
+    ),
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.acct-cert::before,
+.acct-cert::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x,
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px) 0 0 / 14px 9px repeat-x;
+}
+.acct-cert::before { top: 0; }
+.acct-cert::after { bottom: 0; }
+.acct-cert__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-right: 7px;
+}
+.acct-cert__head > :first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.acct-cert__name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-cert__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.13em;
+  margin-top: 5px;
+}
+.acct-cert__seal {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--tone);
+  color: var(--tone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-9deg);
+  line-height: 1;
+  margin-top: -3px;
+}
+.acct-cert__seal .p {
+  font-size: 16px;
+  font-weight: 700;
+}
+.acct-cert__seal .l {
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  margin-top: 4px;
+}
+@container acctcert (max-width: 380px) {
+  .acct-cert__seal { width: 46px; height: 46px; }
+  .acct-cert__seal .p { font-size: 14px; }
+}
+.acct-cert__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 14px 0 12px;
+}
+.acct-cert__line {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.acct-cert__line:last-child { border-bottom: 0; }
+.acct-cert__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 11px;
+}
+@container acctcert (max-width: 560px) {
+  .acct-cert__line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .acct-cert__label { padding-top: 0; }
+  .acct-cert { padding: 18px 16px 20px; }
+}
+.acct-cert__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+@container acctcert (max-width: 380px) {
+  .acct-cert__foot {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .acct-cert__foot > :last-child { text-align: left; }
+  .acct-cert__foot .n--count { margin-top: 4px; }
+}
+.acct-cert__foot > :last-child { text-align: right; }
+.acct-cert__foot .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.acct-cert__foot .n {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}

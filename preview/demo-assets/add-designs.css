@@ -1,0 +1,407 @@
+/* ============================================================
+   THE ADD SCREENS — shared vocabulary.
+
+   The app's certificate family (goal receipt, investment bond,
+   debt IOU, account instrument) covers what you HOLD. These are
+   the screens where you CREATE one — and a creation screen has a
+   different job: it has to make you fill in the blanks of a
+   document, and show you the document as it fills in.
+
+   So the add screens get their own two-part grammar:
+
+     .docline   — a ruled line on the form (label left, value right)
+     .addcert   — the live certificate the form fills in
+
+   The certificate is the point: as you type, the document you are
+   about to create re-engraves itself beside the form. You see the
+   instrument before you commit to it.
+   ============================================================ */
+
+/* ---- the ruled form ------------------------------------------ */
+.dform {
+  display: flex;
+  flex-direction: column;
+}
+.dfline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-2);
+  min-width: 0;
+}
+.dfline:last-child { border-bottom: 0; }
+/* The label sits in the left column, in the same small caps the
+   certificates use for their engraved fields. */
+.dfline__k {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: none;
+  padding-top: 2px;
+}
+.dfline__v {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+/* The control inside a ruled line reads as a filled-in field, not
+   as a widget — no hard border, just an underline. */
+.dfline__v input,
+.dfline__v select,
+.dfline__v textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 2px 0 6px;
+  text-align: right;
+  border-radius: 0;
+}
+.dfline__v select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 18px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 6px center, right 1px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.dfline__v input:focus,
+.dfline__v select:focus,
+.dfline__v textarea:focus {
+  outline: none;
+  border-bottom-color: var(--primary);
+}
+.dfline__v input::placeholder,
+.dfline__v textarea::placeholder { color: var(--muted-2); }
+.dfline__v input[type='date'] { color-scheme: dark; }
+/* A ruled line whose control spans the full width — the amount is
+   the one field that gets the whole row. */
+.dfline--full { flex-direction: column; align-items: stretch; gap: 8px; }
+.dfline--full .dfline__v input { text-align: left; }
+
+/* The amount field, engraved. */
+.damount {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+}
+.damount .cur {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+}
+.damount input {
+  font-size: 30px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: var(--ink) !important;
+  padding: 0 0 6px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the three-door picker ----------------------------------- */
+/* The type picker is the one add-screen moment with no other
+   choices on screen, so its options get the full weight: a glyph
+   plate, a name, a hint, and an example. */
+.door {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+/* The doors need room for a hint AND an example — at three columns
+   in a 440px card the hint wraps to four lines and the three doors
+   end up different heights. The card is wide enough for the doors
+   to sit full-bleed, so they do. */
+.door--wide {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.door__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 20px 20px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.door__btn:hover {
+  border-color: var(--tone, var(--primary));
+  transform: translateY(-2px);
+}
+.door__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone, var(--primary)) 40%, transparent);
+}
+/* The selected door gets a coloured wash and a solid bar at the
+   top — the same two signals the sidebar uses for the active item. */
+.door__btn.on {
+  border-color: var(--tone, var(--primary));
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--tone, var(--primary)) 14%, transparent), transparent 62%),
+    var(--surface);
+  box-shadow: var(--shadow-card), inset 0 0 0 1px color-mix(in srgb, var(--tone, var(--primary)) 40%, transparent);
+}
+.door__btn.on::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+  background: var(--tone, var(--primary));
+}
+.door__ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 15%, transparent);
+}
+.door__ico svg {
+  width: 21px; height: 21px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.door__n { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+.door__h { font-size: 12.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.door__ex {
+  font-size: 11.5px;
+  color: var(--tone, var(--primary));
+  margin-top: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+@media (max-width: 720px) {
+  .door { grid-template-columns: minmax(0, 1fr); }
+  .door__btn { flex-direction: row; align-items: center; gap: 14px; padding: 15px 16px; }
+  .door__ico { margin-bottom: 0; flex: none; width: 38px; height: 38px; border-radius: 10px; }
+  .door__ico svg { width: 18px; height: 18px; }
+  .door__ex { margin-top: 4px; }
+}
+
+/* ---- the live certificate beside the form --------------------- */
+.addsplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1000px) {
+  .addsplit { grid-template-columns: minmax(0, 1fr); }
+}
+.addsplit__col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* ---- the effect strip ---------------------------------------- */
+/* What this entry does to the balance — shown as a single line
+   under the amount so the consequence is never a surprise. */
+.dffect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.dffect__ico {
+  width: 28px; height: 28px; border-radius: 8px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+}
+.dffect__ico svg {
+  width: 14px; height: 14px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.dffect__t {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.dffect__t b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the category chip cloud --------------------------------- */
+.dcat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.dcatchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  transition: 0.15s;
+}
+.dcatchip:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.dcatchip.on {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+  font-weight: 700;
+}
+.dcatgroup__h {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  color: var(--muted-2);
+  margin-bottom: 8px;
+}
+
+/* ---- the type strip (investment / account) -------------------- */
+.dstrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.dstrip--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dstrip__btn {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  padding: 11px 8px;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: 0.15s;
+}
+.dstrip__btn:hover { border-color: var(--muted-2); }
+.dstrip__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+.dstrip__n {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.dstrip__s {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-2);
+  margin-top: 3px;
+}
+.dstrip__btn.on {
+  border-color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 12%, var(--surface-2));
+}
+.dstrip__btn.on .dstrip__n { color: var(--tone, var(--primary)); }
+.dstrip__btn.on .dstrip__s { color: var(--muted); }
+@media (max-width: 560px) {
+  .dstrip { gap: 6px; }
+  .dstrip__btn { padding: 10px 5px; }
+  .dstrip__s { font-size: 9px; }
+}
+
+/* ---- the two-account transfer -------------------------------- */
+.dxfer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.dxfer__arrow {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.dxfer__arrow svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+@media (max-width: 560px) {
+  .dxfer { grid-template-columns: minmax(0, 1fr); }
+  .dxfer__arrow { transform: rotate(90deg); justify-self: start; }
+}
+
+/* ---- the summary rail on the right ---------------------------- */
+.dsum {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+}
+.dsum__h {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.dsum__rows { display: flex; flex-direction: column; }
+.dsum__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-2);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.dsum__row:last-child { border-bottom: 0; }
+.dsum__row b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dsum__row--total {
+  border-top: 1px dashed var(--divider);
+  border-bottom: 0;
+  margin-top: 8px;
+  padding-top: 10px;
+}
+.dsum__row--total b { font-size: 17px; }
