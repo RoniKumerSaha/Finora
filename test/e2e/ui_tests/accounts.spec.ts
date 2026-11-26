@@ -80,8 +80,8 @@ test.describe('Accounts', () => {
         accounts.typeLabel(data.A01_lifecycle.created.name),
       ).toHaveText(data.A01_lifecycle.expected.initialTypeLabel);
 
-      // The wallet pictogram.
-      await expect(accounts.typeIcon(data.A01_lifecycle.created.name)).toBeVisible();
+      // The card's face — the type is told apart by its gradient.
+      await expect(accounts.cardFace(data.A01_lifecycle.created.name)).toBeVisible();
 
       // The card carries NO delta line at all: the screen guards the
       // whole secondary row with `(delta !== 0 || last)`, and a brand
@@ -173,14 +173,24 @@ test.describe('Accounts', () => {
     });
 
     await test.step('Compare the five resulting cards', async () => {
+      // Each account TYPE gets its own card gradient, so the types
+      // are told apart by the colour of the face.
+      const gradients: string[] = [];
+
       for (let i = 0; i < data.A02_typeSweep.accounts.length; i++) {
         const account = data.A02_typeSweep.accounts[i];
         const label = data.A02_typeSweep.cardLabels[i];
 
         await expect(accounts.card(account.name)).toContainText(label);
-        // Each type carries a distinct pictogram.
-        await expect(accounts.typeIcon(account.name)).toBeVisible();
+
+        const gradient = await accounts.cardFace(account.name).evaluate(
+          el => getComputedStyle(el).backgroundImage,
+        );
+        gradients.push(gradient);
       }
+
+      // Every type has its own face.
+      expect(new Set(gradients).size).toBe(data.A02_typeSweep.accounts.length);
 
       // There is no colour picker — the tone follows the type.
       await expect(accounts.gotoAdd()).resolves.toBeUndefined();

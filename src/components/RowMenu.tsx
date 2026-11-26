@@ -14,7 +14,8 @@
  *
  * Pure presentational — parent owns the menu items and their handlers.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface RowMenuItem {
   label: string;
@@ -23,14 +24,56 @@ export interface RowMenuItem {
   tone?: 'default' | 'danger';
 }
 
+/**
+ * The dropdown's position, measured against the trigger's viewport
+ * rect. The menu is rendered in a PORTAL (attached to <body>, not to
+ * the row), because the rows that use this menu live inside cards
+ * with `overflow: hidden` — an in-flow dropdown would be clipped by
+ * the card's rounded corners.
+ */
+interface MenuPos {
+  top: number;
+  left: number;
+}
+
 export function RowMenu({ items, ariaLabel = 'Row actions' }: { items: RowMenuItem[]; ariaLabel?: string }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<MenuPos | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Measure the trigger once the menu opens, and re-measure on scroll
+  // or resize so the dropdown stays pinned to it.
+  useLayoutEffect(() => {
+    if (!open) return;
+    function place() {
+      const btn = wrapRef.current?.getBoundingClientRect();
+      if (!btn) return;
+      const w = menuRef.current?.offsetWidth ?? 140;
+      const h = menuRef.current?.offsetHeight ?? 80;
+      // Flip to the left of the trigger when the menu would overflow
+      // the viewport's right edge.
+      const left = Math.max(8, Math.min(btn.right - w, window.innerWidth - w - 8));
+      // Flip above the trigger when there is no room below.
+      const top = btn.bottom + h + 8 > window.innerHeight && btn.top - h - 8 > 8
+        ? btn.top - h - 4
+        : btn.bottom + 4;
+      setPos({ top, left });
+    }
+    place();
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!wrapRef.current?.contains(t) && !menuRef.current?.contains(t)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
@@ -55,16 +98,18 @@ export function RowMenu({ items, ariaLabel = 'Row actions' }: { items: RowMenuIt
       >
         <span aria-hidden="true" className="text-base leading-none">{'\u22EF'}</span>
       </button>
-      {open && (
+      {open && pos && createPortal(
         <div
+          ref={menuRef}
           role="menu"
-          className="absolute right-0 top-8 z-20 min-w-[140px] rounded-card border border-border bg-surface py-1"
-          style={{ boxShadow: 'var(--shadow-modal)' }}
+          className="fixed z-[60] min-w-[140px] rounded-card border border-border bg-surface py-1"
+          style={{ top: pos.top, left: pos.left, boxShadow: 'var(--shadow-modal)' }}
         >
           {items.map((it, i) => (
             <MenuItem key={i} item={it} onPick={() => setOpen(false)} />
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

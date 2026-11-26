@@ -215,52 +215,235 @@ main > * {
   [data-cashflow-line], [data-networth-bar] { animation: none !important; }
 }
 
-/* ── Arrow-of-blocks Flow mark ─────────────────────────────────────────
-   The Monthly statement's Flow column draws each month as a shaft of
-   small blocks (green = income, red = expense), sized as a share of
-   the column's width.
+/* ── Flow segmented meter ───────────────────────────────────────────────
+   The Monthly statement's Flow column shows each month's NET as a
+   METER: a row of discrete blocks that grow OUTWARD from a zero AXIS
+   down the middle of the column.
 
-   Colours are slightly MUTED against the live --primary / --danger
-   tokens: the blocks sit shoulder-to-shoulder and read as a texture,
-   so a full set of them at full saturation would out-compete the
-   Income/Expense figures in the columns to the right. But they still
-   have to read as clearly green / red at a glance — muted too far and
-   the shaft turns to mud.
+   Green blocks grow RIGHT from the axis (the month saved); red blocks
+   grow LEFT from it (the month overspent).
 
-   The blocks mix toward the panel surface rather than toward black —
-   mixing toward black would punch dark holes in the card, while
-   mixing toward the surface makes the blocks sit ON it as a texture.
+   SEGMENTS, not a solid bar, because a solid length can only be
+   judged ("longer than"); a segmented one can be COUNTED ("three
+   times as many blocks"). That is the whole point of the change.
 
-   Each segment is a repeating linear-gradient of hard-edged bars, so
-   the "blocks" are drawn by the background rather than by N elements —
-   the segment can be any width without a DOM node per block. */
-.flow-blocks {
+   The unfilled slots render as faint ghosts, so every row is the same
+   length. Two things follow:
+     - an empty month shows a bare row of ghosts, which reads as
+       "nothing moved here" rather than as missing data;
+     - the scale is identical on every row, so two months can be
+       compared by counting blocks ACROSS rows.
+
+   The axis is the column's origin and renders on every row,
+   including the empty ones — a row without it would make the rows
+   above and below look like they sat in different places.
+
+   Blocks carry a `min-width` so a month worth one slot (October's
+   ৳1,118 against a ৳6,11,000 scale) is still a visible BLOCK and not
+   a hairline. The last block is PARTIAL — it carries the remainder of
+   the month instead of rounding up to a whole slot — so the length is
+   exact rather than quantised to the grid. */
+.flow-meter {
+  position: relative;
   display: flex;
-  align-items: center;
-  height: 12px;
+  align-items: stretch;
+  gap: 2px;
+  height: 16px;
+  min-width: 0;
 }
-.flow-blocks .blk-group {
+
+/* One side of the axis. Each is half the column wide; the blocks
+   inside are laid out starting at whichever edge touches the axis,
+   so they always grow OUTWARD from zero. */
+.flow-half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  display: flex;
+  gap: 2px;
+}
+.flow-half-l { right: 50%; }
+.flow-half-r { left: 50%; }
+
+/* One slot. */
+.flow-half i {
   display: block;
+  flex: 1 1 0;
+  min-width: 3px;
   height: 100%;
   border-radius: 2px;
-  background-repeat: repeat-x;
-  background-size: 7px 100%;
-  background-position: left center;
+  background: var(--surface-3);
+  opacity: 0.5;
 }
-.flow-blocks .blk-in {
-  background-image: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--primary) 78%, var(--surface-2)) 0 5px,
-    transparent 5px 7px
-  );
+/* A filled slot. */
+.flow-half i.on { background: var(--success); opacity: 1; }
+.flow-half i.on.red { background: var(--danger); }
+/* The partial slot at the tip — its fill is the month's remainder. */
+.flow-half i.part {
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+  opacity: 1;
+  min-width: 4px;
 }
-.flow-blocks .blk-out {
-  background-image: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--danger) 78%, var(--surface-2)) 0 5px,
-    transparent 5px 7px
-  );
+.flow-half i.part::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--w);
+  border-radius: 2px;
+  background: var(--success);
 }
+.flow-half i.part.red::after { background: var(--danger); }
+
+/* The zero axis — down the middle of the column, the origin every
+   row's blocks grow from. */
+.flow-axis {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--muted-2);
+  z-index: 2;
+}
+
+/* ============================================================
+   ACCOUNT CARD — the Accounts screen renders each account as a
+   physical bank card rather than a tinted tile.
+
+     .acct-card        the ISO-ratio shell (1.586 / 1), the rounded
+                       corners, the padding and the shadow.
+     .acct-card--sheen the classic card: a lit four-stop gradient,
+                       the embossed number plate, the gold chip.
+
+   The tone colour is injected as `--tone` by the component, so the
+   same rules serve bank / cash / wallet / card accounts.
+
+   The aspect ratio is what sells the metaphor: a rectangle with a
+   card ratio reads as "held object", the same rectangle without it
+   reads as "panel".
+   ============================================================ */
+
+.acct-card {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.586 / 1;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  /* The face's inner margin. Without it the content sits flush
+     against the rounded corners and gets clipped by overflow:hidden. */
+  padding: 16px 18px;
+}
+
+/* ---- The classic bank card (A1) ---- */
+/* The gradient itself is set inline per account TYPE (see
+   `CARD_GRADIENT` in AccountsListScreen) — each type gets its own
+   dark face. This class supplies the border, the shadow and the
+   inset top-edge highlight. */
+.acct-card--sheen {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+/* The sheen: a brushed diagonal band, a top-left key light and the
+   account's tone glowing out of the bottom-right corner. The glow is
+   kept weak and pushed past the corner — a strong tint there reads as
+   a stain on the card rather than light on it. */
+.acct-card--sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(104deg, transparent 18%, rgba(255, 255, 255, 0.045) 32%, transparent 44%),
+    radial-gradient(120% 90% at 6% -10%, rgba(255, 255, 255, 0.08), transparent 58%),
+    radial-gradient(80% 60% at 96% 104%, color-mix(in srgb, var(--tone) 16%, transparent), transparent 68%);
+}
+
+/* ---- Shared card furniture ---- */
+/* Every text layer sits above the sheen. */
+.acct-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* The gold EMV chip. Decorative — no account has a card number. */
+.acct-chip {
+  width: 36px;
+  height: 27px;
+  border-radius: 5px;
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #B8941F, #E8CB63 55%, #C9A227);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+/* The chip's contact grid — one horizontal and one vertical etch. */
+.acct-chip::before,
+.acct-chip::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 0, 0, 0.24);
+}
+.acct-chip::before { left: 0; right: 0; top: 50%; height: 1px; }
+.acct-chip::after { top: 0; bottom: 0; left: 50%; width: 1px; }
+
+/* The recessed plate the masked number is embossed on. */
+.acct-num {
+  font-size: 14.5px;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  opacity: 0.82;
+  padding: 4px 9px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+/* The account type, set as small caps on the card's top edge. */
+.acct-type {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* The cardholder line — the account name, set as small caps. */
+.acct-name {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+/* The Δ since opening. */
+.acct-delta { font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.acct-delta--up   { color: var(--success-title); }
+.acct-delta--down { color: var(--danger-title); }
+.acct-delta--flat { color: var(--muted); }
+
+/* The balance label above the figure. */
+.acct-bal-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* A negative balance is the one case the tone does NOT cover — a red
+   card in a red tone still has to say the number is negative, so the
+   figure gets the danger colour explicitly. */
+.acct-bal { font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.025em; }
+.acct-bal--neg { color: var(--danger-title); }
 
 /* Banner slide-in keyframe — paired with RoleAlertBanner's transition.
    The banner mounts, runs the keyframe, then idles until user dismiss

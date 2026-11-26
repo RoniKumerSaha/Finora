@@ -1,26 +1,24 @@
 /**
- * AccountsListScreen — one card per account, matching the Goals grid.
+ * AccountsListScreen — one bank card per account.
  *
- * Visual target: docs/ux-designs/.../mockups/v2/dark.html#accounts
+ * 2026-11-26: each account is now a physical BANK CARD rather than a
+ * tinted tile. The card carries the ISO 1.586/1 ratio, a gold chip,
+ * the account type top-right, a masked card number centred on the
+ * face, the account name as the cardholder line, and the balance
+ * bottom-right. Each account TYPE gets its own dark gradient — bank
+ * green, cash gold, wallet blue, credit-card red, other neutral — so
+ * the type still reads at a glance, now through the face's colour
+ * rather than a pictogram.
  *
- * 2026-08-18 polish: each account is now its own .card surface instead
- * of a row inside a shared .card. The lift on hover (via .card-link)
- * makes the click target obvious — important now that destructive
- * actions live behind the `⋯` overflow menu instead of an inline link.
- * Cards arrange responsively: 1 column on mobile, 2 on sm, 3 on lg.
- *
- * 2026-08-31 polish: every card now carries the same richer treatment
- * inspired by the liabilities design — a soft-tone background wash,
- * a 3px left accent strip in the account's tone colour, a "Δ since
- * opening" line (gains/ losses vs opening balance), and a "last
- * activity" heartbeat. The wash colour follows accountTone (not
- * balance sign), so all cards get the same richer treatment while
- * preserving the existing icon-tile colour families. Suppressed
- * entirely for brand-new accounts with no opening and no transactions.
+ * The "Δ since opening" line and the "last activity" heartbeat sit
+ * under the name, and are suppressed entirely for brand-new accounts
+ * with no opening and no transactions.
  *
  * Edit/Delete live in the card's overflow menu (top-right). The
  * RowMenu's trigger sits above the card's hover lift via z-index, so
- * clicking it doesn't trigger the link navigation.
+ * clicking it doesn't trigger the link navigation. The dropdown
+ * itself renders in a portal — the card has `overflow: hidden`, so an
+ * in-flow menu would be clipped by its rounded corners.
  */
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -28,37 +26,148 @@ import * as accounts from '../domain/accounts';
 import { accountBalance, lastAccountActivity } from '../domain/math';
 import { useConfirm } from '../components/ConfirmDialog';
 import { RowMenu } from '../components/RowMenu';
-import { AccountTypeIcon, accountTypeLabel, accountTone, accountBalanceColor } from '../components/AccountTypeIcon';
-import { ICON_TILE_CLASS } from '../components/icons/Icons';
+import { accountTypeLabel, accountTone } from '../components/AccountTypeIcon';
 import { EmptyState, AccountsIllustration } from '../components/EmptyState';
 import type { Account } from '../domain/types';
 import { DeleteError } from '../domain/accounts';
 import { fmtBDT, fmtRelative } from '../lib/format';
-import { leftBarClass, type CardTone } from '../lib/cardSurface';
+import { type CardTone } from '../lib/cardSurface';
+
+/* ---------------- Account card faces ---------------- */
 
 /**
- * Inline wash for the account card — the only card surface in the app
- * that still carries the warm gradient. Lives locally because the
- * shared `cardSurfaceStyle` helper was removed (no other screen uses
- * it). Combines:
- *   - a 14%-opaque page-bg tint
- *   - a top-down linear gradient using the tone colour, blended with
- *     `var(--bg)` so the wash darkens in dark mode and tints deeper in
- *     light mode.
+ * The tone's raw colour, as a CSS value. The card face uses it for
+ * the corner glow, so the account's type still reads at a glance the
+ * way it did under the old wash.
  */
-function accountCardSurfaceStyle(tone: CardTone): React.CSSProperties {
-  const toneVar =
-    tone === 'primary' ? 'var(--primary)' :
-    tone === 'danger'  ? 'var(--danger)'  :
-    tone === 'accent'  ? 'var(--accent)'  :
-    tone === 'warn'    ? 'var(--warn)'    :
-    tone === 'success' ? 'var(--success)' :
-    tone === 'info'    ? 'var(--info)'    :
-                         'var(--muted)';
-  return {
-    backgroundColor: 'color-mix(in srgb, var(--bg) 14%, transparent)',
-    backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${toneVar} 10%, var(--bg)) 0%, color-mix(in srgb, ${toneVar} 8%, transparent) 35%, transparent 80%)`,
-  };
+const TONE_VAR: Record<CardTone, string> = {
+  primary: 'var(--primary)',
+  danger:  'var(--danger)',
+  accent:  'var(--accent)',
+  warn:    'var(--warn)',
+  success: 'var(--success)',
+  info:    'var(--info)',
+  muted:   'var(--muted)',
+  cyan:    'var(--cyan)',
+};
+
+/**
+ * Each account TYPE gets its own card gradient.
+ *
+ * The old screen told the types apart by a tint; the card keeps that
+ * language but as a full face — a bank card is green, a cash card is
+ * gold, a wallet card is blue, a credit card is red. The gradients
+ * stay dark and low-chroma so the white balance figure on top of
+ * them keeps its contrast.
+ */
+const CARD_GRADIENT: Record<string, string> = {
+  // Bank — the deep green of a bank card.
+  bank: 'linear-gradient(135deg, #14201C 0%, #1B2C26 42%, #24382F 74%, #16211D 100%)',
+  // Cash — warm gold, kept dark enough for white text.
+  cash: 'linear-gradient(135deg, #1E1A12 0%, #2B2417 42%, #3A3020 74%, #201A12 100%)',
+  // Mobile wallet — cool blue.
+  mobile_wallet: 'linear-gradient(135deg, #121A22 0%, #18242F 42%, #1F3040 74%, #141C24 100%)',
+  // Credit card — deep red.
+  card: 'linear-gradient(135deg, #1F1513 0%, #2C1C19 42%, #3B2622 74%, #211615 100%)',
+  // Anything else — a neutral slate.
+  other: 'linear-gradient(135deg, #171C1B 0%, #1F2523 42%, #29302D 74%, #1A201E 100%)',
+};
+
+/** The gradient for an account type, falling back to the neutral one. */
+function cardGradient(type: string): string {
+  return CARD_GRADIENT[type] ?? CARD_GRADIENT.other;
+}
+
+/**
+ * A stable pseudo card number for an account.
+ *
+ * The app stores no card numbers, so a real one would be a lie. This
+ * derives a stable 16-digit-looking string from the account id — the
+ * same account always shows the same digits, so the face does not
+ * shuffle between visits — and masks all but the last four.
+ */
+function maskedAccountNumber(id: string): string {
+  // FNV-1a: a small, fast, well-distributed hash. We only need it to
+  // be stable, not cryptographically strong.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  // Twelve digits, formatted as three groups of four.
+  const digits = String(h).padStart(12, '0').slice(-12);
+  const groups = digits.match(/.{4}/g) ?? [];
+  // Only the LAST group shows; the first two are masked.
+  return `•••• •••• •••• ${groups[2]}`;
+}
+
+/**
+ * The classic bank card (A1).
+ *
+ * A gold chip top-left, the account type top-right, the masked card
+ * number centred on the face, the account name as the cardholder line
+ * bottom-left, and the balance bottom-right. The face's gradient
+ * comes from the account's type.
+ */
+function AccountCard({
+  a, bal, delta, last, tone, menu,
+}: {
+  a: Account;
+  bal: number;
+  delta: number;
+  last: string | null;
+  tone: CardTone;
+  menu: React.ReactNode;
+}) {
+  return (
+    <div
+      className="acct-card acct-card--sheen"
+      style={{
+        ['--tone' as string]: TONE_VAR[tone],
+        backgroundImage: cardGradient(a.type),
+      }}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="acct-chip" aria-hidden />
+        <span className="acct-type truncate ml-auto">{accountTypeLabel(a.type)}</span>
+        {/* The overflow menu sits in the card's own top row, so the
+            type label never runs underneath it. */}
+        <div className="shrink-0 -mr-1 -mt-1 relative z-10">
+          {menu}
+        </div>
+      </div>
+
+      {/* The card number, centred on the face — the one line a bank
+          card always puts in the middle. */}
+      <div className="flex-1 flex items-center justify-center">
+        <span className="acct-num">{maskedAccountNumber(a.id)}</span>
+      </div>
+
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <div className="acct-name truncate">{a.name}</div>
+          {/* A brand-new account has neither a delta nor any activity,
+              so the whole secondary block is suppressed — the card
+              shows only the name and the balance. */}
+          {(delta !== 0 || last) && (
+            <div data-acct-secondary>
+              <div className={`acct-delta mt-1 truncate ${delta === 0 ? 'acct-delta--flat' : delta > 0 ? 'acct-delta--up' : 'acct-delta--down'}`}>
+                {delta === 0 ? '— no change' : delta > 0 ? `↑ ${fmtBDT(delta)}` : `↓ ${fmtBDT(Math.abs(delta))}`}
+                {delta !== 0 && <span className="text-muted font-normal"> vs opening</span>}
+              </div>
+              {last && <div className="acct-delta acct-delta--flat truncate mt-0.5">{last}</div>}
+            </div>
+          )}
+        </div>
+        <div className="text-right shrink-0">
+          <div className="acct-bal-label">Balance</div>
+          <div className={`acct-bal text-[21px] leading-tight mt-0.5 ${bal < 0 ? 'acct-bal--neg' : ''}`}>
+            {fmtBDT(bal)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function AccountsListScreen() {
@@ -120,7 +229,7 @@ export function AccountsListScreen() {
           />
         </section>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {accs.map(a => {
             const bal = accountBalance(a, state.transactions);
             const tone = accountTone(a.type);
@@ -142,46 +251,38 @@ export function AccountsListScreen() {
                 ? state.categories.find(c => c.id === lastTx.categoryId)?.name
                 : null)
               || null;
-            // Map AccountTone → CardTone so the shared wash helper
-            // can render the same gradient + left-bar treatment as
-            // Debts / Investments / Plans / Loans.
+            // Map AccountTone → CardTone so the card faces can render
+            // the same tone language as Debts / Investments / Plans /
+            // Loans.
             const cardTone: CardTone =
               tone === 'accent'  ? 'accent' :
               tone === 'primary' ? 'primary' :
               tone === 'info'    ? 'info' :
               tone === 'danger'  ? 'danger' :
                                    'muted';
+            // The card's heartbeat line — when the account last moved,
+            // and what it moved on. Null when the account has never
+            // moved, so the card renders no secondary block at all.
+            const activity = last
+              ? `${fmtRelative(last)}${lastTxNote ? ` · ${lastTxNote}` : ''}`
+              : null;
             return (
               <Link
                 key={a.id}
                 to={`/accounts/${a.id}/edit`}
-                className={`card card-link relative overflow-hidden flex flex-col gap-3 pl-7 pr-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30`}
-                style={accountCardSurfaceStyle(cardTone)}
+                className="card-link rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 block"
+                aria-label={`${a.name}. ${accountTypeLabel(a.type)}. Balance ${fmtBDT(bal)}.`}
               >
-                {/* 3px left accent strip — same colour as the wash. */}
-                <span
-                  aria-hidden
-                  className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full ${leftBarClass(cardTone)}`}
-                />
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Wrapper is uniformly neutral; the icon itself
-                        picks up the account's tone via `currentColor`. */}
-                    <div className={ICON_TILE_CLASS}>
-                      <span className={accountBalanceColor(tone)}>
-                        <AccountTypeIcon type={a.type} />
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-[15px] tracking-tight leading-tight line-clamp-2">{a.name}</div>
-                      <div className="text-xs text-muted tabular mt-1">
-                        {accountTypeLabel(a.type)}
-                      </div>
-                    </div>
-                  </div>
-                  {/* z-10 puts the menu above the lift, so clicking it
-                      doesn't trigger navigation. */}
-                  <div className="relative z-10">
+                <AccountCard
+                  a={a}
+                  bal={bal}
+                  delta={delta}
+                  last={activity}
+                  tone={cardTone}
+                  menu={
+                    /* Edit/Delete live in the overflow menu, which sits
+                       above the card's hover lift via z-index so clicking
+                       it doesn't trigger the link navigation. */
                     <RowMenu
                       ariaLabel={`Actions for ${a.name}`}
                       items={[
@@ -189,40 +290,8 @@ export function AccountsListScreen() {
                         { label: 'Delete', tone: 'danger', onSelect: () => onDelete(a) },
                       ]}
                     />
-                  </div>
-                </div>
-                <div className="flex items-baseline justify-between gap-2 mt-1">
-                  <span className="text-[11px] text-muted uppercase tracking-wider font-semibold">Balance</span>
-                  <span className={`font-bold tabular text-[20px] tracking-tight ${accountBalanceColor(tone)}`}>{fmtBDT(bal)}</span>
-                </div>
-                {(delta !== 0 || last) && (
-                  <div className="flex justify-between items-baseline gap-2 text-[11.5px] tabular pt-2 border-t border-border-2">
-                    <span
-                      className={
-                        delta === 0 ? 'text-muted'
-                          : delta > 0 ? 'text-primary font-semibold'
-                          : 'text-danger font-semibold'
-                      }
-                    >
-                      {delta === 0
-                        ? '— no change'
-                        : delta > 0
-                          ? `↑ ${fmtBDT(delta)}`
-                          : `↓ ${fmtBDT(Math.abs(delta))}`}
-                      {delta !== 0 && (
-                        <span className="text-muted font-normal"> vs opening</span>
-                      )}
-                    </span>
-                    <span className="text-muted text-right truncate min-w-0">
-                      {last ? (
-                        <>
-                          {fmtRelative(last)}
-                          {lastTxNote ? ` · ${lastTxNote}` : ''}
-                        </>
-                      ) : 'no activity yet'}
-                    </span>
-                  </div>
-                )}
+                  }
+                />
               </Link>
             );
           })}

@@ -334,14 +334,17 @@ test.describe('Home and Insights', () => {
       await expect(insights.flowBars).toHaveCount(h04.expected.rowCount);
     });
 
-    await test.step('A month with activity has both an income and an expense segment', async () => {
-      // The seeded salary lands in one month; the Flow bar splits into
-      // an income segment and an expense segment.
-      const incomeSegments = await page.locator('[data-flow-segment="income"]').count();
-      const expenseSegments = await page.locator('[data-flow-segment="expense"]').count();
+    await test.step('A month with activity fills blocks from the zero axis', async () => {
+      // The Flow column is a segmented METER: every row carries the
+      // zero axis and a fixed run of slots either side of it, and a
+      // month that kept money fills green blocks to the RIGHT of the
+      // axis while a month that spent more fills red blocks to the
+      // LEFT.
+      const axes = await page.locator('[data-flow-axis]').count();
+      const blocks = await page.locator('[data-flow-bar] i.on').count();
 
-      expect(incomeSegments).toBeGreaterThan(0);
-      expect(expenseSegments).toBeGreaterThan(0);
+      expect(axes).toBeGreaterThan(0);
+      expect(blocks).toBeGreaterThan(0);
     });
 
     await test.step('No "NaN" or "undefined" artefact appears', async () => {

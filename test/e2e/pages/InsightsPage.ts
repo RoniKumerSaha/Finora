@@ -271,14 +271,48 @@ export class InsightsPage extends BasePage {
     return this.page.locator(`[data-statement-row="${label}"]`).locator('[data-flow-bar]');
   }
 
-  /** The income segment of a row's Flow bar. */
-  flowIncomeSegment(label: string): Locator {
-    return this.flowBar(label).locator('[data-flow-segment="income"]');
+  /**
+   * The zero AXIS of a row's Flow bar.
+   *
+   * The Flow column is a diverging bar: the axis is the zero line the
+   * green and red grow out of, and it renders on every row.
+   */
+  flowAxis(label: string): Locator {
+    return this.flowBar(label).locator('[data-flow-axis]');
   }
 
-  /** The expense segment of a row's Flow bar. */
-  flowExpenseSegment(label: string): Locator {
-    return this.flowBar(label).locator('[data-flow-segment="expense"]');
+  /**
+   * The SAVING blocks of a row's Flow meter — the green ones, which
+   * grow RIGHT from the zero axis.
+   *
+   * The Flow column shows the month's NET, so a row has blocks on the
+   * saving side, on the overspend side, or on neither — never both.
+   */
+  flowSavingsSegment(label: string): Locator {
+    return this.flowBar(label).locator('[data-flow-side="savings"] i.on');
+  }
+
+  /**
+   * The OVERSPEND blocks of a row's Flow meter — the red ones, which
+   * grow LEFT from the zero axis.
+   */
+  flowOverspendSegment(label: string): Locator {
+    return this.flowBar(label).locator('[data-flow-side="overspend"] i.on');
+  }
+
+  /**
+   * Every slot on a row's Flow meter — filled blocks and empty
+   * ghosts alike.
+   */
+  flowSlots(label: string): Locator {
+    return this.flowBar(label).locator('i');
+  }
+
+  /**
+   * The filled blocks on a row's Flow meter, whichever side they are on.
+   */
+  flowFilledBlocks(label: string): Locator {
+    return this.flowBar(label).locator('i.on');
   }
 
   /** The Monthly statement's "Total" row. */

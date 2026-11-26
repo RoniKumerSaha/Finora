@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — P2 with a bar scale</title>
+<style>
+/* ============================================================
+   TOKENS — mirrored from src/styles/theme.css [data-theme="dark"]
+   ============================================================ */
+:root{
+  --bg:#131A18; --surface:#181F1C; --surface-2:#202824; --surface-3:#2A332E;
+  --ink:#F1F3EF; --muted:#94A59C; --muted-2:#647068;
+  --primary:#3FB592; --primary-soft:rgba(63,181,146,.30); --primary-on:#0F1419;
+  --accent:#B98438; --danger:#D26A5C; --danger-soft:rgba(210,106,92,.30); --danger-title:#E58774;
+  --info:#2F75BC; --warn:#D9A234;
+  --success:#3F8E5E; --success-soft:rgba(63,142,94,.40); --success-title:#5DBC83;
+  --border:#27302C; --border-2:#1E2623; --divider:#343F3A;
+  --shadow-card:0 1px 2px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.32);
+  --radius-card:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font);
+  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  padding:32px 24px 100px;
+}
+.tabular{font-variant-numeric:tabular-nums}
+
+.page-head{max-width:1180px;margin:0 auto 32px}
+.page-head h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-head p{color:var(--muted);font-size:13.5px;margin-top:6px;max-width:84ch}
+.page-head p b{color:var(--ink);font-weight:600}
+.problems{margin-top:16px;display:grid;gap:8px}
+.problem{
+  display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;
+  padding:11px 14px;border-radius:9px;background:var(--surface-2);
+  border:1px solid var(--border);font-size:12.5px;color:var(--muted);line-height:1.55;
+}
+.problem .n{
+  width:20px;height:20px;border-radius:6px;background:var(--danger-soft);
+  color:var(--danger-title);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.problem b{color:var(--ink);font-weight:600}
+.problem code{font-size:11.5px;background:var(--surface-3);padding:1px 5px;border-radius:4px}
+
+.option{
+  max-width:1180px;margin:0 auto 26px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.option-head{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;gap:13px;align-items:flex-start}
+.option-badge{
+  flex:none;width:27px;height:27px;border-radius:8px;background:var(--primary);color:var(--primary-on);
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+}
+.option-badge.alt{background:var(--surface-3);color:var(--muted)}
+.option-title{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.option-desc{font-size:12.5px;color:var(--muted);margin-top:3px;max-width:86ch}
+.option-tags{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
+  border-radius:999px;font-weight:700;background:var(--surface-3);color:var(--muted);
+}
+.tag.good{background:var(--primary-soft);color:var(--primary)}
+.tag.warn{background:var(--danger-soft);color:var(--danger-title)}
+.tag.info{background:rgba(47,117,188,.24);color:#7FB2E4}
+
+.card-body{padding:16px 20px 18px}
+.legend{display:flex;gap:16px;align-items:center;justify-content:flex-end;font-size:12px;margin-bottom:12px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:2px;display:block}
+.legend .lbl{color:var(--muted)}
+
+/* The grid: the flow column is the only one the bar lives in, so the
+   scale furniture must be INSIDE that column, never a sibling row. */
+.col-head,.row{
+  display:grid;grid-template-columns:86px minmax(0,1fr) 112px 112px 112px;
+  gap:13px;align-items:center;
+}
+.col-head{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.col-head .r{text-align:right}
+.col-head .fl{display:flex;align-items:center;gap:8px}
+.col-head .fl em{
+  font-style:normal;text-transform:none;letter-spacing:0;font-weight:400;
+  color:var(--muted-2);display:inline-flex;align-items:center;gap:4px;
+}
+.col-head .fl em i{width:9px;height:3px;border-radius:2px;display:block}
+.row{font-size:13px;padding:6px 0;border-bottom:1px solid rgba(39,48,44,.55)}
+.row:last-of-type{border-bottom:0}
+.scalerow{border-bottom:0;padding:0 0 4px}
+.scalerow > div:first-child, .scalerow > div:nth-child(n+3){font-size:0}
+.row .month{font-size:12.5px;font-weight:600}
+.row .r{text-align:right}
+.row .inc{color:var(--primary)}
+.row .exp{color:var(--danger)}
+.row .net{font-weight:600}
+.row .net.pos{color:var(--primary)}
+.row .net.neg{color:var(--danger)}
+.row .net.zero{color:var(--muted)}
+.row.quiet .month{color:var(--muted);font-weight:400}
+.total{
+  display:grid;grid-template-columns:86px minmax(0,1fr) 112px 112px 112px;
+  gap:13px;align-items:center;padding-top:11px;margin-top:2px;
+  border-top:1px solid var(--divider);font-size:12px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+}
+.total .r{text-align:right}
+
+.option-notes{padding:0 20px 16px;font-size:12px;color:var(--muted);display:grid;gap:5px}
+.option-notes div{display:flex;gap:8px;align-items:flex-start}
+.option-notes .k{flex:none;color:var(--ink);font-weight:600;min-width:96px}
+
+/* ============================================================
+   THE FLOW COLUMN — one wrapper holds the scale furniture AND the
+   twelve bars, so every tick lines up with every bar by
+   construction (they share the same width).
+   ============================================================ */
+.flowcol{display:flex;flex-direction:column}
+
+/* ---- P2 base: bright axis + halo + bars flush to the zero ---- */
+.flow{position:relative;display:block;height:22px;min-width:0}
+.axis{
+  position:absolute;top:0;bottom:0;left:50%;width:1px;margin-left:-.5px;
+  background:var(--border-2);z-index:4;
+}
+/* The halo — a faint gradient behind the hairline so the zero reads
+   as the column's spine. */
+.axis::before{
+  content:'';position:absolute;left:-3px;right:-3px;top:0;bottom:0;
+  background:linear-gradient(to right,transparent,rgba(148,165,156,.13),transparent);
+}
+.net{position:absolute;top:50%;height:12px;min-width:3px;margin-top:-6px;z-index:5}
+.up{left:calc(50% + .5px);border-radius:0 3px 3px 0;background:var(--success)}
+.down{right:calc(50% + .5px);border-radius:3px 0 0 3px;background:var(--danger)}
+
+/* ============================================================
+   THE RULER — drawn as a repeating gradient whose period is a
+   TENTH of the HALF-column, so one minor tick = 10% of max and the
+   major tick (a taller, brighter one) lands every 25%.
+
+   The left half is the SAME gradient mirrored, so a bar of a given
+   length reaches exactly the tick that represents it.
+   ============================================================ */
+.ruler{
+  position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none;z-index:1;
+}
+/* Right half: minor ticks every 10% of the HALF-width, major every
+   25%. The gradient's percentage period is relative to the half's own
+   width, so 10% of that half = 10% of max. */
+.ruler .half{
+  position:absolute;top:0;bottom:0;width:50%;
+  background-image:
+    repeating-linear-gradient(to right,
+      var(--border-2) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(to right,
+      var(--divider) 0 1px, transparent 1px 25%);
+  background-size:100% 5px,100% 11px;
+  background-position:left bottom,left bottom;
+  background-repeat:repeat-x;
+  opacity:.9;
+}
+.ruler .half.r{left:50%;}
+/* Left half: mirror the same ruler so the ticks are symmetric
+   around zero. */
+.ruler .half.l{
+  left:0;
+  transform:scaleX(-1);
+  transform-origin:left center;
+}
+
+/* S1/S2/S3/S4 use the per-row ruler. */
+.s1 .ruler,.s2 .ruler,.s3 .ruler,.s4 .ruler{display:block}
+
+/* ============================================================
+   S2 — a numbered scale UNDER the column.
+   The labels live in the same wrapper as the bars, so they align.
+   ============================================================ */
+.s2 .scalelabels{
+  position:relative;height:15px;margin-top:2px;
+  border-top:1px solid var(--border-2);
+}
+.s2 .scalelabels span{
+  position:absolute;top:3px;font-size:9.5px;color:var(--muted-2);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  transform:translateX(-50%);
+}
+/* The outermost labels are pinned to the edges so they don't overflow
+   the column. */
+.s2 .scalelabels span.edge-l{transform:translateX(0);left:0;}
+.s2 .scalelabels span.edge-r{transform:translateX(-100%);right:0;}
+.scalerow-foot{padding:0}
+
+/* ============================================================
+   S3 — a fading gradient track instead of hard ticks.
+   ============================================================ */
+.s3 .ruler .half{
+  background-image:
+    repeating-linear-gradient(to right,
+      var(--border-2) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(to right,
+      var(--divider) 0 1px, transparent 1px 25%);
+  background-size:100% 4px,100% 9px;
+  background-position:left bottom,left bottom;
+  background-repeat:repeat-x;
+  opacity:.55;
+}
+.s3 .ramp{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(to right,
+    rgba(148,165,156,.11) 0%, rgba(148,165,156,.03) 16%, transparent 40%,
+    transparent 60%, rgba(148,165,156,.03) 84%, rgba(148,165,156,.11) 100%);
+}
+
+/* ============================================================
+   S4 — a bracketed range with the two ends named.
+   ============================================================ */
+.s4 .rangebar{
+  position:relative;height:16px;margin-bottom:5px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:9.5px;color:var(--muted-2);letter-spacing:.04em;
+  border-bottom:1px solid var(--border-2);
+  padding-bottom:4px;
+}
+.s4 .rangebar .mid{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-weight:700;color:var(--muted);font-size:10px;
+}
+
+/* ============================================================
+   S5 — ONE shared scale band above the rows.
+   The band is the same width as the bars (same wrapper), so it lines
+   up by construction. The rows below stay clean.
+   ============================================================ */
+.s5 .band{
+  position:relative;height:24px;margin-bottom:5px;
+  border-bottom:1px solid var(--border);
+}
+.s5 .band .ruler{display:block}
+.s5 .band .cap{
+  position:absolute;bottom:2px;font-size:9.5px;color:var(--muted-2);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.s5 .band .cap.l{left:0;}
+.s5 .band .cap.r{right:0;}
+.s5 .band .zero{
+  position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;
+  background:var(--border-2);z-index:2;
+}
+.s5 .band .zero::after{
+  content:'0';position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+  font-size:9px;font-weight:700;color:var(--muted);
+}
+/* The band is the only place the ruler appears for S5. */
+.s5 .row .ruler{display:none}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Flow bar — P2 with a bar scale</h1>
+  <p>
+    The base is <b>P2</b> (bright axis, soft halo, bars anchored flush to the
+    zero line). What is missing is a <b>scale</b> — right now the bars are
+    lengths with nothing to measure them against, so "half the width" is a
+    guess, not a number.
+  </p>
+  <p>
+    Below are five ways to put a scale on that column. <b>S1</b> is the plain
+    ruler, <b>S2</b> adds numbers, <b>S3</b> uses a fading gradient instead of
+    hard ticks, <b>S4</b> brackets the range, and <b>S5</b> lifts the scale out
+    of the rows into one shared band above them.
+  </p>
+  <div class="problems">
+    <div class="problem"><span class="n">1</span><span><b>The axis is nearly invisible.</b> It is drawn in <code>--divider</code> (#343F3A), barely a shade above the card surface — so the column has no visible spine and the bars look like they float.</span></div>
+    <div class="problem"><span class="n">2</span><span><b>The bars do not touch the axis.</b> A 1px axis with bars starting at exactly <code>50%</code> leaves a hairline of background between them, so the bars read as detached objects rather than bars growing out of a zero line.</span></div>
+    <div class="problem"><span class="n">3</span><span><b>There is no scale.</b> A bar's length is proportional to the largest net in the column — but nothing on screen says what that largest value IS, so the reader can see the SHAPE of the year but not judge any single bar.</span></div>
+    <div class="problem"><span class="n">4</span><span><b>A tiny overspend vanishes.</b> October's ৳1,118 overspend is a 3px stub against a ৳6,11,000 scale.</span></div>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script>
+/* ============================================================
+   DATA — the twelve months, exactly as the live screen shows them
+   ============================================================ */
+const DATA = [
+  { label:'Jan 2026', income:0,      expense:0      },
+  { label:'Feb 2026', income:0,      expense:100000 },
+  { label:'Mar 2026', income:0,      expense:110000 },
+  { label:'Apr 2026', income:0,      expense:0      },
+  { label:'May 2026', income:0,      expense:120000 },
+  { label:'Jun 2026', income:611000, expense:0      },
+  { label:'Jul 2026', income:0,      expense:185000 },
+  { label:'Aug 2026', income:0,      expense:222000 },
+  { label:'Sep 2026', income:428947, expense:300442 },
+  { label:'Oct 2026', income:169951, expense:171069 },
+  { label:'Nov 2026', income:0,      expense:41630  },
+  { label:'Dec 2026', income:0,      expense:0      },
+];
+
+const fmt = n => '৳' + Math.round(Math.abs(n)).toLocaleString('en-IN');
+const maxNet = Math.max(...DATA.map(d => Math.abs(d.income - d.expense)));
+const net = d => d.income - d.expense;
+
+/* The scale ticks — quarters of the max, so a bar at full half-width
+   = ৳6,11,000. */
+const TICKS = [0.25, 0.5, 0.75, 1].map(f => Math.round(maxNet * f));
+
+const VARIANTS = [
+  {
+    id:'s0', badge:'S0', live:true,
+    title:'P2 baseline — no scale',
+    desc:'The P2 bar exactly as it is: bright axis, soft halo, bars flush to the zero. This is what "without a scale" looks like, so the versions below have something to be measured against.',
+    tags:[['warn','No scale'],['good','Axis reads as the spine'],['warn','Lengths are unmeasurable']],
+    notes:[
+      ['Reads as','A clean diverging bar. The shape of the year is clear — you can see the green spike in June and the red run through the middle — but every length is relative to an unnamed maximum.'],
+      ['Fixes','Nothing further. This is the reference point.'],
+    ],
+  },
+  {
+    id:'s1', badge:'S1',
+    title:'A graduated ruler on every row',
+    desc:'The column gets a measured scale: minor ticks every 10% of the half-column, taller ticks at each quarter. The bars are laid ON the ruler, so length becomes a measurement rather than a shape.',
+    tags:[['good','Length is now measurable'],['good','Ticks are quiet'],['warn','Every row carries the ruler']],
+    notes:[
+      ['Reads as','A ruler with marks on it. The eye reads each bar against the nearest tick, so "this month is about a quarter of the way" becomes a judgement you can actually make.'],
+      ['Fixes','Problem 3. The scale is present but unnamed — you still do not know the max is ৳6,11,000, only that the bar reached the edge.'],
+      ['Trade-off','The ruler repeats on all twelve rows, which adds a fine texture across the column.'],
+    ],
+  },
+  {
+    id:'s2', badge:'S2',
+    title:'Ruler + a numbered scale',
+    desc:'The same graduated ruler, plus the actual figures printed under the column — so "a quarter of the way" also becomes a rupee amount. Half the column = ৳3,05,500; the full half = ৳6,11,000.',
+    tags:[['good','Scale is named'],['good','Ruler + numbers together'],['warn','Needs vertical room for the labels']],
+    notes:[
+      ['Reads as','A proper measuring scale. You can now say "June saved ৳6,11,000, the full width of the scale" instead of "June is the longest bar".'],
+      ['Fixes','Problem 3, completely. The scale is not just present, it is legible.'],
+      ['Trade-off','The tick labels need a strip under the column, so the card is taller by about 20px.'],
+    ],
+  },
+  {
+    id:'s3', badge:'S3',
+    title:'A fading gradient instead of ticks',
+    desc:'The track fades out from the zero line toward both ends, so reaching further costs more visually. The ruler is still there, but as faint hairlines over a soft ramp rather than as hard ticks.',
+    tags:[['good','Softest of the set'],['good','Ruler still present'],['info','The gradient carries the scale, not the ticks']],
+    notes:[
+      ['Reads as','A ruler laid on a soft ramp. The eye reads the fade as "distance from zero" before it reads any tick, so the scale is felt rather than counted.'],
+      ['Fixes','Problem 3, in feel rather than in numbers — it tells you the bar is nearly full-width, but not what full width means.'],
+      ['Trade-off','The least explicit of the five. Pair it with S2\'s numbers if you want precision.'],
+    ],
+  },
+  {
+    id:'s4', badge:'S4',
+    title:'A bracketed range',
+    desc:'The column is bracketed at both ends with a labelled range: the far left is the maximum overspend, the far right the maximum saving, and the centre is zero. The scale reads as a measuring stick with two known ends.',
+    tags:[['good','Ends are named'],['good','Zero is labelled'],['warn','The range label row adds a band']],
+    notes:[
+      ['Reads as','A measuring stick with its ends marked. "Overspent ← 0 → saved" with ৳6,11,000 at both extremes — the two things a diverging bar is actually about.'],
+      ['Fixes','Problem 3, and adds the sign vocabulary. You know which end is which without inferring it from colour alone.'],
+      ['Trade-off','The label band sits above the rows, so it needs a matching row underneath it to line up.'],
+    ],
+  },
+  {
+    id:'s5', badge:'S5',
+    title:'One shared scale band above the rows',
+    desc:'The ruler is lifted out of the rows and becomes a single labelled band at the top of the column. The twelve rows below stay completely clean — just P2 bars — but they all hang off one shared scale.',
+    tags:[['good','Rows stay clean'],['good','One scale for the whole column'],['good','Numbers included'],['info','The scale band is a separate object']],
+    notes:[
+      ['Reads as','A column with a header ruler. The rows below are uncluttered marks on a board, and the board has one scale at the top. This is the calmest of the five.'],
+      ['Fixes','Problem 3 without adding any per-row texture — the rows stay exactly as P2, and the scale is read once.'],
+      ['Trade-off','The band is a separate visual object above the rows, so it needs to be aligned to the same grid.'],
+    ],
+  },
+];
+
+/* ---------- the ruler markup, shared by every variant ---------- */
+function ruler(){
+  return `<span class="ruler">
+    <span class="half l"></span>
+    <span class="half r"></span>
+  </span>`;
+}
+
+/* ---------- bar rendering per variant ---------- */
+function bar(v, d){
+  const n = net(d);
+  const empty = d.income === 0 && d.expense === 0;
+  const pct = Math.min(50, (Math.abs(n) / maxNet) * 50);
+  const up = n > 0;
+
+  let h = `<div class="flow">`;
+  if (v.id === 's3') h += `<span class="ramp"></span>`;
+  if (v.id !== 's5') h += ruler();
+  h += `<span class="axis"></span>`;
+  if (!empty && n !== 0){
+    h += `<span class="net ${up ? 'up' : 'down'}" style="width:${pct}%"></span>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+/* ---------- the scale furniture that sits OUTSIDE the rows but
+              INSIDE the flow column ---------- */
+function scaleHead(v){
+  if (v.id === 's4'){
+    return `<div class="rangebar">
+      <span>← overspent · max ${fmt(maxNet)}</span>
+      <span class="mid">0</span>
+      <span>saved · max ${fmt(maxNet)} →</span>
+    </div>`;
+  }
+  if (v.id === 's5'){
+    return `<div class="band">
+      ${ruler()}
+      <span class="zero"></span>
+      <span class="cap l">${fmt(maxNet)}</span>
+      <span class="cap r">${fmt(maxNet)}</span>
+    </div>`;
+  }
+  return '';
+}
+
+/* S2's numbered scale sits UNDER the last bar row, because a ruler
+   is read from the bottom up. */
+function scaleFoot(v){
+  if (v.id !== 's2') return '';
+  let t = `<div class="scalelabels">`;
+  [0.25,0.5,0.75,1].forEach(f => {
+    const left = 50 - f*50;
+    t += `<span${f === 1 ? ' class="edge-l"' : ''} style="left:${left}%">${fmt(maxNet*f)}</span>`;
+  });
+  [0.25,0.5,0.75,1].forEach(f => {
+    const left = 50 + f*50;
+    t += `<span${f === 1 ? ' class="edge-r"' : ''} style="left:${left}%">${fmt(maxNet*f)}</span>`;
+  });
+  t += `</div>`;
+  return `<div class="row scalerow scalerow-foot"><div></div><div>${t}</div><div></div><div></div><div></div></div>`;
+}
+
+function row(v, d){
+  const n = net(d);
+  const quiet = d.income === 0 && d.expense === 0;
+  const cls = n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero';
+  const netTxt = n === 0 ? '৳0' : (n > 0 ? '+' : '−') + fmt(Math.abs(n));
+  return `
+    <div class="row ${quiet ? 'quiet' : ''}">
+      <div class="month">${d.label}</div>
+      <div>${bar(v, d)}</div>
+      <div class="r tabular ${d.income > 0 ? 'inc' : ''}" style="${d.income ? '' : 'color:var(--muted)'}">${fmt(d.income)}</div>
+      <div class="r tabular ${d.expense > 0 ? 'exp' : ''}" style="${d.expense ? '' : 'color:var(--muted)'}">${fmt(d.expense)}</div>
+      <div class="r tabular net ${cls}">${netTxt}</div>
+    </div>`;
+}
+
+/* The scale furniture is a GRID ROW of its own, so it lands in the
+   same second column the bars occupy — that is what makes the ticks
+   line up with the bars. */
+function scaleRow(v){
+  const head = scaleHead(v);
+  if (!head) return '';
+  return `<div class="row scalerow"><div></div><div>${head}</div><div></div><div></div><div></div></div>`;
+}
+
+/* ---------- render ---------- */
+const root = document.getElementById('root');
+root.innerHTML = VARIANTS.map(v => `
+  <div class="option ${v.id}" data-variant="${v.id}">
+    <div class="option-head">
+      <div class="option-badge ${v.live ? '' : 'alt'}">${v.badge}</div>
+      <div>
+        <div class="option-title">${v.title}</div>
+        <div class="option-desc">${v.desc}</div>
+        <div class="option-tags">${v.tags.map(([k,t]) => `<span class="tag ${k}">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="legend">
+        <span><i style="background:var(--danger)"></i><span class="lbl">overspent</span></span>
+        <span><i style="background:var(--success)"></i><span class="lbl">saved</span></span>
+      </div>
+      <div class="col-head">
+        <div>Month</div>
+        <div class="fl">
+          <span>Net flow</span>
+          <em><i style="background:var(--danger)"></i>overspent</em>
+          <em><i style="background:var(--success)"></i>saved</em>
+        </div>
+        <div class="r">Income</div><div class="r">Expense</div><div class="r">Net</div>
+      </div>
+      <div class="rows">
+        ${scaleRow(v)}
+        ${DATA.map(d => row(v, d)).join('')}
+        ${scaleFoot(v)}
+      </div>
+      <div class="total">
+        <div>Total</div><div></div>
+        <div class="r tabular" style="color:var(--primary)">৳12,09,898</div>
+        <div class="r tabular" style="color:var(--danger)">৳12,50,141</div>
+        <div class="r tabular" style="color:var(--danger)">−৳40,243</div>
+      </div>
+    </div>
+    <div class="option-notes">
+      ${v.notes.map(([k,t]) => `<div><span class="k">${k}</span><span>${t}</span></div>`).join('')}
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>

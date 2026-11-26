@@ -2,11 +2,13 @@
  * AccountsPage — `/accounts` and `/accounts/add`.
  *
  * `src/screens/AccountsListScreen.tsx` renders one `<Link>` card per
- * account, each with:
- *   - the account name (15px semibold)
- *   - the type label (12px muted) — "Cash" / "Bank Account" / …
- *   - a **"Balance"** label and the formatted amount as SEPARATE text
- *     nodes, so there is no contiguous "Balance ৳ 5,000" string
+ * account. The card is a bank-card face:
+ *   - a gold chip, top-left
+ *   - the account TYPE label, top-right — "Cash" / "Bank Account" / …
+ *   - the masked card number, centred in the middle of the face
+ *   - the account NAME as the cardholder line, bottom-left
+ *   - the Δ since opening under the name, then the last activity
+ *   - a **"Balance"** label and the formatted amount, bottom-right
  *   - a `⋯` RowMenu trigger labelled `Actions for {name}`
  *
  * `src/screens/AccountAddScreen.tsx` is a form with the fields
@@ -56,12 +58,12 @@ export class AccountsPage extends BasePage {
   /**
    * The formatted balance inside a card.
    *
-   * The amount is its own `<span>`, sibling to the "Balance" caption —
+   * The amount is its own element, sibling to the "Balance" caption —
    * so `toContainText('৳ 5,000')` on the card would also pick up
-   * unrelated numbers. Scope to the amount span directly.
+   * unrelated numbers. Scope to the amount element directly.
    */
   balanceValue(name: string): Locator {
-    return this.card(name).locator('span.font-bold.tabular');
+    return this.card(name).locator('.acct-bal');
   }
 
   /** The list header's count line — "N total". */
@@ -72,43 +74,57 @@ export class AccountsPage extends BasePage {
   /**
    * The type label on a card — "Cash" / "Bank Account" / ….
    *
-   * It is the muted `text-xs` line directly under the account name.
+   * It is the small-caps label on the card's top edge.
    */
   typeLabel(name: string): Locator {
-    return this.card(name).locator('div.text-xs.text-muted').first();
+    return this.card(name).locator('.acct-type');
   }
 
   /**
-   * The card's secondary line — the delta ("↑ ৳ 42,000") plus the
-   * "vs opening" suffix.
-   *
-   * The line is only rendered when the account has a delta or a last
-   * activity, so this locator is intentionally absent on a brand-new
-   * account.
+   * The card's Δ line — "↑ ৳ 42,000" or "↓ ৳ 1,200" or "— no change".
    */
   deltaLine(name: string): Locator {
-    return this.card(name)
-      .locator('div.border-t.border-border-2')
-      .locator('span')
-      .first();
+    return this.card(name).locator('.acct-delta').first();
   }
 
   /**
-   * The card's last-activity half of the secondary line.
-   *
-   * It reads "Today · Salary", "no activity yet", "3d ago" or
-   * "25 Aug 2026".
+   * The card's last-activity line — "Today · Salary", "no activity
+   * yet", "3d ago" or "25 Aug 2026".
    */
   activityLine(name: string): Locator {
-    return this.card(name)
-      .locator('div.border-t.border-border-2')
-      .locator('span')
-      .last();
+    return this.card(name).locator('.acct-delta').last();
   }
 
-  /** The account-type icon on a card. */
-  typeIcon(name: string): Locator {
-    return this.card(name).locator('svg').first();
+  /** The masked card number on a card. */
+  cardNumber(name: string): Locator {
+    return this.card(name).locator('.acct-num');
+  }
+
+  /**
+   * The card's face gradient.
+   *
+   * Each account TYPE gets its own dark gradient (see
+   * `CARD_GRADIENT` in AccountsListScreen), so the type is told apart
+   * by the colour of the face rather than by a pictogram.
+   */
+  cardFace(name: string): Locator {
+    return this.card(name).locator('.acct-card');
+  }
+
+  /** The gold chip on a card. */
+  chip(name: string): Locator {
+    return this.card(name).locator('.acct-chip');
+  }
+
+  /**
+   * The card's secondary row — the Δ line and the activity line.
+   *
+   * The block is only rendered when the account has a delta or a last
+   * activity, so `toHaveCount(0)` on this locator is how a case proves
+   * the row is ABSENT.
+   */
+  secondaryRow(name: string): Locator {
+    return this.card(name).locator('[data-acct-secondary]');
   }
 
   /** The empty-state CTA. */
@@ -137,17 +153,6 @@ export class AccountsPage extends BasePage {
   /** The learn-more link on the shared empty state. */
   get learnMoreLink(): Locator {
     return this.page.getByRole('button', { name: 'How accounts work →' });
-  }
-
-  /**
-   * The card's secondary row — the whole row, not one of its halves.
-   *
-   * The row is only rendered when the account has a delta or a last
-   * activity, so `toHaveCount(0)` on this locator is how a case proves
-   * the row is ABSENT.
-   */
-  secondaryRow(name: string): Locator {
-    return this.card(name).locator('div.border-t.border-border-2');
   }
 
   /**

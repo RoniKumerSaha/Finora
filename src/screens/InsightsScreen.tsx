@@ -1074,81 +1074,135 @@ function LoanSummaryRowView({ row }: { row: LoanSummaryRow }) {
 // ---------- Monthly statement ----------
 
 /**
- * FlowBar — one month's income-vs-expense blocks.
+ * FLOW SLOTS — how many blocks each side of the axis carries.
  *
- * 2026-11-24 (Variant K, "arrow of blocks"): the Flow column draws
- * each month as a shaft of small blocks.
+ * The Flow column is a METER, not a solid bar: the length is counted
+ * in blocks rather than judged by eye. Forty slots a side means the
+ * largest month in the column fills its half exactly, and every other
+ * month is a fraction of that — a ratio you can count.
+ */
+const FLOW_SLOTS = 40;
+
+/**
+ * FlowBar — one month's net, drawn as a segmented meter.
  *
- *   - The BLOCKS carry the volume. Green blocks count income, red
- *     blocks count expense, one block a fixed chunk of money. Counting
- *     beats measuring — there is no scale to misread, and a busy month
- *     simply has more blocks.
+ * 2026-11-26 (Variant E, "diverging net" → segmented meter):
  *
- * The direction of travel is carried by the signed Net figure in the
- * last column, so this mark stays a pure volume texture — one mark,
- * one meaning.
+ * The Flow column is a METER built around a ZERO AXIS down the middle
+ * of the column:
  *
- * Block colours are darker than the live --primary / --danger tokens
- * (see `.flow-blocks` in app.css) so a full row of them reads as a
- * texture rather than shouting across the table.
+ *   - a month that SAVED money fills GREEN blocks from the axis to
+ *     the RIGHT;
+ *   - a month that OVERSPENT fills RED blocks from the axis to the
+ *     LEFT.
  *
- * A month with no activity renders a bare hairline rather than an
- * empty shaft — an empty mark reads as "some activity here" at a
- * glance, which is exactly the wrong impression.
+ * The blocks are DISCRETE, so the length is COUNTABLE: you can see
+ * that August is nine blocks and June is forty. A solid bar only ever
+ * lets you judge "longer than"; a segmented one lets you say "three
+ * times as many".
+ *
+ * The unfilled slots render as faint ghosts, so every row is the same
+ * length. That means:
+ *
+ *   - an empty month shows a bare row of ghosts, which reads as
+ *     "nothing moved here" rather than as missing data;
+ *   - the scale is identical on every row, so two months can be
+ *     compared by counting blocks ACROSS rows.
+ *
+ * The block length is the month's NET, so the scale is the largest
+ * monthly net in the column, not the largest income. That is the
+ * trade this variant makes: it shows savings and overspend clearly,
+ * and it does NOT show gross income or gross expense — for that, the
+ * Income and Expense columns beside it carry the figures.
+ *
+ * The last block is PARTIAL — it carries the remainder of the month
+ * rather than rounding up to a whole slot — so the length is exact
+ * and not quantised to the grid.
  */
 function FlowBar({
-  income, expense, max,
+  income, expense, maxNet,
 }: {
   income: number;
   expense: number;
-  max: number;
+  maxNet: number;
 }) {
-  const scale = max > 0 ? max : 1;
+  const net = income - expense;
+
+  // The scale is the largest monthly net in the column. Each side gets
+  // HALF the column, so a saved month and an overspent month of the
+  // same size fill the same number of blocks.
+  const scale = maxNet > 0 ? maxNet : 1;
+  const filled = (Math.abs(net) / scale) * FLOW_SLOTS;
+  const whole = Math.floor(filled);
+  const part = filled - whole;
+  const saved = net > 0;
   const empty = income === 0 && expense === 0;
 
-  if (empty) {
-    return (
-      <div className="h-2.5 flex items-center" data-flow-bar data-flow-empty>
-        <span className="h-px w-full bg-border/70" />
-      </div>
-    );
-  }
+  const title = empty
+    ? 'No transactions this month'
+    : `In ${fmtBDT(income)} · Out ${fmtBDT(expense)} · ${
+        saved ? 'Saved' : 'Overspent'
+      } ${fmtBDT(Math.abs(net))}`;
 
-  // The blocks are sized as a share of the FLOW COLUMN's width, not of
-  // the busiest month — so a busy month fills the space it has and a
-  // quiet month is visibly shorter, all within one fixed-width column.
-  // The busiest month always fills the column exactly.
-  const total = income + expense;
-  const fillPct = Math.min(100, (total / scale) * 100);
-
-  // Split the fill into income and expense segments. These are FLEX
-  // SHARES of the filled bar, not percentages of the column — so they
-  // always add up to exactly the filled width and can never overflow.
-  const inShare = total > 0 ? income / total : 0;
-  const outShare = total > 0 ? expense / total : 0;
+  // One side's worth of slots. `fromAxis` is the side that starts AT
+  // the axis: for the right half that is its left edge, for the left
+  // half that is its right edge. The filled blocks are placed against
+  // that edge and the ghosts fill the rest, so the blocks always grow
+  // OUTWARD from zero.
+  //
+  // `isSaving` says which side this is: the SAVING side (right of the
+  // axis) carries the blocks only when the month saved; the OVERSPEND
+  // side (left of the axis) carries them only when it overspent. The
+  // other side is all ghosts.
+  //
+  // BOTH halves always render their full run of slots, even when the
+  // month has no activity: the ghost slots are what make every row
+  // the same width, so an empty month reads as "nothing moved" and
+  // two rows can be compared by counting blocks across them.
+  const side = (fromAxis: boolean, isSaving: boolean) => {
+    const carries = saved === isSaving;
+    const filledSlots = carries
+      ? Array.from({ length: whole }, (_, i) => (
+          <i key={`f${i}`} className={saved ? 'on' : 'on red'} />
+        ))
+      : [];
+    if (carries && part > 0.02) {
+      filledSlots.push(
+        <i
+          key="part"
+          className={`part${saved ? '' : ' red'}`}
+          style={{ ['--w' as string]: `${Math.round(part * 100)}%` }}
+        />,
+      );
+    }
+    const ghosts = Array.from({ length: FLOW_SLOTS - filledSlots.length }, (_, i) => (
+      <i key={`g${i}`} />
+    ));
+    return fromAxis
+      ? filledSlots.concat(ghosts)
+      : ghosts.concat(filledSlots);
+  };
 
   return (
     <div
-      className="flex items-center h-5 min-w-0"
+      className="flow-meter"
       data-flow-bar
-      title={`In ${fmtBDT(income)} · Out ${fmtBDT(expense)}`}
+      data-flow-empty={empty || undefined}
+      data-flow-direction={saved ? 'savings' : 'overspend'}
+      title={title}
     >
-      <span className="flow-blocks min-w-0 overflow-hidden" style={{ width: `${fillPct}%` }}>
-        {inShare > 0 && (
-          <span
-            className="blk-group blk-in"
-            style={{ flex: `${inShare} 1 0%` }}
-            data-flow-segment="income"
-          />
-        )}
-        {outShare > 0 && (
-          <span
-            className="blk-group blk-out"
-            style={{ flex: `${outShare} 1 0%` }}
-            data-flow-segment="expense"
-          />
-        )}
+      {/* The overspend side — blocks grow LEFTWARD from the axis. */}
+      <span className="flow-half flow-half-l" data-flow-side="overspend">
+        {side(false, false)}
       </span>
+
+      {/* The saving side — blocks grow RIGHTWARD from the axis. */}
+      <span className="flow-half flow-half-r" data-flow-side="savings">
+        {side(true, true)}
+      </span>
+
+      {/* The zero axis, down the middle of the column. */}
+      <span className="flow-axis" data-flow-axis />
     </div>
   );
 }
@@ -1168,7 +1222,13 @@ function MonthlyStatementCard({
   const { bars } = data;
   const totalIncome = bars.reduce((s, b) => s + b.income, 0);
   const totalExpense = bars.reduce((s, b) => s + b.expense, 0);
-  const max = Math.max(1, ...bars.map(b => b.income + b.expense));
+  // The saved figure is the NET of the whole column — the sum of the
+  // months that kept money, minus the months that spent more than they
+  // earned. It matches the Net column's total by construction.
+  const totalSaved = totalIncome - totalExpense;
+  // The Flow column shows each month's NET, so the scale is the
+  // largest monthly net in the column — not the largest income.
+  const maxNet = Math.max(1, ...bars.map(b => Math.abs(b.income - b.expense)));
 
   return (
     <div className="card">
@@ -1190,6 +1250,14 @@ function MonthlyStatementCard({
             <span className="text-muted">Expense</span>
             <span className="text-danger font-semibold">{fmtBDT(totalExpense)}</span>
           </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-success" />
+            <span className="text-muted">Saved</span>
+            <span className={totalSaved >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold'}>
+              {totalSaved >= 0 ? '' : '−'}
+              {fmtBDT(Math.abs(totalSaved))}
+            </span>
+          </span>
         </div>
       </div>
 
@@ -1203,7 +1271,17 @@ function MonthlyStatementCard({
           {/* Column headers */}
           <div className="text-[10.5px] uppercase tracking-[0.08em] font-bold text-muted grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 pb-2 border-b border-border">
             <div>Month</div>
-            <div>Flow</div>
+            <div className="flex items-center gap-2">
+              <span>Net flow</span>
+              {/* What the blocks mean — the axis is zero, green grows
+                  right (saved), red grows left (overspent). */}
+              <span className="flex items-center gap-1.5 normal-case tracking-normal font-normal">
+                <span className="w-2.5 h-2.5 rounded-[2px] bg-danger" />
+                <span className="text-muted-2">overspent</span>
+                <span className="w-2.5 h-2.5 rounded-[2px] bg-success" />
+                <span className="text-muted-2">saved</span>
+              </span>
+            </div>
             <div className="text-right">Income</div>
             <div className="text-right">Expense</div>
             <div className="text-right">Net</div>
@@ -1223,7 +1301,7 @@ function MonthlyStatementCard({
                   <div className={`text-[12.5px] ${hasActivity ? 'font-semibold text-ink' : 'text-muted'}`}>
                     {b.label}
                   </div>
-                  <FlowBar income={b.income} expense={b.expense} max={max} />
+                  <FlowBar income={b.income} expense={b.expense} maxNet={maxNet} />
                   <div className={`text-right ${b.income > 0 ? 'text-primary' : 'text-muted'}`}>
                     {fmtBDT(b.income)}
                   </div>

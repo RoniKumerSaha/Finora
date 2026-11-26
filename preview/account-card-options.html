@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Accounts as cards</title>
+<style>
+/* ============================================================
+   TOKENS — mirrored from src/styles/theme.css [data-theme="dark"]
+   ============================================================ */
+:root{
+  --bg:#131A18; --surface:#181F1C; --surface-2:#202824; --surface-3:#2A332E;
+  --ink:#F1F3EF; --muted:#94A59C; --muted-2:#647068;
+  --primary:#3FB592; --primary-soft:rgba(63,181,146,.30); --primary-on:#0F1419;
+  --accent:#B98438; --danger:#D26A5C; --danger-soft:rgba(210,106,92,.30); --danger-title:#E58774;
+  --info:#2F75BC; --warn:#D9A234;
+  --success:#3F8E5E; --success-soft:rgba(63,142,94,.40); --success-title:#5DBC83;
+  --border:#27302C; --border-2:#1E2623; --divider:#343F3A;
+  --shadow-card:0 1px 2px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.32);
+  --radius-card:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font);
+  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  padding:32px 24px 100px;
+}
+.tabular{font-variant-numeric:tabular-nums}
+
+.page-head{max-width:1240px;margin:0 auto 32px}
+.page-head h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-head p{color:var(--muted);font-size:13.5px;margin-top:6px;max-width:86ch}
+.page-head p b{color:var(--ink);font-weight:600}
+.problems{margin-top:16px;display:grid;gap:8px}
+.problem{
+  display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;
+  padding:11px 14px;border-radius:9px;background:var(--surface-2);
+  border:1px solid var(--border);font-size:12.5px;color:var(--muted);line-height:1.55;
+}
+.problem .n{
+  width:20px;height:20px;border-radius:6px;background:var(--danger-soft);
+  color:var(--danger-title);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.problem b{color:var(--ink);font-weight:600}
+
+.option{
+  max-width:1240px;margin:0 auto 26px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.option-head{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;gap:13px;align-items:flex-start}
+.option-badge{
+  flex:none;width:27px;height:27px;border-radius:8px;background:var(--primary);color:var(--primary-on);
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+}
+.option-badge.alt{background:var(--surface-3);color:var(--muted)}
+.option-title{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.option-desc{font-size:12.5px;color:var(--muted);margin-top:3px;max-width:88ch}
+.option-tags{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
+  border-radius:999px;font-weight:700;background:var(--surface-3);color:var(--muted);
+}
+.tag.good{background:var(--primary-soft);color:var(--primary)}
+.tag.warn{background:var(--danger-soft);color:var(--danger-title)}
+.tag.info{background:rgba(47,117,188,.24);color:#7FB2E4}
+
+.card-body{padding:18px 20px 20px}
+.notes{display:grid;gap:5px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border-2);font-size:12px;color:var(--muted)}
+.notes div{display:flex;gap:8px;align-items:flex-start}
+.notes .k{flex:none;color:var(--ink);font-weight:600;min-width:92px}
+
+/* ============================================================
+   THE GRID — accounts sit in a responsive grid, same as the app.
+   ============================================================ */
+.grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
+}
+@media (max-width:900px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:620px){ .grid{grid-template-columns:1fr} }
+
+/* ============================================================
+   A1 — THE CLASSIC BANK CARD.
+   A rounded card with a gradient, a chip, the bank name top-left,
+   the account name, the masked number, and the balance bottom-right.
+   ============================================================ */
+.a1{
+  position:relative;overflow:hidden;
+  aspect-ratio:1.586/1;   /* the ISO card ratio */
+  border-radius:16px;padding:18px 20px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:linear-gradient(135deg,#1E2A26 0%,#2A3A34 45%,#33463E 100%);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+.a1::after{
+  /* the light sheen across the top-left */
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 8% 0%,rgba(255,255,255,.07),transparent 55%),
+             radial-gradient(90% 60% at 100% 100%,rgba(63,181,146,.10),transparent 60%);
+}
+.a1 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1}
+.a1 .chip{
+  width:34px;height:26px;border-radius:5px;flex:none;
+  background:linear-gradient(135deg,#C9A227,#E8CB63);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+  position:relative;overflow:hidden;
+}
+.a1 .chip::before,.a1 .chip::after{
+  content:'';position:absolute;background:rgba(0,0,0,.22);
+}
+.a1 .chip::before{left:0;right:0;top:50%;height:1px}
+.a1 .chip::after{top:0;bottom:0;left:50%;width:1px}
+.a1 .type{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;
+  color:var(--muted);margin-left:auto;
+}
+.a1 .mid{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+.a1 .num{
+  font-size:15px;letter-spacing:.12em;font-variant-numeric:tabular-nums;
+  color:var(--ink);opacity:.9;
+}
+.a1 .name{
+  position:relative;z-index:1;
+  font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+}
+.a1 .bottom{
+  position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+}
+.a1 .bal-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
+.a1 .bal{font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.a1 .delta{font-size:10.5px;margin-top:2px;font-variant-numeric:tabular-nums}
+.a1 .delta.up{color:var(--success-title)}
+.a1 .delta.down{color:var(--danger-title)}
+.a1 .delta.flat{color:var(--muted)}
+
+/* ============================================================
+   A1 POLISH — refinements on the classic bank card.
+
+   A1p1 · The sheen card  — the current A1 with a tighter gradient,
+          a brushed-metal band behind the number and a thinner rule.
+   A1p2 · The honest card — the same silhouette, but the masked
+          number is replaced by real account facts (type · since
+          opening · last activity) and the chip carries the tone.
+   A1p3 · The wallet card — the face is a dark glass panel over the
+          tone, with the balance as the hero and the card details
+          reduced to a single line.
+   ============================================================ */
+
+/* A1p1 — the sheen card. */
+.a1p1{
+  position:relative;overflow:hidden;
+  aspect-ratio:1.586/1;
+  border-radius:16px;padding:16px 18px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:
+    linear-gradient(135deg,#22302B 0%,#2C3D36 42%,#384C43 78%,#2A3A34 100%);
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:var(--shadow-card),inset 0 1px 0 rgba(255,255,255,.06);
+}
+/* the diagonal brushed band the number sits on */
+.a1p1::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(104deg,transparent 18%,rgba(255,255,255,.045) 32%,transparent 44%),
+    radial-gradient(120% 90% at 6% -10%,rgba(255,255,255,.10),transparent 58%),
+    radial-gradient(90% 70% at 100% 108%,color-mix(in srgb,var(--tone) 22%,transparent),transparent 62%);
+}
+.a1p1 .top{display:flex;align-items:center;gap:9px;position:relative;z-index:1}
+.a1p1 .chip{
+  width:36px;height:27px;border-radius:5px;flex:none;
+  background:linear-gradient(135deg,#B8941F,#E8CB63 55%,#C9A227);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.28),0 1px 2px rgba(0,0,0,.3);
+  position:relative;overflow:hidden;
+}
+.a1p1 .chip::before,.a1p1 .chip::after{content:'';position:absolute;background:rgba(0,0,0,.24)}
+.a1p1 .chip::before{left:0;right:0;top:50%;height:1px}
+.a1p1 .chip::after{top:0;bottom:0;left:50%;width:1px}
+.a1p1 .type{
+  font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;
+  color:var(--muted);margin-left:auto;
+}
+.a1p1 .mid{position:relative;z-index:1;display:flex;align-items:center;gap:11px}
+.a1p1 .num{
+  font-size:14.5px;letter-spacing:.14em;font-variant-numeric:tabular-nums;
+  color:var(--ink);opacity:.82;
+  padding:4px 9px;border-radius:5px;
+  background:rgba(0,0,0,.22);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+}
+.a1p1 .mark{
+  width:20px;height:20px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 26%,transparent);
+  color:var(--tone);
+}
+.a1p1 .bottom{
+  position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+}
+.a1p1 .name{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
+  margin-bottom:3px;
+}
+.a1p1 .delta{font-size:10.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.a1p1 .delta.up{color:var(--success-title)}
+.a1p1 .delta.down{color:var(--danger-title)}
+.a1p1 .delta.flat{color:var(--muted)}
+.a1p1 .bal-label{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right}
+.a1p1 .bal{font-size:21px;font-weight:700;letter-spacing:-.025em;line-height:1.1;text-align:right;font-variant-numeric:tabular-nums}
+.a1p1 .bal.neg{color:var(--danger-title)}
+
+/* A1p2 — the honest card. Same silhouette, real data only. */
+.a1p2{
+  position:relative;overflow:hidden;
+  aspect-ratio:1.586/1;
+  border-radius:16px;padding:16px 18px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:linear-gradient(135deg,#1E2A26 0%,#2A3A34 50%,#32443C 100%);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+.a1p2::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 8% 0%,rgba(255,255,255,.06),transparent 55%),
+             radial-gradient(90% 60% at 100% 100%,color-mix(in srgb,var(--tone) 16%,transparent),transparent 62%);
+}
+.a1p2 .top{display:flex;align-items:center;gap:9px;position:relative;z-index:1}
+.a1p2 .chip{
+  width:34px;height:25px;border-radius:5px;flex:none;
+  background:color-mix(in srgb,var(--tone) 34%,#202A26);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tone) 55%,transparent);
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--tone);
+}
+.a1p2 .type{
+  font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;
+  color:var(--muted);margin-left:auto;
+}
+.a1p2 .mid{position:relative;z-index:1}
+.a1p2 .facts{
+  display:flex;flex-direction:column;gap:5px;
+  padding-top:2px;
+}
+.a1p2 .fact{
+  display:flex;align-items:baseline;gap:8px;
+  font-size:11.5px;color:var(--muted);
+}
+.a1p2 .fact .k{
+  font-size:9px;text-transform:uppercase;letter-spacing:.11em;min-width:64px;
+  color:var(--muted-2);
+}
+.a1p2 .fact .v{font-variant-numeric:tabular-nums;color:var(--ink);opacity:.86}
+.a1p2 .bottom{
+  position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+}
+.a1p2 .name{
+  font-size:12.5px;font-weight:600;letter-spacing:-.01em;color:var(--ink);max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.a1p2 .delta{font-size:10.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+.a1p2 .delta.up{color:var(--success-title)}
+.a1p2 .delta.down{color:var(--danger-title)}
+.a1p2 .delta.flat{color:var(--muted)}
+.a1p2 .bal-label{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right}
+.a1p2 .bal{font-size:21px;font-weight:700;letter-spacing:-.025em;line-height:1.1;text-align:right;font-variant-numeric:tabular-nums}
+.a1p2 .bal.neg{color:var(--danger-title)}
+
+/* A1p3 — the wallet card. Dark glass over the tone; balance is the hero. */
+.a1p3{
+  position:relative;overflow:hidden;
+  aspect-ratio:1.586/1;
+  border-radius:16px;padding:16px 18px;
+  display:flex;flex-direction:column;
+  background:linear-gradient(135deg,#16201D 0%,#1C2825 55%,#22302C 100%);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+.a1p3::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(130% 100% at 100% 0%,color-mix(in srgb,var(--tone) 30%,transparent),transparent 62%),
+    linear-gradient(160deg,rgba(255,255,255,.05),transparent 45%);
+}
+.a1p3 .top{display:flex;align-items:center;gap:9px;position:relative;z-index:1}
+.a1p3 .chip{
+  width:34px;height:25px;border-radius:5px;flex:none;
+  background:linear-gradient(135deg,#C9A227,#E8CB63);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+  position:relative;overflow:hidden;
+}
+.a1p3 .chip::before,.a1p3 .chip::after{content:'';position:absolute;background:rgba(0,0,0,.22)}
+.a1p3 .chip::before{left:0;right:0;top:50%;height:1px}
+.a1p3 .chip::after{top:0;bottom:0;left:50%;width:1px}
+.a1p3 .type{
+  font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;
+  color:var(--muted);margin-left:auto;
+}
+.a1p3 .mid{margin-top:auto;position:relative;z-index:1}
+.a1p3 .bal-label{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.a1p3 .bal{
+  font-size:27px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-top:3px;
+  font-variant-numeric:tabular-nums;
+}
+.a1p3 .bal.neg{color:var(--danger-title)}
+.a1p3 .foot{
+  margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:10.5px;color:var(--muted);position:relative;z-index:1;
+}
+.a1p3 .name{font-size:11px;font-weight:600;color:var(--ink);opacity:.9;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.a1p3 .delta{font-variant-numeric:tabular-nums}
+.a1p3 .delta.up{color:var(--success-title)}
+.a1p3 .delta.down{color:var(--danger-title)}
+.a1p3 .delta.flat{color:var(--muted)}
+
+/* ============================================================
+   A2 — THE LEDGER CARD.
+   Same card silhouette, but the face is a real ledger: the account
+   name is the title, the balance is the hero, and the type is a
+   chip. No fake card number — nothing on it is invented.
+   ============================================================ */
+.a2{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px;
+  min-height:150px;display:flex;flex-direction:column;gap:12px;
+  background:linear-gradient(to bottom,color-mix(in srgb,var(--tone) 12%,var(--surface)) 0%,var(--surface) 62%);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+.a2 .stripe{position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--tone)}
+.a2 .top{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+.a2 .tile{
+  width:38px;height:38px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 16%,transparent);color:var(--tone);
+}
+.a2 .title{font-size:14.5px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.a2 .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.a2 .balwrap{margin-top:auto;position:relative;z-index:1}
+.a2 .bal-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
+.a2 .bal{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-top:2px}
+.a2 .foot{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:11px;padding-top:10px;border-top:1px solid var(--border-2);
+  font-size:11px;color:var(--muted);position:relative;z-index:1;
+}
+.a2 .delta{font-variant-numeric:tabular-nums;font-weight:600}
+.a2 .delta.up{color:var(--success-title)}
+.a2 .delta.down{color:var(--danger-title)}
+.a2 .delta.flat{color:var(--muted)}
+
+/* ============================================================
+   A3 — THE CHIP.
+   A small card, portrait, that reads like a bank chip card: the
+   type glyph top-left, the balance in the middle, the name at the
+   bottom. Compact, so four fit across.
+   ============================================================ */
+.a3{
+  position:relative;overflow:hidden;
+  aspect-ratio:1/1.42;border-radius:14px;padding:14px;
+  display:flex;flex-direction:column;
+  background:linear-gradient(160deg,#22302B 0%,#2C3D36 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.a3::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(100% 70% at 0% 0%,rgba(255,255,255,.06),transparent 60%);
+}
+.a3 .glyph{
+  width:34px;height:34px;border-radius:9px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 22%,transparent);color:var(--tone);
+  position:relative;z-index:1;
+}
+.a3 .mid{margin-top:auto;position:relative;z-index:1}
+.a3 .bal{font-size:20px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.a3 .name{font-size:12.5px;font-weight:600;margin-top:6px;line-height:1.25}
+.a3 .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+.a3 .rail{
+  position:absolute;left:14px;right:14px;bottom:9px;height:2px;border-radius:2px;
+  background:var(--border-2);
+}
+.a3 .rail i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--tone)}
+
+/* ============================================================
+   A4 — THE WALLET ROW.
+   A card-shaped row, not a tile: the icon leads, the name and type
+   follow, the balance is right-aligned and large. One account per
+   row, full width — the densest option.
+   ============================================================ */
+.a4{
+  position:relative;overflow:hidden;
+  border-radius:12px;padding:13px 16px;
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+.a4 .tile{
+  width:42px;height:42px;border-radius:11px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 16%,transparent);color:var(--tone);
+}
+.a4 .name{font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.a4 .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.a4 .right{margin-left:auto;text-align:right}
+.a4 .bal{font-size:18px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.a4 .delta{font-size:10.5px;margin-top:2px;font-variant-numeric:tabular-nums}
+.a4 .delta.up{color:var(--success-title)}
+.a4 .delta.down{color:var(--danger-title)}
+.a4 .delta.flat{color:var(--muted)}
+
+/* ============================================================
+   A5 — THE STRIPED CARD.
+   A card with a magnetic-stripe band across the top, like a bank
+   card. The type sits in the stripe; the face below carries the
+   name and balance.
+   ============================================================ */
+.a5{
+  position:relative;overflow:hidden;
+  border-radius:15px;
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;
+}
+.a5 .stripe{
+  height:34px;background:linear-gradient(to bottom,#232F2A,#1B2521);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:9px;padding:0 16px;
+  position:relative;
+}
+.a5 .stripe::after{
+  content:'';position:absolute;left:0;right:0;bottom:7px;height:2px;
+  background:repeating-linear-gradient(to right,
+    rgba(255,255,255,.10) 0 6px, transparent 6px 11px);
+}
+.a5 .stripe .glyph{color:var(--tone)}
+.a5 .stripe .t{font-size:10px;text-transform:uppercase;letter-spacing:.11em;font-weight:700;color:var(--muted)}
+.a5 .face{padding:15px 16px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.a5 .name{font-size:14.5px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.a5 .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.a5 .right{text-align:right}
+.a5 .bal{font-size:20px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.a5 .delta{font-size:10.5px;margin-top:2px;font-variant-numeric:tabular-nums}
+.a5 .delta.up{color:var(--success-title)}
+.a5 .delta.down{color:var(--danger-title)}
+.a5 .delta.flat{color:var(--muted)}
+.a5 .chip{
+  position:absolute;top:44px;left:16px;width:30px;height:23px;border-radius:5px;
+  background:linear-gradient(135deg,#C9A227,#E8CB63);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);
+}
+
+/* ============================================================
+   A6 — THE FOLD.
+   A card that reads like a folded wallet: the top half is a
+   darker flap with the account identity, the bottom half carries
+   the balance. A hairline down the middle is the fold.
+   ============================================================ */
+.a6{
+  position:relative;overflow:hidden;
+  border-radius:14px;
+  background:linear-gradient(to bottom,var(--surface-2) 0 48%,var(--surface) 48% 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+  padding:15px 17px 16px;min-height:158px;
+  display:flex;flex-direction:column;gap:11px;
+}
+.a6 .fold{
+  position:absolute;left:0;right:0;top:calc(48% - 1px);height:1px;
+  background:linear-gradient(to right,transparent,var(--divider) 20%,var(--divider) 80%,transparent);
+}
+.a6 .top{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+.a6 .tile{
+  width:36px;height:36px;border-radius:9px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 18%,transparent);color:var(--tone);
+}
+.a6 .name{font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.a6 .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.a6 .mid{margin-top:auto;position:relative;z-index:1}
+.a6 .bal-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted)}
+.a6 .bal{font-size:23px;font-weight:700;letter-spacing:-.025em;line-height:1.1;margin-top:2px}
+.a6 .foot{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:11px;color:var(--muted);position:relative;z-index:1;
+}
+.a6 .delta{font-variant-numeric:tabular-nums;font-weight:600}
+.a6 .delta.up{color:var(--success-title)}
+.a6 .delta.down{color:var(--danger-title)}
+.a6 .delta.flat{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Accounts as cards</h1>
+  <p>
+    The Accounts screen today renders each account as a <b>soft wash card</b> —
+    a tone-tinted gradient with a 3px left accent strip, the account name, the
+    balance, and a "Δ since opening" line. It reads as a tinted rectangle.
+  </p>
+  <p>
+    Below are six ways to make it read as an actual <b>credit or bank card</b>.
+    They differ in how much of the card metaphor they commit to, and in how
+    much they keep of the information the screen already carries.
+  </p>
+  <div class="problems">
+    <div class="problem"><span class="n">1</span><span><b>It does not read as a card.</b> A wash + a left stripe is a tinted tile. There is no silhouette, no aspect ratio, nothing that says "held object".</span></div>
+    <div class="problem"><span class="n">2</span><span><b>The card metaphor can lie.</b> A real bank card has a printed number, a chip, a bank name. This app has none of those — so any version that draws them is inventing data the user never entered.</span></div>
+    <div class="problem"><span class="n">3</span><span><b>The tone already carries meaning.</b> Green = bank, gold = cash, blue = wallet, red = card. Whatever silhouette we choose, that colour language has to survive it.</span></div>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script>
+/* ============================================================
+   DATA — four accounts, mirroring the account types the app
+   supports and the tones it already assigns them.
+   ============================================================ */
+const ACCOUNTS = [
+  { name:'Dutch-Bangla Bank', type:'Bank Account', tone:'#3FB592', glyph:'bank',
+    balance:248500, opening:200000, last:'2d ago' },
+  { name:'Cash Wallet', type:'Cash', tone:'#B98438', glyph:'cash',
+    balance:18400, opening:25000, last:'today' },
+  { name:'bKash', type:'Mobile Wallet', tone:'#2F75BC', glyph:'wallet',
+    balance:9320, opening:5000, last:'5h ago' },
+  { name:'Visa Signature', type:'Card', tone:'#D26A5C', glyph:'card',
+    balance:-42680, opening:0, last:'1d ago' },
+];
+
+const fmt = n => '৳' + Math.round(Math.abs(n)).toLocaleString('en-IN');
+
+/* The pictograms, mirrored from src/components/AccountTypeIcon.tsx */
+const GLYPHS = {
+  bank:'<path d="M11.2 2.4a1 1 0 0 1 1.6 0l8.5 6.4a1 1 0 0 1-.6 1.7H3.3a1 1 0 0 1-.6-1.7l8.5-6.4zM4.5 12a1 1 0 1 1 2 0v6h-2v-6zm4.5 0a1 1 0 1 1 2 0v6H9v-6zm4.5 0a1 1 0 1 1 2 0v6h-2v-6zm4.5 0a1 1 0 1 1 2 0v6h-2v-6zM3 19a1 1 0 1 0 0 2h18a1 1 0 1 0 0-2H3zm-1 3a1 1 0 1 0 0 2h20a1 1 0 1 0 0-2H2z"/>',
+  cash:'<path d="M5 6h13a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3zm-.5 4.5h14a.5.5 0 0 0 0-1h-14a.5.5 0 0 0 0 1zM14 12.5a1.5 1.5 0 1 0 0 3h3a1.5 1.5 0 0 0 0-3h-3zm-7-6.5V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1H7z"/>',
+  wallet:'<path d="M8 3a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8zm0 2h6v.5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5V5zm0 5h6a.5.5 0 0 1 .5.5V13a3 3 0 0 1-3 3H8a.5.5 0 0 1-.5-.5V10.5a.5.5 0 0 1 .5-.5z"/><path d="M14 11.5a1.5 1.5 0 0 0 0 3h5a1.5 1.5 0 0 0 0-3h-5zm1 1.5a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1z"/>',
+  card:'<path d="M4 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7zm0 2.5h18v-1.5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v1.5z"/><path d="M7 13.5a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1zm6 0a1 1 0 0 1 1-1h3a1 1 0 1 1 0 2h-3a1 1 0 0 1-1-1zM6.5 17a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0zm5 0a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0z"/>',
+};
+function icon(g, cls){
+  return `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="${cls||''}" style="width:20px;height:20px;display:block">${GLYPHS[g]}</svg>`;
+}
+function deltaOf(a){
+  const d = a.balance - a.opening;
+  return {
+    cls: d > 0 ? 'up' : d < 0 ? 'down' : 'flat',
+    text: d === 0 ? '— no change' : d > 0 ? `↑ ${fmt(d)}` : `↓ ${fmt(Math.abs(d))}`,
+  };
+}
+
+const VARIANTS = [
+  {
+    id:'a1', badge:'A1',
+    title:'The classic bank card',
+    desc:'The full ISO-ratio silhouette: gradient face, gold chip, the account name as the cardholder line, and a masked number. Unmistakably a bank card.',
+    tags:[['good','Reads instantly as a card'],['good','Real card proportions'],['warn','Invents a masked number'],['warn','Only one card per row']],
+    notes:[
+      ['Reads as','A physical card in your hand. The strongest metaphor of the set.'],
+      ['Honesty','The masked number and the chip are decorative — no account has a number. We would need to generate a stable pseudo-number from the account id.'],
+      ['Trade-off','One card per row at this width, so four accounts take a lot of vertical space.'],
+    ],
+  },
+  {
+    id:'a1p1', badge:'A1·1',
+    title:'The sheen card',
+    desc:'A1 with the material fixed: a deeper four-stop gradient, a hairline top-edge highlight, the tone\'s pictogram in a small disc beside the chip, and the number set on a recessed dark plate so it reads as embossed rather than printed.',
+    tags:[['good','Most physical of the set'],['good','Tone still readable'],['warn','Number is still invented'],['info','One card per row']],
+    notes:[
+      ['What changed','The flat wash became a lit surface: the light comes from the top-left, the tone glows from the bottom-right, and the number sits in a milled recess.'],
+      ['Still invented','The masked number. It is stable per account but it is not a real card number — nothing in the app corresponds to it.'],
+      ['Trade-off','Every extra detail is one more thing that has to survive the light theme and the small phone width.'],
+    ],
+  },
+  {
+    id:'a1p2', badge:'A1·2',
+    title:'The honest card',
+    desc:'The same bank-card silhouette, but the number is replaced with the three facts the app actually knows: the opening balance, the change since opening, and when the account last moved. The chip carries the account pictogram in its tone.',
+    tags:[['good','Nothing invented'],['good','Keeps the card silhouette'],['good','Uses the tone properly'],['info','Less "magstripe"']],
+    notes:[
+      ['Reads as','A card whose face is a statement rather than a payment instrument. Still unmistakably a card; nothing on it is fiction.'],
+      ['Honesty','Opened / Change / Activity are all computed from the account and its transactions. The chip is a tone-coloured pictogram tile, not a gold chip pretending to be EMV.'],
+      ['Trade-off','Weaker as a "bank card" at a glance than A1·1 — the strongest cue (the number) is the one thing we removed.'],
+    ],
+  },
+  {
+    id:'a1p3', badge:'A1·3',
+    title:'The wallet card',
+    desc:'The most restrained polish: a dark glass face with the tone glowing out of the top-right corner, the balance as the hero, and the account name plus Δ reduced to a single hairline-separated footer.',
+    tags:[['good','Balance is the hero'],['good','Calm, premium'],['good','Least invented'],['info','No chip cue']],
+    notes:[
+      ['Reads as','A card in a wallet seen in low light. The glow is the tone; the number of the account is the only headline.'],
+      ['Honesty','Name, balance and Δ only. The gold chip is the one decorative leftover.'],
+      ['Trade-off','Loses the payment-card cues almost entirely — closer to a well-made tile than to a card.'],
+    ],
+  },
+  {
+    id:'a2', badge:'A2',
+    title:'The ledger card',
+    desc:'Keeps the card silhouette and the existing tone wash, but the face carries only real data: the account name, its type, the balance, and the Δ since opening. Nothing is invented.',
+    tags:[['good','Real data only'],['good','Keeps the existing tone language'],['good','Keeps the Δ line'],['info','Still a card shape']],
+    notes:[
+      ['Reads as','A card that happens to be honest. The tone gradient still says "bank / cash / wallet / card" at a glance.'],
+      ['Honesty','Every field on the face is real. The only metaphor borrowed is the rounded, shadowed, tinted rectangle.'],
+      ['Trade-off','Weaker as a "card" — closer to the current design than A1, but it now has the proportions and the silhouette.'],
+    ],
+  },
+  {
+    id:'a3', badge:'A3',
+    title:'The chip',
+    desc:'A small portrait card, sized so four fit across. The glyph leads, the balance is the hero, the name sits at the bottom, and a coloured rail at the very bottom shows the balance against the account\'s opening.',
+    tags:[['good','Four across — compact'],['good','Balance is the hero'],['info','Rail is a mini progress bar']],
+    notes:[
+      ['Reads as','A chip card or a coin purse. The rail at the bottom gives the tile a bottom edge you can measure against.'],
+      ['Honesty','The rail encodes balance ÷ opening, which is real — but it needs a cap, or an account far above its opening runs off the end.'],
+      ['Trade-off','Portrait cards are unusual in a finance app and read more like tokens than accounts.'],
+    ],
+  },
+  {
+    id:'a4', badge:'A4',
+    title:'The wallet row',
+    desc:'Not a tile at all — a full-width row with the card treatment: the icon leads, the name and type follow, and the balance is right-aligned and large. One account per row.',
+    tags:[['good','Densest'],['good','Long names fit'],['warn','Least card-like of the six']],
+    notes:[
+      ['Reads as','A list of cards in a wallet. Familiar, scannable, and handles any account name.'],
+      ['Trade-off','Loses the "held card" feeling entirely — it is a row with a rounded border.'],
+    ],
+  },
+  {
+    id:'a5', badge:'A5',
+    title:'The striped card',
+    desc:'A card with a magnetic-stripe band across the top, like a bank card. The account type lives in the stripe; the face below carries the name and the balance. A gold chip sits at the fold.',
+    tags:[['good','Strong card cue'],['good','Type reads first'],['warn','Stripe is decorative'],['info','Chip is decorative']],
+    notes:[
+      ['Reads as','A payment card — the stripe is the single most recognisable card detail there is.'],
+      ['Honesty','The stripe and the chip are decoration, but they are decoration of the CARD, not of the account — they do not assert any account data.'],
+      ['Trade-off','The stripe eats a third of the tile height, so the balance gets less room.'],
+    ],
+  },
+  {
+    id:'a6', badge:'A6',
+    title:'The fold',
+    desc:'A card that reads like a folded wallet: the top flap carries the account identity, the bottom half carries the balance, and a hairline across the middle is the fold.',
+    tags:[['good','Distinctive'],['good','Two clear zones'],['info','Least literal of the set']],
+    notes:[
+      ['Reads as','A folded wallet or a document holder. The fold line splits identity from money, which is a real hierarchy.'],
+      ['Trade-off','The metaphor is abstract — some people will just see a rectangle with a line across it.'],
+    ],
+  },
+];
+
+function renderA1(a){
+  const d = deltaOf(a);
+  const masked = '•••• •••• •••• ' + String(a.balance).slice(-4).padStart(4,'0');
+  return `
+  <div class="a1" style="--tone:${a.tone}">
+    <div class="top">
+      <span class="chip"></span>
+      <span class="type">${a.type}</span>
+    </div>
+    <div class="mid">
+      <span class="num">${masked}</span>
+    </div>
+    <div class="bottom">
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="delta ${d.cls}">${d.text} · ${a.last}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="bal-label">Balance</div>
+        <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderA1p1(a){
+  const d = deltaOf(a);
+  const masked = '•••• •••• •••• ' + String(Math.abs(a.balance)).slice(-4).padStart(4,'0');
+  return `
+  <div class="a1p1" style="--tone:${a.tone}">
+    <div class="top">
+      <span class="chip"></span>
+      <span class="mark">${icon(a.glyph)}</span>
+      <span class="type">${a.type}</span>
+    </div>
+    <div class="mid">
+      <span class="num">${masked}</span>
+    </div>
+    <div class="bottom">
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="delta ${d.cls}">${d.text} · ${a.last}</div>
+      </div>
+      <div>
+        <div class="bal-label">Balance</div>
+        <div class="bal ${a.balance < 0 ? 'neg' : ''}">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderA1p2(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a1p2" style="--tone:${a.tone}">
+    <div class="top">
+      <span class="chip">${icon(a.glyph)}</span>
+      <span class="type">${a.type}</span>
+    </div>
+    <div class="mid">
+      <div class="facts">
+        <div class="fact"><span class="k">Opened</span><span class="v">${a.opening ? fmt(a.opening) : 'no opening'}</span></div>
+        <div class="fact"><span class="k">Change</span><span class="v ${d.cls}" style="color:${d.cls==='up'?'var(--success-title)':d.cls==='down'?'var(--danger-title)':'var(--ink)'}">${d.text}</span></div>
+        <div class="fact"><span class="k">Activity</span><span class="v">${a.last}</span></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="delta ${d.cls}">${a.last === 'today' ? 'Active now' : 'Active ' + a.last}</div>
+      </div>
+      <div>
+        <div class="bal-label">Balance</div>
+        <div class="bal ${a.balance < 0 ? 'neg' : ''}">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderA1p3(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a1p3" style="--tone:${a.tone}">
+    <div class="top">
+      <span class="chip"></span>
+      <span class="type">${a.type}</span>
+    </div>
+    <div class="mid">
+      <div class="bal-label">Balance</div>
+      <div class="bal ${a.balance < 0 ? 'neg' : ''}">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+    </div>
+    <div class="foot">
+      <span class="name">${a.name}</span>
+      <span class="delta ${d.cls}">${d.text}</span>
+    </div>
+  </div>`;
+}
+
+function renderA2(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a2" style="--tone:${a.tone}">
+    <span class="stripe"></span>
+    <div class="top">
+      <div class="tile">${icon(a.glyph)}</div>
+      <div>
+        <div class="title">${a.name}</div>
+        <div class="sub">${a.type}</div>
+      </div>
+    </div>
+    <div class="balwrap">
+      <div class="bal-label">Balance</div>
+      <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+    </div>
+    <div class="foot">
+      <span class="delta ${d.cls}">${d.text}</span>
+      <span>${a.last}</span>
+    </div>
+  </div>`;
+}
+
+function renderA3(a){
+  const d = deltaOf(a);
+  const pct = a.opening > 0 ? Math.min(100, Math.round(Math.abs(a.balance)/a.opening*100)) : (a.balance > 0 ? 100 : 0);
+  return `
+  <div class="a3" style="--tone:${a.tone}">
+    <div class="glyph">${icon(a.glyph)}</div>
+    <div class="mid">
+      <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+      <div class="name">${a.name}</div>
+      <div class="sub">${a.type} · <span class="${d.cls}" style="color:${d.cls==='up'?'var(--success-title)':d.cls==='down'?'var(--danger-title)':'var(--muted)'}">${d.text}</span></div>
+    </div>
+    <div class="rail"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+
+function renderA4(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a4" style="--tone:${a.tone}">
+    <div class="tile">${icon(a.glyph)}</div>
+    <div>
+      <div class="name">${a.name}</div>
+      <div class="sub">${a.type}</div>
+    </div>
+    <div class="right">
+      <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+      <div class="delta ${d.cls}">${d.text}</div>
+    </div>
+  </div>`;
+}
+
+function renderA5(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a5" style="--tone:${a.tone}">
+    <div class="stripe">
+      ${icon(a.glyph)}
+      <span class="t">${a.type}</span>
+    </div>
+    <span class="chip"></span>
+    <div class="face">
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="sub">${a.last}</div>
+      </div>
+      <div class="right">
+        <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+        <div class="delta ${d.cls}">${d.text}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderA6(a){
+  const d = deltaOf(a);
+  return `
+  <div class="a6" style="--tone:${a.tone}">
+    <span class="fold"></span>
+    <div class="top">
+      <div class="tile">${icon(a.glyph)}</div>
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="sub">${a.type}</div>
+      </div>
+    </div>
+    <div class="mid">
+      <div class="bal-label">Balance</div>
+      <div class="bal">${a.balance < 0 ? '−' : ''}${fmt(a.balance)}</div>
+    </div>
+    <div class="foot">
+      <span class="delta ${d.cls}">${d.text}</span>
+      <span>${a.last}</span>
+    </div>
+  </div>`;
+}
+
+const RENDERERS = { a1:renderA1, a1p1:renderA1p1, a1p2:renderA1p2, a1p3:renderA1p3, a2:renderA2, a3:renderA3, a4:renderA4, a5:renderA5, a6:renderA6 };
+
+const root = document.getElementById('root');
+root.innerHTML = VARIANTS.map(v => `
+  <div class="option" data-variant="${v.id}">
+    <div class="option-head">
+      <div class="option-badge">${v.badge}</div>
+      <div>
+        <div class="option-title">${v.title}</div>
+        <div class="option-desc">${v.desc}</div>
+        <div class="option-tags">${v.tags.map(([k,t]) => `<span class="tag ${k}">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid">
+        ${ACCOUNTS.map(a => RENDERERS[v.id](a)).join('')}
+      </div>
+      <div class="notes">
+        ${v.notes.map(([k,t]) => `<div><span class="k">${k}</span><span>${t}</span></div>`).join('')}
+      </div>
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>
