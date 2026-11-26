@@ -497,6 +497,337 @@ main > * {
 }
 
 /* ============================================================
+   THE ACCOUNT CERTIFICATE (.acct-cert)
+   ============================================================
+   The Edit-account screen used to be a grey form floating on the
+   page. Now the form IS the instrument: you write the new terms
+   straight onto the certificate, and the parts you cannot change
+   (the balance, the transaction count) stay printed below a
+   dashed rule.
+
+   It is the same grammar as the goal receipt and the debt
+   certificate — perforated sheet, monospaced engraving, dashed
+   rules — so the three document families read as one family.
+
+   The seal at the top-right names the account's TYPE and carries
+   the tone: mint for a bank, gold for cash, blue for a wallet,
+   red for a card, neutral for anything else. Change the type and
+   the seal changes with it.
+
+   `--tone` is set inline per account type (see `accountTone` in
+   AccountTypeIcon). The wash, the seal, the type picker and the
+   balance figure all share that one colour identity.
+   ============================================================ */
+
+.acct-cert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 22px 22px 24px;
+  /* The sheet lays itself out by its OWN width, not the viewport's.
+     The app's sidebar eats ~495px at the tablet breakpoint, so a
+     273px content column sits inside a 768px window — a media
+     query would read the window and wrongly keep the wide layout.
+     A container query reads the sheet itself, which is the thing
+     that has to fit. */
+  container-type: inline-size;
+  container-name: acctcert;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--tone) 7%, #1E2A24) 0%,
+      color-mix(in srgb, var(--tone) 4%, #22302A) 55%,
+      #1A241F 100%
+    ),
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* The perforated edge — the same tear as the goal receipt and the
+   investment certificate. Both edges are drawn the SAME way: a 9px
+   band whose circles are centred 4.5px from the sheet's own edge,
+   so each hole is a full circle and the top and bottom match. */
+.acct-cert::before,
+.acct-cert::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x,
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px) 0 0 / 14px 9px repeat-x;
+}
+.acct-cert::before { top: 0; }
+.acct-cert::after { bottom: 0; }
+
+/* The header — the account's name and serial on the left, the type
+   seal at the right. The right padding absorbs the seal's rotation
+   overhang, and the text column is allowed to shrink so a long name
+   ellipsizes rather than pushing the seal off the sheet. */
+.acct-cert__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-right: 7px;
+}
+.acct-cert__head > :first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.acct-cert__name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-cert__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.13em;
+  margin-top: 5px;
+}
+
+/* The type seal — a tilted round stamp, the same idea as the
+   investment certificate's rate seal but naming the account's type
+   instead of its rate. */
+.acct-cert__seal {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--tone);
+  color: var(--tone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-9deg);
+  line-height: 1;
+  margin-top: -3px;
+}
+.acct-cert__seal .p {
+  font-size: 16px;
+  font-weight: 700;
+}
+.acct-cert__seal .l {
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  margin-top: 4px;
+}
+/* A narrow sheet shrinks the seal rather than letting it crowd the
+   account name, which is the part worth reading. */
+@container acctcert (max-width: 380px) {
+  .acct-cert__seal {
+    width: 46px;
+    height: 46px;
+  }
+  .acct-cert__seal .p {
+    font-size: 14px;
+  }
+}
+
+/* A dashed rule between the certificate's sections. */
+.acct-cert__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 14px 0 12px;
+}
+
+/* The editable fields, ruled like an application form on paper:
+   the label and its hint on the left, the control on the right. */
+.acct-cert__line {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.acct-cert__line:last-child {
+  border-bottom: 0;
+}
+.acct-cert__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 11px;
+}
+.acct-cert__hint {
+  font-size: 10.5px;
+  color: var(--muted-2);
+  margin-top: 4px;
+  line-height: 1.45;
+  font-family: var(--font-body);
+}
+.acct-cert__err {
+  font-size: 10.5px;
+  color: var(--danger-title);
+  margin-top: 4px;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+
+/* When the sheet itself is narrow, the ruled form stacks — the label
+   and its hint above the control — so the control gets the full width.
+   This keys off the CERTIFICATE's width, not the window's, because
+   the sidebar can leave the content column very narrow on a wide
+   window. */
+@container acctcert (max-width: 560px) {
+  .acct-cert__line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .acct-cert__label {
+    padding-top: 0;
+  }
+  .acct-cert {
+    padding: 18px 16px 20px;
+  }
+}
+
+/* The type picker — engraved options on one strip. The chosen one
+   takes the account's tone, so picking a type recolours the seal
+   and the sheet at the same time. */
+.acct-typepick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+/* A narrow sheet cannot hold three readable columns — "Mobile
+   Wallet" wraps onto two lines and the labels stop being scannable.
+   Two columns then one: the strip shortens as the sheet narrows. */
+@container acctcert (max-width: 700px) {
+  .acct-typepick {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container acctcert (max-width: 380px) {
+  .acct-typepick {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.acct-typeopt {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-2);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.acct-typeopt .t {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: capitalize;
+  font-family: var(--font-body);
+}
+.acct-typeopt .s {
+  font-size: 9.5px;
+  color: var(--muted-2);
+  margin-top: 3px;
+  font-family: var(--font-body);
+}
+.acct-typeopt[aria-checked='true'] {
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface-2));
+}
+.acct-typeopt[aria-checked='true'] .t {
+  color: var(--tone);
+}
+.acct-typeopt[aria-checked='true'] .s {
+  color: var(--muted);
+}
+.acct-typeopt:hover {
+  border-color: var(--muted-2);
+}
+.acct-typeopt:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+/* The footer of the instrument — the figures the form cannot touch.
+   The balance carries the account's tone; the count is plain ink.
+   The two figures share a BASELINE row, not a bottom edge: the count
+   is set smaller than the balance, so aligning their boxes would
+   drop the count below the balance's baseline. */
+.acct-cert__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+/* On a narrow sheet the balance and the count stack instead of
+   sharing a row, so the balance figure keeps its full width. */
+@container acctcert (max-width: 380px) {
+  .acct-cert__foot {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .acct-cert__foot > :last-child {
+    text-align: left;
+  }
+  .acct-cert__foot .n--count {
+    margin-top: 4px;
+  }
+}
+.acct-cert__foot > :last-child {
+  text-align: right;
+}
+.acct-cert__foot .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.acct-cert__foot .n {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+/* The transaction count is a footnote-sized figure, not a headline,
+   but it still has to sit on the balance's baseline. */
+.acct-cert__foot .n--count {
+  font-size: 15px;
+  letter-spacing: 0;
+  /* The smaller figure needs a touch more room above it to land on
+     the same baseline as the 22px balance. */
+  margin-top: 11px;
+}
+
+/* The footnote — the receipt's explanatory note. It sits under a
+   dashed rule, below the figures, so it never fights them. */
+.acct-cert__note {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--divider);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+.acct-cert__note strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+.acct-cert__note em {
+  font-style: italic;
+}
+
+/* ============================================================
    THE GOAL RECEIPT (2026-11-26).
 
    A goal card rendered as a till receipt: monospaced line items,
