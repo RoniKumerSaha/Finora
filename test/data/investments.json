@@ -74,7 +74,12 @@
       "detailStatusChip": "active",
       "maturityCaption": "Matures on",
       "moneyCardHeading": "Maturity",
-      "moneyCardStats": ["Principal", "Maturity value", "Expected interest", "Rate"],
+      "moneyCardStats": [
+        "Principal",
+        "Maturity value",
+        "Expected interest",
+        "Rate"
+      ],
       "rateStat": "9% / yr",
       "simpleInterestLine": "Maturity uses simple interest: principal × (1 + rate × years). No compounding.",
       "payoutAmount": "109000",
@@ -83,7 +88,8 @@
       "deleteConfirmButton": "Delete investment",
       "deleteToast": "Investment deleted",
       "deleteToastWhy": "Linked contributions remain in your transactions.",
-      "deleteToastFix": "Open Home or Transactions to see them."
+      "deleteToastFix": "Open Home or Transactions to see them.",
+      "detailTermValue": "1 year"
     }
   },
   "I02_dpsLifecycle": {
@@ -95,7 +101,10 @@
       "term": "12",
       "account": "Main Bank"
     },
-    "contribution": { "amount": "5000", "note": "October installment" },
+    "contribution": {
+      "amount": "5000",
+      "note": "October installment"
+    },
     "expected": {
       "typeLabel": "DPS",
       "termsLine": "8% · 12mo",
@@ -121,7 +130,8 @@
       "contributionPlanHint": "Plan: ৳ 5,000 / month",
       "contributionBanner": "৳ 5,000 toward Monthly DPS",
       "contributionBannerWhy": "Recorded as an expense transaction linked to this investment.",
-      "contributionBannerFix": "৳ 5,000 contributed so far."
+      "contributionBannerFix": "৳ 5,000 contributed so far.",
+      "detailTermValue": "1 year"
     }
   },
   "I03_validation": {
@@ -306,7 +316,8 @@
       "statusChip": "matured",
       "payoutTagLabel": "category: payout",
       "closedBanner": "DBBL 1-year FDR closed",
-      "closedBannerWhy": "It's been moved out of the active list."
+      "closedBannerWhy": "It's been moved out of the active list.",
+      "payoutFormatted": "৳ 1,08,000"
     }
   },
   "I08_deleteLeavesTransactions": {
@@ -319,6 +330,25 @@
       "bannerFix": "Open Home or Transactions to see them.",
       "balanceBefore": "৳ 20,000",
       "balanceAfter": "৳ 20,000"
+    }
+  },
+  "I09_editPreview": {
+    "dps": {
+      "name": "Monthly DPS",
+      "monthlyContribution": "5000",
+      "rate": "8",
+      "termMonths": "12"
+    },
+    "expected": {
+      "previewLead": "A preview.",
+      "initialMaturityValue": "৳ 62,665",
+      "newRateMaturityValue": "৳ 63,351",
+      "lockedHint": "Locked — 1 contributions already recorded.",
+      "typeHint": "DPS, FDR or savings.",
+      "termsHeading": "The terms at a glance",
+      "summaryYouPutIn": "৳ 60,000",
+      "summaryInterest": "৳ 2,665",
+      "summaryYouGet": "৳ 62,665"
     }
   }
 }

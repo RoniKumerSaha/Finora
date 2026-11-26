@@ -162,35 +162,46 @@ test.describe('Investments', () => {
       );
     });
 
-    await test.step('Open the investment and read the money card', async () => {
+    await test.step('Open the investment and read its certificate', async () => {
       await investments.openInvestment(lifecycle.created.name);
 
       await expect(investments.detailHeading).toHaveText(lifecycle.created.name);
-      await expect(investments.statusChip).toHaveText(
-        lifecycle.expected.detailStatusChip,
-      );
-      await expect(investments.maturityCaption).toHaveText(
-        lifecycle.expected.maturityCaption,
-      );
-      await expect(investments.moneyCardHeading).toHaveText(
-        lifecycle.expected.moneyCardHeading,
-      );
 
-      await expect(investments.statValue('Principal')).toHaveText(
+      // The certificate's serial line carries the type, the
+      // institution and the maturity countdown.
+      await expect(investments.detailSerial).toContainText(
+        lifecycle.expected.typeLabel,
+      );
+      await expect(investments.detailSerial).toContainText(
+        lifecycle.created.institution,
+      );
+      await expect(investments.detailSerial).toContainText(/MATURES IN/);
+
+      // The engraved terms.
+      await expect(investments.detailField('Principal')).toHaveText(
         data.fdr.principalFormatted,
       );
-      await expect(investments.statValue('Maturity value')).toHaveText(
-        data.fdr.maturityFormatted,
+      await expect(investments.detailField('Term')).toHaveText(
+        lifecycle.expected.detailTermValue,
       );
-      await expect(investments.statValue('Expected interest')).toHaveText(
-        data.fdr.interestFormatted,
-      );
-      await expect(investments.statValue('Rate')).toHaveText(
+      await expect(investments.detailField('Rate')).toHaveText(
         lifecycle.expected.rateStat,
       );
-      await expect(investments.simpleInterestFormulaLine).toHaveText(
+
+      // The closing value.
+      await expect(investments.detailValue('Maturity value')).toHaveText(
+        data.fdr.maturityFormatted,
+      );
+      await expect(investments.simpleInterestFormulaLine).toContainText(
         lifecycle.expected.simpleInterestLine,
       );
+
+      // The maturity rail runs from the start date to the maturity
+      // date, with a marker at today's position.
+      await expect(investments.maturityRail).toBeVisible();
+      await expect(investments.maturityMark).toBeVisible();
+      await expect(investments.maturityEnds).toContainText('Started');
+      await expect(investments.maturityEnds).toContainText('Matures');
     });
 
     await test.step('Tap "Record bank payout"', async () => {
@@ -303,17 +314,29 @@ test.describe('Investments', () => {
       );
     });
 
-    await test.step('Open the investment and read the now-vs-maturity split', async () => {
+    await test.step('Open the investment and read its certificate', async () => {
       await investments.openInvestment(lifecycle.created.name);
 
-      await expect(investments.moneyCardHeading).toHaveText(
-        lifecycle.expected.moneyCardHeading,
+      // The engraved terms.
+      await expect(investments.detailField('Monthly contribution')).toHaveText(
+        lifecycle.expected.monthlyValue,
       );
-      await expect(investments.statValue('Contributed so far')).toHaveText(
+      await expect(investments.detailField('Term')).toHaveText(
+        lifecycle.expected.detailTermValue,
+      );
+
+      // The contribution tally — how much has gone in, and how much of
+      // the schedule that is.
+      await expect(investments.detailTally).toContainText(
         lifecycle.expected.contributedStat,
       );
+
+      // The now-vs-maturity split.
+      await expect(investments.detailValue('Current value')).toHaveText(
+        lifecycle.expected.nowValue,
+      );
       await expect(
-        investments.statValue('Estimated payout when the term ends'),
+        investments.detailValue('Estimated payout when the term ends'),
       ).toHaveText(lifecycle.expected.estimatedPayoutStat);
 
       await expect(investments.dpsCallout).toContainText(
@@ -634,16 +657,16 @@ test.describe('Investments', () => {
     const maturity = data.I05_maturity;
     await seedState(page, maturedInvestmentState());
 
-    await test.step('Open the matured FDR and read its header and status chip', async () => {
+    await test.step('Open the matured FDR and read its certificate', async () => {
       await investments.goto();
       await investments.openInvestment(data.fdr.name);
 
-      await expect(investments.maturityCaption).toHaveText(
-        maturity.expected.maturedCaption,
-      );
-      await expect(investments.statusChip).toHaveText(
-        maturity.expected.maturedChip,
-      );
+      // A matured holding's serial line says when it ENDED, and the
+      // certificate carries a "Matured" stamp instead of a rate seal.
+      await expect(investments.detailSerial).toContainText('ENDED');
+      await expect(
+        investments.detailCertificate.locator('.inv-cert__stamp'),
+      ).toHaveText('Matured');
     });
 
     await test.step('Tap "Renew for another term" and confirm', async () => {
@@ -708,8 +731,11 @@ test.describe('Investments', () => {
       // reached through the "Closed" section.
       await investments.openClosedInvestment(data.dps.name);
 
-      await expect(investments.statusChip).toHaveText(maturity.expected.closedChip);
-      await expect(investments.maturityCaption).toHaveText('Term ended');
+      // A closed holding's certificate carries a "Closed" stamp.
+      await expect(
+        investments.detailCertificate.locator('.inv-cert__stamp'),
+      ).toHaveText('Closed');
+      await expect(investments.detailSerial).toContainText('ENDED');
 
       // It sits in the "Closed" group on the list, stamped as closed.
       await investments.goto();
@@ -758,14 +784,14 @@ test.describe('Investments', () => {
       );
     });
 
-    await test.step('Open the DPS and read its money card', async () => {
+    await test.step('Open the DPS and read its certificate', async () => {
       await investments.openInvestment(data.dps.name);
 
-      await expect(investments.statValue('Current value')).toHaveText(
+      await expect(investments.detailValue('Current value')).toHaveText(
         split.dps.currentValue,
       );
       await expect(
-        investments.statValue('Estimated payout when the term ends'),
+        investments.detailValue('Estimated payout when the term ends'),
       ).toHaveText(split.dps.maturityValue);
     });
 
@@ -864,11 +890,19 @@ test.describe('Investments', () => {
     await test.step('Read the investment status and the payout transaction', async () => {
       await investments.openInvestment(data.fdr.name);
 
-      // For an FDR the record is NOT auto-closed — the status is
-      // still "matured", so the user must retire it by hand with
-      // "Mark as done (no payout)".
-      await expect(investments.statusChip).toHaveText(payout.expected.statusChip);
+      // For an FDR the record is NOT auto-closed — the certificate
+      // still carries a "Matured" stamp, so the user must retire it by
+      // hand with "Mark as done (no payout)".
+      await expect(
+        investments.detailCertificate.locator('.inv-cert__stamp'),
+      ).toHaveText('Matured');
       await expect(investments.markDoneButton).toBeVisible();
+
+      // The payout shows in the activity ledger, tagged as a payout.
+      await expect(investments.activityTag(0)).toContainText('Payout');
+      await expect(investments.activityAmount(0)).toHaveText(
+        payout.expected.payoutFormatted,
+      );
 
       await transactions.goto();
       const row = transactions.row(payout.expected.note);
@@ -952,6 +986,86 @@ test.describe('Investments', () => {
       await transactions.goto();
 
       await expect(transactions.row(data.fdr.principalNote)).toBeVisible();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // FIN-I09 — the edit screen previews the new terms live
+  // ─────────────────────────────────────────────────────────────────
+
+  test('FIN-I09 Editing an investment previews the new terms', async ({ page }) => {
+    const preview = data.I09_editPreview;
+    await seedState(page, dpsWithContributionState());
+
+    await test.step('Open the DPS edit screen and read the preview', async () => {
+      await investments.goto();
+      await investments.openEdit(preview.dps.name);
+
+      await expect(investments.editHeading).toHaveText('Edit investment');
+      await expect(investments.editSubtitle).toBeVisible();
+
+      // The certificate above the form re-engraves itself: it shows
+      // the terms as they stand, with the maturity value and date.
+      await expect(investments.previewMaturityValue).toHaveText(
+        preview.expected.initialMaturityValue,
+      );
+      await expect(investments.previewCertificate).toContainText(
+        preview.expected.previewLead,
+      );
+
+      // The summary column carries the same three figures.
+      await expect(investments.activitySheet).toContainText(
+        preview.expected.termsHeading,
+      );
+      await expect(investments.activityStat('You put in')).toHaveText(
+        preview.expected.summaryYouPutIn,
+      );
+      await expect(investments.activityStat('Interest')).toHaveText(
+        preview.expected.summaryInterest,
+      );
+      await expect(investments.activityStat('You get')).toHaveText(
+        preview.expected.summaryYouGet,
+      );
+    });
+
+    await test.step('The monthly amount is LOCKED — a contribution exists', async () => {
+      await expect(investments.lockedHint).toHaveText(
+        preview.expected.lockedHint,
+      );
+      await expect(investments.monthlyContributionInput).toBeDisabled();
+    });
+
+    await test.step('Raise the rate — the preview re-engraves itself', async () => {
+      await investments.rateInput.fill('10');
+      await expect(investments.previewMaturityValue).toHaveText(
+        preview.expected.newRateMaturityValue,
+      );
+    });
+
+    await test.step('Switch the type to FDR — the principal field replaces it', async () => {
+      await investments.typeOption('FDR').click();
+
+      await expect(investments.principalInput).toBeVisible();
+      await expect(investments.monthlyContributionInput).toHaveCount(0);
+
+      // The certificate takes the FDR's tone — the seal reads the new
+      // type's rate.
+      await expect(investments.previewCertificate).toContainText('FDR');
+
+      // A DPS carries no principal, so the switch leaves the field
+      // empty and the save disabled until it is filled.
+      await expect(investments.saveChangesButton).toBeDisabled();
+      await investments.principalInput.fill('100000');
+      await expect(investments.saveChangesButton).toBeEnabled();
+    });
+
+    await test.step('Save and read the banner', async () => {
+      await investments.saveChangesButton.click();
+
+      await expect(page).toHaveURL(/#\/investments\/inv-dps-1$/);
+
+      const feedback = new Feedback(page);
+      await feedback.expectBannerText('Monthly DPS updated');
     });
   });
 });

@@ -1477,6 +1477,7 @@ main > * {
 .inv-cert__tally {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 7px;
   margin-top: 9px;
   padding: 7px 10px;
@@ -1497,21 +1498,24 @@ main > * {
   color: var(--ink);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* The footer — value today, the interest between, and at maturity. */
 .inv-cert__vals {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  align-items: end;
   gap: 16px;
   margin-top: 14px;
 }
+.inv-cert__v { min-width: 0; }
 .inv-cert__v .k {
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
+  line-height: 1.45;
 }
 .inv-cert__v .n {
   font-size: 22px;
@@ -1544,6 +1548,137 @@ main > * {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ============================================================
+   THE MATURITY RAIL (.maturity)
+   ============================================================
+   An investment is a promise about TIME, so the certificate
+   carries a rail from the day it started to the day it matures,
+   with a marker at today's position. The rail is what turns a
+   static list of terms into something the reader can feel.
+
+   The marker's position comes from the caller as a percentage, so
+   the same rail serves a fresh deposit (marker at the very start)
+   and one about to mature (marker at the very end).
+   ============================================================ */
+
+.maturity {
+  position: relative;
+  padding: 6px 0 2px;
+  /* The rail sits below the engraved field row, never across it —
+     the fields row draws its own rule, and the rail would read as a
+     strike-through of the term and rate. */
+  margin-top: 14px;
+}
+.maturity__rail {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid var(--border);
+  overflow: visible;
+}
+/* The elapsed portion of the term. */
+.maturity__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tone, var(--accent));
+}
+/* Today's marker — a stud riding the rail.
+   The stud is 12px wide, so at 0% or 100% it would overhang the
+   rail's end. The clamp keeps it ON the rail: the effective left
+   position never falls below 6px or rises above the rail's width
+   minus 6px. */
+.maturity__mark {
+  position: absolute;
+  top: 50%;
+  left: clamp(6px, var(--mark, 0%), calc(100% - 6px));
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--tone, var(--accent));
+  border: 2px solid #101614;
+}
+/* The two bookends — when it started and when it ends. */
+.maturity__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.maturity__ends b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   THE MATURITY OPTIONS (.maturity-opts)
+   ============================================================
+   The three ways out of an investment. Each is SELF-CONTAINED —
+   the option says what it does and carries its own action beside
+   it. Pooling the buttons underneath meant matching a label to a
+   button by eye; here the button sits with the thing it does.
+
+   The leading option — record the payout — is the one the user
+   most likely wants, so it is set on its own tinted panel.
+   ============================================================ */
+
+.maturity-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.maturity-opt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.maturity-opt:last-child { border-bottom: 0; }
+.maturity-opt__body { min-width: 0; }
+.maturity-opt__k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.maturity-opt__v {
+  font-size: 12.5px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin-top: 3px;
+}
+.maturity-opt__v strong { font-weight: 700; }
+.maturity-opt__v em { font-style: italic; color: var(--muted); }
+
+/* The leading option gets a tinted panel so the eye lands on the
+   payout path first — it is the one that moves the money. */
+.maturity-opt--lead {
+  border: 1px solid color-mix(in srgb, var(--tone) 32%, transparent);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--tone) 8%, transparent);
+}
+.maturity-opt--lead .maturity-opt__k { color: var(--tone); }
+
+@media (max-width: 560px) {
+  .maturity-opt {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+  }
+  .maturity-opt > button { width: 100%; }
 }
 
 /* The SUMMARY certificate — the same shell, holding the totals
@@ -2146,6 +2281,65 @@ main > * {
 .debt-cert--statement .debt-cert__v--mat .n { font-size: 20px; }
 
 /* ============================================================
+   THE INVESTMENT TYPE PICKER (.typepick / .typeopt)
+   ============================================================
+   The three kinds of instrument, engraved on one strip. The chosen
+   one takes its own tone, so picking a type recolours the
+   certificate at the same time — the sheet says what it is before
+   the reader reads a word of it.
+   ============================================================ */
+
+.typepick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.typeopt {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-2);
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: var(--font-body);
+}
+.typeopt .tt {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.typeopt .ts {
+  display: block;
+  font-size: 9.5px;
+  color: var(--muted-2);
+  margin-top: 3px;
+}
+.typeopt[aria-checked='true'] {
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface-2));
+}
+.typeopt[aria-checked='true'] .tt { color: var(--tone); }
+.typeopt[aria-checked='true'] .ts { color: var(--muted); }
+.typeopt:hover { border-color: var(--muted-2); }
+.typeopt:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+/* On a phone the strip still fits three columns — the labels are short
+   ("DPS", "Monthly"), and stacking them one per row would push the
+   rest of the form off the screen. */
+@media (max-width: 560px) {
+  .typepick { gap: 6px; }
+  .typeopt { padding: 9px 5px; }
+  .typeopt .ts { font-size: 9px; }
+}
+
+/* ============================================================
    THE DETAIL PAGES (.debt-page / .loan-page)
    ============================================================
    Two pages share one shape: a wide instrument column on the left
@@ -2161,7 +2355,8 @@ main > * {
    ============================================================ */
 
 .debt-page,
-.loan-page {
+.loan-page,
+.inv-page {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 18px;
@@ -2169,12 +2364,14 @@ main > * {
 }
 @media (max-width: 1080px) {
   .debt-page,
-  .loan-page { grid-template-columns: minmax(0, 1fr); }
+  .loan-page,
+  .inv-page { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* The column stack — every block in a column shares one rhythm. */
 .debt-page__col,
-.loan-page__col {
+.loan-page__col,
+.inv-page__col {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -2184,7 +2381,8 @@ main > * {
 /* The section eyebrow above a column — "Summary (projection)",
    "Activity". */
 .debt-page__sect,
-.loan-page__sect {
+.loan-page__sect,
+.inv-page__sect {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -2382,6 +2580,13 @@ main > * {
 }
 .act-sheet__stat .n--sm { font-size: 13px; }
 
+/* The list of entries — the rows themselves carry the rules, so the
+   wrapper only needs to hold them together. */
+.act-sheet__rows {
+  border-top: 1px solid var(--border-2);
+}
+.act-sheet__rows:empty { border-top: 0; }
+
 .act-row {
   display: flex;
   align-items: flex-start;
@@ -2565,6 +2770,212 @@ main > * {
 .loan-form__wide { grid-column: 1 / -1; }
 @media (max-width: 560px) {
   .loan-form { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   THE PLAN HUB (.plan-grid / .plan-paper)
+   ============================================================
+   Plan is a HUB, but a hub of papers. Each planner is its own
+   sheet — perforated top and bottom, ruled inside — so the page
+   reads as four documents laid out on a desk rather than four
+   identical cards.
+
+   The shell is the SAME perforated paper the certificates use,
+   but quieter: a plan is scratch, not an instrument, so the
+   sheet keeps the plain wash and lets its own tone ride on the
+   heading rule and the figure colours.
+   ============================================================ */
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  /* The sheets stretch to their row's height so a pair of papers sits
+     flush — two sheets of different line counts should still share a
+     top and a bottom edge, the way two sheets on a desk do. */
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  .plan-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The sheet itself. */
+.plan-paper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 20px 22px 22px;
+  background: var(--surface-3);
+  background-image:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent 46%),
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* The perforated tear — the same band the certificates use, so
+   the hub's papers belong to the same family as the documents
+   they link to. */
+.plan-paper::before,
+.plan-paper::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px);
+  background-size: 14px 9px, 14px 9px;
+}
+.plan-paper::before { top: 0; }
+.plan-paper::after { bottom: 0; }
+
+/* The whole sheet is one link to the planner behind it. The
+   accessible name is the planner's own name, so the link reads as
+   "Investments", not as a paragraph of figures.
+
+   It is a COLUMN so the tally can be pushed to the foot of the
+   sheet — when a pair of sheets share a row, the shorter one's
+   figure still sits on the same baseline as the taller one's. */
+.plan-paper__link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  transition: 0.15s;
+}
+.plan-paper__link:hover { color: inherit; }
+.plan-paper__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* The head — the planner's name, its serial line and its stamp. */
+.plan-paper__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.plan-paper__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-paper__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.13em;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The dashed rule under the head. */
+.plan-paper__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 14px 0 12px;
+}
+
+/* The item lines — one per plan, projection, budget jar or event.
+   The name sits left, the figure right; both are tabular so the
+   columns line up down the sheet. */
+.plan-paper__lines {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.plan-paper__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.plan-paper__k {
+  font-size: 12.5px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+/* A line's own caption — "12% · 36mo", a date, a term. */
+.plan-paper__sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.plan-paper__v {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+.plan-paper__v--primary { color: var(--primary); }
+.plan-paper__v--danger { color: var(--danger); }
+.plan-paper__v--accent { color: var(--accent); }
+.plan-paper__v--info { color: var(--info); }
+.plan-paper__v--muted { color: var(--muted); }
+
+/* The sheet's closing tally — the one number the planner is
+   really about, set below its own rule.
+
+   `margin-top: auto` pushes it to the foot of the sheet, so the
+   figure lands on the same baseline as its neighbour's. The
+   `min-height` keeps the rule clear of the last item line when the
+   sheet has only one or two lines. */
+.plan-paper__tally {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--divider);
+}
+/* The gap between the last item line and the tally's rule — a
+   margin on the tally alone would vanish when `margin-top: auto`
+   takes over, so the lines carry their own breathing room. */
+.plan-paper__lines { padding-bottom: 14px; }
+.plan-paper__tally .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.plan-paper__tally .v {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.plan-paper__tally .v--primary { color: var(--primary); }
+.plan-paper__tally .v--danger { color: var(--danger); }
+.plan-paper__tally .v--accent { color: var(--accent); }
+.plan-paper__tally .v--info { color: var(--info); }
+
+/* An empty planner still shows its sheet — the user needs to see
+   the planner EXISTS. Only the figures collapse to a dash. */
+.plan-paper__empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 0 14px;
 }
 
 /* Cash-flow polyline draw-in — uses stroke-dasharray + dashoffset

@@ -438,116 +438,219 @@ export class InvestmentsPage extends BasePage {
     return this.page.getByRole('button', { name: '+ Add a contribution' });
   }
 
+  /**
+   * The "Record payout" action, in the "When it matures" certificate.
+   *
+   * Each option carries its OWN button, so the action sits beside
+   * the thing it does rather than in a pool underneath.
+   */
   get recordPayoutButton(): Locator {
-    return this.page.getByRole('button', { name: 'Record bank payout' });
+    return this.page.getByRole('button', { name: 'Record payout' });
   }
 
+  /** The "Renew" action — start a fresh term after this one ends. */
   get renewButton(): Locator {
-    return this.page.getByRole('button', { name: 'Renew for another term' });
+    return this.page.getByRole('button', { name: 'Renew', exact: true });
   }
 
+  /** The "Mark done" action — retire the record. */
   get markDoneButton(): Locator {
-    return this.page.getByRole('button', { name: 'Mark as done (no payout)' });
+    return this.page.getByRole('button', { name: 'Mark done', exact: true });
   }
 
   get deleteButton(): Locator {
     return this.page.getByRole('button', { name: 'Delete investment' });
   }
 
-  /** The status chip — "active" / "matured" / "closed" / "rolled_over". */
-  get statusChip(): Locator {
-    return this.page.getByText(/^(active|matured|closed|rolled_over)$/, { exact: true });
-  }
+  // ── The certificate ──
 
-  /** The "Matures on" / "Matured on" / "Term ended" caption. */
-  get maturityCaption(): Locator {
-    return this.page.getByText(/^(Matures on|Matured on|Term ended)$/);
-  }
-
-  /** The maturity date figure in the status card. */
-  get maturityDate(): Locator {
-    return this.page.locator('div.text-2xl.font-bold.text-ink');
+  /**
+   * The detail screen's certificate.
+   *
+   * There are TWO certificates on the screen — the holding itself
+   * and the "When it matures" one — so the holding's is the FIRST.
+   */
+  get detailCertificate(): Locator {
+    return this.page.locator('section.inv-cert').first();
   }
 
   /**
-   * A figure from the money card, by its StatCell label.
-   *
-   * `Stat` renders label / value / hint as three siblings, so the
-   * value is the `tabular` div inside the label's parent. The hint
-   * line also carries `tabular`, so the value is narrowed by
-   * `leading-none` — which only the value has.
+   * The certificate's serial line — "NO. 157596 · DPS · DUTCH-BANGLA ·
+   * MATURES IN ~2.2Y".
    */
-  statValue(
-    label:
-      | 'Principal'
-      | 'Contributed so far'
-      | 'Current value'
-      | 'Paid out'
-      | 'Maturity value'
-      | 'Estimated payout when the term ends'
-      | 'Expected interest'
-      | 'Rate',
+  get detailSerial(): Locator {
+    return this.detailCertificate.locator('.inv-cert__serial');
+  }
+
+  /** The certificate's tilted rate seal. */
+  get detailSeal(): Locator {
+    return this.detailCertificate.locator('.inv-cert__seal');
+  }
+
+  /**
+   * A figure from the certificate's engraved fields, by its label —
+   * "Monthly contribution", "Principal", "Term", "Rate".
+   *
+   * The label and the figure are siblings, so the figure is the
+   * field's `.v` child.
+   */
+  detailField(
+    label: 'Monthly contribution' | 'Principal' | 'Term' | 'Rate',
   ): Locator {
-    return this.page
-      .getByText(label, { exact: true })
-      .locator('..')
-      .locator('div.tabular.leading-none');
-  }
-
-  /** The money card's heading — "Maturity" (FDR) or "Plan vs progress" (DPS). */
-  get moneyCardHeading(): Locator {
-    return this.page.getByRole('heading', { name: /^(Maturity|Plan vs progress)$/ });
+    return this.detailCertificate
+      .locator('.inv-cert__f')
+      .filter({ hasText: label })
+      .locator('.v');
   }
 
   /**
-   * The DPS callout block.
-   *
-   * The block mixes several nodes — "What you have now:", the figure
-   * and "(compounded to today)." — so it is reached through the
-   * `<strong>` that opens it.
+   * A figure from the certificate's closing values, by its label —
+   * "Current value", "Maturity value", "Paid out",
+   * "Estimated payout when the term ends".
    */
-  get dpsCallout(): Locator {
-    return this.page.getByText('What you have now:', { exact: true }).locator('..');
+  detailValue(
+    label:
+      | 'Current value'
+      | 'Maturity value'
+      | 'Paid out'
+      | 'Estimated payout when the term ends',
+  ): Locator {
+    return this.detailCertificate
+      .locator('.inv-cert__v')
+      .filter({ has: this.page.getByText(label, { exact: true }) })
+      .locator('.n');
   }
 
-  /** The DPS callout's "At maturity:" clause. */
-  get maturityCallout(): Locator {
-    return this.page.getByText('At maturity:', { exact: true }).locator('..');
+  /** The certificate's contribution tally — "Contributed ৳ X of ৳ Y". */
+  get detailTally(): Locator {
+    return this.detailCertificate.locator('.inv-cert__tally');
+  }
+
+  /** The certificate's projection footnote. */
+  get detailNote(): Locator {
+    return this.detailCertificate.locator('.inv-cert__note');
   }
 
   /** The annuity-due formula line on a DPS. */
   get annuityFormulaLine(): Locator {
-    return this.page.getByText('Maturity uses annuity-due:', { exact: false });
+    return this.detailNote.getByText('Maturity uses annuity-due:', { exact: false });
   }
 
   /** The simple-interest formula line on an FDR / savings. */
   get simpleInterestFormulaLine(): Locator {
-    return this.page.getByText('Maturity uses simple interest:', { exact: false });
+    return this.detailNote.getByText('Maturity uses simple interest:', { exact: false });
   }
 
-  /** The "Edit" link on the detail screen. */
-  get editLink(): Locator {
-    return this.page.getByRole('link', { name: 'Edit', exact: true });
+  /**
+   * The "What you have now:" clause of the DPS footnote.
+   *
+   * The footnote is ONE node — the clauses are separated by plain
+   * text, not by elements — so the assertion is against the whole
+   * note.
+   */
+  get dpsCallout(): Locator {
+    return this.detailNote;
   }
 
-  /** The Activity card — only rendered when contributions exist. */
-  get activityCard(): Locator {
-    return this.page.locator('section.card').filter({ hasText: 'Activity' }).last();
+  /** The "At maturity:" clause of the footnote. */
+  get maturityCallout(): Locator {
+    return this.detailNote;
   }
 
-  /** The Activity card's rows. */
+  // ── The maturity rail ──
+
+  /** The maturity rail — the promise, in time. */
+  get maturityRail(): Locator {
+    return this.detailCertificate.locator('.maturity__rail');
+  }
+
+  /** The rail's elapsed fill. */
+  get maturityFill(): Locator {
+    return this.maturityRail.locator('.maturity__fill');
+  }
+
+  /** The rail's marker — today's position in the term. */
+  get maturityMark(): Locator {
+    return this.maturityRail.locator('.maturity__mark');
+  }
+
+  /** The rail's two bookends — "Started …" and "Matures …". */
+  get maturityEnds(): Locator {
+    return this.detailCertificate.locator('.maturity__ends');
+  }
+
+  // ── "When it matures" ──
+
+  /** The second certificate — the three ways out. */
+  get maturityCertificate(): Locator {
+    return this.page.locator('section.inv-cert').nth(1);
+  }
+
+  /** The three options — payout, renew, retire. */
+  get maturityOptions(): Locator {
+    return this.maturityCertificate.locator('.maturity-opt');
+  }
+
+  /** The maturity certificate's heading — "When it matures". */
+  get maturityHeading(): Locator {
+    return this.maturityCertificate.locator('.inv-cert__name');
+  }
+
+  // ── The activity ledger ──
+
+  /** The activity ledger sheet. */
+  get activitySheet(): Locator {
+    return this.page.locator('section.act-sheet');
+  }
+
+  /** The activity ledger's entries. */
   get activityRows(): Locator {
-    return this.activityCard.locator('div.divide-y > div');
+    return this.activitySheet.locator('.act-sheet__rows .act-row');
   }
 
-  /** The "contribution" / "payout" pill on an Activity row. */
+  /**
+   * An activity row's tag — "Contribution · 5 Dec 2026" /
+   * "Payout · 14 Feb 2026".
+   */
   activityTag(index = 0): Locator {
-    return this.activityRows.nth(index).getByText(/^(contribution|payout)$/);
+    return this.activityRows.nth(index).locator('.act-row__tag');
+  }
+
+  /** An activity row's amount. */
+  activityAmount(index = 0): Locator {
+    return this.activityRows.nth(index).locator('.act-row__amount');
+  }
+
+  /**
+   * A figure from the activity ledger's stats, by its label.
+   *
+   * The detail screen's ledger says "Contributions" / "Total paid in"
+   * / "Paid out"; the edit screen's summary says "You put in" /
+   * "Interest" / "You get". Both are `.act-sheet__stat` blocks.
+   */
+  activityStat(
+    label:
+      | 'Contributions'
+      | 'Total paid in'
+      | 'Paid out'
+      | 'You put in'
+      | 'Interest'
+      | 'You get',
+  ): Locator {
+    return this.activitySheet
+      .locator('.act-sheet__stat')
+      .filter({ hasText: label })
+      .locator('.n');
   }
 
   /** The "Danger zone" section on the detail screen. */
   get dangerZone(): Locator {
     return this.page.getByRole('heading', { name: 'Danger zone' });
+  }
+
+  /** The "Edit" link on the detail screen. */
+  get editLink(): Locator {
+    return this.page.getByRole('link', { name: 'Edit', exact: true });
   }
 
   // ── Edit screen ──
@@ -563,6 +666,46 @@ export class InvestmentsPage extends BasePage {
       'Rate, term, and payout destination can change. Past contributions stay as they are.',
       { exact: true },
     );
+  }
+
+  /**
+   * The edit screen's LIVE PREVIEW certificate — the first one on
+   * the page, which re-engraves itself as the terms change.
+   */
+  get previewCertificate(): Locator {
+    return this.page.locator('section.inv-cert').first();
+  }
+
+  /** The preview's maturity-date figure. */
+  get previewMaturityDate(): Locator {
+    return this.previewCertificate
+      .locator('.inv-cert__v')
+      .filter({ has: this.page.getByText('Maturity date', { exact: true }) })
+      .locator('.n');
+  }
+
+  /** The preview's maturity-value figure. */
+  get previewMaturityValue(): Locator {
+    return this.previewCertificate
+      .locator('.inv-cert__v')
+      .filter({ has: this.page.getByText('Maturity value', { exact: true }) })
+      .locator('.n');
+  }
+
+  /**
+   * The type picker — three engraved options.
+   *
+   * The picker is a `role="radiogroup"`, so each option is a radio
+   * whose accessible name is the type's label ("DPS", "FDR",
+   * "Savings").
+   */
+  get typePicker(): Locator {
+    return this.page.getByRole('radiogroup', { name: 'Type' });
+  }
+
+  /** One of the type picker's options. */
+  typeOption(label: 'DPS' | 'FDR' | 'Savings'): Locator {
+    return this.typePicker.getByRole('radio', { name: label });
   }
 
   /** The edit screen's "Term (months)" hint. */

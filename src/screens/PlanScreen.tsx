@@ -1,19 +1,25 @@
 /**
- * PlanScreen — hub for the scratchpad planner.
+ * PlanScreen — the scratchpad hub.
  *
- * 2026-09-01 redesign: Variant A ("one number, one chip").
- * Each planner is a single horizontal row — icon, title, count,
- * and the one number that matters. No chart, no body copy, no
- * footer. The planner screen behind each row carries the detail.
+ * Plan is a HUB, but a hub of PAPERS. Each planner is its own
+ * perforated sheet — the same family as the certificates and the
+ * ledger sheets elsewhere in the app — laid out two by two. A plan
+ * is scratch, not an instrument, so the sheets take the plain wash
+ * and let each planner's own tone ride on its figures.
  *
- * Four cards:
- *   - Investments → projected at maturity (cool→warm gradient)
- *   - Loans       → monthly EMI
- *   - Month       → total budgeted this month
- *   - Events      → days to the next event
+ * Four sheets:
+ *   - Investments → one line per plan (name + rate), then the
+ *     total projected at maturity.
+ *   - Loans       → one line per projection (name + APR · term),
+ *     then the combined monthly EMI.
+ *   - This month  → one line per budget jar (emoji + name +
+ *     budget), then the total budgeted.
+ *   - Events      → one line per event (emoji + name + date), then
+ *     the days to the next one.
  *
- * Empty state for each card collapses the number but keeps the
- * row visible — the user still needs to see the planner exists.
+ * Every sheet is a link to the planner behind it, and its figures
+ * collapse to a dash when the planner is empty — the sheet still
+ * shows, because the user needs to see the planner EXISTS.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -23,11 +29,11 @@ import {
   listInvestmentPlans,
 } from '../domain/investmentPlans';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
-import { fmtBDT } from '../lib/format';
+import { fmtBDT, fmtDate } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
-import {
-  NavInvestments, NavPlan, Clock, Bank,
-} from '../components/icons/Icons';
+
+/** The tone each planner's figures wear. */
+type PlannerTone = 'primary' | 'danger' | 'accent' | 'info';
 
 export function PlanScreen() {
   const state = useStore(s => s.state);
@@ -38,7 +44,6 @@ export function PlanScreen() {
   for (const plan of investmentPlans) {
     invProjected += investmentPlanMaturityValue(plan);
   }
-  const invHasPlans = investmentPlans.length > 0;
 
   // ── Loans ───────────────────────────────────────────────────────
   const loanPlans = listLoanPlans(state);
@@ -50,8 +55,6 @@ export function PlanScreen() {
   for (const plan of savedLoans) {
     loanEmi += summariseLoanPlan(plan).emi;
   }
-  const loanHasPlans = savedLoans.length > 0;
-  const loanCount = savedLoans.length;
 
   // ── Month ───────────────────────────────────────────────────────
   const thisMonth = plans.monthKey();
@@ -66,11 +69,12 @@ export function PlanScreen() {
   const sortedEvents = [...events].sort(
     (a, b) => a.eventDate.localeCompare(b.eventDate),
   );
+  const todayISO = today().toISOString().slice(0, 10);
   const nextEvent = sortedEvents.find(
-    e => daysBetween(today().toISOString().slice(0, 10), e.eventDate) >= 0,
+    e => daysBetween(todayISO, e.eventDate) >= 0,
   ) ?? sortedEvents[0];
   const daysToNext = nextEvent
-    ? daysBetween(today().toISOString().slice(0, 10), nextEvent.eventDate)
+    ? daysBetween(todayISO, nextEvent.eventDate)
     : null;
 
   return (
@@ -82,57 +86,107 @@ export function PlanScreen() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-3">
-        <PlanRow
+      <div className="plan-grid">
+        {/* ═══ INVESTMENTS ═══════════════════════════════════════ */}
+        <PlanPaper
           to="/plan/invest"
-          icon={<NavInvestments className="w-5 h-5" />}
-          iconTone="primary"
-          title="Investments"
-          sub={`${investmentPlans.length} ${investmentPlans.length === 1 ? 'plan' : 'plans'}`}
-          number={invHasPlans ? fmtBDT(invProjected) : '—'}
-          numberTone="primary"
-          numberSuffix="at maturity"
-        />
-        <PlanRow
+          name="Investments"
+          serial={`${investmentPlans.length} ${investmentPlans.length === 1 ? 'PLAN' : 'PLANS'} · SCRATCHPAD`}
+          tone="primary"
+          empty={investmentPlans.length === 0 ? 'No plans yet' : undefined}
+          tallyLabel="Projected at maturity"
+          tallyValue={investmentPlans.length > 0 ? fmtBDT(invProjected) : '—'}
+        >
+          {investmentPlans.map(plan => (
+            <div className="plan-paper__line" key={plan.id}>
+              <span className="plan-paper__k">
+                {plan.name}
+                <span className="plan-paper__sub">
+                  {plan.rate}%{plan.termMonths > 0 ? ` · ${plan.termMonths}mo` : ''}
+                </span>
+              </span>
+              <span className="plan-paper__v plan-paper__v--primary">
+                {fmtBDT(investmentPlanMaturityValue(plan))}
+              </span>
+            </div>
+          ))}
+        </PlanPaper>
+
+        {/* ═══ LOANS ═════════════════════════════════════════════ */}
+        <PlanPaper
           to="/plan/loan"
-          icon={<Bank className="w-5 h-5" />}
-          iconTone="danger"
-          title="Loans"
-          sub={`${loanCount} ${loanCount === 1 ? 'projection' : 'projections'}`}
-          number={loanHasPlans ? fmtBDT(loanEmi) : '—'}
-          numberTone="danger"
-          numberSuffix="/mo EMI"
-        />
-        <PlanRow
+          name="Loans"
+          serial={`${savedLoans.length} ${savedLoans.length === 1 ? 'PROJECTION' : 'PROJECTIONS'} · SCRATCHPAD`}
+          tone="danger"
+          empty={savedLoans.length === 0 ? 'No projections yet' : undefined}
+          tallyLabel="Monthly EMI"
+          tallyValue={savedLoans.length > 0 ? fmtBDT(loanEmi) : '—'}
+        >
+          {savedLoans.map(plan => (
+            <div className="plan-paper__line" key={plan.id}>
+              <span className="plan-paper__k">
+                {plan.name}
+                <span className="plan-paper__sub">
+                  {plan.rate}%{plan.termMonths > 0 ? ` · ${plan.termMonths}mo` : ''}
+                </span>
+              </span>
+              <span className="plan-paper__v plan-paper__v--danger">
+                {fmtBDT(summariseLoanPlan(plan).emi)}
+              </span>
+            </div>
+          ))}
+        </PlanPaper>
+
+        {/* ═══ THIS MONTH ════════════════════════════════════════ */}
+        <PlanPaper
           to="/plan/month"
-          icon={<NavPlan className="w-5 h-5" />}
-          iconTone="accent"
-          title="This month"
-          sub={plans.monthLabel(thisMonth)}
-          number={monthItems.length > 0 ? fmtBDT(monthBudget) : '—'}
-          numberTone="accent"
-          numberSuffix={monthItems.length > 0
-            ? `budgeted · ${monthItems.length} ${monthItems.length === 1 ? 'item' : 'items'}`
-            : 'nothing planned'}
-        />
-        <PlanRow
+          name="This month"
+          serial={`${plans.monthLabel(thisMonth).toUpperCase()} · ${monthItems.length} ${monthItems.length === 1 ? 'ITEM' : 'ITEMS'}`}
+          tone="accent"
+          empty={monthItems.length === 0 ? 'Nothing planned yet' : undefined}
+          tallyLabel="Budgeted"
+          tallyValue={monthItems.length > 0 ? fmtBDT(monthBudget) : '—'}
+        >
+          {monthItems.map(cat => (
+            <div className="plan-paper__line" key={cat.id}>
+              <span className="plan-paper__k">
+                {cat.emoji ? `${cat.emoji} ` : ''}{cat.name}
+              </span>
+              <span className="plan-paper__v plan-paper__v--accent">
+                {fmtBDT(Number(cat.budget) || 0)}
+              </span>
+            </div>
+          ))}
+        </PlanPaper>
+
+        {/* ═══ EVENTS ═════════════════════════════════════════════ */}
+        <PlanPaper
           to="/plan/event"
-          icon={<Clock className="w-5 h-5" />}
-          iconTone="info"
-          title="Events"
-          sub={`${events.length} ${events.length === 1 ? 'event' : 'events'}`}
-          number={nextEvent
-            ? daysToNext === 0 ? 'today' : String(Math.abs(daysToNext!))
-            : '—'}
-          numberTone="info"
-          numberSuffix={nextEvent
-            ? daysToNext === 0
-              ? nextEvent.name
-              : daysToNext! > 0
-                ? `days away · ${nextEvent.name}`
-                : `days ago · ${nextEvent.name}`
-            : 'no events yet'}
-        />
+          name="Events"
+          serial={`${events.length} ${events.length === 1 ? 'EVENT' : 'EVENTS'} · SCRATCHPAD`}
+          tone="info"
+          empty={events.length === 0 ? 'No events yet' : undefined}
+          tallyLabel="Next event"
+          tallyValue={
+            nextEvent
+              ? daysToNext === 0
+                ? 'today'
+                : `${Math.abs(daysToNext!)} ${Math.abs(daysToNext!) === 1 ? 'day' : 'days'}`
+              : '—'
+          }
+        >
+          {sortedEvents.map(event => (
+            <div className="plan-paper__line" key={event.id}>
+              <span className="plan-paper__k">
+                {event.emoji ? `${event.emoji} ` : ''}{event.name}
+                <span className="plan-paper__sub">{fmtDate(event.eventDate)}</span>
+              </span>
+              <span className="plan-paper__v plan-paper__v--info">
+                {fmtBDT(Number(event.budget) || 0)}
+              </span>
+            </div>
+          ))}
+        </PlanPaper>
       </div>
 
       <div className="text-xs text-muted text-center mt-2">
@@ -142,67 +196,54 @@ export function PlanScreen() {
   );
 }
 
-/* ── Row primitive ──────────────────────────────────────────────── */
+/* ── The sheet ─────────────────────────────────────────────────── */
 
-const ICON_TONE: Record<'primary' | 'accent' | 'danger' | 'info', string> = {
-  primary: 'text-primary',
-  accent:  'text-accent',
-  danger:  'text-danger',
-  info:    'text-info',
-};
-
-function PlanRow({
-  to, icon, iconTone, title, sub, number, numberTone, numberSuffix,
+function PlanPaper({
+  to, name, serial, tone, empty, tallyLabel, tallyValue, children,
 }: {
   to: string;
-  icon: React.ReactNode;
-  iconTone: 'primary' | 'accent' | 'danger' | 'info';
-  title: string;
-  sub: string;
-  number: string;
-  numberTone: 'primary' | 'accent' | 'ink' | 'warn' | 'danger' | 'info';
-  numberSuffix: string;
+  name: string;
+  serial: string;
+  tone: PlannerTone;
+  /** Shown in place of the item lines when the planner is empty. */
+  empty?: string;
+  tallyLabel: string;
+  tallyValue: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <Link
-      to={to}
-      className="card card-link flex items-center gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-    >
-      <div
-        className={[
-          'w-10 h-10 rounded-input flex items-center justify-center shrink-0',
-          'bg-surface-2',
-        ].join(' ')}
+    <section className="plan-paper" style={{ ['--tone' as string]: `var(--${tone})` }}>
+      <Link
+        to={to}
+        className="plan-paper__link"
+        aria-label={`${name} — open the planner`}
       >
-        {/* Wrapper stays neutral; the icon itself picks up the type
-            tone via `currentColor` (we set it on a child span so the
-            wrapper chrome stays uniform across rows). */}
-        <span className={ICON_TONE[iconTone]}>
-          {icon}
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-bold tracking-tight">{title}</div>
-        <div className="text-[11.5px] text-muted mt-0.5 truncate">{sub}</div>
-      </div>
-      <div className="text-right shrink-0">
-        <div
-          className={[
-            'text-[18px] font-extrabold tracking-tight tabular',
-            numberTone === 'primary' ? 'text-primary' : '',
-            numberTone === 'accent'  ? 'text-accent'  : '',
-            numberTone === 'ink'     ? 'text-ink'     : '',
-            numberTone === 'warn'    ? 'text-warn'    : '',
-            numberTone === 'danger'  ? 'text-danger'  : '',
-            numberTone === 'info'    ? 'text-info'    : '',
-          ].filter(Boolean).join(' ')}
-        >
-          {number}
+        <div className="plan-paper__head">
+          <div className="min-w-0">
+            <div className="plan-paper__name">{name}</div>
+            <div className="plan-paper__serial">{serial}</div>
+          </div>
+          <span className="debt-cert__stamp debt-cert__stamp--planned">Planned</span>
         </div>
-        <div className="text-[11px] text-muted mt-0.5 truncate max-w-[220px]">
-          {numberSuffix}
+
+        <div className="plan-paper__rule" />
+
+        {empty ? (
+          <div className="plan-paper__empty">{empty}</div>
+        ) : (
+          <div className="plan-paper__lines">{children}</div>
+        )}
+
+        {/* The tally sits BELOW the lines whether or not there are
+            any, so an empty planner still states its one number as a
+            dash rather than collapsing the sheet to a caption. */}
+        <div className="plan-paper__tally">
+          <span className="k">{tallyLabel}</span>
+          <span className={`v plan-paper__tally-value plan-paper__v--${tone}`}>
+            {tallyValue}
+          </span>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </section>
   );
 }

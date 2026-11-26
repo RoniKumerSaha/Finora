@@ -91,10 +91,10 @@
       ],
       "footer": "ⓘ Plans are pure scratch — switch tabs, swap emoji, abandon mid-edit. Nothing here touches your real accounts or transactions.",
       "rowSuffixes": {
-        "investments": "at maturity",
-        "loans": "/mo EMI",
-        "month": "budgeted · N item(s)",
-        "events": "N days away · {name}"
+        "investments": "Projected at maturity",
+        "loans": "Monthly EMI",
+        "month": "Budgeted",
+        "events": "Next event"
       },
       "destinations": [
         "Investment Planner",

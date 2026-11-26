@@ -2,9 +2,11 @@
  * PlanPage — the planner hub (`/plan`) and the Month Plan
  * (`/plan/month`).
  *
- * `src/screens/PlanScreen.tsx` is a hub of four `PlanRow` links:
- * Investments · Loans · This month · Events. Each row is a
- * `card card-link` with a title, a sub-line and one headline number.
+ * `src/screens/PlanScreen.tsx` is a hub of four PAPERS:
+ * Investments · Loans · This month · Events. Each is a
+ * `section.plan-paper` holding one link, a head (the planner's name
+ * and its serial line), the planner's item lines, and a closing
+ * tally — the one number the planner is really about.
  * The footer carries the "Plans are pure scratch" disclaimer.
  *
  * `src/screens/MonthPlanScreen.tsx` is the biggest planner screen:
@@ -53,29 +55,55 @@ export class PlanPage extends BasePage {
     );
   }
 
-  /** All four hub rows. */
+  /** All four hub papers. */
   get hubRows(): Locator {
-    return this.page.locator('a.card-link');
+    return this.page.locator('section.plan-paper');
   }
 
-  /** A hub row, by its title. */
+  /**
+   * A hub paper, by its planner name.
+   *
+   * The paper's own link carries an `aria-label` of "{name} — open
+   * the planner", so the sheet is found through its NAME in the
+   * head rather than through the link's label.
+   */
   hubRow(title: PlanHubRow): Locator {
-    return this.page.locator('a.card-link').filter({ hasText: title }).first();
+    return this.page
+      .locator('section.plan-paper')
+      .filter({ has: this.page.getByText(title, { exact: true }) })
+      .first();
   }
 
-  /** A hub row's headline number. */
+  /**
+   * A hub paper's link — the whole sheet is one click target.
+   */
+  hubRowLink(title: PlanHubRow): Locator {
+    return this.hubRow(title).locator('a.plan-paper__link');
+  }
+
+  /** A hub paper's headline number — the sheet's closing tally. */
   hubRowNumber(title: PlanHubRow): Locator {
-    return this.hubRow(title).locator('div.text-\\[18px\\]');
+    return this.hubRow(title).locator('.plan-paper__tally .v');
   }
 
-  /** A hub row's number caption ("at maturity", "/mo EMI", …). */
+  /**
+   * A hub paper's number caption — "Projected at maturity",
+   * "Monthly EMI", "Budgeted", "Next event".
+   */
   hubRowSuffix(title: PlanHubRow): Locator {
-    return this.hubRow(title).locator('div.text-\\[11px\\]');
+    return this.hubRow(title).locator('.plan-paper__tally .k');
   }
 
-  /** A hub row's sub-line ("2 plans", "1 event", …). */
+  /**
+   * A hub paper's serial line — "3 PLANS · SCRATCHPAD".
+   */
   hubRowSubLine(title: PlanHubRow): Locator {
-    return this.hubRow(title).getByText(/\d+ (plan|projection|event|item)/, { exact: false });
+    return this.hubRow(title).locator('.plan-paper__serial');
+  }
+
+  /** A hub paper's item lines — one per plan, projection or event. */
+  hubRowLines(title: PlanHubRow): Locator {
+    return this.hubRow(title).locator('.plan-paper__line');
   }
 
   // ── Month Plan ──

@@ -103,33 +103,37 @@ test.describe('Plan', () => {
     });
 
     await test.step('Read the four row states', async () => {
-      // Investments — "at maturity".
+      // Investments — "Projected at maturity".
       await expect(plan.hubRowSuffix('Investments')).toHaveText(expected.rowSuffixes.investments);
-      // Loans — "/mo EMI".
+      // Loans — "Monthly EMI".
       await expect(plan.hubRowSuffix('Loans')).toHaveText(expected.rowSuffixes.loans);
-      // This month — "budgeted · N items" (the fixture holds two).
-      await expect(plan.hubRowSuffix('This month')).toContainText('budgeted · 2 item');
-      // Events — "no events yet" (the fixture holds no event plan).
-      await expect(plan.hubRowSuffix('Events')).toHaveText('no events yet');
+      // This month — "Budgeted" (the fixture holds two jars, and the
+      // count lives in the sheet's serial line).
+      await expect(plan.hubRowSuffix('This month')).toHaveText(expected.rowSuffixes.month);
+      await expect(plan.hubRowSubLine('This month')).toContainText('2 ITEMS');
+      // Events — "Next event" (the fixture holds no event plan, so
+      // the figure collapses to a dash).
+      await expect(plan.hubRowSuffix('Events')).toHaveText(expected.rowSuffixes.events);
+      await expect(plan.hubRowNumber('Events')).toHaveText('—');
     });
 
     await test.step('Click each row in turn and read the destination screen\'s H1', async () => {
-      await plan.hubRow('This month').click();
+      await plan.hubRowLink('This month').click();
       await expect(page).toHaveURL(/#\/plan\/month$/);
       await expect(plan.monthHeading).toHaveText('Plan my month');
 
       await plan.gotoHub();
-      await plan.hubRow('Loans').click();
+      await plan.hubRowLink('Loans').click();
       await expect(page).toHaveURL(/#\/plan\/loan$/);
       await expect(loan.heading).toHaveText('Loan Calculator');
 
       await plan.gotoHub();
-      await plan.hubRow('Investments').click();
+      await plan.hubRowLink('Investments').click();
       await expect(page).toHaveURL(/#\/plan\/invest$/);
       await expect(invest.screenHeading).toHaveText('Investment Planner');
 
       await plan.gotoHub();
-      await plan.hubRow('Events').click();
+      await plan.hubRowLink('Events').click();
       await expect(page).toHaveURL(/#\/plan\/event$/);
       await expect(events.screenHeading).toHaveText('Plan an event');
     });
@@ -137,8 +141,9 @@ test.describe('Plan', () => {
     await test.step('Return to Plan and read the "This month" and "Events" rows again', async () => {
       await plan.gotoHub();
 
-      await expect(plan.hubRowSuffix('This month')).toContainText('budgeted · 2 item');
-      await expect(plan.hubRowSuffix('Events')).toHaveText('no events yet');
+      await expect(plan.hubRowSuffix('This month')).toHaveText(expected.rowSuffixes.month);
+      await expect(plan.hubRowSubLine('This month')).toContainText('2 ITEMS');
+      await expect(plan.hubRowSuffix('Events')).toHaveText(expected.rowSuffixes.events);
     });
 
     await test.step('The Month Plan has no month selector and no rollover', async () => {

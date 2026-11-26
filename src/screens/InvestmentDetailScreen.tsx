@@ -1,21 +1,30 @@
 /**
- * InvestmentDetailScreen — read-only investment detail with actions.
+ * InvestmentDetailScreen — read an investment as a bank certificate.
  *
- * Visual target: v1 design system (Fraunces headings, surface cards,
- * tabular numerals). Type-aware: DPS shows "current value" compounded
- * to today, monthly contribution chip, projected maturity via
- * annuity-due. FDR/savings shows simple-interest maturity.
+ * An investment is a CONTRACT WITH A BANK, so the detail screen is
+ * the instrument itself: a perforated bond certificate carrying
+ * engraved terms, a serial number, a rate seal, a maturity rail and
+ * the two numbers the holder cares about — what the bank would pay
+ * today, and what it owes at maturity.
  *
- * Sections:
- *   - Header + status chip + Edit button
- *   - Headline card: type, rate, term, days to maturity
- *   - Money card: principal/principal+contributed, projected/current,
- *     expected interest
- *   - DPS contribution panel (when type === 'dps')
- *   - Status actions: Contribute (DPS/active), Close, Rollover, Delete
- *   - Contribution history
+ * What the old screen lacked was a sense of TIME, so the rail now
+ * runs from the day the holding started to the day it matures, with
+ * a marker at today's position.
+ *
+ * Layout (two columns):
+ *   LEFT
+ *     - the CERTIFICATE — head, seal, engraved terms, the
+ *       contribution tally, the maturity rail, the two values and
+ *       the projection footnote;
+ *     - "WHEN IT MATURES" — the three ways out, each a labelled
+ *       line, with the payout / renew / retire actions;
+ *     - the DANGER ZONE.
+ *   RIGHT
+ *     - the ACTIVITY LEDGER — every contribution and payout.
+ *
+ * The edit pass lives on its own screen (`/investments/:id/edit`),
+ * so this one stays a document you READ.
  */
-
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -33,15 +42,48 @@ import {
   dpsMaturityValue,
 } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
+import { formatDuration } from '../domain/duration';
 import { Button } from '../components/Button';
 import { Field, Input } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
-import { Stat } from '../components/Stat';
 import { Pill } from '../components/Pill';
 import type { Account, Investment } from '../domain/types';
 
 const MIDDOT = '\u00B7';
+
+/** The document's serial number — a stable hash of the id. */
+function serialFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 999999;
+  }
+  return String(hash).padStart(6, '0');
+}
+
+/** The type as the document names it. */
+function typeLabel(inv: Investment): string {
+  return inv.type === 'dps' ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'SAVINGS';
+}
+
+/** Each investment type wears its own tone. */
+function toneFor(inv: Investment): string {
+  return inv.type === 'dps' ? 'var(--primary)' : inv.type === 'fdr' ? 'var(--accent)' : 'var(--info)';
+}
+
+/**
+ * How long is left, in the unit a reader would use.
+ *
+ * Years for a term measured in years ("~4.8Y"), but days and months
+ * for the short ones — "0.1Y" of a 60-month DPS reads as nonsense
+ * when the bank has 40 days left to pay.
+ */
+function remainingLabel(days: number): string {
+  const left = Math.abs(Math.round(days));
+  if (left >= 365) return `~${(left / 365).toFixed(1)}Y`;
+  if (left >= 60) return `~${Math.round(left / 30)}MO`;
+  return `~${left}D`;
+}
 
 export function InvestmentDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +129,34 @@ export function InvestmentDetailScreen() {
     ? Math.max(0, dpsMaturityValue(inv) - (Number(inv.monthlyContribution) || 0) * (Number(inv.termMonths) || 0))
     : Math.max(0, projected - (Number(inv.principal) || 0));
   const payoutAcc = accs.find(a => a.id === inv.payoutAccountId);
+  const tone = toneFor(inv);
+
+  // ── The maturity rail ──────────────────────────────────────────
+  // The rail's marker sits at today's position in the term, so the
+  // reader can see how much of the promise is already spent.
+  //
+  // The rail is measured in REAL days between the start and the
+  // maturity date, not in months-times-30 — a 60-month term is 1826
+  // days, and a rail that stretched it to 1800 would put the marker
+  // a fortnight early.
+  const startMs = Date.parse(inv.startDate);
+  const matMs = mat ? mat.getTime() : NaN;
+  const spanDays = Number.isFinite(startMs) && Number.isFinite(matMs)
+    ? Math.max(1, Math.round((matMs - startMs) / 86400000))
+    : 0;
+  const elapsedDays = spanDays > 0
+    ? Math.max(0, Math.min(spanDays, spanDays - days))
+    : 0;
+  const elapsedPct = spanDays > 0
+    ? Math.round((elapsedDays / spanDays) * 100)
+    : 0;
+
+  // ── The contribution tally ─────────────────────────────────────
+  // "Contributed ৳ 85,000 of ৳ 3,00,000 · 14 of 60 installments" —
+  // how much has gone in, and how much of the schedule that is.
+  const totalDue = isDps
+    ? (Number(inv.monthlyContribution) || 0) * (Number(inv.termMonths) || 0)
+    : (Number(inv.principal) || 0);
 
   async function onContribute(e: React.FormEvent) {
     e.preventDefault();
@@ -212,13 +282,17 @@ export function InvestmentDetailScreen() {
     navigate('/investments');
   }
 
+  const activity = [...contribs, ...payouts]
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date));
+
   return (
-    <div className="flex flex-col gap-[18px] max-w-[640px]">
+    <div className="flex flex-col gap-[18px]">
       <div className="flex items-center gap-3">
         <Link to="/investments" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Investments</Link>
       </div>
 
-      {/* Header */}
+      {/* ═══ THE HEADER ═══════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <div className="text-[13px] text-muted flex items-center gap-2">
@@ -250,234 +324,310 @@ export function InvestmentDetailScreen() {
         </div>
       </div>
 
-      {/* Status + countdown */}
-      <section className="card">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <div className="text-[11px] text-muted uppercase tracking-wider">Status</div>
-            <div className="mt-1"><StatusChip status={status} /></div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11px] text-muted uppercase tracking-wider">
-              {status === 'matured' ? 'Matured on' : status === 'closed' || status === 'rolled_over' ? 'Term ended' : 'Matures on'}
+      <div className="inv-page">
+        {/* ═══ THE LEFT COLUMN ═════════════════════════════════ */}
+        <div className="inv-page__col">
+          {/* ─── THE CERTIFICATE ─────────────────────────────── */}
+          <section className="inv-cert" style={{ ['--tone' as string]: tone }}>
+            <div className="inv-cert__head">
+              <div className="min-w-0">
+                <div className="inv-cert__name">{inv.name}</div>
+                <div className="inv-cert__serial">
+                  NO. {serialFor(inv.id)} {MIDDOT} {typeLabel(inv)}
+                  {inv.institution ? ` ${MIDDOT} ${inv.institution.toUpperCase()}` : ''}
+                  {status === 'active' && mat
+                    ? ` ${MIDDOT} MATURES IN ${remainingLabel(days)}`
+                    : ''}
+                  {status === 'closed' || status === 'rolled_over' || status === 'matured'
+                    ? ` ${MIDDOT} ENDED ${mat ? fmtDate(mat.toISOString().slice(0, 10)).toUpperCase() : ''}`
+                    : ''}
+                </div>
+              </div>
+              {status === 'active' ? (
+                <div className="inv-cert__seal">
+                  <div className="p">{inv.rate}%</div>
+                  <div className="l">RATE</div>
+                </div>
+              ) : (
+                <div className="inv-cert__stamp" style={{ ['--tone' as string]: 'var(--muted)' }}>
+                  {status === 'matured' ? 'Matured' : status === 'rolled_over' ? 'Rolled' : 'Closed'}
+                </div>
+              )}
             </div>
-            <div className="text-2xl font-bold text-ink tabular mt-1">
-              {mat ? fmtDate(mat.toISOString().slice(0, 10)) : '—'}
-            </div>
-          </div>
-        </div>
-        {status === 'active' && (
-          <div className="text-[13px] text-muted">
-            {days > 0 ? `Matures in ${days} day${days === 1 ? '' : 's'}.`
-              : days === 0 ? 'Matures today.'
-              : `Matured ${-days} day${days === -1 ? '' : 's'} ago.`}
-          </div>
-        )}
-        {inv.institution && (
-          <div className="text-[13px] text-muted mt-1">
-            Held at <span className="text-ink font-semibold">{inv.institution}</span>.
-          </div>
-        )}
-        {payoutAcc && (
-          <div className="text-[13px] text-muted mt-1">
-            Payout account: <span className="text-ink font-semibold">{payoutAcc.name}</span>.
-          </div>
-        )}
-      </section>
 
-      {/* Money */}
-      <section className="card">
-        <h2 className="heading h3-modal mb-4">{isDps ? 'Plan vs progress' : 'Maturity'}</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {!isDps && (
-            <StatCell label="Principal" value={fmtBDT(inv.principal)} />
+            <div className="inv-cert__fields">
+              {isDps ? (
+                <>
+                  <div className="inv-cert__f">
+                    <div className="k">Monthly contribution</div>
+                    <div className="v">{fmtBDT(inv.monthlyContribution || 0)}</div>
+                  </div>
+                  <div className="inv-cert__f">
+                    <div className="k">Term</div>
+                    <div className="v">{formatDuration(inv.termMonths)}</div>
+                  </div>
+                  <div className="inv-cert__f">
+                    <div className="k">Rate</div>
+                    <div className="v">{inv.rate}% / yr</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="inv-cert__f">
+                    <div className="k">Principal</div>
+                    <div className="v">{fmtBDT(inv.principal)}</div>
+                  </div>
+                  <div className="inv-cert__f">
+                    <div className="k">Term</div>
+                    <div className="v">
+                      {inv.termDays
+                        ? `${inv.termDays} days`
+                        : formatDuration(inv.termMonths)}
+                    </div>
+                  </div>
+                  <div className="inv-cert__f">
+                    <div className="k">Rate</div>
+                    <div className="v">{inv.rate}% / yr</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* The contribution tally — how much has gone in, and how
+                much of the schedule that is. */}
+            {isDps && (
+              <div className="inv-cert__tally tabular">
+                <span className="pip" aria-hidden />
+                Contributed <b>{fmtBDT(contributed)}</b> of {fmtBDT(totalDue)}
+                {' '}{MIDDOT} {contribs.length} of {inv.termMonths} installments
+              </div>
+            )}
+
+            {/* The maturity rail — the promise, in time. */}
+            <div className="maturity" style={{ ['--tone' as string]: 'var(--accent)' }}>
+              <div className="maturity__rail">
+                <i className="maturity__fill" style={{ width: `${elapsedPct}%` }} />
+                <b className="maturity__mark" style={{ ['--mark' as string]: `${elapsedPct}%` }} />
+              </div>
+              <div className="maturity__ends">
+                <span>Started <b>{fmtDate(inv.startDate)}</b></span>
+                <span>
+                  {status === 'active' ? 'Matures' : 'Ended'}{' '}
+                  <b>{mat ? fmtDate(mat.toISOString().slice(0, 10)) : '—'}</b>
+                </span>
+              </div>
+            </div>
+
+            <div className="inv-cert__vals">
+              {isDps ? (
+                <>
+                  <div className="inv-cert__v inv-cert__v--now">
+                    <div className="k">Current value</div>
+                    <div className="n">{fmtBDT(currentValue)}</div>
+                  </div>
+                  <div className="inv-cert__v inv-cert__v--mat">
+                    <div className="k">Estimated payout when the term ends</div>
+                    <div className="n">{fmtBDT(projected)}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {paidOut > 0 && (
+                    <div className="inv-cert__v">
+                      <div className="k">Paid out</div>
+                      <div className="n">{fmtBDT(paidOut)}</div>
+                    </div>
+                  )}
+                  <div className="inv-cert__v inv-cert__v--mat">
+                    <div className="k">Maturity value</div>
+                    <div className="n">{fmtBDT(projected)}</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="inv-cert__note">
+              {isDps ? (
+                <>
+                  <strong>What you have now:</strong> {fmtBDT(currentValue)} (compounded to today).{' '}
+                  <strong>At maturity:</strong> {fmtBDT(projected)}{' '}
+                  <em>(projection if every installment is paid)</em>. Maturity uses
+                  annuity-due: {fmtBDT(inv.monthlyContribution || 0)} × ((1 + r)^T − 1) / r × (1 + r)
+                  where r = {inv.rate}%/12 and T = {inv.termMonths} months.
+                </>
+              ) : (
+                <>
+                  <strong>Maturity value:</strong> {fmtBDT(projected)} — principal {fmtBDT(inv.principal)}
+                  {' '}+ {fmtBDT(expectedInterest)} interest. Maturity uses simple interest:
+                  principal × (1 + rate × years). No compounding.
+                </>
+              )}
+            </div>
+          </section>
+
+          {/* ─── WHEN IT MATURES ─────────────────────────────── */}
+          {(status === 'active' || status === 'matured') && (
+            <section className="inv-cert" style={{ ['--tone' as string]: 'var(--accent)' }}>
+              <div className="inv-cert__head">
+                <div className="min-w-0">
+                  <div className="inv-cert__name">When it matures</div>
+                  <div className="inv-cert__serial">THREE WAYS OUT</div>
+                </div>
+                <div className="inv-cert__seal" style={{ ['--tone' as string]: 'var(--accent)' }}>
+                  <div className="p">৳</div>
+                  <div className="l">PAYOUT</div>
+                </div>
+              </div>
+
+              {/* Three ways out, each SELF-CONTAINED: the option says
+                  what it does, and carries its own action. Pooling the
+                  buttons underneath made the reader match a label to
+                  a button by eye — three names floating above three
+                  unrelated buttons. Here the button sits beside the
+                  thing it does. */}
+              <div className="maturity-opts">
+                <div className="maturity-opt maturity-opt--lead">
+                  <div className="maturity-opt__body">
+                    <div className="maturity-opt__k">Record bank payout</div>
+                    <div className="maturity-opt__v">
+                      Opens the income form with {fmtBDT(isDps ? currentValue : projected)} pre-filled
+                      {payoutAcc ? <> and {payoutAcc.name} already chosen</> : null}.
+                    </div>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={onRecordPayout}
+                    disabled={!inv.payoutAccountId || (isDps ? currentValue : projected) - paidOut <= 0}
+                  >
+                    Record payout
+                  </Button>
+                </div>
+
+                <div className="maturity-opt">
+                  <div className="maturity-opt__body">
+                    <div className="maturity-opt__k">Renew for another term</div>
+                    <div className="maturity-opt__v">
+                      Starts a fresh {typeLabel(inv)} the day after this one ends, same terms and rate.
+                    </div>
+                  </div>
+                  <Button variant="secondary" onClick={onRollover}>Renew</Button>
+                </div>
+
+                <div className="maturity-opt">
+                  <div className="maturity-opt__body">
+                    <div className="maturity-opt__k">Mark as done</div>
+                    <div className="maturity-opt__v">
+                      Retires the record — for when you already received the money elsewhere.
+                    </div>
+                  </div>
+                  {/* The retire button stays available even after a
+                      payout — for an FDR the record is not retired
+                      automatically, so the user closes it by hand. */}
+                  <Button variant="secondary" onClick={onClose}>Mark done</Button>
+                </div>
+              </div>
+
+              {!inv.payoutAccountId && (
+                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+                  Choose which <strong>account receives the money</strong> when the bank pays out this
+                  {inv.type.toUpperCase()}.{' '}
+                  <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
+                  to add one — without it, the bank has nowhere to send the money back.
+                </div>
+              )}
+
+              <div className="inv-cert__note">
+                <strong>Record bank payout</strong> saves as Income, which then shows in the
+                activity ledger — and auto-closes this {typeLabel(inv)} once the contributions
+                have been fully paid back.
+              </div>
+            </section>
           )}
-          {isDps && (
-            <>
-              <StatCell label="Contributed so far" value={fmtBDT(contributed)} />
-              {/* Current value carries the gain/loss cue:
-                    contributed == current → break-even (ink)
-                    current > contributed   → in the green (mint)
-                    current < contributed   → in the coral (rare; would need a partial loss) */}
-              <StatCell
-                label="Current value"
-                value={fmtBDT(currentValue)}
-                tone={currentValue > contributed ? 'primary' : currentValue < contributed ? 'danger' : 'ink'}
-                hint="What the bank would pay you if you cashed out today."
-              />
-            </>
-          )}
-          {paidOut > 0 && (
-            <StatCell label="Paid out" value={fmtBDT(paidOut)} hint="Linked income transactions" />
-          )}
-          <StatCell
-            label={isDps ? 'Estimated payout when the term ends' : 'Maturity value'}
-            value={fmtBDT(projected)}
-            accent
-            hint={isDps ? 'If you pay every installment on time.' : 'Simple interest.'}
-          />
-          {/* Expected interest is the gain side of an investment — mint
-              when there's a real expected return, ink on break-even. */}
-          <StatCell
-            label="Expected interest"
-            value={fmtBDT(expectedInterest)}
-            tone={expectedInterest > 0 ? 'primary' : 'ink'}
-          />
-          <StatCell label="Rate" value={`${inv.rate}% / yr`} />
-        </div>
-        {/* 2026-08-17 net-worth clarity: for DPS, surface both numbers
-            explicitly so the user is never confused about whether the
-            headline is real money or a projection. */}
-        {isDps && (
-          <div
-            className="mt-4 rounded-btn px-3.5 py-3 text-[12.5px] leading-relaxed"
+
+          {/* ─── THE DANGER ZONE ─────────────────────────────── */}
+          <section
+            className="rounded-card p-6"
             style={{
-              background: 'var(--accent-soft)',
-              border: '1px solid var(--accent)',
-              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent)',
-              color: 'var(--ink)',
+              background: 'var(--danger-callout-bg)',
+              border: '1px solid var(--danger)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
             }}
           >
-            <strong style={{ color: 'var(--accent)' }}>What you have now:</strong>{' '}
-            <span className="tabular font-semibold">{fmtBDT(currentValue)}</span> (compounded to today).
-            {' '}
-            <strong className="ml-1" style={{ color: 'var(--accent)' }}>At maturity:</strong>{' '}
-            <span className="tabular font-semibold">{fmtBDT(projected)}</span>{' '}
-            <span className="opacity-70">(projection if every installment is paid).</span>
-          </div>
-        )}
-        {isDps && (
-          <div className="mt-3 text-[12px] text-muted leading-relaxed">
-            Maturity uses annuity-due: <span className="tabular">{fmtBDT(inv.monthlyContribution || 0)} × ((1 + r)^T − 1) / r × (1 + r)</span>
-            {' '}where r = {inv.rate}%/12 and T = {inv.termMonths} months.
-          </div>
-        )}
-        {!isDps && (
-          <div className="mt-4 text-[12px] text-muted leading-relaxed">
-            Maturity uses simple interest: principal × (1 + rate × years). No compounding.
-          </div>
-        )}
-      </section>
+            <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
+            <p className="text-[13px] text-muted mb-4">
+              Removes the investment record only. The {contribs.length} linked contribution
+              transactions stay in your records.
+            </p>
+            <Button variant="outlined-danger" onClick={onDelete}>Delete investment</Button>
+          </section>
+        </div>
 
-      {/* DPS contribution form is rendered as a modal (see ContributeModal at end of file). */}
+        {/* ═══ THE RIGHT COLUMN ════════════════════════════════ */}
+        <div className="inv-page__col">
+          <div className="inv-page__sect">Activity</div>
 
-      {/* Status actions */}
-      {(status === 'active' || status === 'matured') && (
-        <section className="card">
-          <h2 className="heading h3-modal mb-4">{status === 'matured' ? 'Matured' : 'When it matures'}</h2>
-          {isDps ? (
-            <>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  onClick={onRecordPayout}
-                  disabled={!inv.payoutAccountId || currentValue - paidOut <= 0}
-                >
-                  Record bank payout
-                </Button>
-                <Button variant="secondary" onClick={onRollover}>Renew for another term</Button>
-                {paidOut === 0 && (
-                  <Button variant="secondary" onClick={onClose}>Mark as done (no payout)</Button>
-                )}
-              </div>
-              {!inv.payoutAccountId && (
-                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-                  Choose which <strong>account receives the money</strong> when the bank pays out this DPS.{' '}
-                  <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
-                  to add one — without it, the bank has nowhere to send the money back.
-                </div>
-              )}
-              <p className="text-[12px] text-muted mt-3 leading-relaxed">
-                <strong>Record bank payout</strong> opens the income form with the remaining amount
-                (current value {fmtBDT(currentValue)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, currentValue - paidOut))})
-                pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
-                and auto-closes this DPS once contributions have been fully paid back.
-                <br />
-                <strong>Renew for another term</strong> starts a fresh DPS the day after this one ends.
-                <br />
-                <strong>Mark as done</strong> is for retiring the record without recording a payout (rare).
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  onClick={onRecordPayout}
-                  disabled={!inv.payoutAccountId || projected - paidOut <= 0}
-                >
-                  Record bank payout
-                </Button>
-                <Button variant="secondary" onClick={onRollover}>Renew for another term</Button>
-                <Button variant="secondary" onClick={onClose}>Mark as done (no payout)</Button>
-              </div>
-              {!inv.payoutAccountId && (
-                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
-                  Choose which <strong>account receives the money</strong> when the bank pays out this {inv.type.toUpperCase()}.{' '}
-                  <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
-                  to add one — without it, the bank has nowhere to send the money back.
-                </div>
-              )}
-              <p className="text-[12px] text-muted mt-3 leading-relaxed">
-                <strong>Record bank payout</strong> opens the income form with the maturity amount
-                ({fmtBDT(projected)} − paid out so far {fmtBDT(paidOut)} = {fmtBDT(Math.max(0, projected - paidOut))})
-                pre-filled and the payout account already chosen. Saving it records the actual bank payout as Income —
-                which then shows in the Paid out row above and in the Activity log below.
-                <br />
-                <strong>Renew for another term</strong> creates a fresh investment starting the day after maturity.
-                <br />
-                <strong>Mark as done</strong> retires this record manually — useful if you already received the money outside the app.
-              </p>
-            </>
-          )}
-        </section>
-      )}
+          <section className="act-sheet">
+            <div className="act-sheet__name">Activity</div>
+            <div className="act-sheet__serial">
+              {activity.length} {activity.length === 1 ? 'ENTRY' : 'ENTRIES'}
+            </div>
 
-      {/* Contribution + payout history */}
-      {(contribs.length > 0 || payouts.length > 0) && (
-        <section className="card">
-          <h2 className="heading h3-modal mb-4">Activity</h2>
-          <div className="divide-y divide-border">
-            {[...contribs, ...payouts]
-              .slice()
-              .sort((a, b) => b.date.localeCompare(a.date))
-              .map(t => {
-                const acc = accs.find(a => a.id === t.accountId);
-                const tag = t.type === 'income' ? 'payout' : 'contribution';
-                return (
-                  <div key={t.id} className="py-2.5 flex justify-between items-center">
-                    <div>
-                      <div className="text-[13px] font-semibold tabular">{fmtBDT(t.amount)}</div>
-                      <div className="text-[11px] text-muted">{fmtDate(t.date)} {acc ? ` ${MIDDOT} ${acc.name}` : ''}{t.note ? ` ${MIDDOT} ${t.note}` : ''}</div>
-                    </div>
-                    <Pill
-                      tone={t.type === 'income' ? 'success' : 'primary'}
-                      variant="solid"
-                    >
-                      {tag}
-                    </Pill>
+            {activity.length > 0 ? (
+              <>
+                <div className="act-sheet__stats">
+                  <div className="act-sheet__stat">
+                    <div className="k">Contributions</div>
+                    <div className="n">{contribs.length}</div>
                   </div>
-                );
-              })}
-          </div>
-        </section>
-      )}
+                  <div className="act-sheet__stat">
+                    <div className="k">Total paid in</div>
+                    <div className="n">{fmtBDT(contributed)}</div>
+                  </div>
+                  <div className="act-sheet__stat">
+                    <div className="k">Paid out</div>
+                    <div className="n">{fmtBDT(paidOut)}</div>
+                  </div>
+                </div>
 
-      {/* Footer: delete */}
-      <section
-        className="rounded-card p-6"
-        style={{
-          background: 'var(--danger-callout-bg)',
-          border: '1px solid var(--danger)',
-          boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)',
-        }}
-      >
-        <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-        <p className="text-[13px] text-muted mb-4">
-          Removes the investment record only. The {contribs.length} linked contribution transactions stay in your records.
-        </p>
-        <Button variant="outlined-danger" onClick={onDelete}>Delete investment</Button>
-      </section>
+                <div className="act-sheet__rows">
+                  {activity.map(t => {
+                    const acc = accs.find(a => a.id === t.accountId);
+                    const isPayout = t.type === 'income';
+                    return (
+                      <div className="act-row" key={t.id}>
+                        <div>
+                          <span
+                            className="act-row__tag"
+                            style={{ color: isPayout ? 'var(--success)' : 'var(--primary)' }}
+                          >
+                            {isPayout ? 'Payout' : 'Contribution'} {MIDDOT} {fmtDate(t.date)}
+                          </span>
+                          <div className="act-row__amount">{fmtBDT(t.amount)}</div>
+                          <div className="act-row__where">
+                            {acc ? acc.name : '—'}
+                            {t.note ? ` ${MIDDOT} ${t.note}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="act-sheet__rows">
+                <div className="text-[12px] text-muted py-2">
+                  Nothing recorded yet — contributions and payouts will appear here.
+                </div>
+              </div>
+            )}
+
+            <div className="debt-cert__note" style={{ marginTop: 12 }}>
+              Contributions are expenses; payouts are income. Both stay linked to this
+              investment, so the ledger always reconciles with the certificate.
+            </div>
+          </section>
+        </div>
+      </div>
 
       {dialog}
       {isDps && status === 'active' && accs.length > 0 && showContributeForm && (
@@ -497,60 +647,6 @@ export function InvestmentDetailScreen() {
         />
       )}
     </div>
-  );
-}
-
-/**
- * StatCell — small 2-column label/value pair inside the money card.
- * Local wrapper because this grid uses a tighter 2-col layout than
- * the canonical <Stat> (which assumes a larger card surface). Maps
- * `accent` → primary tone so the maturity-value cell stands out.
- */
-function StatCell({
-  label,
-  value,
-  accent,
-  tone,
-  hint,
-}: {
-  label: string;
-  value: string;
-  /** Legacy boolean. Maps to primary tone (mint). Kept for callers that
-   *  just want to call attention to a cell — new callers should pass an
-   *  explicit `tone` instead. */
-  accent?: boolean;
-  /** Explicit tone override. Takes precedence over `accent`. */
-  tone?: 'ink' | 'primary' | 'danger' | 'accent';
-  hint?: string;
-}) {
-  const resolved = tone ?? (accent ? 'primary' : 'ink');
-  return (
-    <Stat
-      label={label}
-      value={value}
-      size="md"
-      tone={resolved}
-      hint={hint}
-    />
-  );
-}
-
-/**
- * StatusChip — investment lifecycle badge. Uses the shared <Pill> with
- * the soft variant. Tone mapping:
- *   active   → accent  (running, honey)
- *   matured  → success  (reached its end, sage)
- *   closed   → muted   (retired, neutral)
- *   rolled_over / other → warn (needs attention)
- */
-function StatusChip({ status }: { status: string }) {
-  const tone =
-    status === 'active' ? 'accent'
-    : status === 'matured' ? 'success'
-    : status === 'closed' ? 'muted'
-    : 'warn';
-  return (
-    <Pill tone={tone} variant="soft">{status}</Pill>
   );
 }
 
