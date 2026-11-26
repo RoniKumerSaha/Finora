@@ -88,26 +88,50 @@ export class LoanCalculatorPage extends BasePage {
     return this.page.getByText('Summary (projection)', { exact: true });
   }
 
-  /** The summary card's "EMI" stat label. */
+  /**
+   * The summary certificate's EMI label.
+   *
+   * The summary is a statement certificate, so the figure sits under
+   * a small uppercase label in a `.debt-cert__v` block — the label
+   * reads "Monthly EMI", not the bare "EMI" the old stat tile used.
+   */
   get emiLabel(): Locator {
-    return this.page.getByText('EMI', { exact: true });
+    return this.page
+      .locator('.debt-cert__v--now')
+      .locator('.k');
   }
 
   /** The summary card's "Total you pay" stat label. */
   get totalYouPayLabel(): Locator {
-    return this.page.getByText('Total you pay', { exact: true });
+    return this.page
+      .locator('.debt-cert__v--mat')
+      .locator('.k');
   }
 
-  /** The summary card's "Total interest" stat label. */
+  /**
+   * The summary certificate's total-interest line.
+   *
+   * The interest figure is one of the statement's ruled LINES (not a
+   * stat tile), labelled "Total interest across all".
+   */
   get totalInterestLabel(): Locator {
-    return this.page.getByText('Total interest', { exact: true });
+    return this.page
+      .locator('.debt-cert__line')
+      .filter({ hasText: 'Total interest across all' })
+      .locator('.k');
   }
 
-  /** The projection disclaimer. */
+  /**
+   * The projection disclaimer.
+   *
+   * The disclaimer is the certificate's footnote now, so it reads as
+   * a sentence without the old "ⓘ" glyph — the certificate's own
+   * framing carries the emphasis.
+   */
   get projectionWarning(): Locator {
     return this.page.getByText(
-      'ⓘ Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.',
-      { exact: true },
+      'Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.',
+      { exact: false },
     );
   }
 
@@ -118,10 +142,14 @@ export class LoanCalculatorPage extends BasePage {
 
   /**
    * The year-aware caption above the amortization table —
-   * "36 monthly payments over 3 years".
+   * "36 MONTHLY PAYMENTS OVER 3 YEARS".
+   *
+   * The amortisation table is a LEDGER SHEET, and its caption is the
+   * sheet's own serial line — set in caps, like every other
+   * certificate's serial.
    */
   get termCaption(): Locator {
-    return this.page.getByText(/^\d+ monthly payments? over .+$/);
+    return this.page.getByText(/^\d+ MONTHLY PAYMENTS? OVER .+$/);
   }
 
   /** A column heading in the amortization table. */

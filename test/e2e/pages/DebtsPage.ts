@@ -400,14 +400,20 @@ export class DebtsPage extends BasePage {
     return this.page.getByRole('button', { name: 'Delete debt' });
   }
 
-  /** The "Activity" card — only rendered when payments exist. */
+  /**
+   * The "Activity" LEDGER SHEET — only rendered when payments exist.
+   *
+   * The debt detail screen's activity feed is a ruled sheet of the
+   * same paper as the certificate, so it carries the `.act-sheet`
+   * shell rather than the generic `.card` primitive.
+   */
   get activityCard(): Locator {
-    return this.page.locator('section.card').filter({ hasText: 'Activity' }).last();
+    return this.page.locator('section.act-sheet').filter({ hasText: 'Activity' }).first();
   }
 
   /** The Activity card's "Payments" / "Total paid" / "Last payment" stats. */
   get activityStats(): Locator {
-    return this.activityCard.locator('div.grid.grid-cols-3');
+    return this.activityCard.locator('.act-sheet__stats');
   }
 
   /**
@@ -423,7 +429,7 @@ export class DebtsPage extends BasePage {
 
   /** Every activity row. */
   get activityRows(): Locator {
-    return this.activityCard.locator('div.py-2\\.5');
+    return this.activityCard.locator('.act-row');
   }
 
   // ── Payment modal ──

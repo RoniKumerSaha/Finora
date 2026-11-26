@@ -1972,14 +1972,21 @@ main > * {
   top: 40px;
   bottom: 26px;
   width: 11px;
+  /* The vertical label must stay inside its own margin column. With
+     `writing-mode: vertical-rl` the text's advance runs along the
+     block axis, but the letter-spacing and the 8px face make the
+     line BOX wider than 11px — and an absolutely-positioned box
+     overflows visibly, straight through the punched hole column
+     beside it. Clipping to the column keeps the tear line clean. */
+  overflow: hidden;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted-2);
-  opacity: 0.9;
+  color: var(--muted);
+  opacity: 0.95;
   display: flex;
   align-items: center;
   pointer-events: none;
@@ -2137,6 +2144,428 @@ main > * {
 }
 .debt-cert--statement .debt-cert__v--now .n { font-size: 20px; }
 .debt-cert--statement .debt-cert__v--mat .n { font-size: 20px; }
+
+/* ============================================================
+   THE DETAIL PAGES (.debt-page / .loan-page)
+   ============================================================
+   Two pages share one shape: a wide instrument column on the left
+   and a narrower summary column on the right. Both collapse to a
+   single column on small screens.
+
+   The grid keys off the VIEWPORT, not the content column: the
+   instrument needs room for a three-column engraved field row, and
+   that row only fits when the page itself is wide — a container
+   query would read the page's own box, which is what we want to
+   size here, but the two-column split is a PAGE decision, so the
+   viewport is the right ruler.
+   ============================================================ */
+
+.debt-page,
+.loan-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .debt-page,
+  .loan-page { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The column stack — every block in a column shares one rhythm. */
+.debt-page__col,
+.loan-page__col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* The section eyebrow above a column — "Summary (projection)",
+   "Activity". */
+.debt-page__sect,
+.loan-page__sect {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: -8px;
+}
+
+/* ============================================================
+   THE LEDGER SHEETS (.ledger-sheet / .act-sheet)
+   ============================================================
+   A ledger sheet is a ruled page of the SAME paper as the
+   certificate it belongs to — same torn top and bottom edges, same
+   shadow. It carries a table or a list of entries rather than a
+   single holding's terms.
+   ============================================================ */
+
+.ledger-sheet,
+.act-sheet {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  background: var(--surface-3);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05),
+    transparent 46%
+  );
+  padding: 20px 22px 22px;
+}
+.ledger-sheet::before,
+.ledger-sheet::after,
+.act-sheet::before,
+.act-sheet::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x,
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px) 0 0 / 14px 9px repeat-x;
+}
+.ledger-sheet::before,
+.act-sheet::before { top: 0; }
+.ledger-sheet::after,
+.act-sheet::after { bottom: 0; }
+
+.ledger-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.ledger-sheet__name,
+.act-sheet__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ledger-sheet__serial,
+.act-sheet__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.13em;
+  margin-top: 4px;
+}
+
+/* The count chip on a ledger sheet's head — "First 6 shown". */
+.ledger-sheet__tag {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* The table on a ledger sheet. */
+.ledger-sheet__table {
+  width: 100%;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+.ledger-sheet__table th {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.ledger-sheet__table th.is-n,
+.ledger-sheet__table td.is-n { text-align: right; }
+.ledger-sheet__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-2);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ledger-sheet__table tbody tr:last-child td { border-bottom: 0; }
+.ledger-sheet__table td.is-dim { color: var(--muted); }
+.ledger-sheet__table td.is-danger { color: var(--danger); }
+.ledger-sheet__table td.is-primary { color: var(--primary); }
+
+/* The table's scroll container. When the schedule is wider than the
+   sheet, it scrolls sideways — and a fade on the right edge tells
+   the reader there is more to see, instead of the table simply
+   looking truncated. */
+.ledger-sheet__scroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* On a narrow column the six-column schedule cannot fit, so the
+   padding tightens and the date drops its year. The table still
+   scrolls sideways if it has to — but it usually no longer needs to,
+   which keeps every row readable at a glance. */
+@media (max-width: 900px) {
+  .ledger-sheet { padding: 16px 14px 18px; }
+  .ledger-sheet__table { font-size: 11.5px; }
+  .ledger-sheet__table th { padding: 7px 5px; }
+  .ledger-sheet__table td { padding: 7px 5px; }
+}
+
+/* The due date carries two forms — the full "5 Feb 2027" and the
+   short "5 Feb". Only the full one shows by default. */
+.ledger-sheet__due-short { display: none; }
+
+/* On a PHONE the six columns still overflow, and a clipped Balance
+   column is worse than a compact one — the balance is the number the
+   reader most wants at the end of the row. So the padding drops to
+   almost nothing, the type shrinks again, and the due date drops its
+   year: a schedule's year is obvious, and it is the bulkiest part of
+   the cell. Every column survives — nothing is hidden. */
+@media (max-width: 560px) {
+  .ledger-sheet { padding: 14px 10px 16px; }
+  .ledger-sheet__table { font-size: 10.5px; }
+  .ledger-sheet__table th { padding: 6px 3px; letter-spacing: 0.02em; }
+  .ledger-sheet__table td { padding: 6px 3px; }
+  .ledger-sheet__due-full { display: none; }
+  .ledger-sheet__due-short { display: inline; }
+}
+
+.ledger-sheet__foot {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* ============================================================
+   THE ACTIVITY LEDGER (.act-sheet)
+   ============================================================
+   The running account of every entry against a debt. Each row is a
+   stamped tag, the figure, the account it ran through and — on a
+   loan — the split between interest and principal.
+   ============================================================ */
+
+.act-sheet__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+.act-sheet__stat .k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--muted);
+}
+.act-sheet__stat .n {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.act-sheet__stat .n--sm { font-size: 13px; }
+
+.act-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.act-row:last-child { border-bottom: 0; }
+.act-row__tag {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.act-row__amount {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.act-row__where {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.act-row__split {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.act-row__split .i { color: var(--danger); }
+.act-row__split .p { color: var(--primary); }
+
+/* ============================================================
+   THE RULED FORM (.dform / .dfline)
+   ============================================================
+   Editing a document means writing ON it, so each field gets its
+   own ruled line: a small uppercase label in the left column, the
+   control in the right. The rule is the line you would write on.
+   ============================================================ */
+
+.dform {
+  display: flex;
+  flex-direction: column;
+}
+.dfline {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.dfline:last-child { border-bottom: 0; }
+.dfline__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 11px;
+}
+.dfline__hint {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.45;
+  font-family: var(--font-body);
+}
+
+@media (max-width: 560px) {
+  .dfline { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .dfline__label { padding-top: 0; }
+}
+
+/* The loan sub-block — indented behind a rule, so it reads as a
+   child of the checkbox that switched it on. */
+.subblock {
+  padding-left: 16px;
+  border-left: 2px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+@media (max-width: 560px) {
+  .subblock { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   THE COMPOSITION DONUT (.donut-wrap)
+   ============================================================
+   Principal vs interest, as a ring: the centre states the share
+   that matters, the key beside it names each slice with its figure.
+   ============================================================ */
+
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.donut {
+  flex: none;
+  position: relative;
+  width: 118px;
+  height: 118px;
+}
+.donut svg { transform: rotate(-90deg); display: block; }
+.donut__ctr {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.donut__ctr .v {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.donut__ctr .l {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 3px;
+  font-weight: 700;
+}
+.donut-key {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  flex: 1;
+}
+.donut-key__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.donut-key__sw {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+}
+.donut-key__v {
+  margin-left: auto;
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.donut-key__row--total {
+  border-top: 1px solid var(--border);
+  padding-top: 9px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.donut-key__row--total .donut-key__v { font-size: 14px; }
+
+/* ============================================================
+   THE LOAN FORM (.loan-form)
+   ============================================================
+   The four projection inputs, ruled onto the certificate.
+   ============================================================ */
+
+.loan-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.loan-form__wide { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .loan-form { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* Cash-flow polyline draw-in — uses stroke-dasharray + dashoffset
    to "draw" the line left-to-right. Caller sets `stroke-dasharray`

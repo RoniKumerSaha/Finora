@@ -72,11 +72,25 @@ export function Field({
   label,
   hint,
   error,
+  hideLabel = false,
   children,
 }: {
   label: string;
   hint?: string;
   error?: ReactNode;
+  /**
+   * Hide the label VISUALLY while keeping it in the accessibility
+   * tree.
+   *
+   * Some surfaces already name the field in their own layout — the
+   * debt slip's ruled form lines, for instance, print the field name
+   * in the left column. Rendering the label again on the right would
+   * say the same thing twice, but removing it entirely would break
+   * the `htmlFor` association (and with it `getByLabel` in the
+   * tests). So the label is clipped to 1×1px instead: still
+   * announced, still associated, no longer visible.
+   */
+  hideLabel?: boolean;
   children: ReactNode;
 }) {
   // Accessibility + testability: wire the label to its control with
@@ -116,7 +130,10 @@ export function Field({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={labelable ? controlId : undefined}
-        className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold"
+        className={[
+          'text-[11px] text-muted uppercase tracking-[0.08em] font-semibold',
+          hideLabel ? 'sr-only' : '',
+        ].join(' ').trim()}
       >
         {label}
       </label>

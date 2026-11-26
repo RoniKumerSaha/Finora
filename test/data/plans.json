@@ -207,11 +207,11 @@
         "Enter a positive principal to save."
       ],
       "loanSummaryStats": [
-        "EMI",
+        "Monthly EMI",
         "Total you pay",
-        "Total interest"
+        "Total interest across all"
       ],
-      "loanWarning": "ⓘ Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.",
+      "loanWarning": "Projection only. Actual loan terms may include fees, insurance, or rounding that change the numbers slightly.",
       "amortizationColumns": [
         "Period",
         "Due",
@@ -224,7 +224,7 @@
         "Months",
         "Years"
       ],
-      "loanTermYearsCaption": "36 monthly payments over 3 years",
+      "loanTermYearsCaption": "36 MONTHLY PAYMENTS OVER 3 YEARS",
       "investCompositionYears": "Composition at maturity, over 1 year",
       "investTermYearsCaption": "12 monthly payments over 1 year",
       "investHeading": "Investment Planner",
