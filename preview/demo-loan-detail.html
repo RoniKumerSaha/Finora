@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Loan detail</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* A loan projection wears the debt certificate's shell — the same
+   instrument, in the same red, with a PLANNED stamp because no money
+   has actually moved. */
+.loan-page{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1080px){ .loan-page{grid-template-columns:minmax(0,1fr)} }
+
+/* The amortisation table lives on its own ledger sheet. */
+.ledger-sheet{
+  position:relative;overflow:hidden;border-radius:6px;
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+  background:var(--surface-3);
+  background-image:linear-gradient(to bottom,rgba(255,255,255,.05),transparent 46%);
+  padding:20px 22px 22px;
+}
+.ledger-sheet::before,.ledger-sheet::after{
+  content:'';position:absolute;left:0;right:0;height:9px;pointer-events:none;z-index:1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0,0,0,.55) 3.4px, transparent 4.2px);
+  background-size:14px 9px,14px 9px;
+}
+.ledger-sheet::before{top:0}
+.ledger-sheet::after{bottom:0}
+.ledger-sheet__head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.ledger-sheet__name{font-size:15px;font-weight:700;color:var(--ink)}
+.ledger-sheet__serial{font-size:10px;color:var(--muted);letter-spacing:.13em;margin-top:4px}
+
+/* The composition donut — principal vs interest. */
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut{flex:none;position:relative;width:118px;height:118px}
+.donut svg{transform:rotate(-90deg)}
+.donut .ctr{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+}
+.donut .ctr .cv{font-size:19px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.donut .ctr .cl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:3px;font-weight:700}
+.donut-key{display:flex;flex-direction:column;gap:9px;min-width:0;flex:1}
+.dk{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--muted)}
+.dk .sw{width:9px;height:9px;border-radius:2px;flex:none}
+.dk .dv{margin-left:auto;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* The four inputs, ruled onto the certificate. */
+.loan-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.loan-form .wide{grid-column:1/-1}
+@media (max-width:560px){ .loan-form{grid-template-columns:minmax(0,1fr)} }
+
+.termrow{display:flex;gap:9px;align-items:flex-end}
+.termrow .field{flex:1}
+
+/* The sticky save bar — the same shape the app uses. */
+.savebar{
+  position:sticky;bottom:0;z-index:20;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:12px 16px;border-radius:10px;
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.savebar .dirty{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;
+  color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn);
+  padding:4px 9px;border-radius:999px;
+}
+.savebar .spacer{flex:1}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Loan detail — the projection, on the same certificate</h1>
+  <p>
+    A loan plan is a <b>projection</b>, so it wears the debt certificate's instrument shell —
+    the same red paper, the same engraved fields, the same rail. The only difference is the
+    <b>PLANNED</b> stamp: dashed, grey-worded, red-bordered, because no money has moved.
+    The amortisation table below it is a ledger sheet — a ruled page of the same paper.
+  </p>
+  <div class="legend">
+    <span class="lg">Debt certificate</span>
+    <span class="lg">Planned stamp (dashed, grey word)</span>
+    <span class="lg">Composition donut</span>
+    <span class="lg on">Ledger sheet</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-account-edit.html">Account edit</a>
+    <a href="demo-goal-detail.html">Goal detail</a>
+    <a href="demo-loan-detail.html" class="on">Loan detail</a>
+    <a href="demo-debt-detail.html">Debt detail</a>
+    <a href="demo-invest-detail.html">Invest detail</a>
+    <a href="demo-transactions.html">Transactions</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <a class="back" href="#">← Loan Calculator</a>
+
+    <div class="head">
+      <div>
+        <h1 class="h1">Loan projection</h1>
+        <div class="meta">
+          Edit the four inputs — principal, rate, term, start date — and watch the EMI and
+          amortization table update.
+        </div>
+      </div>
+    </div>
+
+    <div class="loan-page">
+      <div class="stack">
+
+        <!-- ═══ THE INSTRUMENT ═══════════════════════════════ -->
+        <section class="debt-cert debt-cert--plain" style="--tone:var(--danger)">
+          <div class="debt-cert__head">
+            <div style="min-width:0">
+              <div class="debt-cert__name">Car loan</div>
+              <div class="debt-cert__serial">NO. 000214 · LOAN PROJECTION</div>
+            </div>
+            <span class="debt-cert__stamp debt-cert__stamp--planned"
+                  title="This is a projection — no real loan has been taken.">Planned</span>
+          </div>
+
+          <!-- The composition donut: principal vs interest -->
+          <div class="donut-wrap" style="margin-top:16px">
+            <div class="donut">
+              <svg width="118" height="118" viewBox="0 0 118 118">
+                <circle cx="59" cy="59" r="46" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="15"/>
+                <circle cx="59" cy="59" r="46" fill="none" stroke="var(--danger)" stroke-width="15"
+                        stroke-dasharray="212 289" stroke-linecap="butt"/>
+                <circle cx="59" cy="59" r="46" fill="none" stroke="var(--accent)" stroke-width="15"
+                        stroke-dasharray="77 289" stroke-dashoffset="-212" stroke-linecap="butt"/>
+              </svg>
+              <div class="ctr">
+                <div class="cv" style="color:var(--danger)">13.6%</div>
+                <div class="cl">Interest</div>
+              </div>
+            </div>
+            <div class="donut-key">
+              <div class="dk"><span class="sw" style="background:var(--danger)"></span>Principal<span class="dv">৳ 2,12,396</span></div>
+              <div class="dk"><span class="sw" style="background:var(--accent)"></span>Interest<span class="dv">৳ 33,604</span></div>
+              <div class="dk" style="border-top:1px solid var(--border);padding-top:9px">
+                <span style="font-weight:700;color:var(--ink)">Total you pay</span><span class="dv" style="font-size:14px">৳ 2,46,000</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- The engraved terms -->
+          <div class="debt-cert__fields">
+            <div class="debt-cert__f">
+              <div class="k">Loan amount</div>
+              <div class="v">৳ 2,00,000</div>
+            </div>
+            <div class="debt-cert__f">
+              <div class="k">Monthly EMI</div>
+              <div class="v">৳ 6,845</div>
+            </div>
+            <div class="debt-cert__f">
+              <div class="k">Interest paid</div>
+              <div class="v v--danger">৳ 33,604</div>
+            </div>
+          </div>
+
+          <div class="debt-cert__rail" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <i style="width:0%"></i>
+          </div>
+          <div class="debt-cert__railhint">0% of term elapsed · 36 of 36 installments due</div>
+
+          <div class="debt-cert__tally tabular">
+            <span class="pip"></span>First payment <b>05 Jan 2027</b> · Last <b>05 Dec 2029</b>
+          </div>
+
+          <div class="debt-cert__note">
+            <strong>Projection only.</strong> Actual loan terms may include fees, insurance,
+            or rounding that change the numbers slightly. <em>Projections never touch your ledger.</em>
+          </div>
+        </section>
+
+        <!-- ═══ THE INPUTS ════════════════════════════════════ -->
+        <section class="debt-cert debt-cert--plain" style="--tone:var(--danger)">
+          <div class="debt-cert__head">
+            <div style="min-width:0">
+              <div class="debt-cert__name">Terms</div>
+              <div class="debt-cert__serial">FOUR INPUTS · LIVE</div>
+            </div>
+            <span class="debt-cert__stamp debt-cert__stamp--planned">Editing</span>
+          </div>
+
+          <div class="loan-form" style="margin-top:16px">
+            <div class="field wide">
+              <div class="flabel">Name</div>
+              <div class="fhint">Free text. Try "Car loan" or "Personal loan 2026".</div>
+              <input type="text" value="Car loan" />
+            </div>
+            <div class="field">
+              <div class="flabel">Principal</div>
+              <div class="fhint">Total amount borrowed.</div>
+              <input type="number" value="200000" />
+            </div>
+            <div class="field">
+              <div class="flabel">Annual rate (%)</div>
+              <div class="fhint">Annual interest rate. Capped at 0–100%.</div>
+              <input type="number" value="12" />
+            </div>
+            <div class="field">
+              <div class="flabel">Term</div>
+              <div class="fhint">Total number of monthly payments.</div>
+              <div class="termrow">
+                <input type="number" value="36" />
+                <div class="seg">
+                  <button class="on" type="button">Months</button>
+                  <button type="button">Years</button>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <div class="flabel">First payment date</div>
+              <div class="fhint">When the first EMI is due.</div>
+              <input type="date" value="2027-01-05" />
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══ THE AMORTISATION LEDGER ════════════════════════ -->
+        <section class="ledger-sheet">
+          <div class="ledger-sheet__head">
+            <div>
+              <div class="ledger-sheet__name">Amortization table</div>
+              <div class="ledger-sheet__serial">36 MONTHLY PAYMENTS OVER 3 YEARS</div>
+            </div>
+            <span class="tag tag--muted">First 6 shown</span>
+          </div>
+
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Period</th><th>Due</th>
+                <th style="text-align:right">Payment</th>
+                <th style="text-align:right">Interest</th>
+                <th style="text-align:right">Principal</th>
+                <th style="text-align:right">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="p">1</td><td>05 Jan 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 2,000</td><td class="n">৳ 4,845</td><td class="n">৳ 1,95,155</td></tr>
+              <tr><td class="p">2</td><td>05 Feb 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 1,952</td><td class="n">৳ 4,893</td><td class="n">৳ 1,90,262</td></tr>
+              <tr><td class="p">3</td><td>05 Mar 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 1,903</td><td class="n">৳ 4,942</td><td class="n">৳ 1,85,320</td></tr>
+              <tr><td class="p">4</td><td>05 Apr 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 1,853</td><td class="n">৳ 4,992</td><td class="n">৳ 1,80,328</td></tr>
+              <tr><td class="p">5</td><td>05 May 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 1,803</td><td class="n">৳ 5,042</td><td class="n">৳ 1,75,286</td></tr>
+              <tr><td class="p">6</td><td>05 Jun 2027</td><td class="n">৳ 6,845</td><td class="n n--danger">৳ 1,753</td><td class="n">৳ 5,092</td><td class="n">৳ 1,70,194</td></tr>
+            </tbody>
+          </table>
+
+          <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px">
+            Showing first 6 of 36 rows.
+          </div>
+        </section>
+      </div>
+
+      <!-- ═══ THE SIDE COLUMN ════════════════════════════════ -->
+      <div class="stack">
+        <div class="sect-h">Summary (projection)</div>
+
+        <section class="debt-cert debt-cert--plain debt-cert--statement" style="--tone:var(--danger)">
+          <div class="debt-cert__head">
+            <div style="min-width:0">
+              <div class="debt-cert__name">Summary</div>
+              <div class="debt-cert__serial">NO. 000002 · 1 PROJECTION</div>
+            </div>
+            <span class="debt-cert__stamp debt-cert__stamp--planned">Planned</span>
+          </div>
+
+          <div class="debt-cert__rule"></div>
+
+          <div class="debt-cert__lines">
+            <div class="debt-cert__line"><span class="k">Principal</span><span class="v">৳ 2,00,000</span></div>
+            <div class="debt-cert__line"><span class="k">Rate</span><span class="v">12% APR</span></div>
+            <div class="debt-cert__line"><span class="k">Term</span><span class="v">36 months</span></div>
+            <div class="debt-cert__line"><span class="k">Total interest across all</span><span class="v v--danger">৳ 33,604</span></div>
+          </div>
+
+          <div class="debt-cert__vals">
+            <div class="debt-cert__v debt-cert__v--now">
+              <div class="k">Monthly EMI</div>
+              <div class="n">৳ 6,845</div>
+            </div>
+            <div class="debt-cert__v debt-cert__v--mat">
+              <div class="k">Total you pay</div>
+              <div class="n">৳ 2,46,000</div>
+            </div>
+          </div>
+
+          <div class="debt-cert__note">
+            <strong>How it works:</strong> the EMI is fixed for the whole term. Early in the
+            schedule most of each payment is <em>interest</em>; by the last installment it is
+            almost all <em>principal</em>. The table on the left shows that split row by row.
+          </div>
+        </section>
+
+        <div class="okbox">
+          <b>The stamp is the point.</b> A projection is a promise, not a receipt — so the
+          word <b>Planned</b> is stamped across it in grey, with a dashed border so it reads
+          as an annotation rather than an official mark.
+        </div>
+
+        <div class="warnbox">
+          <b>Projections never touch your ledger.</b> Nothing here becomes a transaction, and
+          no account balance moves until you take a real loan and record it yourself.
+        </div>
+      </div>
+    </div>
+
+    <!-- The sticky save bar -->
+    <div class="savebar" style="margin-top:18px">
+      <span class="dirty">Unsaved changes</span>
+      <span style="font-size:12px;color:var(--muted)">Add a name and a principal to save.</span>
+      <span class="spacer"></span>
+      <button class="page btn btn--ghost btn--sm">Delete</button>
+      <button class="page btn">Save plan</button>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

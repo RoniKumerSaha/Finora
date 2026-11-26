@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Plan an event</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* An event plan is a TIMELINE, not a certificate. The list screen
+   shows event cards with a progress bar; the detail screen pairs a
+   dated rail on the left with the category cards on the right. */
+
+/* ── the event card (list screen) ───────────────────────────── */
+.evgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:820px){ .evgrid{grid-template-columns:minmax(0,1fr)} }
+.evcard{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:12px;
+  padding:18px 20px 18px 22px;
+  border-radius:var(--radius-card);border:1px solid var(--border);
+  background:var(--surface);box-shadow:var(--shadow-card);
+  transition:.15s;
+}
+.evcard:hover{border-color:var(--muted-2);transform:translateY(-1px)}
+.evcard__bar{
+  position:absolute;left:0;top:16px;bottom:16px;width:3px;
+  border-radius:0 4px 4px 0;background:var(--tone,var(--primary));
+}
+.evcard__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.evcard__lead{display:flex;align-items:center;gap:9px;min-width:0}
+.evcard__dot{width:8px;height:8px;border-radius:999px;flex:none;background:var(--tone,var(--primary))}
+.evcard__emoji{font-size:19px;line-height:1;flex:none}
+.evcard__name{
+  font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.evcard__date{
+  font-size:11.5px;color:var(--muted);margin-top:5px;margin-left:17px;
+  font-variant-numeric:tabular-nums;
+}
+.evcard__del{
+  font:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;
+  padding:4px 9px;border-radius:8px;border:none;background:transparent;transition:.15s;flex:none;
+}
+.evcard__del:hover{color:var(--danger);background:var(--surface-2)}
+.evcard__bar{
+  height:8px;border-radius:999px;background:rgba(0,0,0,.34);overflow:hidden;
+}
+.evcard__bar > i{display:block;height:100%;border-radius:999px;background:var(--tone,var(--primary))}
+.evcard__bar > i.over{background:var(--danger)}
+.evcard__pills{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fpill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:999px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.fpill b{color:var(--ink);font-weight:700}
+.fpill .pd{width:6px;height:6px;border-radius:999px;flex:none}
+.evcard__foot{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.evcard__foot .warn{color:var(--warn);font-weight:600}
+.evcard__foot .danger{color:var(--danger);font-weight:600}
+
+/* ── the create form ────────────────────────────────────────── */
+.createform{
+  border:1px solid var(--border);border-radius:var(--radius-card);
+  background:var(--surface);box-shadow:var(--shadow-card);
+  padding:22px 24px 24px;display:flex;flex-direction:column;gap:16px;
+}
+
+/* ── the detail header ──────────────────────────────────────── */
+.evhead{display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+.evhead__emoji{
+  width:44px;height:44px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-2);font-size:24px;line-height:1;
+}
+.evhead__body{flex:1;min-width:0}
+.evhead__name{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.evhead__meta{font-size:12.5px;color:var(--muted);margin-top:5px}
+.evhead__meta b{color:var(--ink);font-weight:600}
+.evhead__right{display:flex;align-items:center;gap:14px;flex:none}
+.evhead__days{text-align:right}
+.evhead__days .dl{
+  font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+}
+.evhead__days .dv{font-size:22px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums;line-height:1.1;margin-top:2px}
+.editbtn{
+  width:36px;height:36px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;color:var(--muted);border:none;cursor:pointer;transition:.15s;
+}
+.editbtn:hover{background:var(--surface-2);color:var(--ink)}
+.editbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
+
+/* ── the summary strip ──────────────────────────────────────── */
+.evstrip{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  padding:12px 16px;border-radius:var(--radius-card);
+  background:var(--surface);border:1px solid var(--border);
+}
+.stpill{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:999px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+}
+.stpill .sl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.stpill .sv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.stpill .sv--dim{color:var(--muted);font-weight:500;font-size:12px}
+
+/* ── the callouts ───────────────────────────────────────────── */
+.callout{
+  display:flex;flex-wrap:wrap;align-items:center;gap:16px;
+  padding:16px 20px;border-radius:var(--radius-card);
+}
+.callout--ok{
+  background:color-mix(in srgb,var(--success) 12%,var(--surface));
+  border:1px solid var(--success);
+}
+.callout--danger{
+  background:color-mix(in srgb,var(--danger) 12%,var(--surface));
+  border:1px solid var(--danger);
+}
+.callout__ico{
+  width:40px;height:40px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:var(--surface-2);
+}
+.callout--danger .callout__ico{
+  background:color-mix(in srgb,var(--danger) 18%,transparent);
+  color:var(--danger-title);
+}
+.callout__ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.callout__t{font-size:15px;font-weight:700;color:var(--ink)}
+.callout__s{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5;max-width:62ch}
+.callout__figs{display:flex;gap:22px;margin-left:auto;flex-wrap:wrap}
+.callout__fig{text-align:right}
+.callout__fig .fl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.callout__fig .fv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:2px}
+.callout__fig .fv--danger{color:var(--danger-title)}
+
+/* ── the two-column body ────────────────────────────────────── */
+.evbody{display:grid;grid-template-columns:236px minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:960px){ .evbody{grid-template-columns:minmax(0,1fr)} }
+
+/* The timeline rail. */
+.rail{position:relative;padding-left:22px}
+.rail::before{
+  content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;
+  background:linear-gradient(to bottom,var(--border),var(--border));
+  border-radius:2px;
+}
+.rmark{position:relative;padding-bottom:18px}
+.rmark:last-child{padding-bottom:0}
+.rmark__dot{
+  position:absolute;left:-22px;top:2px;
+  width:14px;height:14px;border-radius:999px;
+  background:var(--surface);border:2px solid var(--fill,var(--muted-2));
+}
+.rmark__dot.fill-event{
+  width:18px;height:18px;left:-24px;top:0;
+  border-color:var(--primary);background:var(--primary-soft);
+}
+.rmark__name{
+  font-size:13px;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:6px;
+}
+.rmark__name .re{font-size:13px}
+.rmark__when{font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.rmark__when.overdue{color:var(--danger);font-weight:600}
+.rmark__when.due{color:var(--warn);font-weight:600}
+.rmark__when.paid{color:var(--success);font-weight:600}
+
+/* The category cards. */
+.catlist{display:flex;flex-direction:column;gap:12px}
+.catcard{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:11px;
+  padding:16px 18px 16px 21px;
+  border-radius:var(--radius-card);border:1px solid var(--border);
+  background:var(--surface);box-shadow:var(--shadow-card);
+  transition:.15s;
+}
+.catcard:hover{border-color:var(--muted-2)}
+.catcard__bar{
+  position:absolute;left:0;top:14px;bottom:14px;width:3px;
+  border-radius:0 4px 4px 0;background:var(--tone,var(--primary));
+}
+.catcard__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.catcard__lead{display:flex;align-items:center;gap:10px;min-width:0}
+.catcard__emoji{font-size:21px;line-height:1;flex:none}
+.catcard__name{font-size:14.5px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.catcard__due{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums;
+}
+.catcard__due svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.catcard__due.overdue{color:var(--danger);font-weight:600}
+.catcard__budget{text-align:right;flex:none}
+.catcard__budget .bl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.catcard__budget .bv{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px}
+.catcard__track{height:7px;border-radius:999px;background:rgba(0,0,0,.34);overflow:hidden}
+.catcard__track > i{display:block;height:100%;border-radius:999px;background:var(--fill,var(--primary))}
+.catcard__track > i.over{background:var(--danger)}
+.catcard__pills{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.catcard__items{
+  display:flex;flex-direction:column;gap:5px;
+  padding-top:10px;border-top:1px solid var(--border-2);
+}
+.citem{
+  display:flex;align-items:center;gap:9px;
+  font-size:12.5px;color:var(--muted);
+}
+.citem .cbox{
+  width:15px;height:15px;border-radius:4px;flex:none;
+  border:1px solid var(--border);background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;color:transparent;
+}
+.citem .cbox.done{background:var(--success);border-color:var(--success);color:#fff}
+.citem .cbox svg{width:9px;height:9px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.citem .cl{color:var(--ink);font-weight:500}
+.citem.done .cl{text-decoration:line-through;color:var(--muted-2)}
+.citem .ca{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+
+/* The dashed "New category" button. */
+.newcat{
+  width:100%;padding:22px;
+  border:1px dashed var(--border);border-radius:var(--radius-card);
+  background:transparent;color:var(--muted);
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;
+}
+.newcat:hover{border-color:var(--primary);color:var(--primary)}
+
+/* The preset categories kit. */
+.kit{
+  border:1px solid var(--border);border-radius:var(--radius-card);
+  background:var(--surface-2);padding:15px 17px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.kit__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kit__lead{display:flex;align-items:center;gap:10px;min-width:0}
+.kit__ico{
+  width:34px;height:34px;border-radius:999px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-soft);color:var(--accent);
+}
+.kit__ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.kit__t{font-size:14px;font-weight:700;color:var(--ink)}
+.kit__s{font-size:12px;color:var(--muted);margin-top:3px}
+.kitgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+@media (max-width:640px){ .kitgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.kitTile{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 11px;border-radius:9px;text-align:left;
+  background:var(--surface);border:1px solid var(--border);
+  font:inherit;cursor:pointer;transition:.15s;
+}
+.kitTile:hover{border-color:var(--primary);transform:translateY(-1px)}
+.kitTile .ke{font-size:17px;flex:none;line-height:1}
+.kitTile .kb{min-width:0;flex:1}
+.kitTile .kn{font-size:12.5px;font-weight:600;color:var(--ink);display:block}
+.kitTile .kh{font-size:10.5px;color:var(--muted);display:block;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kitTile .kp{width:12px;height:12px;flex:none;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.kitTile:hover .kp{stroke:var(--primary)}
+
+/* The rules sheet. */
+.rules{display:flex;flex-direction:column}
+.rules .rline{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--border-2);font-size:12.5px;
+}
+.rules .rline:last-child{border-bottom:0}
+.rules .rk{color:var(--muted)}
+.rules .rv{color:var(--ink);font-weight:600;text-align:right}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Plan an event — the list and the timeline</h1>
+  <p>
+    An event plan is a <b>timeline</b>, not a certificate. The list screen shows one card per
+    event with a progress bar; the detail screen pairs a <b>dated rail</b> on the left with
+    the category cards on the right — so "what's next" is a vertical read, not a table.
+  </p>
+  <div class="legend">
+    <span class="lg">Event cards</span>
+    <span class="lg">Dated rail</span>
+    <span class="lg">Category cascade</span>
+    <span class="lg on">Over-budget callout</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+    <a href="demo-event-plan.html" class="on">Event plan</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <!-- ═══ PART 1 — THE LIST SCREEN ═════════════════════════ -->
+    <div style="margin-bottom:44px">
+      <a class="back" href="demo-plan.html">← Plans</a>
+
+      <div class="head">
+        <div>
+          <div class="h1">Plan an event</div>
+          <div class="meta">
+            Weddings, trips, Eid, anything with a date and a budget. Each event is its own scratchpad.
+          </div>
+        </div>
+        <button class="btn">+ New event</button>
+      </div>
+
+      <!-- The create form — the inline alternative to the CTA. -->
+      <div class="createform" style="margin-bottom:18px">
+        <div class="emojipick" style="margin-bottom:-4px">
+          <button class="on">🏖️</button><button>🎉</button><button>💍</button><button>🕌</button><button>🎓</button><button>🏠</button>
+        </div>
+        <div class="field">
+          <div class="flabel">Event name</div>
+          <input type="text" placeholder="Cox's Bazar trip, Wedding, Eid…" />
+        </div>
+        <div class="cols cols-2">
+          <div class="field">
+            <div class="flabel">Event date</div>
+            <input type="date" value="2026-03-14" />
+          </div>
+          <div class="field">
+            <div class="flabel">Unallocated (optional)</div>
+            <div class="fhint">Top-down ballpark. Add categories below to split it; the event's total budget is the sum of categories.</div>
+            <input type="number" placeholder="80000" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn--outline-primary">Create event</button>
+          <button class="btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+
+      <div class="evgrid">
+        <!-- A healthy event. -->
+        <div class="evcard" style="--tone:var(--primary)">
+          <span class="evcard__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="evcard__top">
+            <div>
+              <div class="evcard__lead">
+                <span class="evcard__dot"></span>
+                <span class="evcard__emoji">🏖️</span>
+                <span class="evcard__name">Cox's Bazar trip</span>
+              </div>
+              <div class="evcard__date">14 Mar 2026 · 108 days to go</div>
+            </div>
+            <button class="evcard__del">Delete</button>
+          </div>
+          <div class="evcard__bar"><i style="width:62%"></i></div>
+          <div class="evcard__pills">
+            <span class="fpill"><b>৳ 49,600</b> / ৳ 80,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--primary)"></span>62% allocated</span>
+          </div>
+          <div class="evcard__foot">4 categories</div>
+        </div>
+
+        <!-- An over-budget event. -->
+        <div class="evcard" style="--tone:var(--danger)">
+          <span class="evcard__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="evcard__top">
+            <div>
+              <div class="evcard__lead">
+                <span class="evcard__dot"></span>
+                <span class="evcard__emoji">💍</span>
+                <span class="evcard__name">Rahim &amp; Ayesha's wedding</span>
+              </div>
+              <div class="evcard__date">22 Nov 2026 · 361 days to go</div>
+            </div>
+            <button class="evcard__del">Delete</button>
+          </div>
+          <div class="evcard__bar"><i class="over" style="width:100%"></i></div>
+          <div class="evcard__pills">
+            <span class="fpill"><b>৳ 1,42,000</b> / ৳ 1,20,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--danger)"></span>118% over</span>
+          </div>
+          <div class="evcard__foot"><span class="danger">2 overdue</span> · 7 categories</div>
+        </div>
+
+        <!-- A nearly-done event. -->
+        <div class="evcard" style="--tone:var(--warn)">
+          <span class="evcard__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="evcard__top">
+            <div>
+              <div class="evcard__lead">
+                <span class="evcard__dot"></span>
+                <span class="evcard__emoji">🕌</span>
+                <span class="evcard__name">Eid celebrations</span>
+              </div>
+              <div class="evcard__date">20 Mar 2026 · 114 days to go</div>
+            </div>
+            <button class="evcard__del">Delete</button>
+          </div>
+          <div class="evcard__bar"><i style="width:88%"></i></div>
+          <div class="evcard__pills">
+            <span class="fpill"><b>৳ 26,400</b> / ৳ 30,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--warn)"></span>88% allocated</span>
+          </div>
+          <div class="evcard__foot"><span class="warn">1 due soon</span> · 3 categories</div>
+        </div>
+
+        <!-- An event with no budget yet. -->
+        <div class="evcard" style="--tone:var(--muted-2)">
+          <span class="evcard__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="evcard__top">
+            <div>
+              <div class="evcard__lead">
+                <span class="evcard__dot"></span>
+                <span class="evcard__emoji">🎓</span>
+                <span class="evcard__name">Farhana's graduation</span>
+              </div>
+              <div class="evcard__date">04 Jun 2026 · 190 days to go</div>
+            </div>
+            <button class="evcard__del">Delete</button>
+          </div>
+          <div class="evcard__bar"><i style="width:0%"></i></div>
+          <div class="evcard__pills">
+            <span class="fpill"><b>৳ 0</b> / ৳ 0</span>
+            <span class="fpill">No budget</span>
+          </div>
+          <div class="evcard__foot">0 categories</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PART 2 — THE DETAIL SCREEN ═══════════════════════ -->
+    <div class="sect-h" style="margin-bottom:16px">The detail screen — the timeline and the cascade</div>
+
+    <a class="back" href="demo-event-plan.html">← Events</a>
+
+    <div class="evhead">
+      <span class="evhead__emoji">💍</span>
+      <div class="evhead__body">
+        <div class="evhead__name">Rahim &amp; Ayesha's wedding</div>
+        <div class="evhead__meta">22 Nov 2026 · <b>৳ 1,42,000</b> total (sum of categories)</div>
+      </div>
+      <div class="evhead__right">
+        <div class="evhead__days">
+          <div class="dl">Days to go</div>
+          <div class="dv">361</div>
+        </div>
+        <button class="editbtn" aria-label="Edit event details">
+          <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 12 L2 10 L10 2 L12 4 L4 12 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 3.5 L10.5 5.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- The summary strip. -->
+    <div class="evstrip" style="margin-top:16px">
+      <span class="stpill">
+        <span class="sl">Allocated</span>
+        <span class="sv" style="color:var(--danger-title)">৳ 1,42,000</span>
+        <span class="sv sv--dim">/ ৳ 1,20,000</span>
+      </span>
+      <span class="stpill">
+        <span class="sl">Paid</span>
+        <span class="sv" style="color:var(--warn)">৳ 38,000</span>
+      </span>
+      <span class="stpill">
+        <span class="sl">Days to go</span>
+        <span class="sv" style="color:var(--primary)">361</span>
+      </span>
+    </div>
+
+    <!-- The over-budget callout. -->
+    <div class="callout callout--danger" style="margin-top:12px">
+      <span class="callout__ico">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5"/><path d="M12 16.5h.01"/><path d="M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      </span>
+      <div>
+        <div class="callout__t">Categories sum past the budget</div>
+        <div class="callout__s">
+          Your categories add up to ৳ 1,42,000 — ৳ 22,000 over the ৳ 1,20,000 total.
+          Trim an amount, drop a line item, or raise a category budget.
+        </div>
+      </div>
+      <div class="callout__figs">
+        <div class="callout__fig"><div class="fl">Budget</div><div class="fv">৳ 1,20,000</div></div>
+        <div class="callout__fig"><div class="fl">Allocated</div><div class="fv fv--danger">৳ 1,42,000</div></div>
+        <div class="callout__fig"><div class="fl">Over by</div><div class="fv fv--danger">৳ 22,000</div></div>
+      </div>
+    </div>
+
+    <!-- The two-column body: rail on the left, cascade on the right. -->
+    <div class="evbody" style="margin-top:22px">
+      <!-- The timeline rail. -->
+      <div class="rail">
+        <div class="rmark">
+          <span class="rmark__dot fill-event"></span>
+          <div class="rmark__name"><span class="re">💍</span> The wedding</div>
+          <div class="rmark__when">22 Nov 2026</div>
+        </div>
+        <div class="rmark">
+          <span class="rmark__dot" style="--fill:var(--danger)"></span>
+          <div class="rmark__name"><span class="re">📝</span> Venue booking</div>
+          <div class="rmark__when overdue">12 days overdue</div>
+        </div>
+        <div class="rmark">
+          <span class="rmark__dot" style="--fill:var(--warn)"></span>
+          <div class="rmark__name"><span class="re">🍽️</span> Catering</div>
+          <div class="rmark__when due">Due in 4 days</div>
+        </div>
+        <div class="rmark">
+          <span class="rmark__dot" style="--fill:var(--success)"></span>
+          <div class="rmark__name"><span class="re">👗</span> Attire</div>
+          <div class="rmark__when paid">Fully paid</div>
+        </div>
+        <div class="rmark">
+          <span class="rmark__dot" style="--fill:var(--info)"></span>
+          <div class="rmark__name"><span class="re">📸</span> Photography</div>
+          <div class="rmark__when">02 Feb 2026</div>
+        </div>
+        <div class="rmark">
+          <span class="rmark__dot" style="--fill:var(--muted-2)"></span>
+          <div class="rmark__name"><span class="re">🎁</span> Gifts &amp; favours</div>
+          <div class="rmark__when">No date set</div>
+        </div>
+      </div>
+
+      <!-- The category cascade. -->
+      <div class="catlist">
+        <!-- The preset kit. -->
+        <section class="kit">
+          <div class="kit__head">
+            <div class="kit__lead">
+              <span class="kit__ico">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2 L8 9 M5 6 L8 9 L11 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13 H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+              <div>
+                <div class="kit__t">Wedding starter categories</div>
+                <div class="kit__s">Dates are seeded relative to the event date, so the timeline fills immediately.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px;flex:none">
+              <button class="pbtn">
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6 L5 9 L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Add all
+              </button>
+              <button class="pbtn pbtn--primary">
+                Browse presets
+                <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 7.5 L6 4.5 L9 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="kitgrid">
+            <button class="kitTile"><span class="ke">📝</span><span class="kb"><span class="kn">Venue booking</span><span class="kh">Deposit &amp; hall</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button class="kitTile"><span class="ke">🍽️</span><span class="kb"><span class="kn">Catering</span><span class="kh">Food &amp; guests</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button class="kitTile"><span class="ke">👗</span><span class="kb"><span class="kn">Attire</span><span class="kh">Clothes &amp; makeup</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button class="kitTile"><span class="ke">📸</span><span class="kb"><span class="kn">Photography</span><span class="kh">Photographer</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button class="kitTile"><span class="ke">💐</span><span class="kb"><span class="kn">Flowers</span><span class="kh">Decoration</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button class="kitTile"><span class="ke">🎁</span><span class="kb"><span class="kn">Gifts &amp; favours</span><span class="kh">Return gifts</span></span><svg class="kp" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V12.5 M1.5 7 H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+          </div>
+        </section>
+
+        <!-- A paid category. -->
+        <div class="catcard" style="--tone:var(--success);--fill:var(--success)">
+          <span class="catcard__bar" style="position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="catcard__top">
+            <div>
+              <div class="catcard__lead">
+                <span class="catcard__emoji">👗</span>
+                <div>
+                  <div class="catcard__name">Attire</div>
+                  <div class="catcard__due" style="color:var(--success);font-weight:600">
+                    <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6 L4.5 8.5 L10 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    All items paid
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="catcard__budget">
+              <div class="bl">Budget</div>
+              <div class="bv">৳ 45,000</div>
+            </div>
+          </div>
+          <div class="catcard__track"><i style="width:100%;background:var(--success)"></i></div>
+          <div class="catcard__pills">
+            <span class="fpill"><b>৳ 45,000</b> / ৳ 45,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--success)"></span>100% paid</span>
+          </div>
+          <div class="catcard__items">
+            <div class="citem done"><span class="cbox done"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6 L5 8.5 L9.5 3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cl">Groom's sherwani</span><span class="ca">৳ 18,000</span></div>
+            <div class="citem done"><span class="cbox done"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6 L5 8.5 L9.5 3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cl">Bride's lehenga</span><span class="ca">৳ 22,000</span></div>
+            <div class="citem done"><span class="cbox done"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6 L5 8.5 L9.5 3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cl">Makeup &amp; jewellery</span><span class="ca">৳ 5,000</span></div>
+          </div>
+        </div>
+
+        <!-- An overdue category. -->
+        <div class="catcard" style="--tone:var(--danger);--fill:var(--danger)">
+          <span class="catcard__bar" style="position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="catcard__top">
+            <div>
+              <div class="catcard__lead">
+                <span class="catcard__emoji">📝</span>
+                <div>
+                  <div class="catcard__name">Venue booking</div>
+                  <div class="catcard__due overdue">
+                    <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.6" stroke="currentColor" stroke-width="1.6"/><path d="M6 3.4V6l1.8 1.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    12 days overdue
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="catcard__budget">
+              <div class="bl">Budget</div>
+              <div class="bv">৳ 60,000</div>
+            </div>
+          </div>
+          <div class="catcard__track"><i class="over" style="width:100%"></i></div>
+          <div class="catcard__pills">
+            <span class="fpill"><b>৳ 68,000</b> / ৳ 60,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--danger)"></span>113% allocated</span>
+          </div>
+          <div class="catcard__items">
+            <div class="citem"><span class="cbox"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6 L5 8.5 L9.5 3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cl">Hall deposit</span><span class="ca">৳ 40,000</span></div>
+            <div class="citem"><span class="cbox"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6 L5 8.5 L9.5 3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cl">Remaining hall rent</span><span class="ca">৳ 28,000</span></div>
+          </div>
+        </div>
+
+        <!-- A category with no date yet. -->
+        <div class="catcard" style="--tone:var(--muted-2);--fill:var(--muted-2)">
+          <span class="catcard__bar" style="position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="catcard__top">
+            <div>
+              <div class="catcard__lead">
+                <span class="catcard__emoji">🎁</span>
+                <div>
+                  <div class="catcard__name">Gifts &amp; favours</div>
+                  <div class="catcard__due">
+                    <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.6" stroke="currentColor" stroke-width="1.6"/><path d="M6 3.4V6l1.8 1.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    No date set
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="catcard__budget">
+              <div class="bl">Budget</div>
+              <div class="bv">৳ 10,000</div>
+            </div>
+          </div>
+          <div class="catcard__track"><i style="width:0%;background:var(--muted-2)"></i></div>
+          <div class="catcard__pills">
+            <span class="fpill"><b>৳ 0</b> / ৳ 10,000</span>
+            <span class="fpill"><span class="pd" style="background:var(--muted-2)"></span>0% allocated</span>
+          </div>
+        </div>
+
+        <button class="newcat">+ New category</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:22px;max-width:70ch;margin-left:auto;margin-right:auto">
+      ⓘ Tap a category card to edit it in a pop-up. Use <b style="color:var(--ink)">Browse presets</b>
+      above to drop in starter categories. Every edit saves automatically.
+    </div>
+
+    <!-- ═══ THE REFERENCE SHEET ══════════════════════════════ -->
+    <div style="margin-top:34px">
+      <div class="sect-h">The rules this screen follows</div>
+      <div class="sheet">
+        <div class="rules">
+          <div class="rline"><span class="rk">The event's budget</span><span class="rv">the sum of its categories</span></div>
+          <div class="rline"><span class="rk">The rail's dots</span><span class="rv">share the category cards' colours</span></div>
+          <div class="rline"><span class="rk">Undated categories</span><span class="rv">sort last, never disappear</span></div>
+          <div class="rline"><span class="rk">All items paid</span><span class="rv">the category turns green, event included</span></div>
+          <div class="rline"><span class="rk">Allocated over budget</span><span class="rv">a callout, not an error</span></div>
+          <div class="rline"><span class="rk">Nothing here</span><span class="rv">touches your ledger</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

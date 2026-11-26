@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Investment Planner</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* The Investment Planner is the certificate family's PLANNED branch.
+   A plan is a promise, not a contract — so it wears the same shell as
+   a real investment certificate but swaps the rate seal for a dashed
+   PLANNED stamp. Nothing here moves real money. */
+
+/* The kit cards — three starters that pre-fill the form. */
+.kits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){ .kits{grid-template-columns:minmax(0,1fr)} }
+.kit{
+  position:relative;overflow:hidden;text-align:left;
+  display:flex;flex-direction:column;gap:8px;
+  padding:18px 18px 20px;
+  border-radius:var(--radius-card);border:1px solid var(--border);
+  background:var(--surface);box-shadow:var(--shadow-card);
+  font:inherit;color:inherit;cursor:pointer;transition:.15s;
+}
+.kit:hover{border-color:var(--tone);transform:translateY(-2px)}
+.kit__bar{
+  position:absolute;left:0;top:16px;bottom:16px;width:3px;
+  border-radius:0 4px 4px 0;background:var(--tone);
+}
+.kit__top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;width:100%}
+.kit__glyph{
+  width:46px;height:46px;border-radius:12px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--tone) 16%,transparent);
+  color:var(--tone);
+}
+.kit__glyph svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.kit__badge{
+  font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;
+  padding:3px 8px;border-radius:999px;flex:none;
+  color:var(--tone);background:color-mix(in srgb,var(--tone) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--tone) 32%,transparent);
+}
+.kit__n{font-size:14px;font-weight:700;color:var(--ink)}
+.kit__v{font-size:12.5px;font-weight:700;color:var(--tone);font-variant-numeric:tabular-nums}
+.kit__v span{font-weight:500;color:var(--muted)}
+.kit__d{font-size:11.5px;color:var(--muted);line-height:1.5}
+
+/* The detail hero — a big projection number over a donut. */
+.hero{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:16px;
+  padding:20px 22px 22px;
+  border-radius:var(--radius-card);border:1px solid var(--border);
+  background:var(--surface);box-shadow:var(--shadow-card);
+}
+.hero__bar{
+  position:absolute;left:0;top:16px;bottom:16px;width:3px;
+  border-radius:0 4px 4px 0;background:var(--tone,var(--primary));
+}
+.hero__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.hero__lbl{
+  font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+}
+.hero__fig{
+  font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--tone,var(--primary));
+}
+.hero__sub{
+  font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;
+  color:var(--muted);margin-top:8px;
+}
+.hero__split{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center}
+
+/* The donut — your money vs interest. */
+.donut{position:relative;width:128px;height:128px;flex:none}
+.donut .hole{
+  position:absolute;inset:0;border-radius:50%;
+  mask:radial-gradient(farthest-side,transparent calc(100% - 18px),#000 calc(100% - 17px));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 18px),#000 calc(100% - 17px));
+}
+.donut__centre{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+}
+.donut__cv{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.donut__cl{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted)}
+
+.leg{display:flex;flex-direction:column;gap:11px;min-width:0}
+.leg .row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.leg .lead{display:flex;align-items:center;gap:8px;min-width:0}
+.leg .sw{width:10px;height:10px;border-radius:3px;flex:none}
+.leg .lt{font-size:12.5px;color:var(--muted)}
+.leg .lv{font-size:13px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.leg .lv .pc{color:var(--muted);font-weight:500}
+
+/* The chip row. */
+.chips3{display:flex;flex-wrap:wrap;gap:10px}
+.chip3{
+  flex:1;min-width:120px;
+  padding:10px 13px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface-2);display:flex;flex-direction:column;gap:3px;
+}
+.chip3 .cl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.chip3 .cv{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.chip3--accent{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.chip3--accent .cv{color:var(--accent)}
+
+/* The term fields — months OR years. */
+.term{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+.term__or{
+  font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;
+  color:var(--muted);padding-bottom:11px;
+}
+.term__in{
+  width:100%;background:var(--surface-2);border:1px solid var(--border);
+  color:var(--ink);border-radius:8px;padding:10px 12px;font:inherit;font-size:13.5px;
+  font-variant-numeric:tabular-nums;
+}
+.term__in:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+
+/* The rules sheet. */
+.rules{display:flex;flex-direction:column}
+.rules .rline{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--border-2);font-size:12.5px;
+}
+.rules .rline:last-child{border-bottom:0}
+.rules .rk{color:var(--muted)}
+.rules .rv{color:var(--ink);font-weight:600;text-align:right}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Investment Planner — a promise, not a contract</h1>
+  <p>
+    The planner is the certificate family's <b>planned branch</b>. A plan wears the same
+    <b>investment certificate</b> shell as a real holding — but the rate seal becomes a dashed
+    <b>PLANNED</b> stamp, because a plan is a promise and there is no instrument behind it.
+    Nothing here moves real money.
+  </p>
+  <div class="legend">
+    <span class="lg">Planned stamp</span>
+    <span class="lg">Kit cards</span>
+    <span class="lg">Projection hero</span>
+    <span class="lg on">Your money vs interest</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+    <a href="demo-invest-planner.html" class="on">Invest planner</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <!-- ═══ PART 1 — THE LIST SCREEN ════════════════════════ -->
+    <div style="margin-bottom:44px">
+      <a class="back" href="demo-plan.html">← Plans</a>
+
+      <div class="head">
+        <div>
+          <div class="h1">Investment Planner</div>
+          <div class="meta">
+            Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a
+            sandbox for "what if I opened a 1-year FDR at 9%?".
+          </div>
+        </div>
+        <button class="btn">+ New plan</button>
+      </div>
+
+      <div class="cols cols-2" style="align-items:start">
+        <!-- The planned certificates. -->
+        <div class="stack" style="gap:14px">
+          <article class="inv-cert" style="--tone:var(--info)">
+            <div class="inv-cert__head">
+              <div class="min-w-0">
+                <div class="inv-cert__name">DBBL 1-year FDR</div>
+                <div class="inv-cert__serial">NO. 418263 · FDR · DBBL · MATURES IN 214D</div>
+              </div>
+              <div class="inv-cert__stamp inv-cert__stamp--planned">Planned</div>
+            </div>
+            <div class="inv-cert__fields">
+              <div class="inv-cert__f"><div class="k">Principal</div><div class="v">৳ 1,00,000</div></div>
+              <div class="inv-cert__f"><div class="k">Term</div><div class="v">1y</div></div>
+              <div class="inv-cert__f"><div class="k">Time left</div><div class="v">214d</div></div>
+            </div>
+            <div class="inv-cert__ledger">
+              <div class="inv-cert__ledger-head"><span class="t">Projection</span><span class="n">1 lump sum</span></div>
+              <div class="inv-cert__dline">
+                <span class="inv-cert__dk">Starts</span>
+                <span class="inv-cert__dd">15 Apr 2026</span>
+                <span class="inv-cert__da">৳ 1,00,000</span>
+              </div>
+              <div class="inv-cert__dline inv-cert__dline--next">
+                <span class="inv-cert__dk">Matures</span>
+                <span class="inv-cert__dd">15 Apr 2027</span>
+                <span class="inv-cert__da">৳ 1,09,000</span>
+              </div>
+              <div class="inv-cert__tally">
+                <span class="pip" aria-hidden></span>
+                <span>Lump sum · <b>৳ 1,00,000</b> locked in at start</span>
+              </div>
+            </div>
+            <div class="inv-cert__vals">
+              <div class="inv-cert__v inv-cert__v--now"><div class="k">Committed</div><div class="n">৳ 1,00,000</div></div>
+              <div class="inv-cert__grow"><div class="gk">Interest</div><div class="gn">৳ 9,000</div></div>
+              <div class="inv-cert__v inv-cert__v--mat"><div class="k">At maturity</div><div class="n">৳ 1,09,000</div></div>
+            </div>
+          </article>
+
+          <article class="inv-cert" style="--tone:var(--primary)">
+            <div class="inv-cert__head">
+              <div class="min-w-0">
+                <div class="inv-cert__name">BRAC DPS plan</div>
+                <div class="inv-cert__serial">NO. 907154 · DPS · BRAC · MATURES IN ~2.0Y</div>
+              </div>
+              <div class="inv-cert__stamp inv-cert__stamp--planned">Planned</div>
+            </div>
+            <div class="inv-cert__fields">
+              <div class="inv-cert__f"><div class="k">Monthly</div><div class="v">৳ 5,000</div></div>
+              <div class="inv-cert__f"><div class="k">Term</div><div class="v">2y</div></div>
+              <div class="inv-cert__f"><div class="k">Time left</div><div class="v">~2.0y</div></div>
+            </div>
+            <div class="inv-cert__ledger">
+              <div class="inv-cert__ledger-head"><span class="t">Projection</span><span class="n">24 installments</span></div>
+              <div class="inv-cert__dline">
+                <span class="inv-cert__dk">Starts</span>
+                <span class="inv-cert__dd">01 May 2026</span>
+                <span class="inv-cert__da">৳ 5,000</span>
+              </div>
+              <div class="inv-cert__dline inv-cert__dline--next">
+                <span class="inv-cert__dk">Matures</span>
+                <span class="inv-cert__dd">01 May 2028</span>
+                <span class="inv-cert__da">৳ 1,34,600</span>
+              </div>
+              <div class="inv-cert__tally">
+                <span class="pip" aria-hidden></span>
+                <span><b>৳ 1,20,000</b> over the full term · <b>৳ 14,600</b> interest</span>
+              </div>
+            </div>
+            <div class="inv-cert__vals">
+              <div class="inv-cert__v inv-cert__v--now"><div class="k">Committed</div><div class="n">৳ 1,20,000</div></div>
+              <div class="inv-cert__grow"><div class="gk">Interest</div><div class="gn">৳ 14,600</div></div>
+              <div class="inv-cert__v inv-cert__v--mat"><div class="k">At maturity</div><div class="n">৳ 1,34,600</div></div>
+            </div>
+          </article>
+
+          <article class="inv-cert" style="--tone:var(--accent)">
+            <div class="inv-cert__head">
+              <div class="min-w-0">
+                <div class="inv-cert__name">Emergency certificate</div>
+                <div class="inv-cert__serial">NO. 302771 · SAVINGS · MATURES IN 91D</div>
+              </div>
+              <div class="inv-cert__stamp inv-cert__stamp--planned">Planned</div>
+            </div>
+            <div class="inv-cert__fields">
+              <div class="inv-cert__f"><div class="k">Principal</div><div class="v">৳ 40,000</div></div>
+              <div class="inv-cert__f"><div class="k">Term</div><div class="v">3m</div></div>
+              <div class="inv-cert__f"><div class="k">Time left</div><div class="v">91d</div></div>
+            </div>
+            <div class="inv-cert__ledger">
+              <div class="inv-cert__ledger-head"><span class="t">Projection</span><span class="n">1 lump sum</span></div>
+              <div class="inv-cert__dline">
+                <span class="inv-cert__dk">Starts</span>
+                <span class="inv-cert__dd">20 Feb 2026</span>
+                <span class="inv-cert__da">৳ 40,000</span>
+              </div>
+              <div class="inv-cert__dline inv-cert__dline--next">
+                <span class="inv-cert__dk">Matures</span>
+                <span class="inv-cert__dd">20 May 2026</span>
+                <span class="inv-cert__da">৳ 41,200</span>
+              </div>
+              <div class="inv-cert__tally">
+                <span class="pip" aria-hidden></span>
+                <span>Lump sum · <b>৳ 40,000</b> locked in at start</span>
+              </div>
+            </div>
+            <div class="inv-cert__vals">
+              <div class="inv-cert__v inv-cert__v--now"><div class="k">Committed</div><div class="n">৳ 40,000</div></div>
+              <div class="inv-cert__grow"><div class="gk">Interest</div><div class="gn">৳ 1,200</div></div>
+              <div class="inv-cert__v inv-cert__v--mat"><div class="k">At maturity</div><div class="n">৳ 41,200</div></div>
+            </div>
+            <div class="mt-2">
+              <span class="tag tag--warn">Draft</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- The summary certificate. -->
+        <div>
+          <article class="inv-cert inv-cert--summary" style="--tone:var(--primary)">
+            <div class="inv-cert__head">
+              <div class="min-w-0">
+                <div class="inv-cert__name">Summary</div>
+                <div class="inv-cert__serial">NO. 000003 · 3 PLANNED · PROJECTIONS</div>
+              </div>
+              <div class="inv-cert__stamp inv-cert__stamp--planned">Planned</div>
+            </div>
+            <div class="inv-cert__fields inv-cert__fields--stack">
+              <div class="inv-cert__f"><div class="k">FDR · 1</div><div class="v" style="color:var(--info)">৳ 1,00,000</div></div>
+              <div class="inv-cert__f"><div class="k">DPS · 1</div><div class="v" style="color:var(--primary)">৳ 1,20,000</div></div>
+              <div class="inv-cert__f"><div class="k">Savings · 1</div><div class="v" style="color:var(--accent)">৳ 40,000</div></div>
+            </div>
+            <div class="inv-cert__vals">
+              <div class="inv-cert__v inv-cert__v--now"><div class="k">Committed</div><div class="n">৳ 2,60,000</div></div>
+              <div class="inv-cert__v inv-cert__v--mat"><div class="k">At maturity</div><div class="n">৳ 2,84,800</div></div>
+              <div class="inv-cert__grow">
+                <div class="gk">Interest if every term completes</div>
+                <div class="gn">৳ 24,800</div>
+              </div>
+            </div>
+            <div class="inv-cert__note">
+              <strong class="text-ink">Committed</strong> is the money you would put in across every plan.
+              <strong class="text-ink">At maturity</strong> is what you would collect if every term ended.
+              Nothing here moves real money.
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PART 2 — THE NEW-PLAN LANDING ════════════════════ -->
+    <div class="sect-h" style="margin-bottom:16px">The new-plan landing — three kits, or a blank form</div>
+
+    <a class="back" href="demo-invest-planner.html">← Investment Planner</a>
+
+    <div class="head" style="margin-top:6px">
+      <div>
+        <div class="h1">New plan</div>
+        <div class="meta">Pick a starter kit to fill in sensible defaults, or start from a blank form.</div>
+      </div>
+    </div>
+
+    <div class="kits">
+      <!-- The DPS kit. -->
+      <button class="kit" style="--tone:var(--primary)">
+        <span class="kit__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+        <span class="kit__top">
+          <span class="kit__glyph">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg>
+          </span>
+          <span class="kit__badge">DPS</span>
+        </span>
+        <span class="kit__n">Monthly deposit scheme</span>
+        <span class="kit__v">→ ৳ 1,34,600 <span>in 2 years</span></span>
+        <span class="kit__d">Pay a fixed amount every month; the bank compounds the rest.</span>
+      </button>
+
+      <!-- The FDR kit. -->
+      <button class="kit" style="--tone:var(--info)">
+        <span class="kit__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+        <span class="kit__top">
+          <span class="kit__glyph">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.8"/><path d="M6 9.5h.01M18 14.5h.01"/></svg>
+          </span>
+          <span class="kit__badge">FDR</span>
+        </span>
+        <span class="kit__n">Fixed deposit receipt</span>
+        <span class="kit__v">→ ৳ 1,09,000 <span>in 1 year</span></span>
+        <span class="kit__d">One lump sum, locked for the whole term at a fixed rate.</span>
+      </button>
+
+      <!-- The Savings kit. -->
+      <button class="kit" style="--tone:var(--accent)">
+        <span class="kit__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+        <span class="kit__top">
+          <span class="kit__glyph">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.5h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M3 5h18v3.5H3z"/><path d="M9 12h6"/></svg>
+          </span>
+          <span class="kit__badge">Savings</span>
+        </span>
+        <span class="kit__n">Term deposit</span>
+        <span class="kit__v">→ ৳ 41,200 <span>in 3 months</span></span>
+        <span class="kit__d">A short, safe place to park cash you don't need right now.</span>
+      </button>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-top:20px">
+      <button class="btn btn--ghost">Start from a blank form</button>
+    </div>
+
+    <!-- ═══ PART 3 — THE DETAIL SCREEN ═══════════════════════ -->
+    <div style="margin-top:44px">
+      <div class="sect-h" style="margin-bottom:16px">The detail screen — a hero projection over the form</div>
+
+      <a class="back" href="demo-invest-planner.html">← Investment Planner</a>
+
+      <div class="head" style="margin-top:6px">
+        <div>
+          <div class="h1">Plan</div>
+          <div class="meta">
+            Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
+          </div>
+        </div>
+      </div>
+
+      <div class="cols cols-2" style="align-items:start">
+        <!-- The hero. -->
+        <section class="hero" style="--tone:var(--info)">
+          <span class="hero__bar" style="position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 4px 4px 0"></span>
+          <div class="hero__top">
+            <div class="hero__lbl">Projection</div>
+            <span class="kit__badge" style="--tone:var(--info)">FDR</span>
+          </div>
+          <div>
+            <div class="hero__fig">৳ 1,09,000</div>
+            <div class="hero__sub">At maturity (projection)</div>
+          </div>
+
+          <div class="hero__split">
+            <div class="donut">
+              <div class="hole" style="background:conic-gradient(var(--info) 0 92.2%, var(--accent) 92.2% 100%)"></div>
+              <div class="donut__centre">
+                <div class="donut__cv">৳ 1,09,000</div>
+                <div class="donut__cl">At maturity</div>
+              </div>
+            </div>
+            <div class="leg">
+              <div class="row">
+                <span class="lead"><span class="sw" style="background:var(--info)"></span><span class="lt">Your money</span></span>
+                <span class="lv">৳ 1,00,000 <span class="pc">· 92%</span></span>
+              </div>
+              <div class="row">
+                <span class="lead"><span class="sw" style="background:var(--accent)"></span><span class="lt">Interest earned</span></span>
+                <span class="lv" style="color:var(--accent)">৳ 9,000 <span class="pc">· 8%</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--muted)">Composition at maturity, over 1 year</div>
+            </div>
+          </div>
+
+          <div class="chips3">
+            <div class="chip3"><div class="cl">You put in</div><div class="cv">৳ 1,00,000</div></div>
+            <div class="chip3 chip3--accent"><div class="cl">You earn</div><div class="cv">৳ 9,000</div></div>
+            <div class="chip3"><div class="cl">Matures</div><div class="cv">15 Apr 2027</div></div>
+          </div>
+
+          <div style="font-size:11px;color:var(--warn)">ⓘ This is a projection. Actual bank payouts may differ.</div>
+        </section>
+
+        <!-- The form. -->
+        <section class="card" style="display:flex;flex-direction:column;gap:16px">
+          <div class="field">
+            <div class="flabel">Name</div>
+            <div class="fhint">Free text. Try "DBBL 1-year FDR" or "BRAC DPS plan".</div>
+            <input type="text" value="DBBL 1-year FDR" />
+          </div>
+          <div class="field">
+            <div class="flabel">Type</div>
+            <div class="fhint">Pick the scheme you want to plan.</div>
+            <select>
+              <option>DPS — monthly deposit scheme</option>
+              <option selected>FDR — fixed deposit receipt</option>
+              <option>Other (savings certificate / term deposit)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="flabel">Principal</div>
+            <div class="fhint">Total lump sum you'd lock into the deposit.</div>
+            <input type="number" value="100000" />
+          </div>
+          <div class="cols cols-2">
+            <div class="field">
+              <div class="flabel">Annual rate (%)</div>
+              <div class="fhint">Annual interest rate. Capped at 0–100%.</div>
+              <input type="number" value="9" />
+            </div>
+            <div class="field">
+              <div class="flabel">Term</div>
+              <div class="fhint">Use the same term as your bank contract. Enter it in months or years.</div>
+              <div class="term">
+                <input class="term__in" type="number" value="12" />
+                <span class="term__or">months</span>
+                <input class="term__in" type="number" value="1" />
+              </div>
+            </div>
+          </div>
+          <div class="cols cols-2">
+            <div class="field">
+              <div class="flabel">Start date</div>
+              <div class="fhint">When the deposit would land.</div>
+              <input type="date" value="2026-04-15" />
+            </div>
+            <div class="field">
+              <div class="flabel">Institution</div>
+              <div class="fhint">Bank or NBFI holding this investment (optional).</div>
+              <input type="text" value="DBBL" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- The sticky save bar. -->
+      <div style="position:sticky;bottom:14px;margin-top:22px">
+        <div class="floatbar" style="position:static;box-shadow:0 10px 32px rgba(0,0,0,.45)">
+          <span class="fpill" style="border-color:var(--warn);color:var(--warn)">● Unsaved changes</span>
+          <div class="floatbar__acts">
+            <button class="pbtn">Reset</button>
+            <button class="pbtn pbtn--danger">
+              <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Delete
+            </button>
+            <button class="pbtn pbtn--primary">Save plan</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">Plans never touch your ledger.</div>
+    </div>
+
+    <!-- ═══ THE REFERENCE SHEET ══════════════════════════════ -->
+    <div style="margin-top:34px">
+      <div class="sect-h">The rules this screen follows</div>
+      <div class="sheet">
+        <div class="rules">
+          <div class="rline"><span class="rk">A plan's card</span><span class="rv">the real investment certificate shell</span></div>
+          <div class="rline"><span class="rk">What marks it a plan</span><span class="rv">the dashed PLANNED stamp</span></div>
+          <div class="rline"><span class="rk">A DPS's first field</span><span class="rv">the installment, not a principal</span></div>
+          <div class="rline"><span class="rk">The summary</span><span class="rv">also carries the PLANNED stamp</span></div>
+          <div class="rline"><span class="rk">Term</span><span class="rv">months or years, either way</span></div>
+          <div class="rline"><span class="rk">Nothing here</span><span class="rv">touches your ledger</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

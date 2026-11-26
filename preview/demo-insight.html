@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Insight</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* Insight answers its questions in the order people ask them:
+   1. Cash flow      (hero, full-width) — "did I spend too much?"
+   2. What stands out + Where your money sits  (2-up)
+   3. Investments + Loans  (2-up summaries)
+   4. Monthly statement  (full-width) — the exact figures
+   The dashboard keeps the plain card language — it is a report, not
+   a document, so the perforation belongs to the certificate screens
+   alone. */
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);box-shadow:var(--shadow-card);
+  padding:20px 22px;min-width:0;
+}
+.card__head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:14px}
+.card__h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.card__s{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;font-weight:600}
+.card__link{font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;white-space:nowrap}
+.card__link:hover{text-decoration:underline;text-underline-offset:2px}
+
+/* ── range pills ────────────────────────────────────────────── */
+.rangepills{display:flex;gap:6px;flex-wrap:wrap}
+.rangepills .rp{
+  padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;
+  background:var(--surface);color:var(--muted);border:1px solid var(--border);
+  cursor:pointer;font-family:inherit;
+}
+.rangepills .rp.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
+
+/* ── the cash flow chart ────────────────────────────────────── */
+.cfkey{display:flex;align-items:center;gap:14px;font-size:12px;tabular-nums}
+.cfkey .k{display:flex;align-items:center;gap:6px}
+.cfkey .dot{width:8px;height:8px;border-radius:50%}
+.cfchart{width:100%;height:auto;display:block;overflow:visible}
+.cffoot{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin-top:10px;tabular-nums}
+
+/* ── the insight feed ───────────────────────────────────────── */
+.feed{display:flex;flex-direction:column;gap:10px}
+.feeditem{
+  display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;
+}
+.feeditem__ico{
+  width:26px;height:26px;border-radius:8px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+}
+.feeditem__t{font-size:13px;font-weight:600;color:var(--ink)}
+.feeditem__d{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+.feeditem__v{font-size:14px;font-weight:800;white-space:nowrap;text-align:right;tabular-nums}
+
+/* ── the composition donut ──────────────────────────────────── */
+.comp{display:flex;flex-direction:column;align-items:stretch;gap:16px}
+.comp__ring{position:relative;width:128px;height:128px;flex:none;margin:0 auto}
+.comp__ring .hole{
+  position:absolute;inset:0;border-radius:50%;
+  mask:radial-gradient(farthest-side,transparent calc(100% - 24px),#000 calc(100% - 23px));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 24px),#000 calc(100% - 23px));
+}
+.comp__centre{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.comp__n{font-size:17px;font-weight:800;letter-spacing:-.02em;tabular-nums;line-height:1}
+.comp__l{font-size:10px;color:var(--muted);margin-top:4px}
+.complegend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0}
+.complegend .row{display:grid;grid-template-columns:10px minmax(0,1fr) auto 36px;gap:8px;align-items:center;font-size:12.5px}
+.complegend .sw{width:10px;height:10px;border-radius:3px;display:block}
+.complegend .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.complegend .am{font-weight:700;tabular-nums;white-space:nowrap}
+.complegend .pc{font-size:11.5px;color:var(--muted);text-align:right;tabular-nums}
+.complegend .row--debt{border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
+.compfoot{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.55}
+
+/* ── summary figures ───────────────────────────────────────── */
+.figbig{font-size:24px;font-weight:800;letter-spacing:-.02em;tabular-nums;line-height:1}
+.figmid{font-size:15px;font-weight:800;tabular-nums;line-height:1}
+.figcap{font-size:12px;color:var(--muted)}
+.figline{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+
+/* ── the summary rows ───────────────────────────────────────── */
+.srow{display:grid;grid-template-columns:minmax(0,1fr) 96px 84px;gap:10px;align-items:center;font-size:12.5px}
+.srow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .mt{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap;tabular-nums}
+.srow .ea{text-align:right;font-weight:700;white-space:nowrap;tabular-nums}
+
+.lrow{margin-bottom:4px}
+.lrow__top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.lrow__nm{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow__pm{font-size:12px;color:var(--muted);white-space:nowrap;tabular-nums}
+.lrow__bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--surface-3)}
+.lrow__bar i{display:block;height:100%}
+.lrow__foot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:6px;font-size:11px;color:var(--muted);tabular-nums}
+
+/* ── the monthly statement ──────────────────────────────────── */
+.stmt__head{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+  display:grid;grid-template-columns:72px minmax(0,1fr) 96px 96px 96px;gap:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+}
+.stmt__head .fl{display:flex;align-items:center;gap:8px}
+.stmt__row{
+  display:grid;grid-template-columns:72px minmax(0,1fr) 96px 96px 96px;gap:12px;align-items:center;
+  padding:6px 0;border-bottom:1px solid rgba(39,48,44,.6);
+}
+.stmt__row:last-child{border-bottom:0}
+.stmt__row .mo{font-size:12.5px;font-weight:600}
+.stmt__row .n{text-align:right;font-size:12.5px;tabular-nums}
+.stmt__total{
+  display:grid;grid-template-columns:72px minmax(0,1fr) 96px 96px 96px;gap:12px;align-items:center;
+  padding-top:12px;border-top:1px solid var(--divider);
+  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+}
+.stmt__total .n{text-align:right;tabular-nums}
+@media (max-width:820px){
+  .stmt__head,.stmt__row,.stmt__total{grid-template-columns:64px minmax(0,1fr) 84px}
+  .stmt__head > *:nth-child(4),.stmt__head > *:nth-child(5),
+  .stmt__row > *:nth-child(4),.stmt__row > *:nth-child(5),
+  .stmt__total > *:nth-child(4),.stmt__total > *:nth-child(5){display:none}
+}
+
+/* ── the flow meter ─────────────────────────────────────────── */
+.flow{display:flex;height:16px;gap:1px;align-items:stretch}
+.flow__half{display:flex;flex:1;gap:1px;min-width:0;overflow:hidden}
+.flow__half--r{flex-direction:row}
+.flow__half--l{flex-direction:row-reverse}
+.flow i{
+  flex:1;min-width:0;border-radius:1px;background:rgba(148,165,156,.10);
+}
+.flow i.on{background:var(--success)}
+.flow i.on.red{background:var(--danger)}
+.flow i.part{background:var(--success);flex:none;width:var(--w,0%);min-width:2px}
+.flow i.part.red{background:var(--danger)}
+.flow__axis{width:1px;background:var(--muted-2);opacity:.55;flex:none}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Insight — the answer, in the order you ask</h1>
+  <p>
+    Insight is a <b>report</b>, so it keeps the plain card language rather than the
+    certificate shell. The page answers in the order people actually ask: <b>cash flow</b>
+    first (did I spend too much?), then <b>what stands out</b> beside <b>where your money
+    sits</b>, then the <b>Investments</b> and <b>Loans</b> summaries, and finally the
+    <b>monthly statement</b> — the exact figures, no hover needed.
+  </p>
+  <div class="legend">
+    <span class="lg">Cash flow hero</span>
+    <span class="lg">Generated feed</span>
+    <span class="lg">Composition donut</span>
+    <span class="lg on">Segmented flow meter</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html" class="on">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+
+    <div class="head">
+      <div>
+        <h1 class="h1">Insight</h1>
+        <div class="meta tabular">Last 6 months · Jun 2026 – Nov 2026</div>
+      </div>
+      <div class="rangepills">
+        <button class="rp">This month</button>
+        <button class="rp on">Last 6 months</button>
+        <button class="rp">Last 12 months</button>
+        <button class="rp">All time</button>
+      </div>
+    </div>
+
+    <!-- ═══ 1. CASH FLOW — the hero ══════════════════════════ -->
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__h">Cash flow</div>
+          <div class="card__s">Income &amp; expense by month</div>
+        </div>
+        <div class="cfkey">
+          <span class="k"><span class="dot" style="background:var(--primary)"></span><span style="color:var(--muted)">Income</span><span style="color:var(--primary);font-weight:700">৳ 4,12,000</span></span>
+          <span class="k"><span class="dot" style="background:var(--danger)"></span><span style="color:var(--muted)">Expense</span><span style="color:var(--danger);font-weight:700">৳ 3,38,410</span></span>
+        </div>
+      </div>
+
+      <svg class="cfchart" viewBox="0 0 720 220" role="img" aria-label="Income and expense by month, 6 months">
+        <!-- gridlines -->
+        <line x1="36" y1="16"  x2="704" y2="16"  stroke="var(--border-2)" stroke-dasharray="2 4"/>
+        <line x1="36" y1="69"  x2="704" y2="69"  stroke="var(--border-2)" stroke-dasharray="2 4"/>
+        <line x1="36" y1="122" x2="704" y2="122" stroke="var(--border-2)" stroke-dasharray="2 4"/>
+        <line x1="36" y1="175" x2="704" y2="175" stroke="var(--border-2)" stroke-dasharray="2 4"/>
+        <!-- axes -->
+        <line x1="36" y1="16" x2="36" y2="196" stroke="var(--border)"/>
+        <line x1="36" y1="196" x2="704" y2="196" stroke="var(--border)"/>
+
+        <!-- income line -->
+        <polyline points="36,120 163,60 290,96 417,44 544,78 671,32" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <!-- expense line -->
+        <polyline points="36,164 163,150 290,158 417,146 544,168 671,152" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+        <!-- dots -->
+        <g fill="var(--primary)">
+          <circle cx="36"  cy="120" r="3"/><circle cx="163" cy="60"  r="3"/>
+          <circle cx="290" cy="96"  r="3"/><circle cx="417" cy="44"  r="3"/>
+          <circle cx="544" cy="78"  r="3"/><circle cx="671" cy="32"  r="3"/>
+        </g>
+        <g fill="var(--danger)">
+          <circle cx="36"  cy="164" r="3"/><circle cx="163" cy="150" r="3"/>
+          <circle cx="290" cy="158" r="3"/><circle cx="417" cy="146" r="3"/>
+          <circle cx="544" cy="168" r="3"/><circle cx="671" cy="152" r="3"/>
+        </g>
+
+        <!-- x labels -->
+        <g font-size="10" fill="var(--muted)" text-anchor="middle">
+          <text x="36"  y="214">Jun</text>
+          <text x="163" y="214">Jul</text>
+          <text x="290" y="214">Aug</text>
+          <text x="417" y="214">Sep</text>
+          <text x="544" y="214">Oct</text>
+          <text x="671" y="214">Nov</text>
+        </g>
+      </svg>
+
+      <div class="cffoot">
+        <span>Net cash flow <span style="color:var(--primary);font-weight:700">+৳ 73,590</span></span>
+        <span>Showing last 6 of 6 months</span>
+      </div>
+    </section>
+
+    <!-- ═══ 2. WHAT STANDS OUT + WHERE YOUR MONEY SITS ════ -->
+    <section class="cols cols-2" style="margin-top:18px;align-items:stretch">
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="card__head">
+          <div>
+            <div class="card__h">What stands out</div>
+            <div class="card__s">Generated from the chosen range</div>
+          </div>
+        </div>
+        <div class="feed">
+          <div class="feeditem">
+            <span class="feeditem__ico" style="background:var(--warn-soft);color:var(--warn)">!</span>
+            <div>
+              <div class="feeditem__t">Rent is your biggest expense</div>
+              <div class="feeditem__d">৳ 96,000 of ৳ 3,38,410 — 28% of every taka out</div>
+            </div>
+            <div class="feeditem__v" style="color:var(--warn)">28%</div>
+          </div>
+          <div class="feeditem">
+            <span class="feeditem__ico" style="background:var(--primary-hi,rgba(63,181,146,.22));color:var(--primary)">↑</span>
+            <div>
+              <div class="feeditem__t">You kept a healthy share of income</div>
+              <div class="feeditem__d">18% of your income stayed with you over the period</div>
+            </div>
+            <div class="feeditem__v" style="color:var(--primary)">+18%</div>
+          </div>
+          <div class="feeditem">
+            <span class="feeditem__ico" style="background:var(--primary-hi,rgba(63,181,146,.22));color:var(--primary)">↑</span>
+            <div>
+              <div class="feeditem__t">August was your strongest month</div>
+              <div class="feeditem__d">Net cash flow of ৳ 34,200</div>
+            </div>
+            <div class="feeditem__v" style="color:var(--primary)">+৳ 34,200</div>
+          </div>
+          <div class="feeditem">
+            <span class="feeditem__ico" style="background:var(--info-soft);color:var(--info)">i</span>
+            <div>
+              <div class="feeditem__t">Your runway is comfortable</div>
+              <div class="feeditem__d">121 days of cash at your current burn rate</div>
+            </div>
+            <div class="feeditem__v" style="color:var(--info)">121 d</div>
+          </div>
+          <div class="feeditem">
+            <span class="feeditem__ico" style="background:var(--primary-hi,rgba(63,181,146,.22));color:var(--primary)">↑</span>
+            <div>
+              <div class="feeditem__t">Your investments are growing</div>
+              <div class="feeditem__d">Active schemes are ৳ 1,60,292 ahead of what you put in</div>
+            </div>
+            <div class="feeditem__v" style="color:var(--primary)">+৳ 1,60,292</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="card__head">
+          <div>
+            <div class="card__h">Where your money sits</div>
+            <div class="card__s">Composition of net worth</div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);white-space:nowrap">Assets <span style="color:var(--ink);font-weight:700">৳ 9,79,750</span></div>
+        </div>
+
+        <div class="comp" style="flex:1">
+          <div class="comp__ring">
+            <div class="hole" style="background:conic-gradient(
+              var(--primary) 0% 30.1%,
+              var(--warn) 30.1% 36.5%,
+              var(--info) 36.5% 51.9%,
+              var(--accent) 51.9% 56.5%,
+              var(--surface-3) 56.5% 100%)"></div>
+            <div class="comp__centre">
+              <div class="comp__n">৳ 9.80L</div>
+              <div class="comp__l">net worth</div>
+            </div>
+          </div>
+
+          <div class="complegend">
+            <div class="row">
+              <span class="sw" style="background:var(--primary)"></span>
+              <span class="nm">Cash</span>
+              <span class="am">৳ 2,94,610</span>
+              <span class="pc">30%</span>
+            </div>
+            <div class="row">
+              <span class="sw" style="background:var(--warn)"></span>
+              <span class="nm">Savings</span>
+              <span class="am">৳ 62,700</span>
+              <span class="pc">6%</span>
+            </div>
+            <div class="row">
+              <span class="sw" style="background:var(--info)"></span>
+              <span class="nm">DPS &amp; FDR</span>
+              <span class="am">৳ 5,08,440</span>
+              <span class="pc">52%</span>
+            </div>
+            <div class="row">
+              <span class="sw" style="background:var(--accent)"></span>
+              <span class="nm">Receivables</span>
+              <span class="am">৳ 45,000</span>
+              <span class="pc">5%</span>
+            </div>
+            <div class="row">
+              <span class="sw" style="background:var(--surface-3)"></span>
+              <span class="nm">Other</span>
+              <span class="am">৳ 69,000</span>
+              <span class="pc">7%</span>
+            </div>
+            <div class="row row--debt">
+              <span class="sw" style="background:var(--danger)"></span>
+              <span class="nm">Less: debt</span>
+              <span class="am" style="color:var(--danger)">−৳ 1,37,580</span>
+              <span class="pc"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="compfoot">
+          Cash covers <span style="color:var(--ink);font-weight:700">30%</span> of what you own.
+          Debt and receivables net off to <span style="color:var(--ink);font-weight:700;tabular-nums">৳ 92,580</span>
+          against your assets.
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 3. INVESTMENTS + LOANS ═════════════════════════ -->
+    <section class="cols cols-2" style="margin-top:18px;align-items:stretch">
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="card__head">
+          <div>
+            <div class="card__h">Investments</div>
+            <div class="card__s">3 active schemes</div>
+          </div>
+          <a class="card__link" href="demo-investments.html">See all →</a>
+        </div>
+
+        <div class="figline">
+          <span class="figbig">৳ 3,91,000</span>
+          <span class="figcap">invested</span>
+        </div>
+        <div class="figline">
+          <span class="figmid" style="color:var(--primary)">+৳ 1,60,292</span>
+          <span class="figcap">total earnings at maturity</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Worth <span style="color:var(--ink);font-weight:700;tabular-nums">৳ 5,51,292</span> when every
+          scheme matures · average rate <span style="color:var(--ink);font-weight:700;tabular-nums">8.2%</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+          <div class="srow">
+            <span class="nm">Dutch-Bangla DPS</span>
+            <span class="mt">8.5% · 60mo</span>
+            <span class="ea" style="color:var(--primary)">+৳ 1,49,552</span>
+          </div>
+          <div class="srow">
+            <span class="nm">City Bank FDR</span>
+            <span class="mt">9.2% · 12mo</span>
+            <span class="ea" style="color:var(--primary)">+৳ 10,290</span>
+          </div>
+          <div class="srow">
+            <span class="nm">Emergency savings</span>
+            <span class="mt">7.0% · 9mo</span>
+            <span class="ea" style="color:var(--primary)">+৳ 450</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted)">
+          Earnings are what each scheme is projected to pay at maturity, not profit already banked.
+        </div>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="card__head">
+          <div>
+            <div class="card__h">Loans</div>
+            <div class="card__s">1 active loan</div>
+          </div>
+          <a class="card__link" href="demo-debts.html">See all →</a>
+        </div>
+
+        <div class="figline">
+          <span class="figbig">৳ 13,78,460</span>
+          <span class="figcap">still owed</span>
+        </div>
+        <div class="figline">
+          <span class="figmid" style="color:var(--danger)">৳ 82,580</span>
+          <span class="figcap">interest left to pay</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          <span style="color:var(--ink);font-weight:700;tabular-nums">৳ 3,431</span> a month goes to
+          interest across your loans
+        </div>
+
+        <div style="flex:1">
+          <div class="lrow">
+            <div class="lrow__top">
+              <span class="lrow__nm">Home loan</span>
+              <span class="lrow__pm">৳ 51,962/mo</span>
+            </div>
+            <div class="lrow__bar">
+              <i style="width:60%;background:var(--primary)"></i>
+              <i style="width:40%;background:var(--danger)"></i>
+            </div>
+            <div class="lrow__foot">
+              <span><span style="color:var(--primary);font-weight:700">৳ 1,21,540</span> principal</span>
+              <span><span style="color:var(--danger);font-weight:700">৳ 82,580</span> interest</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted)">
+          Only the principal portion of a payment reduces what you owe — interest is the bank's cut.
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 4. THE MONTHLY STATEMENT ════════════════════════ -->
+    <section class="card" style="margin-top:18px">
+      <div class="card__head">
+        <div>
+          <div class="card__h">Monthly statement</div>
+          <div class="card__s">Income, expense and net by month</div>
+        </div>
+        <div class="cfkey">
+          <span class="k"><span class="dot" style="background:var(--primary)"></span><span style="color:var(--muted)">Income</span><span style="color:var(--primary);font-weight:700">৳ 4,12,000</span></span>
+          <span class="k"><span class="dot" style="background:var(--danger)"></span><span style="color:var(--muted)">Expense</span><span style="color:var(--danger);font-weight:700">৳ 3,38,410</span></span>
+          <span class="k"><span class="dot" style="background:var(--success)"></span><span style="color:var(--muted)">Saved</span><span style="color:var(--success);font-weight:700">৳ 73,590</span></span>
+        </div>
+      </div>
+
+      <div class="stmt__head">
+        <div>Month</div>
+        <div class="fl">
+          <span>Net flow</span>
+          <span style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-weight:400">
+            <span style="width:10px;height:10px;border-radius:2px;background:var(--danger);display:inline-block"></span>
+            <span style="color:var(--muted-2)">overspent</span>
+            <span style="width:10px;height:10px;border-radius:2px;background:var(--success);display:inline-block"></span>
+            <span style="color:var(--muted-2)">saved</span>
+          </span>
+        </div>
+        <div style="text-align:right">Income</div>
+        <div style="text-align:right">Expense</div>
+        <div style="text-align:right">Net</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Jun 2026</div>
+        <div class="flow"><span class="flow__half flow__half--l"></span><span class="flow__axis"></span><span class="flow__half flow__half--r"></span></div>
+        <div class="n" style="color:var(--primary)">৳ 62,000</div>
+        <div class="n" style="color:var(--danger)">৳ 58,400</div>
+        <div class="n" style="color:var(--primary);font-weight:600">+৳ 3,600</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Jul 2026</div>
+        <div class="flow">
+          <span class="flow__half flow__half--l"><i class="on red"></i></span>
+          <span class="flow__axis"></span>
+          <span class="flow__half flow__half--r"></span>
+        </div>
+        <div class="n" style="color:var(--primary)">৳ 55,000</div>
+        <div class="n" style="color:var(--danger)">৳ 58,900</div>
+        <div class="n" style="color:var(--danger);font-weight:600">−৳ 3,900</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Aug 2026</div>
+        <div class="flow">
+          <span class="flow__half flow__half--l"></span>
+          <span class="flow__axis"></span>
+          <span class="flow__half flow__half--r"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+        </div>
+        <div class="n" style="color:var(--primary)">৳ 70,000</div>
+        <div class="n" style="color:var(--danger)">৳ 35,800</div>
+        <div class="n" style="color:var(--primary);font-weight:600">+৳ 34,200</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Sep 2026</div>
+        <div class="flow">
+          <span class="flow__half flow__half--l"></span>
+          <span class="flow__axis"></span>
+          <span class="flow__half flow__half--r"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+        </div>
+        <div class="n" style="color:var(--primary)">৳ 85,000</div>
+        <div class="n" style="color:var(--danger)">৳ 38,200</div>
+        <div class="n" style="color:var(--primary);font-weight:600">+৳ 46,800</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Oct 2026</div>
+        <div class="flow">
+          <span class="flow__half flow__half--l"><i class="on red"></i><i class="on red"></i><i class="on red"></i></span>
+          <span class="flow__axis"></span>
+          <span class="flow__half flow__half--r"></span>
+        </div>
+        <div class="n" style="color:var(--primary)">৳ 55,000</div>
+        <div class="n" style="color:var(--danger)">৳ 62,300</div>
+        <div class="n" style="color:var(--danger);font-weight:600">−৳ 7,300</div>
+      </div>
+
+      <div class="stmt__row">
+        <div class="mo">Nov 2026</div>
+        <div class="flow">
+          <span class="flow__half flow__half--l"></span>
+          <span class="flow__axis"></span>
+          <span class="flow__half flow__half--r"><i class="on"></i><i class="on"></i></span>
+        </div>
+        <div class="n" style="color:var(--primary)">৳ 85,000</div>
+        <div class="n" style="color:var(--danger)">৳ 84,810</div>
+        <div class="n" style="color:var(--primary);font-weight:600">+৳ 190</div>
+      </div>
+
+      <div class="stmt__total">
+        <div>Total</div>
+        <div></div>
+        <div class="n" style="color:var(--primary)">৳ 4,12,000</div>
+        <div class="n" style="color:var(--danger)">৳ 3,38,410</div>
+        <div class="n" style="color:var(--primary)">+৳ 73,590</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

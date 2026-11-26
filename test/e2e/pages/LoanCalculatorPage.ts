@@ -7,7 +7,7 @@
  *     sub-line and the "+ New projection" CTA;
  *   - an empty state reading "No projections yet" with a
  *     "Start a projection" button;
- *   - one `card card-link` button per projection.
+ *   - one `div.debt-cert` projection certificate per projection.
  *
  * `src/screens/LoanCalculatorDetailScreen.tsx` — the detail:
  *   - the "Summary (projection)" card with the **EMI**, **Total you
@@ -61,9 +61,14 @@ export class LoanCalculatorPage extends BasePage {
     return this.page.getByRole('button', { name: 'Start a projection' });
   }
 
-  /** A projection card, by its name. */
+  /**
+   * A projection card, by its name.
+   *
+   * Each projection renders as a `div.debt-cert` with `role="button"`
+   * — the same certificate shell the Debts screen uses.
+   */
   projectionCard(name: string): Locator {
-    return this.page.locator('button.card-link').filter({ hasText: name }).first();
+    return this.page.locator('div.debt-cert').filter({ hasText: name }).first();
   }
 
   // ── Detail screen ──

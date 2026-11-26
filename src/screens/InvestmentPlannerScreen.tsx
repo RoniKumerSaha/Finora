@@ -209,13 +209,25 @@ function PlannerSummary({
 
   return (
     <section className="h-fit lg:sticky lg:top-4">
-      <article className="inv-cert inv-cert--summary">
+      <article
+        className="inv-cert inv-cert--summary"
+        style={{ ['--tone' as string]: 'var(--primary)' }}
+      >
         <div className="inv-cert__head">
           <div className="min-w-0">
             <div className="inv-cert__name">Summary</div>
             <div className="inv-cert__serial">
               NO. {String(plans.length).padStart(6, '0')} {MIDDOT} {plans.length} PLANNED {MIDDOT} PROJECTIONS
             </div>
+          </div>
+          {/* The PLANNED stamp — the summary holds projections, never
+              real holdings, so it says so in the same ink the cards
+              do: green for an investment. */}
+          <div
+            className="inv-cert__stamp inv-cert__stamp--planned"
+            title="These are projections — no real money is involved."
+          >
+            Planned
           </div>
         </div>
 
@@ -340,7 +352,7 @@ function InvestmentPlanCard({
     >
       <article
         className="inv-cert"
-        style={{ ...cardSurfaceStyle(cardTone), ['--tone' as string]: `var(--${cardTone})` }}
+        style={{ ['--tone' as string]: `var(--${cardTone})` }}
       >
         {/* The header — name + serial on the left, the PLANNED stamp on
             the right, standing in for the real card's rate seal. */}
@@ -355,6 +367,7 @@ function InvestmentPlanCard({
           </div>
           <div
             className="inv-cert__stamp inv-cert__stamp--planned"
+            style={{ ['--tone' as string]: 'var(--primary)' }}
             title="This is a projection — no real money is involved."
           >
             Planned

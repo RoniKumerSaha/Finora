@@ -106,7 +106,8 @@
     "expected": {
       "loanPill": "Loan",
       "termsLine": "12% APR · 36mo",
-      "loanAmount": "Loan amount ৳ 60,000",
+      "loanAmountLabel": "Loan amount",
+      "loanAmount": "৳ 60,000",
       "splitLine": "Paid ৳ 0 interest and ৳ 0 principal",
       "emiLabel": "Monthly EMI",
       "emi": "৳ 1,993",

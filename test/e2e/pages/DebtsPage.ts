@@ -9,7 +9,8 @@
  *     the name, "You've paid ৳ X of ৳ Y", "Owed to <person>", and a
  *     right zone with "Remaining" + "of ৳ Y total".
  *   - a loan card shows a "Loan" pill, "12% APR · 36mo",
- *     "Loan amount ৳ X", "Paid ৳ A interest and ৳ B principal",
+ *     a "Loan amount" field with its figure on the line below,
+ *     "Paid ৳ A interest and ৳ B principal",
  *     "Monthly EMI" and "Outstanding".
  *   - "Pay now" (i_owe) / "Receive now" (owed_to_me) opens the payment
  *     modal; it only renders for `status === 'active'`.
@@ -37,17 +38,18 @@ export class DebtsPage extends BasePage {
 
   /** All debt cards. */
   get cards(): Locator {
-    return this.page.locator('div.card.card-link');
+    return this.page.locator('div.debt-cert');
   }
 
   /**
    * A debt card, by its name.
    *
-   * Scoped to the card's identity zone so the "Pay now" chip and the
-   * amount zone don't widen the match.
+   * A debt is a CERTIFICATE — a perforated sheet with a serial, a
+   * stamp and engraved terms — so the card is found through the
+   * certificate shell rather than the generic `.card` primitive.
    */
   card(name: string): Locator {
-    return this.page.locator('div.card.card-link').filter({ hasText: name }).first();
+    return this.page.locator('div.debt-cert').filter({ hasText: name }).first();
   }
 
   /** The card's full-card link — `Edit debt "{name}"`. */
@@ -62,9 +64,15 @@ export class DebtsPage extends BasePage {
 
   // ── Card figures ──
 
-  /** The flat card's direction tag — "I owe" or "Owed to me". */
+  /**
+   * The flat card's direction stamp — "I owe" or "Owed to me".
+   *
+   * The card is a certificate: the polarity is a rubber stamp in the
+   * header, so it is read through the stamp element rather than by
+   * any loose text match.
+   */
   cardDirectionTag(name: string): Locator {
-    return this.card(name).getByText(/^(I owe|Owed to me)$/, { exact: true });
+    return this.card(name).locator('.debt-cert__stamp').filter({ hasText: /^(I owe|Owed to me)$/ });
   }
 
   /** The flat card's "You've paid ৳ X of ৳ Y" line. */
@@ -75,22 +83,38 @@ export class DebtsPage extends BasePage {
   /**
    * The flat card's "Owed to Rahim" / "Owed by Karim" line.
    *
-   * The direction tag above it also starts with "Owed to", so the
+   * The direction stamp above it also starts with "Owed to", so the
    * pattern requires a capitalised name after the preposition — the
-   * tag's own wording is "Owed to me".
+   * stamp's own wording is "Owed to me".
    */
   cardCounterpartyLine(name: string): Locator {
     return this.card(name).getByText(/^Owed (to|by) [A-Z]/, { exact: false });
   }
 
-  /** The card's headline remaining / EMI figure (`text-[24px]`). */
+  /**
+   * The card's headline remaining / EMI figure.
+   *
+   * The certificate's closing figures live in a `.debt-cert__v`
+   * block, whose label and value are siblings — so the value is the
+   * `.n` div next to the label.
+   */
   cardHeadlineFigure(name: string): Locator {
-    return this.card(name).locator('span.text-\\[24px\\]');
+    return this.card(name)
+      .locator('.debt-cert__v--now')
+      .locator('.n');
   }
 
-  /** The flat card's "of ৳ Y total" caption. */
+  /**
+   * The flat card's "of ৳ Y total" caption.
+   *
+   * The certificate states the total as the SECOND closing figure —
+   * "Of total" beside the remaining — so the caption is read from
+   * that block's value.
+   */
   cardTotalCaption(name: string): Locator {
-    return this.card(name).getByText(/of ৳ .* total/, { exact: false });
+    return this.card(name)
+      .locator('.debt-cert__v--mat')
+      .locator('.n');
   }
 
   /** The card's "{n}% paid" progress caption. */
@@ -108,9 +132,28 @@ export class DebtsPage extends BasePage {
     return this.card(name).locator('div.text-\\[12px\\].tabular').filter({ hasText: '% APR' });
   }
 
-  /** The loan card's "Loan amount ৳ X" line. */
+  /**
+   * The loan card's "Loan amount" field.
+   *
+   * The figure sits on its own line beneath the label, so the label
+   * and the figure are separate elements — the field is the unit that
+   * carries both.
+   */
+  cardLoanAmountField(name: string): Locator {
+    return this.card(name)
+      .locator('.debt-cert__f')
+      .filter({ hasText: 'Loan amount' })
+      .first();
+  }
+
+  /** The loan card's "Loan amount" label. */
+  cardLoanAmountLabel(name: string): Locator {
+    return this.cardLoanAmountField(name).locator('.k');
+  }
+
+  /** The loan card's "Loan amount" figure. */
   cardLoanAmount(name: string): Locator {
-    return this.card(name).getByText('Loan amount', { exact: false });
+    return this.cardLoanAmountField(name).locator('.v');
   }
 
   /** The loan card's "Paid ৳ A interest and ৳ B principal" line. */
@@ -121,43 +164,41 @@ export class DebtsPage extends BasePage {
   /** The loan card's "Monthly EMI" figure. */
   cardMonthlyEmi(name: string): Locator {
     return this.card(name)
-      .getByText('Monthly EMI', { exact: true })
-      .locator('..')
-      .locator('span.text-\\[24px\\]');
+      .locator('.debt-cert__v--now')
+      .locator('.n');
   }
 
   /** The loan card's "Outstanding" figure. */
   cardOutstanding(name: string): Locator {
     return this.card(name)
-      .getByText('Outstanding', { exact: true })
-      .locator('..')
-      .locator('span.text-\\[15px\\]');
+      .locator('.debt-cert__v--mat')
+      .locator('.n');
   }
 
   /**
    * A figure from the Summary card, by its label.
    *
-   * The summary renders label / figure / caption as three siblings, so
-   * the figure is the `[26px]` div next to the label's parent.
+   * The Summary is a statement certificate: each polarity is one
+   * line of the breakdown — label on the left, figure on the right.
    */
   summaryValue(label: 'You owe' | 'Owed to you'): Locator {
     return this.summaryCard
-      .getByText(label, { exact: true })
-      .locator('..')
-      .locator('div.text-\\[26px\\]');
+      .locator('.debt-cert__line')
+      .filter({ hasText: label })
+      .locator('.v');
   }
 
   /** The Summary card's "Across N debt(s)" caption. */
   summaryCaption(label: 'You owe' | 'Owed to you'): Locator {
     return this.summaryCard
-      .getByText(label, { exact: true })
-      .locator('..')
-      .locator('div.text-\\[11px\\].tabular');
+      .locator('.debt-cert__line')
+      .filter({ hasText: label })
+      .locator('.debt-cert__cap');
   }
 
   /** The "Summary" card — only rendered when something is outstanding. */
   get summaryCard(): Locator {
-    return this.page.locator('section.card').filter({ hasText: 'How it works:' });
+    return this.page.locator('section.debt-cert--statement').filter({ hasText: 'How it works:' });
   }
 
   /** The completed-debts group heading, e.g. "Completed (1)". */
@@ -168,7 +209,7 @@ export class DebtsPage extends BasePage {
   /** The "Completed (n)" section card. */
   get completedSection(): Locator {
     return this.page
-      .locator('section.card')
+      .locator('section.debt-cert--settled')
       .filter({ has: this.page.getByRole('heading', { name: /Completed \(\d+\)/ }) });
   }
 

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Settings</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* Settings is a service counter: a stack of plain cards in a left
+   column, and a single About panel pinned to the right. The one
+   card that breaks the pattern is the Danger zone — it is a callout,
+   not a card, and it is the only place a red border appears. */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);box-shadow:var(--shadow-card);
+  padding:20px 22px;min-width:0;
+}
+.card__h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.card__p{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6}
+.card__row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+
+.setlayout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media (max-width:980px){ .setlayout{grid-template-columns:minmax(0,1fr)} }
+
+.setcol{display:flex;flex-direction:column;gap:18px}
+
+/* The one button family the whole demo set shares. */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 16px;border-radius:12px;min-height:38px;
+  font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;
+  border:1px solid transparent;text-decoration:none;
+  transition:opacity .15s,background .15s,border-color .15s,color .15s,transform .08s;
+}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 40%, transparent)}
+.btn--primary{background:var(--primary);color:var(--primary-on)}
+.btn--primary:hover{opacity:.95}
+.btn--secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn--secondary:hover{background:var(--surface-2);border-color:var(--muted-2)}
+.btn--outlined-danger{background:transparent;color:var(--danger-title);border-color:var(--danger)}
+.btn--outlined-danger:hover{background:var(--danger-soft)}
+.btn--outlined-danger:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb, var(--danger) 40%, transparent)}
+.btn--danger{background:var(--danger);color:#fff}
+.btn--danger:hover{opacity:.92}
+.btn--sm{padding:7px 12px;font-size:12px;border-radius:9px;min-height:0}
+
+/* The status pill, matching the app's Pill outline variant. */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;border:1px solid transparent;
+}
+.pill--ok{color:var(--primary);border-color:var(--primary);background:transparent}
+.pill--muted{color:var(--muted);border-color:var(--border);background:transparent}
+
+/* The danger zone callout. */
+.dangerzone{
+  border-radius:var(--radius-card);padding:20px 22px;
+  background:var(--danger-callout-bg,rgba(210,106,92,.10));
+  border:1px solid var(--danger);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.dangerzone h2{font-size:15px;font-weight:700;color:var(--danger-title);letter-spacing:-.01em}
+.dangerzone p{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6}
+.dangerrow{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:18px}
+.dangerrow__t{font-size:14px;font-weight:600;color:var(--ink)}
+.dangerrow__d{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.55;max-width:56ch}
+
+/* The About panel. */
+.about h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--muted);margin-bottom:14px}
+.about .brandline{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.about .blurb{font-size:13px;color:var(--muted);line-height:1.6;margin:10px 0 16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.metarow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:12.5px;margin:0}
+.metarow dt{flex:none}
+.metarow dd{margin:0}
+.metarow--block{flex-direction:column;align-items:flex-start;gap:5px}
+.metarow dt{color:var(--muted)}
+.metarow dd{color:var(--ink);text-align:right}
+.metarow--block dd{text-align:left;line-height:1.5}
+.about .erased{
+  display:inline-block;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);
+  font-size:12.5px;font-weight:600;color:var(--primary);text-decoration:none;
+}
+.about .erased:hover{text-decoration:underline;text-underline-offset:2px}
+
+/* The sync panel's two states, side by side. */
+.statestrip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:14px}
+@media (max-width:640px){ .statestrip{grid-template-columns:1fr} }
+.statestrip > div{background:var(--surface-2);padding:14px 16px}
+.statestrip .st{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.statestrip .sv{font-size:13px;font-weight:600;color:var(--ink);margin-top:6px}
+.statestrip .sd{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+/* The PIN dial — the Set PIN dialog, previews the keypad. */
+.dial{display:grid;gap:10px;margin-top:14px}
+.dial__dots{display:flex;gap:12px;justify-content:center}
+.dial__dots i{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--muted-2);display:block}
+.dial__dots i.f{background:var(--primary);border-color:var(--primary)}
+.dial__keys{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:260px;margin:0 auto}
+.dial__keys b{
+  height:46px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Settings — the service counter</h1>
+  <p>
+    Settings is a stack of plain <b>cards</b> in a left column, with a single <b>About
+    panel</b> pinned to the right. The one element that breaks the pattern is the
+    <b>Danger zone</b> — it isn't a card, it's a callout with a red border, because it's
+    the only action on this page you can't undo.
+  </p>
+  <div class="legend">
+    <span class="lg">Plain cards</span>
+    <span class="lg">Status pill</span>
+    <span class="lg">About panel</span>
+    <span class="lg on">Danger zone callout</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html" class="on">Settings</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+
+    <div class="head">
+      <div>
+        <h1 class="h1">Settings</h1>
+        <div class="meta">Backup and reset.</div>
+      </div>
+    </div>
+
+    <div class="setlayout">
+
+      <!-- ═══ LEFT — THE CONTROLS ════════════════════════════ -->
+      <div class="setcol">
+
+        <!-- SECURITY -->
+        <section class="card">
+          <div class="card__h">Security</div>
+          <p class="card__p">
+            Protect this device data with a 6-digit PIN. You'll need to enter it
+            every time the app loads.
+          </p>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="btn btn--secondary">Change PIN</button>
+            <button class="btn btn--outlined-danger">Disable PIN</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:12px">
+            Forgot your PIN? Wipe all data from the Danger Zone — there's no
+            recovery, by design.
+          </div>
+        </section>
+
+        <!-- CLOUD SYNC -->
+        <section class="card">
+          <div class="card__row">
+            <div class="card__h">Cloud sync</div>
+            <span class="pill pill--ok">Synced</span>
+          </div>
+
+          <div class="statestrip">
+            <div>
+              <div class="st">Signed in as</div>
+              <div class="sv">roni.kumer@example.com</div>
+            </div>
+            <div>
+              <div class="st">Last synced</div>
+              <div class="sv">4m ago</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:16px">
+            <button class="btn btn--primary">Force sync now</button>
+            <button class="btn btn--secondary">Change password</button>
+            <button class="btn btn--secondary">Sign out</button>
+          </div>
+
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+            <div class="sect-h">The signed-out state</div>
+            <p class="card__p" style="margin-top:0">
+              Sync your data across devices with end-to-end RLS-scoped storage. Optional —
+              Finora works fine without it. Your cloud copy is preserved when you sign out,
+              so signing back in pulls the latest snapshot.
+            </p>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn--primary">Sign in</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- BACKUP -->
+        <section class="card">
+          <div class="card__h">Backup</div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn btn--primary">Export backup</button>
+            <button class="btn btn--secondary">Import backup</button>
+          </div>
+          <p class="card__p">
+            Save a JSON file to your device. Use Import to restore from a backup later
+            (replaces all data after confirmation).
+          </p>
+        </section>
+
+        <!-- DANGER ZONE -->
+        <section class="dangerzone">
+          <h2>Danger zone</h2>
+          <p>This action is destructive. Export first if unsure.</p>
+          <div class="dangerrow">
+            <div>
+              <div class="dangerrow__t">Wipe all data</div>
+              <div class="dangerrow__d">
+                Deletes every account, transaction, goal, debt, investment, and plan from
+                this device and from your cloud copy on Supabase — leaves the app as a
+                clean install.
+              </div>
+            </div>
+            <button class="btn btn--danger" style="flex:none">Wipe all data</button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ═══ RIGHT — THE ABOUT PANEL ════════════════════════ -->
+      <aside class="card about">
+        <h3>About</h3>
+        <div class="brandline">Finora</div>
+        <p class="blurb">
+          A quiet place for your money. Track what you have, where it goes, and what you're
+          aiming for — without an account, an inbox, or a notification asking for anything back.
+        </p>
+
+        <dl style="display:flex;flex-direction:column;gap:12px;font-size:12.5px">
+          <div class="metarow">
+            <dt>Version</dt>
+            <dd>v1.0.0</dd>
+          </div>
+          <div class="metarow metarow--block">
+            <dt>Privacy</dt>
+            <dd>Stored on this device and synced to your cloud copy on Supabase. RLS scopes every read and write to your account.</dd>
+          </div>
+          <div class="metarow">
+            <dt>Storage</dt>
+            <dd>Saved on this device · 47 entries</dd>
+          </div>
+        </dl>
+
+        <a class="erased" href="#">Erase everything and start over →</a>
+      </aside>
+
+    </div>
+
+    <!-- ═══ THE SET-PIN DIALOG ══════════════════════════════ -->
+    <div class="sect-h" style="margin-top:28px">Set PIN — the one dialog with its own surface</div>
+
+    <div class="cols cols-2">
+      <div class="card">
+        <div class="card__h">Set a 6-digit PIN</div>
+        <p class="card__p">You'll enter this every time the app loads. There's no recovery — by design.</p>
+        <div class="dial">
+          <div class="dial__dots">
+            <i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i>
+          </div>
+          <div class="dial__keys">
+            <b>1</b><b>2</b><b>3</b>
+            <b>4</b><b>5</b><b>6</b>
+            <b>7</b><b>8</b><b>9</b>
+            <b>⌫</b><b>0</b><b style="background:transparent;border-color:transparent;color:var(--muted);font-size:12px">OK</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="sect-h">The rules this screen follows</div>
+        <div class="sheet">
+          <div class="lines">
+            <div class="line"><span class="lk">Destructive action</span><span class="lv lv--danger">red border, filled button</span></div>
+            <div class="line"><span class="lk">Reversible action</span><span class="lv lv--primary">secondary button</span></div>
+            <div class="line"><span class="lk">Cloud sync</span><span class="lv lv--muted">status pill, not a toggle</span></div>
+            <div class="line"><span class="lk">Version &amp; privacy</span><span class="lv">About panel, right</span></div>
+            <div class="line line--total"><span class="lk">Wipe behaviour</span><span class="lv">cloud first, then local</span></div>
+          </div>
+          <div class="acct__note" style="margin-top:12px">
+            The wipe deletes the <b>cloud copy first</b>, so a failed network call aborts
+            before the local store is touched. Nothing is recoverable afterwards — which is
+            why the Danger zone is a callout, not a card.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

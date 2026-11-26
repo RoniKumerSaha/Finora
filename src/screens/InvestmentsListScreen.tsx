@@ -50,7 +50,7 @@ import {
   investmentMaturityDate,
 } from '../domain/math';
 import { fmtBDT, fmtDate } from '../lib/format';
-import { cardSurfaceStyle, investmentTone } from '../lib/cardSurface';
+import { investmentTone } from '../lib/cardSurface';
 import type { Investment, Transaction } from '../domain/types';
 
 const MIDDOT = '\u00B7';
@@ -258,7 +258,7 @@ function ClosedInvCard({ inv }: { inv: Investment }) {
     >
       <article
         className="inv-cert inv-cert--closed"
-        style={{ ...cardSurfaceStyle('muted'), ['--tone' as string]: 'var(--muted-2)' }}
+        style={{ ['--tone' as string]: 'var(--muted-2)' }}
       >
         <div className="inv-cert__head">
           <div className="min-w-0">
@@ -364,7 +364,7 @@ function InvCard({
     >
       <article
         className="inv-cert"
-        style={{ ...cardSurfaceStyle(cardTone), ['--tone' as string]: `var(--${cardTone})` }}
+        style={{ ['--tone' as string]: `var(--${cardTone})` }}
       >
         {/* The header — name + serial on the left, the tilted rate
             seal on the right. */}

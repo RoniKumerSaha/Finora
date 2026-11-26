@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Transactions</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* The transaction list is the one place a single sheet can hold a
+   hundred rows — so it's a long ledger sheet, perforated top and
+   bottom like every other document in the app. */
+.tx-sheet{
+  position:relative;overflow:hidden;border-radius:6px;
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+  background:var(--surface-3);
+  background-image:linear-gradient(to bottom,rgba(255,255,255,.05),transparent 46%);
+  padding:6px 22px 18px;
+}
+.tx-sheet::before,.tx-sheet::after{
+  content:'';position:absolute;left:0;right:0;height:9px;pointer-events:none;z-index:1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0,0,0,.55) 3.4px, transparent 4.2px);
+  background-size:14px 9px,14px 9px;
+}
+.tx-sheet::before{top:0}
+.tx-sheet::after{bottom:0}
+
+/* The column header — a ruled header row, like a statement. */
+.tx-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 2px 11px;border-bottom:1px solid var(--border);
+}
+.tx-head .txh-name{font-size:15px;font-weight:700;color:var(--ink)}
+.tx-head .txh-serial{font-size:10px;color:var(--muted);letter-spacing:.13em;margin-top:4px}
+
+/* The running totals strip — what the month adds up to. */
+.tx-sum{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;margin:16px 0 18px;
+}
+.tx-sum > div{background:var(--surface);padding:13px 16px}
+.tx-sum .sl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.tx-sum .sv{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-top:5px;font-variant-numeric:tabular-nums}
+
+@media (max-width:760px){
+  .tacct{display:none}
+  .tx-sum{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:480px){
+  .tx-sum{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Transactions — one long ledger sheet</h1>
+  <p>
+    Transactions are the one place where a card has to hold a hundred rows, so the list stays
+    a <b>single sheet</b> rather than a stack of cards — but it earns the same perforation,
+    the same ruled header and the same day separators as every other document. Filters live
+    above the sheet as chips; the running totals at the top of the sheet tell you what the
+    month actually adds up to.
+  </p>
+  <div class="legend">
+    <span class="lg">Ledger sheet</span>
+    <span class="lg">Day separators</span>
+    <span class="lg">Tag pills</span>
+    <span class="lg on">Running totals</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-account-edit.html">Account edit</a>
+    <a href="demo-goal-detail.html">Goal detail</a>
+    <a href="demo-loan-detail.html">Loan detail</a>
+    <a href="demo-debt-detail.html">Debt detail</a>
+    <a href="demo-invest-detail.html">Invest detail</a>
+    <a href="demo-transactions.html" class="on">Transactions</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <div class="head">
+      <div>
+        <h1 class="h1">Transactions</h1>
+        <div class="meta tabular">148 entries</div>
+      </div>
+      <button class="page btn"><span>+</span> Add</button>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="chips">
+      <button class="chip on">All</button>
+      <button class="chip">Income</button>
+      <button class="chip">Expense</button>
+      <button class="chip">Transfer</button>
+      <button class="chip">Payouts</button>
+      <button class="chip">Debt payments</button>
+      <button class="chip">This month</button>
+      <button class="chip">Cash</button>
+    </div>
+
+    <section class="tx-sheet">
+      <div class="tx-head">
+        <div>
+          <div class="txh-name">All transactions</div>
+          <div class="txh-serial">148 ENTRIES · NEWEST FIRST</div>
+        </div>
+        <span class="tag tag--muted">25 Aug — 26 Nov 2026</span>
+      </div>
+
+      <!-- The running totals — the sheet's own summary line -->
+      <div class="tx-sum">
+        <div>
+          <div class="sl">Money in</div>
+          <div class="sv" style="color:var(--primary)">৳ 3,18,400</div>
+        </div>
+        <div>
+          <div class="sl">Money out</div>
+          <div class="sv" style="color:var(--danger)">৳ 2,06,930</div>
+        </div>
+        <div>
+          <div class="sl">Net</div>
+          <div class="sv" style="color:var(--primary)">+৳ 1,11,470</div>
+        </div>
+        <div>
+          <div class="sl">This month</div>
+          <div class="sv">24 entries</div>
+        </div>
+      </div>
+
+      <!-- ═══ THE LEDGER ═══════════════════════════════════ -->
+      <div class="tiles">
+
+        <div class="daysep">26 Nov 2026</div>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--in"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Salary — November</div>
+              <div class="ts">Main Bank · Salary</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--in">+৳ 85,000</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Groceries — Shwapno</div>
+              <div class="ts">Cash · Groceries</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Cash</div>
+            <div class="tamt tamt--out">−৳ 3,240</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Dutch-Bangla DPS — December installment</div>
+              <div class="ts">Main Bank · Investment</div>
+            </div>
+          </div>
+          <div class="tr">
+            <span class="tag tag--out">Contribution</span>
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--out">−৳ 5,000</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Rahim — loan payment</div>
+              <div class="ts">Main Bank · Debt</div>
+            </div>
+          </div>
+          <div class="tr">
+            <span class="tag tag--warn">Debt payment</span>
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--out">−৳ 5,541</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--xfr"><svg viewBox="0 0 24 24"><path d="M7 8h11l-3-3M17 16H6l3 3"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Cash top-up</div>
+              <div class="ts">Transfer · Main Bank → Cash</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Main Bank → Cash</div>
+            <div class="tamt tamt--xfr">৳ 10,000</div>
+          </div>
+        </a>
+
+        <div class="daysep">25 Nov 2026</div>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--in"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Sabbir — repayment</div>
+              <div class="ts">Cash · Debt</div>
+            </div>
+          </div>
+          <div class="tr">
+            <span class="tag tag--in">Debt received</span>
+            <div class="tacct">Cash</div>
+            <div class="tamt tamt--in">+৳ 12,000</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--in"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">City Bank FDR — maturity payout</div>
+              <div class="ts">Main Bank · Investment</div>
+            </div>
+          </div>
+          <div class="tr">
+            <span class="tag tag--in">Payout</span>
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--in">+৳ 21,000</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Electricity bill</div>
+              <div class="ts">Main Bank · Utilities</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--out">−৳ 4,180</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Borrowed from Arif</div>
+              <div class="ts">Cash · Debt</div>
+            </div>
+          </div>
+          <div class="tr">
+            <span class="tag tag--warn">Borrowed</span>
+            <div class="tacct">Cash</div>
+            <div class="tamt tamt--out">−৳ 15,000</div>
+          </div>
+        </a>
+
+        <div class="daysep">24 Nov 2026</div>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Fuel — Papa garage</div>
+              <div class="ts">Cash · Transport</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Cash</div>
+            <div class="tamt tamt--out">−৳ 2,600</div>
+          </div>
+        </a>
+
+        <a href="#" class="trow" style="text-decoration:none">
+          <div class="tl">
+            <div class="tile tile--out"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+            <div style="min-width:0">
+              <div class="tt">Rent — November</div>
+              <div class="ts">Main Bank · Housing</div>
+            </div>
+          </div>
+          <div class="tr">
+            <div class="tacct">Main Bank</div>
+            <div class="tamt tamt--out">−৳ 25,000</div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ═══ THE EMPTY STATE ═════════════════════════════════ -->
+    <div class="sect-h" style="margin-top:26px">When there's nothing yet</div>
+
+    <div class="empty">
+      <div class="e">No transactions yet</div>
+      <div class="d">Record income, expenses, or transfers. Each one updates the account it touches.</div>
+      <a href="#" class="b">+ Add transaction</a>
+      <div style="margin-top:14px;font-size:12px;color:var(--muted)">
+        <a href="#" style="color:var(--primary);text-decoration:none;font-weight:600">How transactions work →</a>
+      </div>
+    </div>
+
+    <!-- ═══ THE TAG VOCABULARY ═══════════════════════════════ -->
+    <div class="sect-h" style="margin-top:26px">The tag vocabulary</div>
+
+    <section class="tx-sheet">
+      <div class="tx-head">
+        <div>
+          <div class="txh-name">Tags</div>
+          <div class="txh-serial">WHAT EACH PILL MEANS</div>
+        </div>
+      </div>
+      <div style="padding-top:14px">
+        <div class="arow" style="border-bottom:1px solid var(--border-2);padding:11px 2px">
+          <div>
+            <div class="tt">Payout</div>
+            <div class="ts">Money back from an investment that matured.</div>
+          </div>
+          <span class="tag tag--in">Payout</span>
+        </div>
+        <div class="arow" style="border-bottom:1px solid var(--border-2);padding:11px 2px">
+          <div>
+            <div class="tt">Borrowed</div>
+            <div class="ts">You took money on — a liability you now owe.</div>
+          </div>
+          <span class="tag tag--warn">Borrowed</span>
+        </div>
+        <div class="arow" style="border-bottom:1px solid var(--border-2);padding:11px 2px">
+          <div>
+            <div class="tt">Lent</div>
+            <div class="ts">You gave money out that comes back later.</div>
+          </div>
+          <span class="tag tag--warn">Lent</span>
+        </div>
+        <div class="arow" style="border-bottom:1px solid var(--border-2);padding:11px 2px">
+          <div>
+            <div class="tt">Debt payment</div>
+            <div class="ts">You paid toward something you owe.</div>
+          </div>
+          <span class="tag tag--warn">Debt payment</span>
+        </div>
+        <div class="arow" style="padding:11px 2px">
+          <div>
+            <div class="tt">Debt received</div>
+            <div class="ts">You collected money someone owed you.</div>
+          </div>
+          <span class="tag tag--in">Debt received</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+</body>
+</html>

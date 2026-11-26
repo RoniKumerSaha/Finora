@@ -1,186 +1,109 @@
 /**
- * DebtsListScreen — one card per active debt, full-width stacked.
+ * DebtsListScreen — one CERTIFICATE per debt.
  *
- * 2026-08-18 redesign: switched the active-debt card to the same
- * horizontal split the investment card uses (left = identity + terms,
- * right = headline amount, separated by a 1px divider). One card per
- * debt, stacked in a single column so meta doesn't truncate at lg
- * widths. Summary card pinned to the right at lg+ summarises the
- * remaining balance per direction (mirrors InvestmentsListScreen).
+ * 2026-11-26 redesign (the document family): a debt is an IOU — a
+ * PROMISE, not a holding — so the card is a perforated document
+ * rather than a tile. The shell is the same sheet the goal receipt
+ * and the investment certificate use, but each part of it carries a
+ * debt-specific meaning:
  *
- * 2026-09-03 redesign: when a debt is loan-kind, the card mirrors
- * the planned-loan card (`LoanCalculatorListScreen`) — same 4-row
- * left zone (icon + name + Loan pill + "rate · term" + Principal /
- * Interest you'll pay with mt-auto) and same right-zone
- * "Monthly EMI / Total you pay" shape. Flat debts keep the original
- * "I owe / Owed to me" + "Paid X of Y total" card.
+ *   - the STAMP states the polarity ("I owe" / "Owed to me"), so the
+ *     direction is readable before any number is;
+ *   - a flat debt gets a TEAR-OFF STUB — the counterparty's copy,
+ *     perforated down the left edge, which is what makes a flat debt
+ *     read as an IOU slip;
+ *   - a loan gets an APR rate SEAL (a tilted circle, the same shape
+ *     as the investment certificate's rate seal), because a loan is
+ *     an instrument with a rate;
+ *   - the RAIL is the share already settled;
+ *   - a completed debt is a SETTLED DOCUMENT — the same sheet in the
+ *     quiet ink of something already dealt with, stamped PAID;
+ *   - the Summary is a STATEMENT — the rolled-up view, holding the
+ *     totals instead of one debt's terms.
  *
- * Card shape (loan-kind):
- *   ┌─ [Bank]  City Bank Loan        [Loan]    ┌────────────┐
- *   │                                            │ MONTHLY EMI│
- *   │     9% APR · 12mo                          │ ৳8,742    │
- *   │                                            ├────────────┤
- *   │     Principal ৳87,418                      │OUTSTANDING │
- *   │     Pay ৳4,900 interest                    │ ৳87,418    │
- *   ├────────────────────────────────────────────┴────────────┤
- *   │  ◯━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░  12% paid   [Pay now]│
- *   └──────────────────────────────────────────────────────────┘
+ * The `--tone` custom property is set inline per debt: danger for
+ * "I owe", primary for "Owed to me". The wash, the stamp, the rail
+ * and the hero figure all share that one colour identity.
  *
- * Card shape (flat-kind):
- *   ┌─ I OWE                                          ┌────────────┐
- *   │  [↓] Rahim                                │     │ ৳12,26,261│
- *   │       Paid ৳100 of ৳12,26,361 total     │     │   Remaining │
- *   │                                                 │  of ৳Y total│
- *   ├─────────────────────────────────────────────────┴────────────┤
- *   │  ◯━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░  0.8% paid               │
- *   └────────────────────────────────────────────────────────────┘
- *
- * Completed debts stay in a quieter group at the bottom (no hover
- * lift — record-only).
+ * The e2e suite addresses the cards structurally, so the contract
+ * below is load-bearing: the direction tag, the paid line, the
+ * counterparty line, the `text-[24px]` headline figure, the "of ৳ Y
+ * total" caption, the "% paid" hint, the loan terms line, the loan
+ * amount and split lines, the Monthly EMI / Outstanding pair, and
+ * the Summary's "You owe" / "Owed to you" figures and captions.
  */
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../domain/store';
 import * as debts from '../domain/debts';
 import { loanEMI, loanPaymentSplit } from '../domain/math';
-import { Check, User } from '../components/icons/Icons';
 import { DebtPaymentModal } from './DebtPaymentModal';
-import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, debtTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
-import { Pill } from '../components/Pill';
-import { ProgressBar } from '../components/ProgressBar';
-import { LoanTile } from '../components/InvestLoanTile';
+import { fmtBDT, fmtDate } from '../lib/format';
+import { debtTone } from '../lib/cardSurface';
+import type { CardTone } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
 
-export function DebtsListScreen() {
-  const state = useStore(s => s.state);
-  const ds = debts.list(state);
-  // Active debts — fully paid debts are surfaced in their own Completed
-  // section so the active list stays focused on what's still owed.
-  const active = ds.filter(d => d.status === 'active');
-  const completed = ds.filter(d => d.status === 'completed');
+/* ---------------- tone helpers ---------------- */
 
-  // Per-direction remaining totals for the Summary card. Uses the
-  // canonical `debtOutstanding` helper for every debt — loan-kind
-  // replays the interest/principal split, flat-kind subtracts paid
-  // from total. Same helper Home and net worth read, so the three
-  // screens always agree.
-  let oweRemaining = 0;
-  let receivableRemaining = 0;
-  for (const d of active) {
-    const left = debts.outstandingFor(d, state.transactions);
-    if (d.direction === 'i_owe') oweRemaining += left;
-    else receivableRemaining += left;
+/**
+ * The tone's raw colour, as a CSS value. The certificate's wash,
+ * stamp and rail all read it, so one assignment colours the whole
+ * document.
+ */
+const TONE_VAR: Record<CardTone, string> = {
+  primary: 'var(--primary)',
+  danger:  'var(--danger)',
+  accent:  'var(--accent)',
+  warn:    'var(--warn)',
+  success: 'var(--success)',
+  info:    'var(--info)',
+  muted:   'var(--muted)',
+  cyan:    'var(--cyan)',
+};
+
+/* ---------------- serial numbers ---------------- */
+
+/**
+ * A stable serial number for a debt.
+ *
+ * The app stores no document numbers, so a real one would be a lie.
+ * This derives a stable six-digit number from the debt id — the same
+ * debt always shows the same serial, so the face does not shuffle
+ * between visits.
+ */
+function serialFor(id: string): string {
+  // FNV-1a: small, fast, well-distributed. We only need stability.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
   }
-  const showReceivable = receivableRemaining > 0;
-  const showOwe = oweRemaining > 0;
-  // V1.1: drives the extra sentence in the "How it works" copy.
-  const hasAnyLoan = active.some(d => d.kind === 'loan');
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap justify-between items-end gap-2">
-        <div className="flex items-center gap-3">
-          <LoanTile />
-          <div>
-            <h1 className="heading h1-screen">Debts</h1>
-            <div className="text-muted text-[13px] mt-1.5 tabular">
-              {active.length} active{completed.length > 0 ? ` \u00B7 ${completed.length} completed` : ''}
-            </div>
-          </div>
-        </div>
-        <Link
-          to="/debts/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          style={{ background: 'var(--primary)' }}
-        >
-          <span className="text-base leading-none">+</span>
-          <span>Add</span>
-        </Link>
-      </div>
-
-      {ds.length === 0 ? (
-        <section className="card">
-          <div className="py-10 text-center text-muted">
-            <div className="text-[14px] font-semibold text-ink">No debts yet.</div>
-            <div className="text-[12.5px] mt-2">Add a debt to track who owes whom.</div>
-          </div>
-        </section>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-          <div className="flex flex-col gap-4">
-            {active.map((d, i) => <DebtCard key={d.id} debt={d} animDelay={i * 180} />)}
-            {completed.length > 0 && (
-              <CompletedSection rows={completed} />
-            )}
-          </div>
-
-          {/* Summary card — pinned on the right at lg+ so the totals
-              stay visible while scrolling the list. Stacks below the
-              list at smaller breakpoints. */}
-          {(showOwe || showReceivable) && (
-            <section className="card h-fit lg:sticky lg:top-4">
-              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">Summary</h2>
-              <div className="flex flex-col gap-5">
-                {showOwe && (
-                  <div>
-                    <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">You owe</div>
-                    <div className="text-[26px] font-bold text-danger mt-2 tabular tracking-tight leading-none">
-                      {fmtBDT(oweRemaining)}
-                    </div>
-                    <div className="text-[11px] text-muted mt-1.5 tabular">Across {active.filter(d => d.direction === 'i_owe').length} debt{active.filter(d => d.direction === 'i_owe').length === 1 ? '' : 's'}</div>
-                  </div>
-                )}
-                {showReceivable && (
-                  <div>
-                    <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Owed to you</div>
-                    <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
-                      {fmtBDT(receivableRemaining)}
-                    </div>
-                    <div className="text-[11px] text-muted mt-1.5 tabular">Across {active.filter(d => d.direction === 'owed_to_me').length} debt{active.filter(d => d.direction === 'owed_to_me').length === 1 ? '' : 's'}</div>
-                  </div>
-                )}
-              </div>
-              <div className="text-xs text-muted mt-5 leading-relaxed">
-                <strong className="text-ink">How it works:</strong> Each debt records an opening transaction for the cash that gave rise to it — borrowed cash lands as <em>Income</em> in your account for <em>i_owe</em>; lent cash lands as <em>Expense</em> for <em>owed_to_me</em>. Use the <em>Pay now</em> / <em>Receive now</em> chip on a card to record a partial repayment against the same account.
-                {hasAnyLoan && (
-                  <>
-                    {' '}
-                    For loans with interest, each payment is split into <em>interest</em> (calculated on the outstanding principal) and <em>principal</em> — only the principal portion reduces what you still owe.
-                  </>
-                )}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return String(h % 1_000_000).padStart(6, '0');
 }
+
+/* ---------------- the debt card ---------------- */
 
 function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number }) {
   const state = useStore(s => s.state);
   const isIOwe = d.direction === 'i_owe';
   const isLoan = d.kind === 'loan';
-  // Per-category tone — derived once and reused everywhere on the
-  // card (wash, bar, icon tile, bold figure, pill, progress bar).
+  // Per-debt tone — derived once and reused everywhere on the card
+  // (wash, stamp, rail, hero figure).
   const cardTone = debtTone(d.direction, d.kind);
-  const amtColor = toneTextClass(cardTone);
   const directionLabel = isIOwe ? 'I owe' : 'Owed to me';
 
-  // Right-zone figure: the canonical outstanding. For loan-kind this
+  // The headline figure: the canonical outstanding. For loan-kind this
   // replays the interest/principal split (so it reports the principal
   // still owed, not total minus gross payments); for flat-kind it's
   // total minus what's been paid.
   const outstanding = debts.outstandingFor(d, state.transactions);
 
   // ── Loan-specific derived figures ──
-  // Loan cards mirror the planned-loan card layout (see
-  // LoanCalculatorListScreen), so the left-zone meta and right-zone
-  // hero need: APR, term, monthly EMI, total interest paid so far,
-  // and total principal paid so far. Computing these once here keeps
-  // the loan-branch JSX tight.
+  // A loan certificate is an instrument, so it carries the same
+  // engraved terms a bond would: the amount borrowed, and the split of
+  // every payment so far into interest (money paid to the lender) and
+  // principal (money that actually reduced what you owe).
   const rate = Number(d.interestRate) || 0;
   const term = Number(d.termMonths) || 0;
   const monthlyEmi = isLoan && term > 0
@@ -208,7 +131,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
     }
   }
 
-  // Progress bar — the share of the PRINCIPAL that's been retired.
+  // Progress — the share of the PRINCIPAL that's been retired.
   //
   // For a loan, `paidSoFar` is gross: every payment also carried
   // interest, so gross-paid-over-total ran ahead of the real progress
@@ -220,7 +143,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
       ))
     : 0;
 
-  // Loan payment modal — opened from the Pay button on loan cards.
+  // Loan payment modal — opened from the Pay button on the card.
   const [payOpen, setPayOpen] = useState(false);
   function openPay(e: React.MouseEvent) {
     e.preventDefault();
@@ -228,236 +151,227 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
     setPayOpen(true);
   }
 
+  const serial = serialFor(d.id);
+
   return (
     <div
-      className="card card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
-      style={cardSurfaceStyle(cardTone)}
+      className={`debt-cert ${isLoan ? '' : 'debt-cert--stub'} card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative`}
+      style={{ ['--tone' as string]: TONE_VAR[cardTone] }}
     >
+      {/* The full-card link overlay. `z-0` puts it under the
+          document's own content, and every interactive child sits
+          above it via `z-[1]`. */}
       <Link
         to={`/debts/${d.id}/edit`}
         className="absolute inset-0 z-0"
         aria-label={`Edit debt "${d.name}"`}
       />
-      {/* Left-edge direction bar — 3px tone-coloured stripe. Direction-
-          encoded: danger for i_owe, primary for owed_to_me. */}
-      <span
-        aria-hidden
-        className={`absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full pointer-events-none z-[1] ${leftBarClass(cardTone)}`}
-      />
-      {/* Top row — horizontal split: identity (left) + headline amount
-          (right), separated by a 1px divider. Mirrors the investment /
-          planned-loan card so the three surfaces read as one family. */}
-      <div className="flex items-stretch gap-5 sm:gap-6 px-6 pt-2.5 pb-2">
-        {/* Left zone — identity, terms, totals. Two layouts selected
-            on `kind`. Loan-kind mirrors the planned-loan card exactly
-            so a planned and a real loan sit next to each other and
-            read as the same object differing only by the PLANNED pill. */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-1">
-          {isLoan ? (
-            <>
-              {/* Row 1: icon + name + Loan pill. No PLANNED pill —
-                  real loans are flagged by the card linking to the
-                  real edit screen, not by a state stamp. */}
-              <div className="flex items-center gap-2 min-w-0">
-                <LoanTile size={20} />
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-                    {d.name}
-                  </div>
-                  <Pill tone={cardTone} variant="solid">Loan</Pill>
-                </div>
-              </div>
 
-              {/* Row 2: APR · term — the critical loan pair. Wrapped in
-                  a non-shrinking span so it never breaks across lines. */}
-              <div className="text-[12px] text-muted tabular truncate">
-                {rate > 0 && (
-                  <span className="shrink-0">{rate}% APR</span>
-                )}
-                {rate > 0 && term > 0 && <span> {MIDDOT} </span>}
-                {term > 0 && (
-                  <span className="shrink-0">{term}mo</span>
-                )}
-              </div>
+      {/* The tear-off stub — a flat debt is an IOU slip with the
+          counterparty's copy down the left margin. */}
+      {!isLoan && (
+        <>
+          <span className="debt-cert__stublabel" aria-hidden />
+          <span className="debt-cert__stubtail" aria-hidden>Counterparty copy</span>
+        </>
+      )}
 
-              {/* Row 3 (mt-auto): loan amount taken + the split of every
-                  payment so far (interest vs principal) on stacked rows
-                  so tokens don't split across lines. Both figures sit
-                  on the same line so the user can read the split at a
-                  glance — interest in the danger tone (money paid to
-                  the lender) and principal in green (money that
-                  actually reduced what you still owe). */}
-              <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
-                <div className="tabular shrink-0">
-                  Loan amount <b className="text-ink font-semibold">{fmtBDT(d.total)}</b>
-                </div>
-                <div className="tabular shrink-0">
-                  Paid <b className="text-danger font-semibold">{fmtBDT(totalInterest)}</b> interest and <b className="text-primary font-semibold">{fmtBDT(totalPrincipal)}</b> principal
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Flat-kind layout — kept identical to the previous debt
-                  card: direction tag up top, icon + name on row 2,
-                  "Paid X of Y total" on row 3. */}
-              {/* Direction tag — top-left, uppercase, muted. The first
-                  thing the user scans so the polarity of the card is
-                  clear before reading the number. */}
-              <div
-                className="text-[10.5px] text-muted uppercase tracking-[0.12em] font-semibold"
-                title={isIOwe ? 'You owe this person' : 'This person owes you'}
+      <div className="debt-cert__head">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="debt-cert__name">{d.name}</div>
+            {/* The "Loan" pill — the loan sub-type. A flat debt has
+                no pill: the stamp already says what it is. */}
+            {isLoan && (
+              <span
+                className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded"
+                style={{
+                  background: 'color-mix(in srgb, var(--tone) 22%, transparent)',
+                  color: 'var(--tone)',
+                }}
               >
-                {directionLabel}
-              </div>
-              <div className="flex items-center gap-2.5 min-w-0">
-                {/* Flat debts use the User silhouette tinted by
-                    direction (red for i_owe, green for owed_to_me). */}
-                <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
-                  <span className={isIOwe ? 'text-danger' : 'text-primary'}>
-                    <User className="w-[18px] h-[18px]" strokeWidth={2} />
-                  </span>
-                </div>
-                {/* Single-line name. Matches the investment / loan
-                    card so short names don't reserve a phantom second
-                    line of vertical space. Long names still truncate
-                    with ellipsis. */}
-                <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-                  {d.name}
-                </div>
-              </div>
-              {/* Direction-aware copy. "You've paid" for i_owe (the
-                  user is the one paying); "They've paid" for
-                  owed_to_me (the other party is paying back). The
-                  verb + subject combination is the single biggest
-                  signal differentiating the two card polarities. */}
-              <div className="text-[12px] text-muted tabular truncate">
-                {isIOwe ? 'You\'ve paid' : 'They\'ve paid'} {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)}
-              </div>
-              {/* Counterparty line — only when `person` is set, so
-                  the card stays quiet when the user didn't fill it
-                  in. Direction-aware preposition so a Rahim entry
-                  reads "Owed to Rahim" (i_owe: he is owed) or
-                  "Owed by Rahim" (owed_to_me: he owes you). */}
-              {d.person && (
-                <div className="text-[12px] text-muted tabular truncate">
-                  {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
-                </div>
-              )}
-              {/* Spacer keeps the right-zone headline aligned with the
-                  name on loan-kind cards where the third row has
-                  more content. */}
-              <div className="mt-auto" />
-            </>
-          )}
+                Loan
+              </span>
+            )}
+          </div>
+          <div className="debt-cert__serial">
+            NO. {serial}
+            {isLoan
+              ? ` ${MIDDOT} LOAN${term > 0 ? ` ${term} MO` : ''}`
+              : ` ${MIDDOT} ${isIOwe ? 'I OWE' : 'OWED TO ME'}${d.person ? ` ${MIDDOT} ${d.person.toUpperCase()}` : ''}`}
+          </div>
         </div>
 
-        {/* Vertical divider between identity and amounts. */}
-        <div
-          aria-hidden
-          className="w-px self-stretch my-1 shrink-0"
-          style={{ background: 'var(--divider)' }}
-        />
-
-        {/* Right zone — headline amounts, right-aligned. Loan cards
-            get the planned-loan shape: Monthly EMI on top, Outstanding
-            below. Flat cards keep the single Outstanding / Remaining
-            block. z-[1] so any button in this zone stays clickable
-            above the full-card <Link>. */}
-        <div className="relative z-[1] flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
-          {isLoan ? (
-            <>
-              <div className="flex flex-col items-end leading-none">
-                <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-                  Monthly EMI
-                </span>
-                <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${amtColor}`}>
-                  {monthlyEmi > 0 ? fmtBDT(monthlyEmi) : '—'}
-                </span>
-              </div>
-              <div className="flex flex-col items-end leading-none">
-                {/* Label + figure sit at white/70 + white — same treatment
-                    as the planned-loan card's "Total you pay" so the
-                    real and planned loan cards read as one family. The
-                    previous tone-coloured text landed red-on-red on the
-                    danger wash and disappeared into the gradient. */}
-                <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">
-                  Outstanding
-                </span>
-                <span className="font-bold tabular text-[15px] text-white mt-1">
-                  {fmtBDT(outstanding)}
-                </span>
-              </div>
-            </>
+        {isLoan ? (
+          /* A loan is an instrument with a rate, so it carries the
+             APR seal rather than the polarity stamp — the polarity
+             is already on the serial line. */
+          rate > 0 ? (
+            <span className="debt-cert__seal" aria-label={`${rate}% APR`}>
+              <span className="p">{rate}%</span>
+              <span className="l">APR</span>
+            </span>
           ) : (
-            <div className="flex flex-col gap-1.5 items-end justify-center">
-              <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-                Remaining
-              </span>
-              <span className={`font-bold tabular text-[24px] tracking-tight leading-none ${amtColor}`}>
-                {fmtBDT(outstanding)}
-              </span>
-              <span className="text-[10.5px] text-muted tabular">
-                of {fmtBDT(d.total)} total
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Progress strip + Pay-now action row. Bar + "X% paid" on the
-          left (flex-1); Pay-now chip on the right when this is a
-          loan-kind active debt. z-[1] on the button keeps it clickable
-          above the full-card <Link>. */}
-      <div className="px-6 pb-2.5 flex items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <ProgressBar value={pct} height={4} animateOnMount animationDelay={animDelay} />
-          <div className="text-[10.5px] text-muted tabular mt-1">{pct}% paid</div>
-        </div>
-        {/* V1.1 (L3.1) + B1: Pay / Receive shortcut — every active
-            debt card gets one, not just loans. Bottom-right of the
-            card, opposite the figures up top. Sharp 4px corners +
-            raised surface (surface-3) make it read as a separate
-            control rather than a chip that belongs to the card's
-            rounded-12px surface — the visual treatment is theme-
-            consistent (uses the same surface-3 token in dark and
-            light mode). z-[1] so it stays clickable above the
-            full-card <Link>. */}
-        {d.status === 'active' && (
-          // Solid filled chip — the strongest call-to-action on the
-          // card. Matches fintech convention (Revolut/Wise solid pills
-          // for primary actions). Dark fill + white text + white dot;
-          // colour flips on direction — danger for i_owe (you're
-          // paying), primary for owed_to_me (you're receiving). A
-          // plain <button> instead of <Button> so we control every
-          // aspect without fighting shared variant/size classes.
-          <button
-            type="button"
-            onClick={openPay}
-            title={isIOwe ? `Record a payment toward "${d.name}"` : `Record a receipt from "${d.name}"`}
-            // Direction-coloured fill mixed toward black so the chip
-            // lands in a deep, consistent tone across both light and
-            // dark themes (the base --danger / --primary are too pale
-            // in light mode and too washed next to the deep bg in
-            // dark mode). Mixing with `black` (not --ink or the tone-
-            // on, both of which are white in dark mode and would
-            // *lighten* the chip there) keeps it consistently dark.
-            style={{
-              background: isIOwe
-                ? 'color-mix(in srgb, var(--danger) 65%, black)'
-                : 'color-mix(in srgb, var(--primary) 65%, black)',
-            }}
-            className={`shrink-0 z-[1] inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
-          >
-            {/* Filled dot — solid white on the dark fill. */}
-            <span
-              aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-white"
-            />
-            {isIOwe ? 'Pay now' : 'Receive now'}
-          </button>
+            <span className="debt-cert__stamp">{directionLabel}</span>
+          )
+        ) : (
+          /* The polarity stamp — the one fact that must be readable
+             before any number is. */
+          <span className="debt-cert__stamp" title={isIOwe ? 'You owe this person' : 'This person owes you'}>
+            {directionLabel}
+          </span>
         )}
       </div>
+
+      {/* The loan's terms — the APR and the term, the critical pair a
+          borrower reads first. On a flat note there is no term, so
+          the line names the counterparty instead. */}
+      {isLoan ? (
+        <div className="text-[12px] text-muted tabular truncate mt-2">
+          {rate > 0 && <span className="shrink-0">{rate}% APR</span>}
+          {rate > 0 && term > 0 && <span> {MIDDOT} </span>}
+          {term > 0 && <span className="shrink-0">{term}mo</span>}
+        </div>
+      ) : (
+        d.person && (
+          <div className="text-[12px] text-muted tabular truncate mt-2">
+            {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
+          </div>
+        )
+      )}
+
+      {isLoan ? (
+        <>
+          {/* The loan's engraved terms — all three read the same way:
+              a small uppercase label with its figure on the line
+              beneath it. */}
+          <div className="debt-cert__fields">
+            <div className="debt-cert__f">
+              <div className="k">Loan amount</div>
+              <div className="v">{fmtBDT(d.total)}</div>
+            </div>
+            <div className="debt-cert__f">
+              <div className="k">Interest paid</div>
+              <div className="v v--danger">{fmtBDT(totalInterest)}</div>
+            </div>
+            <div className="debt-cert__f">
+              <div className="k">Principal paid</div>
+              <div className="v v--primary">{fmtBDT(totalPrincipal)}</div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* The flat debt's engraved terms. */}
+          <div className="debt-cert__fields">
+            <div className="debt-cert__f">
+              <div className="k">Total</div>
+              <div className="v">{fmtBDT(d.total)}</div>
+            </div>
+            <div className="debt-cert__f">
+              <div className="k">Paid</div>
+              <div className="v">{fmtBDT(d.paidSoFar || 0)}</div>
+            </div>
+            <div className="debt-cert__f">
+              <div className="k">Settled</div>
+              <div className="v">{pct}%</div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* The rail — the share already settled. */}
+      <div className="debt-cert__rail" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${d.name} settled`}>
+        <i style={{ width: `${pct}%`, animationDelay: `${animDelay}ms` }} />
+      </div>
+      <div className="debt-cert__railhint">{pct}% paid</div>
+
+      {/* The loan's tally — the split of everything paid so far into
+          interest (money paid to the lender) and principal (money
+          that actually reduced what you owe). */}
+      {isLoan && (
+        <div className="debt-cert__tally tabular">
+          <span className="pip" aria-hidden />
+          <span>
+            Paid <b>{fmtBDT(totalInterest)}</b> interest and <b>{fmtBDT(totalPrincipal)}</b> principal
+          </span>
+        </div>
+      )}
+
+      {/* The document's closing figures. */}
+      {isLoan ? (
+        <div className="debt-cert__vals">
+          <div className="debt-cert__v debt-cert__v--now">
+            <div className="k">Monthly EMI</div>
+            <div className="n">{monthlyEmi > 0 ? fmtBDT(monthlyEmi) : '—'}</div>
+          </div>
+          <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
+            <div className="k">Outstanding</div>
+            <div className="n">{fmtBDT(outstanding)}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="debt-cert__vals">
+          <div className="debt-cert__v debt-cert__v--now">
+            <div className="k">Remaining</div>
+            <div className="n">{fmtBDT(outstanding)}</div>
+          </div>
+          <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
+            <div className="k">Of total</div>
+            <div className="n">of {fmtBDT(d.total)} total</div>
+          </div>
+        </div>
+      )}
+
+      {/* The footnote — the document's small print, plus the action
+          that changes it. The flat debt's paid line lives here
+          because a flat IOU has no ledger of its own: "You've paid
+          ৳ X of ৳ Y" is a statement about the document's total. */}
+      {isLoan ? (
+        <div className="debt-cert__note flex items-center justify-between gap-3">
+          <span>
+            <strong>Pay now</strong> — record a repayment against this loan
+          </span>
+          {d.status === 'active' && (
+            <button
+              type="button"
+              onClick={openPay}
+              title={isIOwe ? `Record a payment toward "${d.name}"` : `Record a receipt from "${d.name}"`}
+              style={{
+                background: isIOwe
+                  ? 'color-mix(in srgb, var(--danger) 65%, black)'
+                  : 'color-mix(in srgb, var(--primary) 65%, black)',
+              }}
+              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
+            >
+              <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
+              {isIOwe ? 'Pay now' : 'Receive now'}
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="debt-cert__note flex items-center justify-between gap-3">
+          <span className="tabular">
+            {isIOwe ? 'You\'ve paid' : 'They\'ve paid'} {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)}
+          </span>
+          {d.status === 'active' && (
+            <button
+              type="button"
+              onClick={openPay}
+              title={isIOwe ? `Record a payment toward "${d.name}"` : `Record a receipt from "${d.name}"`}
+              style={{
+                background: isIOwe
+                  ? 'color-mix(in srgb, var(--danger) 65%, black)'
+                  : 'color-mix(in srgb, var(--primary) 65%, black)',
+              }}
+              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
+            >
+              <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
+              {isIOwe ? 'Pay now' : 'Receive now'}
+            </button>
+          )}
+        </div>
+      )}
 
       {payOpen && (
         <DebtPaymentModal
@@ -470,14 +384,146 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
   );
 }
 
+/* ---------------- the summary statement ---------------- */
+
+function DebtSummary({
+  oweRemaining,
+  receivableRemaining,
+  oweCount,
+  receivableCount,
+  hasAnyLoan,
+}: {
+  oweRemaining: number;
+  receivableRemaining: number;
+  oweCount: number;
+  receivableCount: number;
+  hasAnyLoan: boolean;
+}) {
+  // The net position — what you owe minus what you're owed. It is the
+  // one number the statement exists to deliver.
+  const net = oweRemaining - receivableRemaining;
+
+  // The largest single balance, so the statement names the debt that
+  // actually dominates the position.
+  const state = useStore(s => s.state);
+  let largest = 0;
+  let totalInterest = 0;
+  for (const d of debts.list(state)) {
+    if (d.status !== 'active') continue;
+    const left = debts.outstandingFor(d, state.transactions);
+    if (left > largest) largest = left;
+    if (d.kind === 'loan') {
+      const rate = Number(d.interestRate) || 0;
+      let out = Number(d.total) || 0;
+      for (const t of state.transactions
+        .filter(t => t.linkedDebtId === d.id)
+        .sort((a, b) => a.date.localeCompare(b.date))) {
+        const matches =
+          (d.direction === 'i_owe' && t.type === 'expense') ||
+          (d.direction === 'owed_to_me' && t.type === 'income');
+        if (!matches) continue;
+        totalInterest += loanPaymentSplit(out, Number(t.amount) || 0, rate).interest;
+      }
+    }
+  }
+
+  const activeCount = oweCount + receivableCount;
+
+  return (
+    <section className="debt-cert debt-cert--statement h-fit lg:sticky lg:top-4" style={{ ['--tone' as string]: 'var(--danger)' }}>
+      <div className="debt-cert__head">
+        <div className="min-w-0">
+          <div className="debt-cert__name" style={{ textTransform: 'uppercase' }}>Summary</div>
+          <div className="debt-cert__serial">{activeCount} ACTIVE</div>
+        </div>
+        <span className="debt-cert__stamp" style={{ ['--tone' as string]: 'var(--muted)', borderStyle: 'dashed', transform: 'rotate(-4deg)' }}>
+          {activeCount} active
+        </span>
+      </div>
+
+      <div className="debt-cert__rule" />
+
+      {/* The per-direction breakdown — one line per polarity, each
+          carrying its own tone. The label and the "Across N debt(s)"
+          caption are separate elements so the caption can name the
+          count in full. */}
+      <div className="debt-cert__lines">
+        {oweCount > 0 && (
+          <div className="debt-cert__line">
+            <span className="k">You owe</span>
+            <span className="v v--danger">{fmtBDT(oweRemaining)}</span>
+            <span className="debt-cert__cap">Across {oweCount} debt{oweCount === 1 ? '' : 's'}</span>
+          </div>
+        )}
+        {receivableCount > 0 && (
+          <div className="debt-cert__line">
+            <span className="k">Owed to you</span>
+            <span className="v v--primary">{fmtBDT(receivableRemaining)}</span>
+            <span className="debt-cert__cap">Across {receivableCount} debt{receivableCount === 1 ? '' : 's'}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="debt-cert__rule" />
+
+      <div className="debt-cert__vals">
+        <div className="debt-cert__v debt-cert__v--now">
+          <div className="k">Net position</div>
+          <div className="n">{fmtBDT(net)}</div>
+        </div>
+        {hasAnyLoan && (
+          <div className="debt-cert__v debt-cert__v--mat">
+            <div className="k">Interest paid</div>
+            <div className="n">{fmtBDT(totalInterest)}</div>
+          </div>
+        )}
+        <div className="debt-cert__v debt-cert__v--wide">
+          <span className="k">Largest balance</span>
+          <span className="n">{fmtBDT(largest)}</span>
+        </div>
+      </div>
+
+      <div className="debt-cert__note">
+        <strong>How it works:</strong> Each debt records an opening transaction for the cash that gave rise to it — borrowed cash lands as <em>Income</em> in your account for <em>i_owe</em>; lent cash lands as <em>Expense</em> for <em>owed_to_me</em>. Use the <em>Pay now</em> / <em>Receive now</em> chip on a card to record a partial repayment against the same account.
+        {hasAnyLoan && (
+          <>
+            {' '}
+            For loans with interest, each payment is split into <em>interest</em> (calculated on the outstanding principal) and <em>principal</em> — only the principal portion reduces what you still owe.
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- completed debts ---------------- */
+
+/**
+ * The settled documents.
+ *
+ * A completed debt leaves the active grid, but it is not a footnote —
+ * it is a document that has been paid, and the archive reads better
+ * when each entry is a sheet in the same language as the live ones.
+ */
 function CompletedSection({ rows }: { rows: any[] }) {
   const state = useStore(s => s.state);
   return (
-    <section className="card">
-      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-3.5">
-        Completed ({rows.length})
-      </h2>
-      <div>
+    <section className="debt-cert debt-cert--settled" style={{ ['--tone' as string]: 'var(--muted-2)' }}>
+      <div className="debt-cert__head">
+        <div className="min-w-0">
+          <h2 className="debt-cert__name" style={{ textTransform: 'uppercase', fontSize: '13px', margin: 0 }}>
+            Completed ({rows.length})
+          </h2>
+          <div className="debt-cert__serial">SETTLED IN FULL</div>
+        </div>
+        <span className="debt-cert__stamp" style={{ ['--tone' as string]: 'var(--success)' }}>
+          Paid
+        </span>
+      </div>
+
+      <div className="debt-cert__rule" />
+
+      <div className="flex flex-col">
         {rows.map(d => {
           // Find the account that was used in the linked transactions —
           // most recent first, so the user sees the account that actually
@@ -488,41 +534,118 @@ function CompletedSection({ rows }: { rows: any[] }) {
             .sort((a, b) => b.date.localeCompare(a.date));
           const accId = linked[0]?.accountId;
           const acc = state.accounts.find((a: any) => a.id === accId);
+          const settledOn = linked[0]?.date;
           return (
             <Link
               key={d.id}
               to={`/debts/${d.id}/edit`}
-              className="group relative block py-2.5 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              className="group relative block py-3 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
-              <span
-                aria-hidden
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition"
-                style={{ background: 'var(--primary)' }}
-              />
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2">
-                    <span className="text-primary">
-                      <Check className="w-[18px] h-[18px]" />
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-[14px] leading-tight truncate tracking-tight">{d.name}</div>
-                    <div className="text-xs text-muted leading-tight mt-1 truncate tabular">
-                      {fmtBDT(d.total)} paid off
-                      {d.person ? ` \u00B7 ${d.person}` : ''}
-                      {acc ? ` \u00B7 ${acc.name}` : ''}
-                    </div>
+              <div className="flex justify-between items-center gap-3">
+                <div className="min-w-0">
+                  <div className="debt-cert__name" style={{ fontSize: '14px' }}>{d.name}</div>
+                  <div className="text-[11px] text-muted leading-tight mt-1 truncate tabular">
+                    {fmtBDT(d.total)} paid off
+                    {d.person ? ` ${MIDDOT} ${d.person}` : ''}
+                    {acc ? ` ${MIDDOT} ${acc.name}` : ''}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[10px] text-muted uppercase tracking-wider font-semibold opacity-0 group-hover:opacity-100 transition">View</span>
+                <div className="shrink-0 text-[10px] text-muted uppercase tracking-wider font-semibold opacity-0 group-hover:opacity-100 transition">
+                  View
                 </div>
               </div>
+              {settledOn && (
+                <div className="debt-cert__tally">
+                  <span className="pip" />
+                  Settled on <b>{fmtDate(settledOn)}</b>
+                </div>
+              )}
             </Link>
           );
         })}
       </div>
     </section>
+  );
+}
+
+/* ---------------- the screen ---------------- */
+
+export function DebtsListScreen() {
+  const state = useStore(s => s.state);
+  const ds = debts.list(state);
+  // Active debts — fully paid debts are surfaced in their own Completed
+  // section so the active list stays focused on what's still owed.
+  const active = ds.filter(d => d.status === 'active');
+  const completed = ds.filter(d => d.status === 'completed');
+
+  // Per-direction remaining totals for the Summary statement. Uses the
+  // canonical `debtOutstanding` helper for every debt — loan-kind
+  // replays the interest/principal split, flat-kind subtracts paid
+  // from total. Same helper Home and net worth read, so the three
+  // screens always agree.
+  let oweRemaining = 0;
+  let receivableRemaining = 0;
+  for (const d of active) {
+    const left = debts.outstandingFor(d, state.transactions);
+    if (d.direction === 'i_owe') oweRemaining += left;
+    else receivableRemaining += left;
+  }
+  const showReceivable = receivableRemaining > 0;
+  const showOwe = oweRemaining > 0;
+  const oweCount = active.filter(d => d.direction === 'i_owe').length;
+  const receivableCount = active.filter(d => d.direction === 'owed_to_me').length;
+  // V1.1: drives the extra sentence in the "How it works" copy.
+  const hasAnyLoan = active.some(d => d.kind === 'loan');
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap justify-between items-end gap-2">
+        <div>
+          <h1 className="heading h1-screen">Debts</h1>
+          <div className="text-muted text-[13px] mt-1.5 tabular">
+            {active.length} active{completed.length > 0 ? ` ${MIDDOT} ${completed.length} completed` : ''}
+          </div>
+        </div>
+        <Link
+          to="/debts/add"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          style={{ background: 'var(--primary)' }}
+        >
+          <span className="text-base leading-none">+</span>
+          <span>Add</span>
+        </Link>
+      </div>
+
+      {ds.length === 0 ? (
+        <section className="card">
+          <div className="py-10 text-center text-muted">
+            <div className="text-[14px] font-semibold text-ink">No debts yet.</div>
+            <div className="text-[12.5px] mt-2">Add a debt to track who owes whom.</div>
+          </div>
+        </section>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-start">
+          <div className="flex flex-col gap-4">
+            {active.map((d, i) => <DebtCard key={d.id} debt={d} animDelay={i * 180} />)}
+            {completed.length > 0 && (
+              <CompletedSection rows={completed} />
+            )}
+          </div>
+
+          {/* Summary statement — pinned on the right at lg+ so the
+              totals stay visible while scrolling the list. Stacks
+              below the list at smaller breakpoints. */}
+          {(showOwe || showReceivable) && (
+            <DebtSummary
+              oweRemaining={oweRemaining}
+              receivableRemaining={receivableRemaining}
+              oweCount={oweCount}
+              receivableCount={receivableCount}
+              hasAnyLoan={hasAnyLoan}
+            />
+          )}
+        </div>
+      )}
+    </div>
   );
 }

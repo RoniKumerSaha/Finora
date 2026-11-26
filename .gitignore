@@ -60,3 +60,6 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+
+# Working scratch area — throwaway scripts and screenshots
+scratchpad/

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Loan Calculator</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* The Loan Calculator is the debt certificate family's PLANNED
+   branch. A projection wears the same `.debt-cert` shell as a real
+   debt — same perforated sheet, same engraved fields, same rail —
+   but the APR seal becomes a dashed PLANNED stamp, and the tone is
+   the danger ink a loan always carries: a loan is a cost. */
+
+/* The amortization table — the payoff of the whole screen. */
+.amort{border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden;background:var(--surface)}
+.amort__hd{
+  display:grid;grid-template-columns:56px minmax(0,1.6fr) repeat(3,minmax(0,1fr));
+  gap:12px;align-items:center;padding:10px 15px;
+  background:var(--surface-2);border-bottom:1px solid var(--border);
+  font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);
+}
+.amort__hd span:nth-child(n+3){text-align:right}
+.amort__row{
+  display:grid;grid-template-columns:56px minmax(0,1.6fr) repeat(3,minmax(0,1fr));
+  gap:12px;align-items:center;padding:9px 15px;
+  border-bottom:1px solid var(--border-2);font-size:12.5px;
+}
+.amort__row:last-child{border-bottom:0}
+.amort__row:hover{background:rgba(255,255,255,.02)}
+.amort__row .mk{
+  font-size:11px;font-weight:700;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.amort__row .dt{color:var(--muted);font-variant-numeric:tabular-nums}
+.amort__row .nm{color:var(--ink);font-weight:600}
+.amort__row .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.amort__row .n--dim{color:var(--muted);font-weight:500}
+.amort__row .n--danger{color:var(--danger)}
+.amort__row--total{
+  background:var(--surface-2);border-top:1px solid var(--border);border-bottom:0;
+  font-weight:700;color:var(--ink);
+}
+
+/* The input strip — the live calculator. */
+.calcstrip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
+  padding:18px 20px;border-radius:var(--radius-card);
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:var(--shadow-card);
+}
+@media (max-width:900px){ .calcstrip{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.calcstrip .field input{font-size:15px;font-weight:700}
+
+/* The live result strip under the inputs. */
+.calcout{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;
+  background:var(--border);border:1px solid var(--border);
+  border-radius:var(--radius-card);overflow:hidden;
+}
+@media (max-width:700px){ .calcout{grid-template-columns:minmax(0,1fr)} }
+.calcout > div{background:var(--surface);padding:14px 17px}
+.calcout .cl{
+  font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+}
+.calcout .cv{
+  font-size:20px;font-weight:800;letter-spacing:-.02em;margin-top:5px;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
+.calcout .cv--danger{color:var(--danger)}
+.calcout .cv--primary{color:var(--primary)}
+.calcout .cs{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* The rules sheet. */
+.rules{display:flex;flex-direction:column}
+.rules .rline{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--border-2);font-size:12.5px;
+}
+.rules .rline:last-child{border-bottom:0}
+.rules .rk{color:var(--muted)}
+.rules .rv{color:var(--ink);font-weight:600;text-align:right}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Loan Calculator — a projection, not a debt</h1>
+  <p>
+    A loan projection wears the <b>same debt certificate</b> as a real debt — the same
+    perforated sheet, the same engraved fields, the same rail. What marks it as a projection
+    is the dashed <b>PLANNED</b> stamp standing in for the APR seal: there is no instrument
+    behind it yet. The tone is the danger ink a loan always carries.
+  </p>
+  <div class="legend">
+    <span class="lg">Debt certificate shell</span>
+    <span class="lg">Planned stamp</span>
+    <span class="lg">Statement sidebar</span>
+    <span class="lg on">Amortization table</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+    <a href="demo-loan-calculator.html" class="on">Loan calc</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <!-- ═══ PART 1 — THE LIST SCREEN ════════════════════════ -->
+    <div style="margin-bottom:44px">
+      <a class="back" href="demo-plan.html">← Plans</a>
+
+      <div class="head">
+        <div>
+          <div class="h1">Loan Calculator</div>
+          <div class="meta">
+            Project what a loan will cost. Enter principal, rate, and term — the app fills the
+            amortization table for you.
+          </div>
+        </div>
+        <button class="btn">+ New projection</button>
+      </div>
+
+      <div class="cols cols-2" style="align-items:start">
+        <!-- The projection certificates. -->
+        <div class="stack" style="gap:12px">
+          <article class="debt-cert debt-cert--plain" style="--tone:var(--danger)">
+            <div class="debt-cert__head">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="debt-cert__name">Home loan — 3 years</div>
+                </div>
+                <div class="debt-cert__serial">NO. 583204 · LOAN PROJECTION</div>
+              </div>
+              <span class="debt-cert__stamp debt-cert__stamp--planned">Planned</span>
+            </div>
+            <div class="text-[12px] text-muted tabular truncate mt-2">9% APR · 3y</div>
+            <div class="debt-cert__fields">
+              <div class="debt-cert__f"><div class="k">Loan amount</div><div class="v">৳ 5,00,000</div></div>
+              <div class="debt-cert__f"><div class="k">Term</div><div class="v">3y</div></div>
+              <div class="debt-cert__f"><div class="k">Rate</div><div class="v">9%</div></div>
+            </div>
+            <div class="debt-cert__rail"><i style="width:33%"></i></div>
+            <div class="debt-cert__railhint">33% of term elapsed</div>
+            <div class="debt-cert__tally tabular">
+              <span class="pip" aria-hidden></span>
+              <span>36 of 36 installments · <b>৳ 6,68,420</b> paid in full</span>
+            </div>
+            <div class="debt-cert__vals">
+              <div class="debt-cert__v debt-cert__v--now"><div class="k">Monthly EMI</div><div class="n">৳ 16,147</div></div>
+              <div class="debt-cert__v debt-cert__v--mat" style="text-align:right"><div class="k">Total you pay</div><div class="n">৳ 5,81,292</div></div>
+            </div>
+            <div class="debt-cert__note">
+              <span class="tabular"><strong>First payment</strong> 15 May 2026 · <strong>Last</strong> 15 Apr 2029</span>
+            </div>
+          </article>
+
+          <article class="debt-cert debt-cert--plain" style="--tone:var(--danger)">
+            <div class="debt-cert__head">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="debt-cert__name">Bike loan</div>
+                  <span class="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded" style="background:var(--warn-soft);color:var(--warn)">Draft</span>
+                </div>
+                <div class="debt-cert__serial">NO. 190477 · LOAN PROJECTION</div>
+              </div>
+              <span class="debt-cert__stamp debt-cert__stamp--planned">Planned</span>
+            </div>
+            <div class="text-[12px] text-muted tabular truncate mt-2">12% APR · 2y</div>
+            <div class="debt-cert__fields">
+              <div class="debt-cert__f"><div class="k">Loan amount</div><div class="v">৳ 80,000</div></div>
+              <div class="debt-cert__f"><div class="k">Term</div><div class="v">2y</div></div>
+              <div class="debt-cert__f"><div class="k">Rate</div><div class="v">12%</div></div>
+            </div>
+            <div class="debt-cert__rail"><i style="width:0%"></i></div>
+            <div class="debt-cert__railhint">0% of term elapsed</div>
+            <div class="debt-cert__tally tabular">
+              <span class="pip" aria-hidden></span>
+              <span>24 of 24 installments · <b>৳ 96,480</b> paid in full</span>
+            </div>
+            <div class="debt-cert__vals">
+              <div class="debt-cert__v debt-cert__v--now"><div class="k">Monthly EMI</div><div class="n">৳ 4,020</div></div>
+              <div class="debt-cert__v debt-cert__v--mat" style="text-align:right"><div class="k">Total you pay</div><div class="n">৳ 16,480</div></div>
+            </div>
+            <div class="debt-cert__note">
+              <span class="tabular"><strong>First payment</strong> 01 Dec 2026 · <strong>Last</strong> 01 Nov 2028</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- The summary statement. -->
+        <div>
+          <article class="debt-cert debt-cert--plain debt-cert--statement" style="--tone:var(--danger)">
+            <div class="debt-cert__head">
+              <div class="min-w-0">
+                <div class="debt-cert__name" style="text-transform:uppercase">Summary</div>
+                <div class="debt-cert__serial">NO. 000002 · 2 PROJECTIONS</div>
+              </div>
+              <span class="debt-cert__stamp debt-cert__stamp--planned">Planned</span>
+            </div>
+            <div class="debt-cert__rule"></div>
+            <div class="debt-cert__lines">
+              <div class="debt-cert__line"><span class="k">Projections</span><span class="v">2</span></div>
+              <div class="debt-cert__line"><span class="k">If you borrow this much</span><span class="v">৳ 5,80,000</span></div>
+              <div class="debt-cert__line"><span class="k">Total interest across all</span><span class="v" style="color:var(--danger)">৳ 97,772</span></div>
+            </div>
+            <div class="debt-cert__vals">
+              <div class="debt-cert__v debt-cert__v--wide"><span class="k">Combined EMI</span><span class="n">৳ 20,167</span></div>
+              <div class="debt-cert__v debt-cert__v--wide"><span class="k">Total you pay</span><span class="n">৳ 5,97,772</span></div>
+            </div>
+            <div class="debt-cert__note">
+              <strong>How it works:</strong> <em>Monthly EMI</em> and <em>total you pay</em> live on
+              each card. This sidebar carries the aggregates across every projection — what you'd
+              borrow in total, and what that costs in interest. Nothing here moves real money.
+            </div>
+          </article>
+
+          <!-- The drafts footer. -->
+          <div class="card" style="margin-top:14px">
+            <h2 style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--muted);margin:0 0 10px">
+              Unsaved drafts (1)
+            </h2>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <p style="font-size:12.5px;color:var(--muted);margin:0;max-width:44ch;line-height:1.5">
+                Drafts are shown above with a Draft pill. Clear them here if you don't want to keep them.
+              </p>
+              <button class="btn btn--ghost btn--sm">Clear drafts</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PART 2 — THE LIVE CALCULATOR ══════════════════════ -->
+    <div class="sect-h" style="margin-bottom:16px">The calculator — the projection, live</div>
+
+    <div class="calcstrip">
+      <div class="field">
+        <div class="flabel">Loan amount</div>
+        <div class="fhint">How much you'd borrow.</div>
+        <input type="number" value="500000" />
+      </div>
+      <div class="field">
+        <div class="flabel">Annual rate (%)</div>
+        <div class="fhint">The bank's APR.</div>
+        <input type="number" value="9" />
+      </div>
+      <div class="field">
+        <div class="flabel">Term</div>
+        <div class="fhint">In months or years.</div>
+        <input type="number" value="36" />
+      </div>
+      <div class="field">
+        <div class="flabel">First payment</div>
+        <div class="fhint">When the schedule starts.</div>
+        <input type="date" value="2026-05-15" />
+      </div>
+    </div>
+
+    <div class="calcout" style="margin-top:14px">
+      <div>
+        <div class="cl">Monthly EMI</div>
+        <div class="cv cv--primary">৳ 16,147</div>
+        <div class="cs">what you pay each month</div>
+      </div>
+      <div>
+        <div class="cl">Total you pay</div>
+        <div class="cv">৳ 5,81,292</div>
+        <div class="cs">principal + interest</div>
+      </div>
+      <div>
+        <div class="cl">Total interest</div>
+        <div class="cv cv--danger">৳ 81,292</div>
+        <div class="cs">the cost of borrowing</div>
+      </div>
+    </div>
+
+    <!-- The amortization table. -->
+    <div style="margin-top:22px">
+      <div class="sect-h">The amortization table — the payoff of the whole screen</div>
+      <div class="amort">
+        <div class="amort__hd">
+          <span>#</span><span>Date</span><span>Payment</span><span>Interest</span><span>Principal</span>
+        </div>
+        <div class="amort__row">
+          <span class="mk">1</span><span class="dt">15 May 2026</span>
+          <span class="n">৳ 16,147</span><span class="n n--danger">৳ 3,750</span><span class="n">৳ 12,397</span>
+        </div>
+        <div class="amort__row">
+          <span class="mk">2</span><span class="dt">15 Jun 2026</span>
+          <span class="n">৳ 16,147</span><span class="n n--danger">৳ 3,657</span><span class="n">৳ 12,490</span>
+        </div>
+        <div class="amort__row">
+          <span class="mk">3</span><span class="dt">15 Jul 2026</span>
+          <span class="n">৳ 16,147</span><span class="n n--danger">৳ 3,563</span><span class="n">৳ 12,584</span>
+        </div>
+        <div class="amort__row">
+          <span class="mk">…</span><span class="dt">34 more payments</span>
+          <span class="n n--dim">—</span><span class="n n--dim">—</span><span class="n n--dim">—</span>
+        </div>
+        <div class="amort__row">
+          <span class="mk">36</span><span class="dt">15 Apr 2029</span>
+          <span class="n">৳ 16,147</span><span class="n n--danger">৳ 14</span><span class="n">৳ 16,133</span>
+        </div>
+        <div class="amort__row amort__row--total">
+          <span class="mk">Σ</span><span class="dt">36 payments</span>
+          <span class="n">৳ 5,81,292</span><span class="n n--danger">৳ 81,292</span><span class="n">৳ 5,00,000</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ THE REFERENCE SHEET ══════════════════════════════ -->
+    <div style="margin-top:34px">
+      <div class="sect-h">The rules this screen follows</div>
+      <div class="sheet">
+        <div class="rules">
+          <div class="rline"><span class="rk">A projection's card</span><span class="rv">the real debt certificate shell</span></div>
+          <div class="rline"><span class="rk">What marks it a plan</span><span class="rv">the dashed PLANNED stamp</span></div>
+          <div class="rline"><span class="rk">The tone</span><span class="rv">danger — a loan is a cost</span></div>
+          <div class="rline"><span class="rk">The rail shows</span><span class="rv">the term elapsed, not a paid share</span></div>
+          <div class="rline"><span class="rk">The sidebar</span><span class="rv">aggregates — the card carries the EMI</span></div>
+          <div class="rline"><span class="rk">Nothing here</span><span class="rv">touches your ledger</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

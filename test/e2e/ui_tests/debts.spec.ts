@@ -247,8 +247,12 @@ test.describe('Debts', () => {
         loan.expected.termsLine,
       );
 
-      // "Loan amount ৳ 60,000" and "Paid ৳ 0 interest and ৳ 0 principal".
-      await expect(debts.cardLoanAmount(loan.created.name)).toContainText(
+      // "Loan amount" with "৳ 60,000" on the line below it, and
+      // "Paid ৳ 0 interest and ৳ 0 principal".
+      await expect(debts.cardLoanAmountLabel(loan.created.name)).toHaveText(
+        loan.expected.loanAmountLabel,
+      );
+      await expect(debts.cardLoanAmount(loan.created.name)).toHaveText(
         loan.expected.loanAmount,
       );
       await expect(debts.cardLoanSplitLine(loan.created.name)).toHaveText(

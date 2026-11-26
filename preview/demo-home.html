@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Home</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* Home is the one screen that isn't a document — it's a desk with
+   a statement pinned to it. The status bar is a ruled ledger head;
+   the activity board is a long sheet. */
+.statusbar{
+  display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;
+}
+@media (max-width:1000px){ .statusbar{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:560px){ .statusbar{grid-template-columns:minmax(0,1fr)} }
+.statusbar > div{background:var(--surface);padding:16px 18px;min-width:0}
+.statusbar .lead{background:var(--surface-2)}
+.statusbar .cl{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;color:var(--muted)}
+.statusbar .cv{font-size:21px;font-weight:800;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+.statusbar .ch{font-size:11.5px;color:var(--muted);margin-top:5px}
+.spark{display:block;width:100%;height:26px;margin-top:10px;overflow:visible}
+.sparklabels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted-2);margin-top:4px}
+
+/* The activity board's rows. */
+.board{display:flex;flex-direction:column}
+.brow{
+  display:grid;grid-template-columns:minmax(0,1.6fr) 108px 132px 116px 118px;
+  gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-2);
+}
+.brow:last-child{border-bottom:0}
+.brow .bh{
+  font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+@media (max-width:900px){
+  .brow{grid-template-columns:minmax(0,1fr) 110px}
+  .brow .bh:nth-child(2),.brow .bh:nth-child(3),.brow .bh:nth-child(4){display:none}
+  .brow > div:nth-child(2),.brow > div:nth-child(3),.brow > div:nth-child(4){display:none}
+}
+.brow .bd{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.brow .bm{font-size:13.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.brow .bt{font-size:13px;font-weight:600;color:var(--ink)}
+
+/* The onboarding banner. */
+.welcome{
+  display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:18px;
+  border:1px solid var(--primary);border-radius:9px;
+  background:linear-gradient(120deg,rgba(63,181,146,.16),rgba(63,181,146,.05));
+}
+.welcome .wi{
+  width:34px;height:34px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--primary);color:var(--primary-on);font-weight:800;font-size:15px;
+}
+.welcome .wt{font-size:13.5px;font-weight:600;color:var(--ink)}
+.welcome .wd{font-size:12px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Home — the desk, with a statement pinned to it</h1>
+  <p>
+    Home is the one screen that isn't a single document. It's a <b>desk</b>: a ruled status bar
+    across the top (the net worth, and where it sits), then a long <b>activity board</b> below —
+    the five most recent transactions, laid out as columns so you can scan the money by
+    account and category without reading a single row.
+  </p>
+  <div class="legend">
+    <span class="lg">Status bar</span>
+    <span class="lg">Ruled columns</span>
+    <span class="lg">Activity board</span>
+    <span class="lg on">Sparklines</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html" class="on">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+
+    <!-- The onboarding banner -->
+    <div class="welcome">
+      <div class="wi">F</div>
+      <div style="flex:1;min-width:0">
+        <div class="wt">Welcome to Finora.</div>
+        <div class="wd">Track what you have, what you owe, and what you're saving for — all in one place.</div>
+      </div>
+      <a href="#" class="page btn btn--sm">Get started</a>
+    </div>
+
+    <div class="head">
+      <div>
+        <h1 class="h1">Where is my money?</h1>
+        <div class="meta">Net worth · across 3 accounts · updated just now</div>
+      </div>
+    </div>
+
+    <!-- ═══ THE STATUS BAR ═══════════════════════════════════ -->
+    <div class="statusbar">
+      <div class="lead">
+        <div class="cl">Net worth</div>
+        <div class="cv" style="color:var(--accent)">৳ 8,42,190</div>
+        <div class="ch" style="color:var(--primary);font-weight:700">▲ ৳ 41,200 <span style="color:var(--muted);font-weight:400">vs last month</span></div>
+        <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden>
+          <polygon points="0,20 20,16 40,18 60,11 80,13 120,4 120,26 0,26" fill="var(--accent)" opacity=".10"/>
+          <polyline points="0,20 20,16 40,18 60,11 80,13 120,4" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="sparklabels"><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span></div>
+      </div>
+      <div>
+        <div class="cl">Cash</div>
+        <div class="cv" style="color:var(--primary)">৳ 2,94,610</div>
+        <div class="ch">Sum across 3 accounts</div>
+        <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden>
+          <polygon points="0,18 30,20 60,14 90,15 120,9 120,26 0,26" fill="var(--primary)" opacity=".10"/>
+          <polyline points="0,18 30,20 60,14 90,15 120,9" fill="none" stroke="var(--primary)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div>
+        <div class="cl">Investments</div>
+        <div class="cv" style="color:var(--accent)">৳ 4,10,000</div>
+        <div class="ch">Locked in 4 active schemes</div>
+        <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden>
+          <polygon points="0,22 30,20 60,17 90,14 120,11 120,26 0,26" fill="var(--accent)" opacity=".10"/>
+          <polyline points="0,22 30,20 60,17 90,14 120,11" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div>
+        <div class="cl">Receivables</div>
+        <div class="cv" style="color:var(--primary)">৳ 45,000</div>
+        <div class="ch">Owed by 1 person</div>
+        <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden>
+          <polyline points="0,13 120,13" fill="none" stroke="var(--primary)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div>
+        <div class="cl">Debts</div>
+        <div class="cv" style="color:var(--danger)">৳ 1,37,580</div>
+        <div class="ch">You owe across 2 debts</div>
+        <svg class="spark" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden>
+          <polygon points="0,6 30,8 60,12 90,15 120,18 120,26 0,26" fill="var(--danger)" opacity=".10"/>
+          <polyline points="0,6 30,8 60,12 90,15 120,18" fill="none" stroke="var(--danger)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ═══ THE ACTIVITY BOARD ═══════════════════════════════ -->
+    <div class="sheet" style="margin-top:20px">
+      <div class="sheet__head">
+        <div>
+          <div class="sheet__name">Recent activity</div>
+          <div class="sheet__serial">LAST 5 TRANSACTIONS</div>
+        </div>
+        <a href="demo-transactions.html" style="font-size:12.5px;font-weight:600;color:var(--primary);text-decoration:none">See full Insights →</a>
+      </div>
+      <div class="sheet__rule"></div>
+
+      <div class="board">
+        <div class="brow bh">
+          <div>Transaction</div><div>Date</div><div>Account</div><div>Category</div><div style="text-align:right">Amount</div>
+        </div>
+        <div class="brow">
+          <div class="bt">Salary — November</div>
+          <div class="bd">2 hours ago</div><div class="bd">Main Bank</div><div class="bd">Salary</div>
+          <div class="bm" style="color:var(--primary)">+৳ 85,000</div>
+        </div>
+        <div class="brow">
+          <div class="bt">Groceries — Shwapno</div>
+          <div class="bd">Yesterday</div><div class="bd">Cash</div><div class="bd">Groceries</div>
+          <div class="bm" style="color:var(--danger)">−৳ 3,240</div>
+        </div>
+        <div class="brow">
+          <div class="bt">Dutch-Bangla DPS — December installment</div>
+          <div class="bd">Yesterday</div><div class="bd">Main Bank</div><div class="bd">Investment</div>
+          <div class="bm" style="color:var(--danger)">−৳ 5,000</div>
+        </div>
+        <div class="brow">
+          <div class="bt">Rahim — loan payment</div>
+          <div class="bd">2 days ago</div><div class="bd">Main Bank</div><div class="bd">Debt</div>
+          <div class="bm" style="color:var(--danger)">−৳ 5,541</div>
+        </div>
+        <div class="brow">
+          <div class="bt">Sabbir — repayment</div>
+          <div class="bd">4 days ago</div><div class="bd">Cash</div><div class="bd">Debt</div>
+          <div class="bm" style="color:var(--primary)">+৳ 12,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ THE SCRATCHPAD STRIP ═════════════════════════════ -->
+    <div class="sheet" style="margin-top:20px">
+      <div class="sheet__head">
+        <div>
+          <div class="sheet__name">Your scratchpads</div>
+          <div class="sheet__serial">PLANS, GOALS AND PROJECTS</div>
+        </div>
+        <a href="demo-plan.html" style="font-size:12.5px;font-weight:600;color:var(--primary);text-decoration:none">Open Plan →</a>
+      </div>
+      <div class="sheet__rule"></div>
+
+      <div class="lines">
+        <div class="line"><span class="lk">Investments planned</span><span class="lv">৳ 90,000 / mo</span></div>
+        <div class="line"><span class="lk">Loans being costed</span><span class="lv">2 projections</span></div>
+        <div class="line"><span class="lk">Goals in progress</span><span class="lv">2</span></div>
+        <div class="line"><span class="lk">Budget jars this month</span><span class="lv">14 of 28</span></div>
+        <div class="line line--total"><span class="lk">Events being planned</span><span class="lv">1</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

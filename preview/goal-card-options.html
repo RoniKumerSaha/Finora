@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Goals, nine ways</title>
+<style>
+/* ============================================================
+   TOKENS — mirrored from src/styles/theme.css [data-theme="dark"]
+   ============================================================ */
+:root{
+  --bg:#131A18; --surface:#181F1C; --surface-2:#202824; --surface-3:#2A332E;
+  --ink:#F1F3EF; --muted:#94A59C; --muted-2:#647068;
+  --primary:#3FB592; --primary-soft:rgba(63,181,146,.30); --primary-on:#0F1419;
+  --accent:#B98438; --danger:#D26A5C; --danger-soft:rgba(210,106,92,.30); --danger-title:#E58774;
+  --info:#2F75BC; --warn:#D9A234;
+  --success:#3F8E5E; --success-soft:rgba(63,142,94,.40); --success-title:#5DBC83;
+  --border:#27302C; --border-2:#1E2623; --divider:#343F3A;
+  --shadow-card:0 1px 2px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.32);
+  --shadow-modal:0 12px 40px rgba(0,0,0,.55);
+  --radius-card:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font);
+  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  padding:32px 24px 100px;
+}
+.tabular{font-variant-numeric:tabular-nums}
+
+.page-head{max-width:1240px;margin:0 auto 30px}
+.page-head h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-head p{color:var(--muted);font-size:13.5px;margin-top:6px;max-width:88ch}
+.page-head p b{color:var(--ink);font-weight:600}
+.problems{margin-top:16px;display:grid;gap:8px}
+.problem{
+  display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;
+  padding:11px 14px;border-radius:9px;background:var(--surface-2);
+  border:1px solid var(--border);font-size:12.5px;color:var(--muted);line-height:1.55;
+}
+.problem .n{
+  width:20px;height:20px;border-radius:6px;background:var(--danger-soft);
+  color:var(--danger-title);font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.problem b{color:var(--ink);font-weight:600}
+
+.option{
+  max-width:1240px;margin:0 auto 26px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-card);overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.option-head{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;gap:13px;align-items:flex-start}
+.option-badge{
+  flex:none;width:27px;height:27px;border-radius:8px;background:var(--primary);color:var(--primary-on);
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;
+}
+.option-title{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.option-desc{font-size:12.5px;color:var(--muted);margin-top:3px;max-width:90ch}
+.option-tags{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;
+  border-radius:999px;font-weight:700;background:var(--surface-3);color:var(--muted);
+}
+.tag.good{background:var(--primary-soft);color:var(--primary)}
+.tag.warn{background:var(--danger-soft);color:var(--danger-title)}
+.tag.info{background:rgba(47,117,188,.24);color:#7FB2E4}
+
+.card-body{padding:18px 20px 20px}
+.notes{display:grid;gap:5px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border-2);font-size:12px;color:var(--muted)}
+.notes div{display:flex;gap:8px;align-items:flex-start}
+.notes .k{flex:none;color:var(--ink);font-weight:600;min-width:92px}
+
+/* The grid the cards live in — same as the app. */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:980px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:640px){ .grid{grid-template-columns:1fr} }
+
+/* The star pictogram, mirrored from NavGoals. */
+.star{width:20px;height:20px;display:block;fill:currentColor}
+
+/* ════════════════════════════════════════════════════════════════
+   G1 — THE JAR.  A goal is a jar you fill. The card IS the jar:
+   a tall vessel whose fill level is the progress, so the number
+   and the shape say the same thing.
+   ════════════════════════════════════════════════════════════════ */
+.g1{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px;
+  min-height:196px;display:flex;flex-direction:column;
+  background:linear-gradient(160deg,#1A2530 0%,#1E2A36 55%,#212D3A 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+/* The vessel. */
+.g1 .jar{
+  position:relative;flex:1;min-height:88px;margin:12px 0 12px;
+  border-radius:10px 10px 14px 14px;
+  background:rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.06);
+  overflow:hidden;
+}
+/* The fill — a liquid level, from the bottom. */
+.g1 .jar i{
+  position:absolute;left:0;right:0;bottom:0;
+  height:var(--fill,0%);
+  background:linear-gradient(to top,rgba(47,117,188,.55),rgba(63,181,146,.75));
+  border-radius:0 0 9px 9px;
+  transition:height .5s cubic-bezier(.22,1,.36,1);
+}
+/* The meniscus — a bright line at the surface of the fill. */
+.g1 .jar i::after{
+  content:'';position:absolute;left:0;right:0;top:0;height:2px;
+  background:rgba(140,225,196,.9);
+  box-shadow:0 0 8px rgba(140,225,196,.5);
+}
+/* Graduation ticks on the vessel wall. */
+.g1 .jar::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to top,
+    rgba(255,255,255,.07) 0 1px, transparent 1px 25%);
+}
+.g1 .jar b{
+  position:absolute;left:8px;top:5px;z-index:2;
+  font-size:10px;letter-spacing:.06em;color:var(--muted);font-weight:700;
+}
+.g1 .top{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+.g1 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g1 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;position:relative;z-index:2}
+.g1 .big{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.g1 .of{font-size:12px;color:var(--muted);margin-top:3px}
+.g1 .chip{
+  font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;
+  background:var(--danger-soft);color:var(--danger-title);letter-spacing:.04em;
+  white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   G2 — THE ARC.  A goal is a dial sweeping to full circle. The
+   percent is drawn as an arc around the number, so progress is
+   SHAPED, not just labelled.
+   ════════════════════════════════════════════════════════════════ */
+.g2{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px;
+  min-height:186px;display:flex;align-items:center;gap:16px;
+  background:linear-gradient(135deg,#1A2420 0%,#1F2C26 50%,#22302A 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g2 .ring{position:relative;width:96px;height:96px;flex:none}
+.g2 .ring svg{transform:rotate(-90deg);display:block}
+.g2 .ring .track{stroke:rgba(255,255,255,.08)}
+.g2 .ring .fill{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.22,1,.36,1)}
+.g2 .ring .mid{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;
+}
+.g2 .pct{font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.g2 .of{font-size:9.5px;color:var(--muted-2);letter-spacing:.08em;text-transform:uppercase}
+.g2 .right{min-width:0;flex:1}
+.g2 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g2 .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.g2 .need{margin-top:10px;padding-top:9px;border-top:1px solid var(--border-2);font-size:11.5px;color:var(--muted)}
+.g2 .need b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g2 .status{
+  display:inline-block;margin-top:9px;font-size:10.5px;font-weight:700;
+  padding:2px 8px;border-radius:999px;background:var(--danger-soft);color:var(--danger-title);
+  letter-spacing:.04em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   G3 — THE STAIRCASE.  Progress as steps climbing to a flag. Each
+   step is a milestone slice of the target, so you can SEE how many
+   milestones remain, not just a percentage.
+   ════════════════════════════════════════════════════════════════ */
+.g3{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px 18px;
+  background:linear-gradient(150deg,#1B2420 0%,#202C27 60%,#24322C 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g3 .top{display:flex;align-items:center;gap:10px}
+.g3 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g3 .pct{
+  font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;
+  background:var(--surface-3);color:var(--ink);font-variant-numeric:tabular-nums;
+}
+/* The staircase. */
+.g3 .stair{display:flex;align-items:flex-end;gap:3px;height:56px;margin:16px 0 10px}
+.g3 .stair i{
+  flex:1;display:block;border-radius:2px 2px 0 0;
+  background:var(--surface-3);
+  position:relative;
+}
+/* A filled step. */
+.g3 .stair i.on{background:linear-gradient(to top,var(--primary),#5FD3AE)}
+/* The step the money is currently sitting on — the one in progress. */
+.g3 .stair i.cur{
+  background:linear-gradient(to top,var(--primary),var(--primary));
+  box-shadow:0 0 12px rgba(63,181,146,.45);
+}
+/* The goal flag at the top of the last step. */
+.g3 .stair i:last-child::after{
+  content:'';position:absolute;left:50%;top:-11px;transform:translateX(-50%);
+  width:2px;height:11px;background:var(--muted-2);
+}
+.g3 .stair i:last-child::before{
+  content:'';position:absolute;left:calc(50% + 2px);top:-11px;
+  border-left:8px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;
+}
+.g3 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.g3 .need{font-size:11.5px;color:var(--muted)}
+.g3 .need b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g3 .due{font-size:11.5px;color:var(--muted);text-align:right}
+.g3 .due b{display:block;color:var(--danger-title);font-weight:700;font-size:12.5px;margin-top:1px}
+
+/* ════════════════════════════════════════════════════════════════
+   G4 — THE LEDGER STRIP.  A horizontal receipt strip: the goal's
+   numbers typed like a till receipt, with a torn/perforated edge.
+   Progress is a stamp in the corner.
+   ════════════════════════════════════════════════════════════════ */
+.g4{
+  position:relative;overflow:hidden;
+  border-radius:6px;padding:24px 20px 26px;
+  background:linear-gradient(180deg,#1E2622 0%,#222B26 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+/* The perforation — a row of punched holes down each edge. The top
+   row's semicircles bite DOWN into the paper; the bottom row's bite
+   UP. Both sit clear of the text's padding. */
+.g4::before,.g4::after{
+  content:'';position:absolute;left:0;right:0;height:7px;pointer-events:none;
+  background:
+    radial-gradient(circle at 7px 0, var(--bg) 3.2px, transparent 3.4px) 0 0/14px 7px repeat-x;
+}
+.g4::before{top:0}
+.g4::after{
+  bottom:0;
+  background:
+    radial-gradient(circle at 7px 7px, var(--bg) 3.2px, transparent 3.4px) 0 0/14px 7px repeat-x;
+}
+.g4 .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.g4 .name{font-size:15px;font-weight:700;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g4 .stamp{
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border:2px solid var(--danger);color:var(--danger);
+  padding:3px 8px;border-radius:4px;transform:rotate(-6deg);
+  opacity:.85;white-space:nowrap;
+}
+.g4 .rule{border-top:1px dashed var(--divider);margin:12px 0 10px}
+.g4 .row{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted);padding:2px 0}
+.g4 .row b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.g4 .row.total{border-top:1px dashed var(--divider);margin-top:9px;padding-top:9px;font-size:13px}
+.g4 .row.total b{font-size:16px}
+
+/* ════════════════════════════════════════════════════════════════
+   G5 — THE PACE GAUGE.  Two arcs: how far the money has come, and
+   how far the CALENDAR has come. The gap between them IS the pace.
+   ════════════════════════════════════════════════════════════════ */
+.g5{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:18px 20px;
+  background:linear-gradient(150deg,#191F26 0%,#1E262F 55%,#222B34 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g5 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.g5 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g5 .due{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+.g5 .gauge{margin:16px 0 4px}
+.g5 .gauge svg{display:block;width:100%;height:auto}
+.g5 .gauge .base{stroke:rgba(255,255,255,.07)}
+.g5 .gauge .cal{stroke:var(--info);stroke-linecap:round}
+.g5 .gauge .money{stroke:var(--primary);stroke-linecap:round}
+.g5 .legend{display:flex;gap:14px;font-size:10.5px;color:var(--muted);margin-top:8px}
+.g5 .legend span{display:flex;align-items:center;gap:5px}
+.g5 .legend i{width:9px;height:2px;border-radius:2px;display:block}
+.g5 .verdict{
+  margin-top:12px;padding-top:11px;border-top:1px solid var(--border-2);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.g5 .verdict .need{font-size:11.5px;color:var(--muted)}
+.g5 .verdict .need b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g5 .pill{
+  font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+  background:var(--danger-soft);color:var(--danger-title);letter-spacing:.05em;white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   G6 — THE LAYERED TILES.  The target is broken into ten tiles;
+   each tile you can afford fills in. Purely countable progress —
+   "four of ten" needs no arithmetic.
+   ════════════════════════════════════════════════════════════════ */
+.g6{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px 18px;
+  background:linear-gradient(150deg,#1C2320 0%,#212A26 60%,#25312C 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g6 .top{display:flex;align-items:center;gap:10px}
+.g6 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g6 .count{
+  font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.g6 .tiles{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:16px 0 14px;
+}
+.g6 .tiles i{
+  display:block;aspect-ratio:1;border-radius:6px;
+  background:var(--surface-3);
+  border:1px solid rgba(255,255,255,.04);
+}
+/* A filled tile. */
+.g6 .tiles i.on{
+  background:linear-gradient(140deg,var(--primary),#5FD3AE);
+  border-color:transparent;
+  box-shadow:0 2px 8px rgba(63,181,146,.28);
+}
+/* The tile in progress — it is partly filled. */
+.g6 .tiles i.cur{
+  background:linear-gradient(140deg,var(--primary),#5FD3AE);
+  border-color:transparent;
+  position:relative;overflow:hidden;
+}
+.g6 .tiles i.cur::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(0,0,0,.45);
+  clip-path:inset(0 0 0 var(--part,0%));
+}
+.g6 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.g6 .big{font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.g6 .need{font-size:11.5px;color:var(--muted);margin-top:3px}
+.g6 .need b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g6 .due{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.g6 .due b{display:block;color:var(--danger-title);font-weight:700;font-size:12.5px;margin-top:1px}
+
+/* ════════════════════════════════════════════════════════════════
+   G7 — THE VIGIL.  A card that looks like a bank statement for a
+   promise. The progress is a ruled column on the right that fills
+   like a column of ruled lines being ticked off.
+   ════════════════════════════════════════════════════════════════ */
+.g7{
+  position:relative;overflow:hidden;
+  border-radius:4px;padding:0;
+  background:#F3F1EA; color:#1B211E;
+  border:1px solid #C9C4B6; box-shadow:var(--shadow-card);
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+.g7 .head{
+  padding:14px 16px 12px;border-bottom:1px solid #D6D1C2;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.g7 .title{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6B675C;font-weight:700}
+.g7 .name{font-size:16px;font-weight:700;margin-top:3px;letter-spacing:-.01em;color:#121714}
+.g7 .no{font-size:10px;color:#6B675C;margin-top:3px;letter-spacing:.05em}
+.g7 .body{display:flex;gap:14px;padding:14px 16px 16px}
+.g7 .lines{flex:1;min-width:0}
+.g7 .ln{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:3px 0;color:#4A4A44}
+.g7 .ln b{color:#121714;font-weight:700;font-variant-numeric:tabular-nums}
+.g7 .ln.total{margin-top:7px;padding-top:8px;border-top:1px solid #D6D1C2;font-size:13px}
+.g7 .ln.total b{font-size:17px}
+/* The ruled column — one rule per tenth of the target. */
+.g7 .ticks{width:38px;flex:none;display:flex;flex-direction:column-reverse;gap:3px}
+.g7 .ticks i{display:block;height:5px;border-radius:1px;background:#DDD8C9}
+.g7 .ticks i.on{background:#2E8C6E}
+/* The stamp. */
+.g7 .stamp{
+  position:absolute;right:14px;top:52px;
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:#A33F32;border:2px solid #A33F32;padding:3px 7px;border-radius:3px;
+  transform:rotate(-8deg);opacity:.7;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   G8 — THE COMET.  The money is a spark travelling toward the goal.
+   The trail behind it IS the saved amount. Motion says "going",
+   not "sitting".
+   ════════════════════════════════════════════════════════════════ */
+.g8{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:16px 18px 18px;
+  min-height:180px;display:flex;flex-direction:column;
+  background:
+    radial-gradient(120% 90% at 100% 0%,rgba(63,181,146,.14),transparent 60%),
+    linear-gradient(150deg,#151E1B 0%,#1A2420 60%,#1D2A25 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g8 .top{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+.g8 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g8 .pct{
+  font-size:13px;font-weight:700;color:var(--primary);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+/* The track. */
+.g8 .track{
+  position:relative;height:3px;border-radius:3px;margin:20px 0 14px;
+  background:rgba(255,255,255,.07);
+}
+.g8 .track i{
+  position:absolute;left:0;top:0;bottom:0;border-radius:3px;
+  width:var(--w,0%);
+  background:linear-gradient(to right,rgba(63,181,146,.15),var(--primary));
+}
+/* The comet head. */
+.g8 .track b{
+  position:absolute;top:50%;left:var(--w,0%);
+  width:11px;height:11px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:var(--primary);
+  box-shadow:0 0 0 4px rgba(63,181,146,.18),0 0 16px rgba(63,181,146,.65);
+}
+/* The goal marker at the end of the track. */
+.g8 .track em{
+  position:absolute;right:-3px;top:50%;transform:translateY(-50%);
+  width:9px;height:9px;border-radius:50%;
+  border:2px solid var(--muted-2);background:var(--bg);
+}
+/* Faint dust along the trail. */
+.g8 .dust{position:absolute;inset:0;pointer-events:none;z-index:1}
+.g8 .dust i{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:rgba(140,225,196,.35);
+}
+.g8 .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;position:relative;z-index:2}
+.g8 .big{font-size:25px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.g8 .of{font-size:12px;color:var(--muted);margin-top:3px}
+.g8 .right{text-align:right}
+.g8 .need{font-size:11.5px;color:var(--muted)}
+.g8 .need b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.g8 .over{font-size:11px;color:var(--danger-title);font-weight:700;margin-top:2px}
+
+/* ════════════════════════════════════════════════════════════════
+   G9 — THE WINDOW.  A goal is a window you look through at the
+   target. The card is a frame: the top half is the future you are
+   buying (a faded preview of the target), the bottom is what you
+   have. The gap between them is the work left.
+   ════════════════════════════════════════════════════════════════ */
+.g9{
+  position:relative;overflow:hidden;
+  border-radius:14px;padding:0;
+  background:linear-gradient(160deg,#1A2228 0%,#1E272D 55%,#212A30 100%);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+}
+.g9 .window{
+  position:relative;height:104px;overflow:hidden;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(63,181,146,.16),rgba(63,181,146,.03));
+}
+/* The target, waiting in the future — blurred and pale. It sits in
+   the TOP band so the rising sill never covers it. */
+.g9 .window .far{
+  position:absolute;left:0;right:0;top:0;height:46px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  opacity:.62;
+}
+.g9 .window .far .amt{font-size:21px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.g9 .window .far .lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);line-height:1}
+/* The frame's sill — where "now" is. The liquid rises through the
+   LOWER band only, so the target above stays legible at any fill. */
+.g9 .window .sill{
+  position:absolute;left:0;right:0;bottom:0;height:60px;
+  overflow:hidden;
+}
+.g9 .window .sill i{
+  position:absolute;left:0;right:0;bottom:0;
+  height:var(--fill,0%);
+  background:linear-gradient(to top,rgba(63,181,146,.34),rgba(63,181,146,.12));
+  border-top:2px solid var(--primary);
+}
+/* The reflections on the glass. */
+.g9 .window::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(112deg,transparent 34%,rgba(255,255,255,.06) 46%,transparent 58%);
+}
+.g9 .body{padding:14px 18px 16px}
+.g9 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.g9 .name{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g9 .due{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+.g9 .row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:12px}
+.g9 .have{font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.g9 .have span{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:0}
+.g9 .need{font-size:11.5px;color:var(--muted);text-align:right}
+.g9 .need b{display:block;color:var(--ink);font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.g9 .over{color:var(--danger-title);font-weight:700;font-size:10.5px;letter-spacing:.05em;margin-top:5px;text-align:right}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Goals — nine ways to draw a promise</h1>
+  <p>
+    The Goals screen today renders each goal as a <b>soft blue wash card</b>: a star
+    tile, the name, a green percentage pill, a progress bar, the saved/target and
+    deadline, and a "Need ৳X more / overdue" footer. Every goal looks identical
+    apart from its numbers.
+  </p>
+  <p>
+    Below are nine redraws. They differ in <b>what shape carries the progress</b> —
+    a liquid level, an arc, a staircase, a stepped tile grid, a comet, a pair of
+    gauges — because a bar labelled "0%" and a bar labelled "0%" are the same
+    object no matter how prettily it is filled.
+  </p>
+  <div class="problems">
+    <div class="problem"><span class="n">1</span><span><b>Nothing distinguishes a goal.</b> Two goals, one at 92% and one at 3%, are the same rectangle with a different number in it. The card does not LOOK like how the goal is doing.</span></div>
+    <div class="problem"><span class="n">2</span><span><b>"0%" is a dead end.</b> A goal with nothing saved yet shows an empty track — no signal at all that the goal is on fire. The pace of a goal is invisible until it is nearly late.</span></div>
+    <div class="problem"><span class="n">3</span><span><b>"overdue" is the only warning.</b> The screen has a whole pace model — ahead, on track, behind, overdue — but the card only surfaces the last one, as an orange word in the corner.</span></div>
+    <div class="problem"><span class="n">4</span><span><b>The date is decoration.</b> "by 27 Nov 2026" sits in the meta row at the same weight as everything else, even when it is the only thing that matters.</span></div>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script>
+/* ============================================================
+   DATA — the same two goals from the screenshot, plus two more so
+   the set can be judged on a range of states (nearly done, and
+   comfortably ahead).
+   ============================================================ */
+const GOALS = [
+  { name:'My Cash',     target:1234,   saved:1,      date:'27 Nov 2026', days:1,   state:'overdue'  },
+  { name:'adfafds',     target:222222, saved:2,      date:'18 Dec 2026', days:22,  state:'overdue'  },
+  { name:'Laptop fund', target:180000, saved:132000, date:'14 Mar 2027', days:108, state:'ahead'    },
+  { name:'Emergency',   target:60000,  saved:21000,  date:'09 Aug 2027', days:256, state:'ontrack'  },
+];
+
+/* Mirrors the app's `fmtBDT` exactly: `৳ 3,500` — a space after the
+   taka sign. The space matters: the U+09F3 glyph has no width in the
+   Windows fallback face, so without it the next character overlaps it. */
+const fmt = n => '৳ ' + Math.round(Math.abs(n)).toLocaleString('en-IN');
+const star = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg>';
+
+function pctOf(g){ return g.target > 0 ? Math.min(100, Math.round(g.saved / g.target * 100)) : 0; }
+function remain(g){ return Math.max(0, g.target - g.saved); }
+
+/* The elapsed fraction of the goal's own window — used by G5. */
+function calendarPct(g){
+  const total = 270; // the demo window, in days
+  return Math.max(0, Math.min(100, Math.round((1 - g.days / total) * 100)));
+}
+
+/* ── The renderers ── */
+
+function g1(g){
+  const p = pctOf(g);
+  return `
+  <div class="g1">
+    <div class="top">
+      <span style="color:var(--info)">${star}</span>
+      <span class="name">${g.name}</span>
+    </div>
+    <div class="jar">
+      <b>${p}%</b>
+      <i style="--fill:${Math.max(p, 1.5)}%"></i>
+    </div>
+    <div class="foot">
+      <div>
+        <div class="big">${fmt(g.saved)}</div>
+        <div class="of">of ${fmt(g.target)}</div>
+      </div>
+      <span class="chip">${g.state === 'overdue' ? 'OVERDUE' : g.state.toUpperCase()}</span>
+    </div>
+  </div>`;
+}
+
+function g2(g){
+  const p = pctOf(g);
+  const R = 40, C = 2 * Math.PI * R;
+  const off = C * (1 - p / 100);
+  return `
+  <div class="g2">
+    <div class="ring">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle class="track" cx="48" cy="48" r="${R}" fill="none" stroke-width="8"/>
+        <circle class="fill" cx="48" cy="48" r="${R}" fill="none" stroke-width="8"
+                stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+      </svg>
+      <div class="mid">
+        <div class="pct">${p}%</div>
+        <div class="of">saved</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="name">${g.name}</div>
+      <div class="sub">by ${g.date}</div>
+      <div class="need">
+        Need <b>${fmt(remain(g))}</b> more
+      </div>
+      ${g.state === 'overdue'
+        ? '<span class="status">OVERDUE</span>'
+        : `<span class="status" style="background:var(--success-soft);color:var(--success-title)">${g.state.toUpperCase()}</span>`}
+    </div>
+  </div>`;
+}
+
+function g3(g){
+  const p = pctOf(g);
+  const steps = 10;
+  const filled = Math.floor((p / 100) * steps);
+  const partial = (p / 100) * steps - filled;
+  let cells = '';
+  for (let i = 0; i < steps; i++) {
+    const h = 16 + i * 4.2;
+    let cls = '';
+    if (i < filled) cls = 'on';
+    else if (i === filled && partial > 0.05) cls = 'cur';
+    cells += `<i class="${cls}" style="height:${h.toFixed(1)}px"></i>`;
+  }
+  return `
+  <div class="g3">
+    <div class="top">
+      <span style="color:var(--info)">${star}</span>
+      <span class="name">${g.name}</span>
+      <span class="pct">${p}%</span>
+    </div>
+    <div class="stair">${cells}</div>
+    <div class="foot">
+      <div class="need">
+        Need <b>${fmt(remain(g))}</b> more
+      </div>
+      <div class="due">
+        due
+        <b>${g.date}</b>
+      </div>
+    </div>
+  </div>`;
+}
+
+function g4(g){
+  const p = pctOf(g);
+  return `
+  <div class="g4">
+    <div class="top">
+      <div class="name">${g.name.toUpperCase()}</div>
+      <div class="stamp">${g.state === 'overdue' ? 'OVERDUE' : 'OPEN'}</div>
+    </div>
+    <div class="rule"></div>
+    <div class="row"><span>TARGET</span><b>${fmt(g.target)}</b></div>
+    <div class="row"><span>SAVED</span><b>${fmt(g.saved)}</b></div>
+    <div class="row"><span>PROGRESS</span><b>${p}%</b></div>
+    <div class="row"><span>DUE</span><b>${g.date}</b></div>
+    <div class="rule"></div>
+    <div class="row total"><span>STILL NEEDED</span><b>${fmt(remain(g))}</b></div>
+  </div>`;
+}
+
+function g5(g){
+  const p = pctOf(g);
+  const c = calendarPct(g);
+  // A 180° arc, drawn as a semicircle path.
+  const R = 70, CX = 100, CY = 76;
+  const arc = (frac, cls) => {
+    const a = Math.PI * (1 - frac);
+    const x = CX + R * Math.cos(a), y = CY - R * Math.sin(a);
+    return `<path class="${cls}" d="M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}"
+             fill="none" stroke-width="9" stroke-linecap="round"/>`;
+  };
+  return `
+  <div class="g5">
+    <div class="top">
+      <div class="name">${g.name}</div>
+      <div class="due">due ${g.date}</div>
+    </div>
+    <div class="gauge">
+      <svg viewBox="0 0 200 84">
+        <path class="base" d="M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}" fill="none" stroke-width="9"/>
+        ${arc(c / 100, 'cal')}
+        ${arc(p / 100, 'money')}
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--primary)"></i> money ${p}%</span>
+      <span><i style="background:var(--info)"></i> time ${c}%</span>
+    </div>
+    <div class="verdict">
+      <div class="need">Need <b>${fmt(remain(g))}</b> more</div>
+      <span class="pill">${g.state === 'overdue' ? 'BEHIND' : g.state.toUpperCase()}</span>
+    </div>
+  </div>`;
+}
+
+function g6(g){
+  const p = pctOf(g);
+  const n = 10;
+  const filled = Math.floor((p / 100) * n);
+  const partial = (p / 100) * n - filled;
+  let tiles = '';
+  for (let i = 0; i < n; i++) {
+    if (i < filled) tiles += '<i class="on"></i>';
+    else if (i === filled && partial > 0.04) tiles += `<i class="cur" style="--part:${((1 - partial) * 100).toFixed(0)}%"></i>`;
+    else tiles += '<i></i>';
+  }
+  return `
+  <div class="g6">
+    <div class="top">
+      <span style="color:var(--info)">${star}</span>
+      <span class="name">${g.name}</span>
+      <span class="count">${filled} of ${n}</span>
+    </div>
+    <div class="tiles">${tiles}</div>
+    <div class="foot">
+      <div>
+        <div class="big">${fmt(g.saved)}</div>
+        <div class="need">of <b>${fmt(g.target)}</b></div>
+      </div>
+      <div class="due">
+        due
+        <b>${g.date}</b>
+      </div>
+    </div>
+  </div>`;
+}
+
+function g7(g){
+  const p = pctOf(g);
+  const n = 10;
+  const filled = Math.floor((p / 100) * n);
+  let ticks = '';
+  for (let i = 0; i < n; i++) ticks += `<i class="${i < filled ? 'on' : ''}"></i>`;
+  return `
+  <div class="g7">
+    <div class="head">
+      <div>
+        <div class="title">Goal Statement</div>
+        <div class="name">${g.name}</div>
+        <div class="no">No. ${String(Math.abs(hash(g.name)) % 9000 + 1000)}</div>
+      </div>
+    </div>
+    <div class="stamp">${g.state === 'overdue' ? 'OVERDUE' : 'OPEN'}</div>
+    <div class="body">
+      <div class="lines">
+        <div class="ln"><span>TARGET</span><b>${fmt(g.target)}</b></div>
+        <div class="ln"><span>DEPOSITED</span><b>${fmt(g.saved)}</b></div>
+        <div class="ln"><span>DUE</span><b>${g.date}</b></div>
+        <div class="ln total"><span>OUTSTANDING</span><b>${fmt(remain(g))}</b></div>
+      </div>
+      <div class="ticks">${ticks}</div>
+    </div>
+  </div>`;
+}
+
+function hash(s){
+  let h = 0;
+  for (let i = 0; i < s.length; i++){ h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+function g8(g){
+  const p = pctOf(g);
+  const dust = Array.from({length: 14}, (_, i) => {
+    const x = (hash(g.name + i) % 100);
+    const y = (hash(g.name + 'y' + i) % 100);
+    return `<i style="left:${x}%;top:${y}%"></i>`;
+  }).join('');
+  return `
+  <div class="g8">
+    <div class="dust">${dust}</div>
+    <div class="top">
+      <span style="color:var(--info)">${star}</span>
+      <span class="name">${g.name}</span>
+      <span class="pct">${p}%</span>
+    </div>
+    <div class="track" style="--w:${p}%">
+      <i style="--w:${p}%"></i>
+      <b style="--w:${p}%"></b>
+      <em></em>
+    </div>
+    <div class="foot">
+      <div>
+        <div class="big">${fmt(g.saved)}</div>
+        <div class="of">of ${fmt(g.target)}</div>
+      </div>
+      <div class="right">
+        <div class="need">need <b>${fmt(remain(g))}</b></div>
+        ${g.state === 'overdue' ? '<div class="over">OVERDUE</div>' : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function g9(g){
+  const p = pctOf(g);
+  return `
+  <div class="g9">
+    <div class="window">
+      <div class="far">
+        <div class="amt">${fmt(g.target)}</div>
+        <div class="lbl">the goal</div>
+      </div>
+      <div class="sill"><i style="--fill:${Math.max(p, 2)}%"></i></div>
+    </div>
+    <div class="body">
+      <div class="top">
+        <div class="name">${g.name}</div>
+        <div class="due">by ${g.date}</div>
+      </div>
+      <div class="row">
+        <div class="have">${fmt(g.saved)} <span>saved</span></div>
+        <div class="need">
+          <b>${fmt(remain(g))}</b> to go
+          ${g.state === 'overdue' ? '<div class="over">OVERDUE</div>' : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+const VARIANTS = [
+  {
+    id:'g1', badge:'G1', render:g1,
+    title:'The jar',
+    desc:'The card IS a vessel. The saved amount is a liquid level rising from the bottom, so the shape of the goal and the number of the goal are the same fact. An empty goal is an empty jar — visibly empty, not just "0%".',
+    tags:[['good','Shape carries the value'],['good','Empty state reads'],['warn','Vessel metaphor'],['info','Tall card']],
+    notes:[
+      ['Reads as','A savings jar on a shelf. The gradient inside makes it feel like something you pour into.'],
+      ['Honesty','Every number is real: saved, target, percent, deadline. The liquid is the percent.'],
+      ['Trade-off','The jar metaphor is strong enough that it may distract; the graduation ticks are decorative.'],
+    ],
+  },
+  {
+    id:'g2', badge:'G2', render:g2,
+    title:'The arc',
+    desc:'A dial. The percent is drawn as an arc sweeping to a full circle, so progress is SHAPED — you see a sliver versus a full ring before you read a digit.',
+    tags:[['good','Progress is a shape'],['good','Compact'],['info','Ring + text'],['warn','0% is a bare ring']],
+    notes:[
+      ['Reads as','A gauge or a dial. The green arc is the money you have; the gap is the money you do not.'],
+      ['Trade-off','At 0% the ring is empty and says nothing, which is the exact state that most needs a signal.'],
+    ],
+  },
+  {
+    id:'g3', badge:'G3', render:g3,
+    title:'The staircase',
+    desc:'Progress as steps climbing toward a flag. Each step is a tenth of the target, so you count the steps you have climbed AND the steps that remain — no arithmetic needed.',
+    tags:[['good','Countable both ways'],['good','The deadline becomes a flag'],['good','Playful, on-brand'],['info','Ten steps']],
+    notes:[
+      ['Reads as','Climbing. The flag sits on the last step, so the deadline is the thing at the top of the climb.'],
+      ['Trade-off','Ten steps is coarse — a goal at 94% and one at 96% look identical.'],
+    ],
+  },
+  {
+    id:'g4', badge:'G4', render:g4,
+    title:'The receipt',
+    desc:'A till receipt, perforated top and bottom, with the goal as a line-item statement and an OVERDUE stamp in the corner. The progress drops out entirely — the receipt is the record.',
+    tags:[['good','Very distinctive'],['good','Stamp is a real signal'],['warn','No progress at all'],['info','Monospace paper']],
+    notes:[
+      ['Reads as','Paper. A promise written down and stamped. Nothing here is a "progress bar".'],
+      ['Trade-off','It gives up the at-a-glance progress entirely — you have to read two numbers and divide.'],
+    ],
+  },
+  {
+    id:'g5', badge:'G5', render:g5,
+    title:'The pace gauge',
+    desc:'TWO arcs on one dial: the blue arc is how far the CALENDAR has gone, the green arc is how far the MONEY has gone. The gap between them is the pace — the one thing the current card cannot say.',
+    tags:[['good','Shows pace, not just progress'],['good','Uses the existing pace model'],['good','Two facts, one shape'],['info','Needs a clock metaphor']],
+    notes:[
+      ['Reads as','Two needles on one dial. Green past blue means you are ahead; green behind blue means you are slipping.'],
+      ['Honesty','Both arcs are computed from real data — the money from saved ÷ target, the time from the goal window.'],
+      ['Trade-off','The most information-dense of the nine, and the most to explain.'],
+    ],
+  },
+  {
+    id:'g6', badge:'G6', render:g6,
+    title:'The ten tiles',
+    desc:'The target broken into ten squares. Each square you can afford fills in. Progress becomes "four of ten" — a count, not a percentage, and the tiles can be compared with a glance across the grid.',
+    tags:[['good','Countable, no arithmetic'],['good','Tiles compare across cards'],['good','Partial tile shows the last one'],['info','Coarse to 10%']],
+    notes:[
+      ['Reads as','A set of ten blocks to knock down. The count in the corner ("4 of 10") states it outright.'],
+      ['Trade-off','Ten tiles quantise the target — good for a big goal, blunt for a small one.'],
+    ],
+  },
+  {
+    id:'g7', badge:'G7', render:g7,
+    title:'The statement',
+    desc:'A light-theme bank statement for a promise: monospaced line items, a ruled column of ten deposits down the right edge, and an OVERDUE stamp. The only light card in the set.',
+    tags:[['good','Breaks the dark page'],['good','Paper metaphor is legible'],['good','Ruled deposit column'],['warn','Inconsistent with the app']],
+    notes:[
+      ['Reads as','A printed document. The tick column on the right is the progress, ticked off like a deposit ledger.'],
+      ['Trade-off','A light card on a dark screen is a big statement — it either anchors the screen or fights it.'],
+    ],
+  },
+  {
+    id:'g8', badge:'G8', render:g8,
+    title:'The comet',
+    desc:'The saved amount is a spark travelling along a track toward the goal, with a trail behind it. Motion says "going" rather than "sitting" — a goal is a journey, not a container.',
+    tags:[['good','Motion = progress'],['good','Goal marker at the end'],['good','Dark, premium'],['info','Static in a screenshot']],
+    notes:[
+      ['Reads as','Something in flight. The bright head is the money you have; the pale trail behind it is where it came from.'],
+      ['Trade-off','The comet head at 0% sits on the left edge, which is the weakest possible position for the weakest possible state.'],
+    ],
+  },
+  {
+    id:'g9', badge:'G9', render:g9,
+    title:'The window',
+    desc:'The card is a window onto the target. The top half shows the goal as a pale, out-of-focus future; a sill rises from the bottom as you save. You are looking THROUGH the goal, not at a bar.',
+    tags:[['good','Goal is the subject'],['good','Depth, not just fill'],['good','Very distinct'],['info','Needs the percent too']],
+    notes:[
+      ['Reads as','A window with a horizon. The pale target up top and the solid "now" rising from the sill is the gap you are closing.'],
+      ['Trade-off','The most designed of the nine, and the one that most needs its proportions checked at small widths.'],
+    ],
+  },
+];
+
+const root = document.getElementById('root');
+root.innerHTML = VARIANTS.map(v => `
+  <div class="option" data-variant="${v.id}">
+    <div class="option-head">
+      <div class="option-badge">${v.badge}</div>
+      <div>
+        <div class="option-title">${v.title}</div>
+        <div class="option-desc">${v.desc}</div>
+        <div class="option-tags">${v.tags.map(([k,t]) => `<span class="tag ${k}">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid">
+        ${GOALS.map(g => v.render(g)).join('')}
+      </div>
+      <div class="notes">
+        ${v.notes.map(([k,t]) => `<div><span class="k">${k}</span><span>${t}</span></div>`).join('')}
+      </div>
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>

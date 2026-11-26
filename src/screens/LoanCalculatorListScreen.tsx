@@ -1,36 +1,90 @@
 /**
  * LoanCalculatorListScreen — list of saved loan projections.
  *
- * 2026-08-30 polish: cards mirror the InvestmentsListScreen design —
- * horizontal split (identity left, amounts right), hero EMI on the
- * right, total interest under it. A "PLANNED" pill flags that these
- * are projections, not real debts. The only differences from the
- * investment card are the danger-tinted accent (loans are about
- * cost), the danger-tinted wash, and the "interest you'll pay" copy.
+ * 2026-11-26 redesign (the document family): a projection is a
+ * PROMISE, not a contract — nothing here touches the ledger. So the
+ * card wears the SAME certificate shell as the real debt card
+ * (`.debt-cert`): the same perforated sheet, the same engraved
+ * fields, the same rail, the same closing figures.
  *
- * 2026-08-31: restored the warm-gradient wash (was off during the
- * "Accounts-only wash" interlude). The planned-loan page now reads as
- * a sibling of the planned-investment and real-debt cards — all three
- * list surfaces carry the same wash; only the tone differs.
+ * What marks it as a projection rather than a real debt is the
+ * PLANNED stamp — a dashed, tilted label standing in for the debt
+ * card's APR seal, because there is no instrument behind it yet. The
+ * tone is the danger ink a loan always carries: a loan is a cost.
  *
- * 2026-09-01: drafts are now rendered inline in the same card list
- * with a Draft pill, instead of being hidden in a footer section. The
- * user should always see what they've started — drafts are part of
- * "what I have", not a separate hidden pile.
+ * The shape matches the debt certificate exactly:
  *
- * Tap through to edit inputs or inspect the full amortization table.
+ *   - the header carries the name, the serial and the PLANNED stamp;
+ *   - the engraved fields name the principal, the term and the rate;
+ *   - the rail tracks the term's progress (the plan has no payments,
+ *     so it cannot show a settled share);
+ *   - the tally carries the count the other lines cannot hold;
+ *   - the footer names the EMI and the total you would pay.
+ *
+ * The Summary sidebar becomes a STATEMENT certificate — the same
+ * shell, holding the aggregates instead of one projection's terms.
+ *
+ * A DRAFT is a plan that has never been saved, so it is marked with
+ * a Draft pill rather than a second stamp: one stamp per card.
  */
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import { listLoanPlans, summariseLoanPlan } from '../domain/loanPlans';
 import { Button } from '../components/Button';
-import { fmtBDT } from '../lib/format';
+import { fmtBDT, fmtDate } from '../lib/format';
 import { formatDurationShort } from '../domain/duration';
-import { cardSurfaceStyle, leftBarClass, loanPlanTone, toneTextClass } from '../lib/cardSurface';
-import { Pill } from '../components/Pill';
-import { LoanTile } from '../components/InvestLoanTile';
+import type { CardTone } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
+
+/**
+ * The tone's raw colour, as a CSS value. The certificate's stamp,
+ * pip and amount colours all read it, so one assignment colours the
+ * whole document.
+ */
+const TONE_VAR: Record<CardTone, string> = {
+  primary: 'var(--primary)',
+  danger:  'var(--danger)',
+  accent:  'var(--accent)',
+  warn:    'var(--warn)',
+  success: 'var(--success)',
+  info:    'var(--info)',
+  muted:   'var(--muted)',
+  cyan:    'var(--cyan)',
+};
+
+/**
+ * A stable serial number for a projection.
+ *
+ * The app stores no document numbers, so a real one would be a lie.
+ * This derives a stable six-digit number from the plan id — the same
+ * plan always shows the same serial, so the face does not shuffle
+ * between visits.
+ */
+function serialFor(id: string): string {
+  // FNV-1a: small, fast, well-distributed. We only need stability.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return String(h % 1_000_000).padStart(6, '0');
+}
+
+/**
+ * The last payment date — the end of the term.
+ *
+ * The amortization table is monthly from the first payment date, so
+ * the last payment lands `termMonths - 1` months later.
+ */
+function lastPaymentDate(plan: { startDate: string; termMonths: number }): string | null {
+  const term = Math.max(0, Math.floor(Number(plan.termMonths) || 0));
+  if (!plan.startDate || term <= 0) return null;
+  const d = new Date(plan.startDate);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setMonth(d.getMonth() + term - 1);
+  return d.toISOString().slice(0, 10);
+}
 
 export function LoanCalculatorListScreen() {
   const navigate = useNavigate();
@@ -60,7 +114,7 @@ export function LoanCalculatorListScreen() {
     navigate(`/plan/loan/${id}`);
   }
 
-  // Aggregate totals for the sidebar summary card.
+  // Aggregate totals for the sidebar summary statement.
   let totalMonthly = 0;
   let totalPaid = 0;
   let totalPrincipal = 0;
@@ -108,191 +162,84 @@ export function LoanCalculatorListScreen() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-            {/* Left column — full-width loan cards stacked. Saved
-                plans render first, drafts render after, each draft
-                carries the Draft pill on the second row so the user
-                can tell saved from in-flight at a glance. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 items-start">
+            {/* Left column — one certificate per projection, the same
+                shell the Debts screen uses. Saved plans render first,
+                drafts render after, each draft carries the Draft pill
+                so the user can tell saved from in-flight at a glance. */}
             <div className="flex flex-col gap-3">
-              {ordered.map(plan => {
-                const s = summariseLoanPlan(plan);
-                const principal = Math.max(0, Number(plan.principal) || 0);
-                const interest = Math.max(0, s.totalInterest);
-                return (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => navigate(`/plan/loan/${plan.id}`)}
-                    className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative text-left"
-                    style={cardSurfaceStyle(loanPlanTone())}
-                  >
-                  {/* Left accent bar — 3px tone-coloured stripe. Loan
-                      cards use danger (cost/interest). The PLANNED pill
-                      in the left zone tells the user this isn't a real
-                      debt. */}
-                  <span
-                    aria-hidden
-                    className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(loanPlanTone())}`}
-                  />
-
-                  {/* Left zone — identity, terms, total cost.
-                      Same py-1 padding as the real InvCard so the
-                      planned and real cards have matching weight. */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-1">
-                    {/* Row 1: emoji + (name + Loan pill + PLANNED
-                        pill) on one row. Both pills hug the title
-                        text on the left. PLANNED is outlined so
-                        it reads as a state stamp sibling of the
-                        Loan pill, not a different category. Title
-                        is truncated to 1 line so the pills
-                        always sit against the title baseline. */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <LoanTile size={20} />
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-                          {plan.name || 'Untitled loan'}
-                        </div>
-                        <Pill tone={loanPlanTone()} variant="solid">Loan</Pill>
-                        {/* PLANNED pill — soft muted tone so it reads as
-                            a state stamp, not a category badge. Sits
-                            right next to the Loan pill. */}
-                        <Pill tone="muted" variant="soft" title="This is a projection — no real loan has been taken.">
-                          Planned
-                        </Pill>
-                      </div>
-                    </div>
-
-                    {/* Row 2: optional Draft pill — only when the
-                        plan has unsaved edits. Sits on its own row
-                        so it doesn't crowd the title row's pills.
-                        Now actually reachable since drafts render
-                        inline in the main list. */}
-                    {plan.dirty && (
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Pill tone="warn" variant="soft">Draft</Pill>
-                      </div>
-                    )}
-
-                    {/* Row 3: rate · term · start date. APR and
-                        termMonths are the critical pair — wrapped
-                        in a non-shrinking span so the start date
-                        (when present) doesn't push them off. */}
-                    <div className="text-[12px] text-muted tabular truncate">
-                      <span className="shrink-0">{plan.rate}% APR {MIDDOT} {formatDurationShort(plan.termMonths)}</span>
-                      {plan.startDate && <span className="opacity-70"> {MIDDOT} starts {plan.startDate}</span>}
-                    </div>
-
-                    {/* Row 4: principal + interest cost on stacked
-                        rows so tokens like "₹" and "2,00,000" never
-                        split across lines. mt-auto pins to bottom. */}
-                    <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
-                      <div className="tabular shrink-0">
-                        Principal <b className="text-ink font-semibold">{fmtBDT(principal)}</b>
-                      </div>
-                      <div className="tabular shrink-0">
-                        Pay <b className="text-danger font-semibold">{fmtBDT(interest)}</b> interest
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vertical divider between identity and amounts.
-                      self-stretch + my-1 matches the real card. */}
-                  <div
-                    aria-hidden
-                    className="w-px self-stretch my-1 shrink-0"
-                    style={{ background: 'var(--divider)' }}
-                  />
-
-                  {/* Right zone — amounts, right-aligned. EMI is the
-                      hero (the figure the user plans around); Total
-                      you pay sits below as the secondary figure.
-                      sm:min-w-[200px] matches the real card so the
-                      planned and real cards align visually. */}
-                  <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
-                    <div className="flex flex-col items-end leading-none">
-                      <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-                        Monthly EMI
-                      </span>
-                      <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(loanPlanTone())}`}>
-                        {fmtBDT(s.emi)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end leading-none">
-                      {/* White on the danger wash — the previous text-danger
-                          was red-on-red and disappeared into the wash.
-                          The label sits at 70% white so it still reads
-                          as a subdued label, not a competing hero figure. */}
-                      <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">
-                        Total you pay
-                      </span>
-                      <span className="font-bold tabular text-[15px] text-white mt-1">
-                        {fmtBDT(s.totalPaid)}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+              {ordered.map(plan => (
+                <LoanProjectionCard
+                  key={plan.id}
+                  plan={plan}
+                  onOpen={() => navigate(`/plan/loan/${plan.id}`)}
+                />
+              ))}
             </div>
 
-            {/* Right column — Summary sidebar (sticky at lg+). The
-                sidebar carries the aggregates the cards don't show on
-                their own: a count, the total principal across every
+            {/* Right column — the Summary STATEMENT. The sidebar
+                carries the aggregates the cards don't show on their
+                own: a count, the total principal across every
                 projection ("if you borrow this much"), and the total
                 interest across all. Per-card EMI and total-paid live
                 on the card itself; the sidebar aggregates are only
-                interesting once you have multiple projections stacked.
-                Mirrors InvestmentsListScreen's Summary card so the
-                three list screens (real / planned / loan) share one
-                shape. */}
-            <section className="card h-fit lg:sticky lg:top-4">
-              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
-                Summary
-              </h2>
-              <div className="flex flex-col gap-5">
-                <div>
-                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-                    Projections
-                  </div>
-                  <div className="text-[26px] font-bold text-ink mt-2 tabular tracking-tight leading-none">
-                    {count}
-                  </div>
-                  <div className="text-[11px] text-muted mt-1.5 tabular">
-                    {count === 1 ? 'saved loan plan' : 'saved loan plans'}
+                interesting once you have multiple projections
+                stacked. */}
+            <section
+              className="debt-cert debt-cert--plain debt-cert--statement h-fit lg:sticky lg:top-4"
+              style={{ ['--tone' as string]: TONE_VAR.danger }}
+            >
+              <div className="debt-cert__head">
+                <div className="min-w-0">
+                  <div className="debt-cert__name" style={{ textTransform: 'uppercase' }}>Summary</div>
+                  <div className="debt-cert__serial">
+                    NO. {String(count).padStart(6, '0')} {MIDDOT} {count} PROJECTION{count === 1 ? '' : 'S'}
                   </div>
                 </div>
-                <div>
-                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-                    If you borrow this much
-                  </div>
-                  <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalPrincipal)}
-                  </div>
-                  <div className="text-[11px] text-muted mt-1.5 tabular">
-                    Total principal across every projection
-                  </div>
+                <span
+                  className="debt-cert__stamp debt-cert__stamp--planned"
+                  title="These are projections — no real loan has been taken."
+                >
+                  Planned
+                </span>
+              </div>
+
+              <div className="debt-cert__rule" />
+
+              {/* The breakdown — one line per aggregate, label left
+                  and figure right. */}
+              <div className="debt-cert__lines">
+                <div className="debt-cert__line">
+                  <span className="k">Projections</span>
+                  <span className="v">{count}</span>
                 </div>
-                <div>
-                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-                    Total interest across all
-                  </div>
-                  <div className="text-[26px] font-bold text-danger mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalInterest)}
-                  </div>
-                  <div className="text-[11px] text-muted mt-1.5 tabular">
-                    {count === 1
-                      ? 'Over the full term of this loan'
-                      : 'Sum of interest across every projection'}
-                  </div>
+                <div className="debt-cert__line">
+                  <span className="k">If you borrow this much</span>
+                  <span className="v">{fmtBDT(totalPrincipal)}</span>
+                </div>
+                <div className="debt-cert__line">
+                  <span className="k">Total interest across all</span>
+                  <span className="v" style={{ color: 'var(--danger)' }}>{fmtBDT(totalInterest)}</span>
                 </div>
               </div>
-              <div className="text-xs text-muted mt-5 leading-relaxed">
-                <strong className="text-ink">How it works:</strong>{' '}
-                <em>Total monthly EMI</em> and <em>total you pay</em>
-                live on each card. This sidebar carries the aggregates
-                across every projection — what you'd borrow in total,
-                and what that costs in interest. Nothing here moves real
-                money.
+
+              <div className="debt-cert__vals">
+                <div className="debt-cert__v debt-cert__v--wide">
+                  <span className="k">Combined EMI</span>
+                  <span className="n">{fmtBDT(totalMonthly)}</span>
+                </div>
+                <div className="debt-cert__v debt-cert__v--wide">
+                  <span className="k">Total you pay</span>
+                  <span className="n">{fmtBDT(totalPaid)}</span>
+                </div>
+              </div>
+
+              <div className="debt-cert__note">
+                <strong>How it works:</strong> <em>Monthly EMI</em> and
+                <em> total you pay</em> live on each card. This sidebar
+                carries the aggregates across every projection — what
+                you'd borrow in total, and what that costs in interest.
+                Nothing here moves real money.
               </div>
             </section>
           </div>
@@ -320,5 +267,173 @@ export function LoanCalculatorListScreen() {
         </>
       )}
     </div>
+  );
+}
+
+/* ── Sub-component ──────────────────────────────────────────────── */
+
+/**
+ * A loan projection — the SAME certificate shell as a real debt card,
+ * so the plan and the debt read as siblings of one document family.
+ *
+ * A projection has no payments on record, so its rail cannot show a
+ * settled share. It shows the TERM instead: the share of the plan's
+ * life that has elapsed, measured against the first payment date.
+ */
+function LoanProjectionCard({
+  plan, onOpen,
+}: {
+  plan: ReturnType<typeof listLoanPlans>[number];
+  onOpen: () => void;
+}) {
+  const s = summariseLoanPlan(plan);
+  const principal = Math.max(0, Number(plan.principal) || 0);
+  const term = Math.max(0, Math.floor(Number(plan.termMonths) || 0));
+  const rate = Number(plan.rate) || 0;
+  const lastDate = lastPaymentDate(plan);
+
+  // How much of the term has already elapsed. A plan that has not
+  // started yet sits at zero, so its rail reads empty — which is
+  // exactly right: nothing has been paid and nothing has passed.
+  const elapsed = Math.max(0, Math.min(term, monthsElapsed(plan.startDate)));
+  const pct = term > 0 ? Math.round((elapsed / term) * 100) : 0;
+
+  // A loan projection is a cost, so it carries the danger tone — the
+  // same ink the real loan card uses.
+  const cardTone: CardTone = 'danger';
+
+  return (
+    <div
+      className="debt-cert debt-cert--plain card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative"
+      style={{ ['--tone' as string]: TONE_VAR[cardTone] }}
+      onClick={onOpen}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open loan projection "${plan.name || 'Untitled loan'}"`}
+    >
+      {/* The header — name + serial on the left, the PLANNED stamp on
+          the right, standing in for the debt card's APR seal. */}
+      <div className="debt-cert__head">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="debt-cert__name">{plan.name || 'Untitled loan'}</div>
+            {/* The Draft pill — a plan that has never been saved. It
+                sits beside the title so the user can tell saved from
+                in-flight at a glance. */}
+            {plan.dirty && (
+              <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded bg-warn-soft text-warn">
+                Draft
+              </span>
+            )}
+          </div>
+          <div className="debt-cert__serial">
+            NO. {serialFor(plan.id)} {MIDDOT} LOAN PROJECTION
+          </div>
+        </div>
+
+        {/* The PLANNED stamp — the one fact that must be readable
+            before any number is: this is a projection, not a debt. */}
+        <span
+          className="debt-cert__stamp debt-cert__stamp--planned"
+          title="This is a projection — no real loan has been taken."
+        >
+          Planned
+        </span>
+      </div>
+
+      {/* The terms line — the rate and the term, the critical pair a
+          borrower reads first. */}
+      <div className="text-[12px] text-muted tabular truncate mt-2">
+        {rate > 0 && <span className="shrink-0">{rate}% APR</span>}
+        {rate > 0 && term > 0 && <span> {MIDDOT} </span>}
+        {term > 0 && <span className="shrink-0">{formatDurationShort(term)}</span>}
+      </div>
+
+      {/* The engraved terms — all three read the same way: a small
+          uppercase label with its figure on the line beneath it. */}
+      <div className="debt-cert__fields">
+        <div className="debt-cert__f">
+          <div className="k">Loan amount</div>
+          <div className="v">{fmtBDT(principal)}</div>
+        </div>
+        <div className="debt-cert__f">
+          <div className="k">Term</div>
+          <div className="v">{term > 0 ? formatDurationShort(term) : '—'}</div>
+        </div>
+        <div className="debt-cert__f">
+          <div className="k">Rate</div>
+          <div className="v">{rate}%</div>
+        </div>
+      </div>
+
+      {/* The rail — the share of the term already elapsed. */}
+      <div
+        className="debt-cert__rail"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${plan.name || 'Untitled loan'} term elapsed`}
+      >
+        <i style={{ width: `${pct}%` }} />
+      </div>
+      <div className="debt-cert__railhint">
+        {term > 0 ? `${pct}% of term elapsed` : '—'}
+      </div>
+
+      {/* The tally — the numbers the other lines cannot carry: the
+          first and the last payment dates, and the count. */}
+      <div className="debt-cert__tally tabular">
+        <span className="pip" aria-hidden />
+        <span>
+          {term} of {term} installments {MIDDOT}{' '}
+          <b>{fmtBDT(s.totalPaid)}</b> paid in full
+        </span>
+      </div>
+
+      {/* The document's closing figures. */}
+      <div className="debt-cert__vals">
+        <div className="debt-cert__v debt-cert__v--now">
+          <div className="k">Monthly EMI</div>
+          <div className="n">{fmtBDT(s.emi)}</div>
+        </div>
+        <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
+          <div className="k">Total you pay</div>
+          <div className="n">{fmtBDT(s.totalPaid)}</div>
+        </div>
+      </div>
+
+      {/* The footnote — the document's small print. */}
+      <div className="debt-cert__note">
+        <span className="tabular">
+          <strong>First payment</strong> {fmtDate(plan.startDate)}
+          {lastDate ? <> {MIDDOT} <strong>Last</strong> {fmtDate(lastDate)}</> : null}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How many whole months have passed since the first payment date.
+ *
+ * Negative before the start (the plan has not begun), and never more
+ * than the plan's own term.
+ */
+function monthsElapsed(startDate: string): number {
+  if (!startDate) return 0;
+  const d = new Date(startDate);
+  if (Number.isNaN(d.getTime())) return 0;
+  const now = new Date();
+  if (now < d) return 0;
+  return (
+    (now.getFullYear() - d.getFullYear()) * 12 +
+    (now.getMonth() - d.getMonth())
   );
 }

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — Investments</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/certificates.css" />
+<style>
+/* Investments is a stack of certificates with a summary pinned right.
+   ONE SHELL FOR EVERY TYPE — a DPS and an FDR are the same card, the
+   same height. The ledger is always two lines: LAST DEPOSIT and
+   NEXT DUE (or MATURES for a lump sum). */
+.invlayout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1080px){ .invlayout{grid-template-columns:minmax(0,1fr)} }
+.invcol{display:flex;flex-direction:column;gap:18px}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Investments — the certificate stack</h1>
+  <p>
+    An investment is a <b>bond certificate</b>: a perforated instrument carrying engraved
+    terms, a serial number, a tilted rate seal, a two-line deposit ledger and the two values
+    separated by a named interest figure. The Summary is pinned to the right at large widths,
+    so the totals stay visible while you scroll the list.
+  </p>
+  <div class="legend">
+    <span class="lg">Certificate stack</span>
+    <span class="lg">Rate seal</span>
+    <span class="lg">Two-line ledger</span>
+    <span class="lg on">Value / interest / maturity</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-home.html">Home</a>
+    <a href="demo-transactions.html">Transactions</a>
+    <a href="demo-accounts.html">Accounts</a>
+    <a href="demo-goals.html">Goals</a>
+    <a href="demo-investments.html" class="on">Investments</a>
+    <a href="demo-debts.html">Debts</a>
+    <a href="demo-plan.html">Plan</a>
+    <a href="demo-insight.html">Insight</a>
+    <a href="demo-settings.html">Settings</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+    <div class="head">
+      <div>
+        <h1 class="h1">Investments</h1>
+        <div class="meta tabular">5 total</div>
+      </div>
+      <button class="page btn"><span>+</span> Add</button>
+    </div>
+
+    <div class="invlayout">
+
+      <!-- ═══ THE CERTIFICATE STACK ═════════════════════════════ -->
+      <div class="invcol">
+
+        <!-- DPS — monthly installment, blue tone -->
+        <article class="inv-cert" style="--tone:var(--info)">
+          <div class="inv-cert__head">
+            <div style="min-width:0">
+              <div class="inv-cert__name">Dutch-Bangla DPS</div>
+              <div class="inv-cert__serial">NO. 126784 · DPS · DUTCH-BANGA · MATURES IN ~2.4Y</div>
+            </div>
+            <div class="inv-cert__seal"><span class="p">8.5%</span><span class="l">RATE</span></div>
+          </div>
+
+          <div class="inv-cert__fields">
+            <div class="inv-cert__f"><div class="k">Monthly</div><div class="v">৳ 5,000</div></div>
+            <div class="inv-cert__f"><div class="k">Term</div><div class="v">60 mo</div></div>
+            <div class="inv-cert__f"><div class="k">Time left</div><div class="v">~2.4y</div></div>
+          </div>
+
+          <div class="inv-cert__ledger">
+            <div class="inv-cert__ledger-head">
+              <span class="t">Deposits</span>
+              <span class="n">26 of 60 paid</span>
+            </div>
+            <div class="inv-cert__dline">
+              <span class="inv-cert__dk">Last deposit</span>
+              <span class="inv-cert__dd">01 Nov 2026</span>
+              <span class="inv-cert__da">৳ 5,000</span>
+            </div>
+            <div class="inv-cert__dline inv-cert__dline--next">
+              <span class="inv-cert__dk">Next due</span>
+              <span class="inv-cert__dd">01 Dec 2026</span>
+              <span class="inv-cert__da">৳ 5,000</span>
+            </div>
+            <div class="inv-cert__tally">
+              <span class="pip" aria-hidden></span>
+              <span><b>৳ 1,30,000</b> contributed so far · <b>৳ 1,51,674</b> in the account</span>
+            </div>
+          </div>
+
+          <div class="inv-cert__vals">
+            <div class="inv-cert__v inv-cert__v--now">
+              <div class="k">Value today</div><div class="n">৳ 1,51,674</div>
+            </div>
+            <div class="inv-cert__grow">
+              <div class="gk">Interest</div><div class="gn">৳ 1,49,552</div>
+            </div>
+            <div class="inv-cert__v inv-cert__v--mat">
+              <div class="k">At maturity</div><div class="n">৳ 3,01,226</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- FDR — lump sum, honey tone -->
+        <article class="inv-cert" style="--tone:var(--accent)">
+          <div class="inv-cert__head">
+            <div style="min-width:0">
+              <div class="inv-cert__name">City Bank FDR</div>
+              <div class="inv-cert__serial">NO. 448120 · FDR · CITY BANK · MATURES IN ~1.1Y</div>
+            </div>
+            <div class="inv-cert__seal"><span class="p">9.2%</span><span class="l">RATE</span></div>
+          </div>
+
+          <div class="inv-cert__fields">
+            <div class="inv-cert__f"><div class="k">Principal</div><div class="v">৳ 2,00,000</div></div>
+            <div class="inv-cert__f"><div class="k">Term</div><div class="v">12 mo</div></div>
+            <div class="inv-cert__f"><div class="k">Time left</div><div class="v">~1.1y</div></div>
+          </div>
+
+          <div class="inv-cert__ledger">
+            <div class="inv-cert__ledger-head">
+              <span class="t">Deposit record</span>
+              <span class="n">1 lump sum</span>
+            </div>
+            <div class="inv-cert__dline">
+              <span class="inv-cert__dk">Last deposit</span>
+              <span class="inv-cert__dd">14 Jan 2026</span>
+              <span class="inv-cert__da">৳ 2,00,000</span>
+            </div>
+            <div class="inv-cert__dline inv-cert__dline--next">
+              <span class="inv-cert__dk">Matures</span>
+              <span class="inv-cert__dd">14 Jan 2027</span>
+              <span class="inv-cert__da">৳ 2,18,400</span>
+            </div>
+            <div class="inv-cert__tally">
+              <span class="pip" aria-hidden></span>
+              <span>Lump sum · <b>৳ 2,00,000</b> locked in at start</span>
+            </div>
+          </div>
+
+          <div class="inv-cert__vals">
+            <div class="inv-cert__v inv-cert__v--now">
+              <div class="k">Value today</div><div class="n">৳ 2,08,110</div>
+            </div>
+            <div class="inv-cert__grow">
+              <div class="gk">Interest</div><div class="gn">৳ 10,290</div>
+            </div>
+            <div class="inv-cert__v inv-cert__v--mat">
+              <div class="k">At maturity</div><div class="n">৳ 2,18,400</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Savings — mint tone -->
+        <article class="inv-cert" style="--tone:var(--primary)">
+          <div class="inv-cert__head">
+            <div style="min-width:0">
+              <div class="inv-cert__name">Emergency savings</div>
+              <div class="inv-cert__serial">NO. 903771 · SAVINGS · MATURES IN ~0.8Y</div>
+            </div>
+            <div class="inv-cert__seal"><span class="p">7.0%</span><span class="l">RATE</span></div>
+          </div>
+
+          <div class="inv-cert__fields">
+            <div class="inv-cert__f"><div class="k">Principal</div><div class="v">৳ 60,000</div></div>
+            <div class="inv-cert__f"><div class="k">Term</div><div class="v">9 mo</div></div>
+            <div class="inv-cert__f"><div class="k">Time left</div><div class="v">~0.8y</div></div>
+          </div>
+
+          <div class="inv-cert__ledger">
+            <div class="inv-cert__ledger-head">
+              <span class="t">Deposit record</span>
+              <span class="n">1 lump sum</span>
+            </div>
+            <div class="inv-cert__dline">
+              <span class="inv-cert__dk">Last deposit</span>
+              <span class="inv-cert__dd">02 Feb 2026</span>
+              <span class="inv-cert__da">৳ 60,000</span>
+            </div>
+            <div class="inv-cert__dline inv-cert__dline--next">
+              <span class="inv-cert__dk">Matures</span>
+              <span class="inv-cert__dd">02 Nov 2026</span>
+              <span class="inv-cert__da">৳ 63,150</span>
+            </div>
+            <div class="inv-cert__tally">
+              <span class="pip" aria-hidden></span>
+              <span>Lump sum · <b>৳ 60,000</b> locked in at start</span>
+            </div>
+          </div>
+
+          <div class="inv-cert__vals">
+            <div class="inv-cert__v inv-cert__v--now">
+              <div class="k">Value today</div><div class="n">৳ 62,700</div>
+            </div>
+            <div class="inv-cert__grow">
+              <div class="gk">Interest</div><div class="gn">৳ 450</div>
+            </div>
+            <div class="inv-cert__v inv-cert__v--mat">
+              <div class="k">At maturity</div><div class="n">৳ 63,150</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- ═══ CLOSED — the quiet list ═══════════════════════════ -->
+        <div class="sect-h" style="margin-top:8px">Closed · 1</div>
+        <article class="inv-cert inv-cert--closed" style="--tone:var(--muted-2)">
+          <div class="inv-cert__head">
+            <div style="min-width:0">
+              <div class="inv-cert__name">Standard Chartered FDR</div>
+              <div class="inv-cert__serial">NO. 557213 · FDR · STANDARD CHARTERED</div>
+            </div>
+            <div class="inv-cert__stamp">Closed</div>
+          </div>
+          <div class="inv-cert__fields">
+            <div class="inv-cert__f"><div class="k">Principal</div><div class="v">৳ 1,00,000</div></div>
+            <div class="inv-cert__f"><div class="k">Rate</div><div class="v">6.5%</div></div>
+            <div class="inv-cert__f"><div class="k">Term</div><div class="v">6 mo</div></div>
+          </div>
+          <div class="inv-cert__tally">
+            <span class="pip" aria-hidden></span>
+            <span>Ended 04 Aug 2026</span>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- ═══ THE SUMMARY — pinned right ═════════════════════════ -->
+      <section>
+        <article class="inv-cert inv-cert--summary">
+          <div class="inv-cert__head">
+            <div style="min-width:0">
+              <div class="inv-cert__name">Summary</div>
+              <div class="inv-cert__serial">NO. 000003 · 3 ACTIVE · HOLDINGS</div>
+            </div>
+          </div>
+
+          <div class="inv-cert__fields inv-cert__fields--stack">
+            <div class="inv-cert__f">
+              <div class="k">DPS · 1</div>
+              <div class="v" style="color:var(--info)">৳ 1,51,674</div>
+            </div>
+            <div class="inv-cert__f">
+              <div class="k">FDR · 1</div>
+              <div class="v" style="color:var(--accent)">৳ 2,08,110</div>
+            </div>
+            <div class="inv-cert__f">
+              <div class="k">Savings · 1</div>
+              <div class="v" style="color:var(--primary)">৳ 62,700</div>
+            </div>
+          </div>
+
+          <div class="inv-cert__vals">
+            <div class="inv-cert__v inv-cert__v--now">
+              <div class="k">Value today</div><div class="n">৳ 4,22,484</div>
+            </div>
+            <div class="inv-cert__v inv-cert__v--mat">
+              <div class="k">At maturity</div><div class="n">৳ 5,82,776</div>
+            </div>
+            <div class="inv-cert__grow">
+              <div class="gk">Interest if every term completes</div>
+              <div class="gn">৳ 1,60,292</div>
+            </div>
+          </div>
+
+          <div class="inv-cert__note">
+            <strong class="text-ink">Value today</strong> is what the banks would pay out now.
+            <strong class="text-ink">At maturity</strong> is what you collect when every term ends.
+            Record a payout as Income to bring the money back to your account.
+          </div>
+        </article>
+      </section>
+
+    </div>
+
+    <!-- ═══ ADD INVESTMENT ════════════════════════════════════════ -->
+    <div class="sect-h" style="margin-top:28px">Add investment — type-aware, and the maturity preview is live</div>
+
+    <div class="cols cols-2">
+      <form class="sheet" onsubmit="return false">
+        <div class="sheet__head">
+          <div>
+            <div class="sheet__name">Add investment</div>
+            <div class="sheet__serial">DPS, FDR, OR INTEREST-BEARING SAVINGS</div>
+          </div>
+          <span class="tag tag--in">DPS</span>
+        </div>
+        <div class="sheet__rule"></div>
+        <div class="stack">
+          <div class="field">
+            <div class="flabel">Name</div>
+            <input type="text" placeholder="DPS #1, Main FDR…" />
+          </div>
+          <div class="field">
+            <div class="flabel">Type</div>
+            <select>
+              <option>DPS (monthly installment)</option>
+              <option>FDR (lump-sum, fixed term)</option>
+              <option>Savings (interest-bearing)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="flabel">Monthly contribution</div>
+            <div class="fhint">What you pay each month into this DPS.</div>
+            <input type="number" placeholder="5000" />
+          </div>
+          <div class="field">
+            <div class="flabel">Rate (% per year)</div>
+            <div class="fhint">Annual rate. Simple interest for FDR/savings (compounded monthly for DPS).</div>
+            <input type="number" placeholder="8" />
+          </div>
+          <div class="stack-2">
+            <div class="field">
+              <div class="flabel">Start date</div>
+              <input type="date" />
+            </div>
+            <div class="field">
+              <div class="flabel">Term (months)</div>
+              <input type="number" placeholder="12" />
+            </div>
+          </div>
+          <div class="field">
+            <div class="flabel">Account</div>
+            <div class="fhint">Where each monthly contribution comes from. (You'll pick it again on each contribution.)</div>
+            <select>
+              <option>Main Bank</option>
+              <option>Cash</option>
+              <option>bKash</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="flabel">Institution (optional)</div>
+            <input type="text" placeholder="Bank name…" />
+          </div>
+        </div>
+
+        <div class="warnbox" style="margin-top:16px">
+          <b>Review:</b> You'll receive about <b>৳ 2,74,310</b> at maturity
+          <span style="opacity:.7">(projection — actual payout may differ).</span>
+          <div style="color:var(--muted);font-size:12.5px;margin-top:6px">
+            Annuity-due: monthly contribution compounded at the stated rate for the full term.
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:18px">
+          <button class="page btn" type="button">Save investment</button>
+          <button class="page btn btn--ghost" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <div class="stack">
+        <div class="sect-h">One shell for every type</div>
+        <div class="sheet">
+          <div class="lines">
+            <div class="line"><span class="lk"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--info);margin-right:8px"></span>DPS</span><span class="lv">monthly installment</span></div>
+            <div class="line"><span class="lk"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--accent);margin-right:8px"></span>FDR</span><span class="lv">lump sum, fixed term</span></div>
+            <div class="line"><span class="lk"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--primary);margin-right:8px"></span>Savings</span><span class="lv">interest-bearing</span></div>
+            <div class="line line--total"><span class="lk">Card height</span><span class="lv">never grows with the term</span></div>
+          </div>
+          <div class="acct__note" style="margin-top:12px">
+            A DPS pays a fixed installment every month for years, so its full deposit ledger
+            can run to dozens of rows; an FDR has exactly one deposit. Both get the
+            <b>same two-line ledger</b> — LAST DEPOSIT and NEXT DUE — so a 34-deposit DPS
+            and a 1-deposit FDR are the same card, the same height.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1094,11 +1094,13 @@ main > * {
 }
 
 /* The PLANNED stamp — the planner's stand-in for the real card's rate
-   seal. A plan is a promise, not a contract, so it prints in the
-   neutral muted ink rather than the holding's own tone. */
+   seal. A plan is a promise, not a contract, so it prints with a
+   dashed border rather than the live card's solid rule — but it
+   still carries the plan's own tone: green for a planned
+   investment, the colour of a return. The WORD stays grey. */
 .inv-cert__stamp--planned {
-  --tone: var(--muted);
   border-style: dashed;
+  color: var(--muted);
   transform: rotate(-4deg);
 }
 
@@ -1111,6 +1113,461 @@ main > * {
 .inv-cert--closed .inv-cert__tally {
   margin-top: 12px;
 }
+
+/* ============================================================
+   THE DEBT CERTIFICATE (.debt-cert)
+   ============================================================
+   A debt is an IOU — a PROMISE, not a holding. So the debt card is
+   not the investment certificate: it has no maturity value and no
+   deposit ledger. What it does have is a polarity ("I owe" /
+   "Owed to me"), which is exactly what a stamp on a document is
+   for. So the shell is the same perforated sheet, but it carries:
+
+     the STAMP       the polarity, in a rubber-stamp label
+     the SEAL        the APR, on a loan (a circle, like the
+                     investment certificate's rate seal)
+     the STUB        a tear-off counterparty copy, on a flat debt
+     the RAIL        the share already settled, as a punched track
+
+   The tear-off stub is what makes a flat debt read as an IOU: the
+   counterparty keeps their copy, the user keeps theirs, and the
+   perforation between them is the line where the sheet tears.
+
+   `--tone` is set inline per debt: danger for "I owe", primary for
+   "Owed to me". The wash, the stamp, the rail and the hero figure
+   all share that one colour identity.
+   ============================================================ */
+
+.debt-cert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 22px 22px 24px;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--tone) 7%, #1E2A24) 0%,
+      color-mix(in srgb, var(--tone) 4%, #22302A) 55%,
+      #1A241F 100%
+    );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* The PLAIN paper — the same neutral sheet the goal receipt and the
+   investment certificate are printed on.
+
+   The tone-washed gradient above is the DEBT's own ink: a debt is a
+   live obligation, so its colour identity rides on the sheet. A
+   projection is not an obligation, so it takes the plain paper and
+   keeps its identity in the seal, the pip and the amount colours —
+   exactly like the investment certificate. */
+.debt-cert--plain {
+  background: var(--surface-3);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05),
+    transparent 46%
+  );
+  box-shadow: var(--shadow-card), var(--card-inset);
+}
+
+/* The perforated edge — the same tear as the goal receipt and the
+   investment certificate, so the three documents read as one
+   family. Both edges are drawn the SAME way: a 9px band whose
+   circles are centred 4.5px from the sheet's own edge, so each
+   hole is a full circle and the top and bottom match. */
+.debt-cert::before,
+.debt-cert::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x,
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px) 0 0 / 14px 9px repeat-x;
+}
+.debt-cert::before { top: 0; }
+.debt-cert::after { bottom: 0; }
+
+/* The header — the debt's name and serial on the left, the stamp
+   (or the APR seal) on the right. */
+.debt-cert__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.debt-cert__name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.debt-cert__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The polarity STAMP — a rubber stamp on the document. It states
+   the direction ("I owe" / "Owed to me"), which is the one fact
+   that must be readable before any number is. */
+.debt-cert__stamp {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 2px solid var(--tone, var(--muted));
+  color: var(--tone, var(--muted));
+  border-radius: 4px;
+  transform: rotate(-6deg);
+  white-space: nowrap;
+}
+
+/* The PLANNED stamp — a projection is a promise, not a contract, so
+   its stamp prints with a dashed border instead of the live
+   document's solid rule. The border carries the card's own tone: red
+   for a planned loan (a cost), green for a planned investment (a
+   return). The WORD stays grey — the stamp says what it is, and
+   only the rule says which document it belongs to. */
+.debt-cert__stamp--planned {
+  border-style: dashed;
+  color: var(--muted);
+  transform: rotate(-4deg);
+}
+
+/* The APR seal — a tilted circle on a loan, matching the investment
+   certificate's rate seal so the two instruments read as siblings. */
+.debt-cert__seal {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--tone);
+  color: var(--tone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-9deg);
+  line-height: 1;
+  margin-right: 6px;
+}
+.debt-cert__seal .p {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.debt-cert__seal .l {
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  margin-top: 3px;
+}
+
+/* The engraved fields — total, paid, counterparty. */
+.debt-cert__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.debt-cert__f .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.debt-cert__f .v {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A field whose figure carries the debt's own tone — the interest
+   you paid (danger) or the principal that actually reduced what
+   you owe (primary). */
+.debt-cert__f .v--danger { color: var(--danger); }
+.debt-cert__f .v--primary { color: var(--primary); }
+
+/* The RAIL — the share already settled, as a punched track. */
+.debt-cert__rail {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  margin-top: 14px;
+}
+.debt-cert__rail > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tone, var(--primary));
+}
+.debt-cert__railhint {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* The figures at the foot of the document — what is still owed,
+   with the total it came from alongside. */
+.debt-cert__vals {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+}
+.debt-cert__v .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.debt-cert__v .n {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.debt-cert__v--now .n { color: var(--tone); }
+.debt-cert__v--mat .n { font-size: 15px; color: var(--ink); }
+
+/* The footnote — the document's small print. */
+.debt-cert__note {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--divider);
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.debt-cert__note strong { font-weight: 700; color: var(--ink); }
+.debt-cert__note em { font-style: italic; }
+
+/* ============================================================
+   THE TEAR-OFF STUB (.debt-cert--stub)
+   ============================================================
+   A flat debt is an IOU slip with a detachable counterparty copy.
+   The perforation runs DOWN the sheet's left edge — a column of
+   punched holes — and the tail beside it is the copy the other
+   party keeps. The stub narrows the sheet's own text column, so
+   the content area shifts right to make room.
+   ============================================================ */
+
+.debt-cert--stub {
+  padding-left: 46px;
+}
+/* The punched column of holes, cut through to the page colour. The
+   holes sit to the RIGHT of the stub label so the label reads clear
+   of them. */
+.debt-cert--stub::before,
+.debt-cert--stub::after {
+  left: 26px;
+  right: auto;
+  top: 20px;
+  bottom: 20px;
+  width: 10px;
+  height: auto;
+  background:
+    radial-gradient(circle at 5px 5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 10px 12px repeat-y,
+    radial-gradient(circle at 5px 5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px) 0 0 / 10px 12px repeat-y;
+}
+/* The tear-off label, running down the margin beside the holes. */
+.debt-cert__stubtail {
+  position: absolute;
+  left: 2px;
+  top: 40px;
+  bottom: 26px;
+  width: 11px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+/* The punched notch at the head of the stub — the tone-coloured
+   pip that marks where the tear starts. */
+.debt-cert__stublabel {
+  position: absolute;
+  left: 6px;
+  top: 24px;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tone) 60%, black);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone) 20%, transparent);
+  pointer-events: none;
+}
+
+/* ============================================================
+   THE SETTLED DOCUMENT (.debt-cert--settled)
+   ============================================================
+   A completed debt is a SPENT document — the same sheet, printed
+   in the quiet ink of something already dealt with. It drops the
+   tone wash, the rail and the hero figure: there is nothing left
+   to collect. The PAID stamp is the headline.
+   ============================================================ */
+
+.debt-cert--settled {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--muted-2) 12%, #262F2B) 0%,
+    color-mix(in srgb, var(--muted-2) 7%, #222B27) 55%,
+    #1E2622 100%
+  );
+  padding: 18px 20px 20px;
+}
+
+/* The tally — the settled document's closing line: what it was,
+   and where the money went. */
+.debt-cert__tally {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 11px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.debt-cert__tally .pip {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--tone, var(--primary));
+}
+.debt-cert__tally b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   THE DEBT STATEMENT (.debt-cert--statement)
+   ============================================================
+   The Summary is the rolled-up view — a STATEMENT rather than an
+   instrument, so it carries the totals instead of one holding's
+   terms. Its wash is quieter than a certificate's, because it
+   aggregates rather than asserts.
+
+   The per-direction breakdown stacks down the sheet (each line is
+   one polarity and needs its own tone), and the footer grid holds
+   the net position beside the interest paid.
+   ============================================================ */
+
+.debt-cert--statement {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--tone) 6%, #1B2521) 0%,
+      color-mix(in srgb, var(--tone) 3%, #202B26) 55%,
+      #18211D 100%
+    );
+  padding: 20px 20px 22px;
+}
+
+/* A dashed rule between the statement's sections. */
+.debt-cert__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 12px 0 10px;
+}
+
+/* The statement's breakdown — one line per polarity, label left
+   and figure right. */
+.debt-cert__lines {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+}
+.debt-cert__line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.debt-cert__line .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.debt-cert__line .v {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+.debt-cert__line .v--danger { color: var(--danger); }
+.debt-cert__line .v--primary { color: var(--primary); }
+/* The count caption — "Across 2 debts" — sits under its own line,
+   so the label and the figure can share the row above it. */
+.debt-cert__cap {
+  grid-column: 1 / -1;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The statement's footer — the net position, the interest paid and
+   the largest single balance. The card lives in the narrow sidebar
+   column, so the three figures cannot sit side by side: they
+   wrap onto two columns and the third spans the full width. */
+.debt-cert--statement .debt-cert__vals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 12px 14px;
+}
+.debt-cert--statement .debt-cert__v--wide {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--divider);
+}
+.debt-cert--statement .debt-cert__v--wide .n {
+  font-size: 13px;
+  color: var(--ink);
+}
+.debt-cert--statement .debt-cert__v--now .n { font-size: 20px; }
+.debt-cert--statement .debt-cert__v--mat .n { font-size: 20px; }
 
 /* Cash-flow polyline draw-in — uses stroke-dasharray + dashoffset
    to "draw" the line left-to-right. Caller sets `stroke-dasharray`
