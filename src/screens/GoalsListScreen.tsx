@@ -1,34 +1,28 @@
 /**
- * GoalsListScreen — multi-column card grid matching the mockup.
+ * GoalsListScreen — multi-column card grid, rendered as RECEIPTS.
  *
  * Visual target: docs/ux-designs/.../mockups/v2/dark.html#goals
- * Each card: name + percent chip in a row, gradient bar, two-line
- * meta (saved/target and by-date). Cards link to /goals/:id for detail.
+ *
+ * 2026-11-26 redesign (variant G4, "the receipt"): each goal is a
+ * till receipt — monospaced line items, dashed rules, a perforated
+ * edge top and bottom, and a status stamp tilted at the top-right.
+ * The progress BAR, the percent PILL and the star tile are gone:
+ * the receipt is the record, and its NUMBERS carry the progress.
+ * "TARGET / SAVED / PROGRESS / DUE" read as a statement, and
+ * "STILL NEEDED" is the receipt's total.
  *
  * The saved amount is derived from transaction history (R6), so the
  * card shows the live aggregate, not the stale stored field.
- *
- * 2026-08-14 polish: cards use the shared .card primitive (rounded
- * 12px, 24px padding, refined shadow), the progress bar is slightly
- * taller, and hover affordance is subtle border + lift.
  *
  * 2026-08-14 polish: header carries an "Add" CTA — goals are a
  * separate entity from transactions, so the global "Add transaction"
  * sidebar CTA doesn't help here. The empty state has its own contextual
  * button.
  *
- * 2026-08-31 polish: every goal card now carries the shared
- * info-tone wash + 3px accent bar — the same treatment the
- * account / debt / investment / planned-loan cards use, so the
- * goal list feels of-a-piece with the rest of the app.
- *
- * 2026-09-01 polish: progress bar moved to the canonical
- * primary → accent gradient (same component as Goals / Debts /
- * Investments widgets on Insights + the planner preview). The
- * card's info wash + accent bar still carry the cool-blue theme
- * locally; the gradient bar carries the universal "money
- * growing" language so every progress-bar surface in the app
- * reads as one shape.
+ * The pace classification is unchanged — it now reads as the
+ * receipt's footnote ("PACE: AHEAD") rather than a chip in the
+ * header, so the pace still states the one thing the numbers alone
+ * cannot: whether the money is keeping up with the calendar.
  */
 import { Link } from 'react-router-dom';
 import { useStore } from '../domain/store';
@@ -43,10 +37,6 @@ import {
 } from '../domain/math';
 import { EmptyState, GoalsIllustration } from '../components/EmptyState';
 import { fmtBDT, fmtDate } from '../lib/format';
-import { cardSurfaceStyle, leftBarClass } from '../lib/cardSurface';
-import { Pill } from '../components/Pill';
-import { ProgressBar } from '../components/ProgressBar';
-import { GoalTile } from '../components/InvestLoanTile';
 
 /**
  * Classify the user's pace toward a goal as ahead / on-track / behind.
@@ -81,27 +71,37 @@ const PACE_LABEL: Record<ReturnType<typeof paceOf>, string> = {
   behind: 'Behind',
 };
 
-// Map a goal's pace state to the tone the pace chip + label should use.
-// Completed / ahead → success (you're winning). On-track → primary
-// (the neutral "fine" state). Behind → warn (slipping). Expired → danger
-// (deadline passed without hitting target).
-const PACE_TONE: Record<ReturnType<typeof paceOf>, 'success' | 'primary' | 'warn' | 'danger'> = {
-  completed: 'success',
-  ahead:     'success',
-  'on-track':'primary',
-  behind:    'warn',
-  expired:   'danger',
-};
-
-// Inline-label color matches the chip's tone — the small "Pace: Behind"
-// line below the meta block uses the same hue so the chip + caption read
-// as one themed unit.
+// The pace line's ink. Completed / ahead → success (you're winning).
+// On-track → primary (the neutral "fine" state). Behind → warn
+// (slipping). Expired → danger (deadline passed without hitting
+// target).
 const PACE_TEXT_COLOR: Record<ReturnType<typeof paceOf>, string> = {
   completed: 'var(--success)',
   ahead:     'var(--success)',
   'on-track':'var(--primary)',
   behind:    'var(--warn)',
   expired:   'var(--danger)',
+};
+
+/**
+ * The receipt's status STAMP.
+ *
+ * A stamp is a physical claim about a document, so the wording is
+ * document language rather than app language: a goal past its date
+ * is OVERDUE, a goal that hit its target is DONE, and anything else
+ * is still OPEN.
+ */
+const STAMP_TEXT: Record<'completed' | 'expired' | 'open', string> = {
+  completed: 'Done',
+  expired:   'Overdue',
+  open:      'Open',
+};
+
+/** The stamp's ink — a red rubber stamp for a late promise. */
+const STAMP_COLOR: Record<'completed' | 'expired' | 'open', string> = {
+  completed: 'var(--success)',
+  expired:   'var(--danger)',
+  open:      'var(--muted)',
 };
 
 export function GoalsListScreen() {
@@ -136,8 +136,8 @@ export function GoalsListScreen() {
           />
         </section>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {gs.map((g, index) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+          {gs.map(g => {
             const saved = goalSaved(g);
             const target = Number(g.target) || 0;
             const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
@@ -145,65 +145,97 @@ export function GoalsListScreen() {
             const required = goalRequiredPerMonth(g, saved);
             const completed = isGoalCompleted(g, saved);
             const pace = paceOf(g, saved, target);
-            const paceTone = PACE_TONE[pace];
+
+            // The stamp states the goal's STATUS — done, overdue, or
+            // still open. The pace (ahead / behind) is a separate
+            // fact and lives in the footnote below the total.
+            const stamp: 'completed' | 'expired' | 'open' =
+              completed ? 'completed' : pace === 'expired' ? 'expired' : 'open';
 
             return (
               <Link
                 key={g.id}
                 to={`/goals/${g.id}`}
-                className="card card-link flex flex-col gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative overflow-hidden"
-                style={cardSurfaceStyle('info')}
+                className="goal-receipt card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                style={{ ['--stamp' as string]: STAMP_COLOR[stamp] }}
+                aria-label={`${g.name}. ${STAMP_TEXT[stamp]}. ${pct}% saved toward ${fmtBDT(target)}.`}
               >
-                {/* Left accent bar — 3px info-tone stripe (matches the
-                    wash + progress-bar fill so the whole card reads as
-                    one themed unit). Same bar treatment as the
-                    account / debt / investment / planned-loan cards. */}
-                <span
-                  aria-hidden
-                  className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass('info')}`}
-                />
-                <div className="flex items-center gap-3 min-w-0">
-                  <GoalTile />
-                  <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0 flex-1">{g.name}</div>
-                  <Pill tone={paceTone} variant="solid" className="shrink-0" title={`${pct}% saved vs target pace`}>
-                    {pct}%
-                  </Pill>
+                {/* The heading — the goal's name set in caps, with the
+                    status stamp tilted at the far right. */}
+                <div className="goal-receipt__head">
+                  <span className="goal-receipt__name">{g.name}</span>
+                  <span className="goal-receipt__stamp">{STAMP_TEXT[stamp]}</span>
                 </div>
-                <ProgressBar value={pct} height={10} animateOnMount animationDelay={index * 180} />
 
-                {/* Two-line meta:
-                       line 1 — saved / target + deadline
-                       line 2 — remaining + required/mo (the action prompt) */}
-                <div className="flex justify-between text-xs text-muted tabular">
-                  <span>{fmtBDT(saved)} / {fmtBDT(target)}</span>
-                  <span>{g.targetDate ? `by ${fmtDate(g.targetDate)}` : ''}</span>
+                <div className="goal-receipt__rule" />
+
+                {/* The statement — one line item per fact. The
+                    PROGRESS figure carries the progressbar role so
+                    assistive tech still announces the percentage. */}
+                <div className="goal-receipt__row">
+                  <span>Target</span>
+                  <b>{fmtBDT(target)}</b>
                 </div>
+                <div className="goal-receipt__row">
+                  <span>Saved</span>
+                  <b>{fmtBDT(saved)}</b>
+                </div>
+                <div className="goal-receipt__row">
+                  <span>Progress</span>
+                  <b
+                    role="progressbar"
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${g.name} saved toward target`}
+                    title={`${pct}% saved vs target pace`}
+                  >
+                    {pct}%
+                  </b>
+                </div>
+                <div className="goal-receipt__row">
+                  <span>Due</span>
+                  <b>{g.targetDate ? fmtDate(g.targetDate) : '—'}</b>
+                </div>
+
+                <div className="goal-receipt__rule" />
+
+                {/* The receipt's total — what is still owed to the
+                    goal. A completed goal has no total, so the line
+                    is replaced by the paid note. */}
+                {completed ? (
+                  <div className="goal-receipt__row">
+                    <span>Status</span>
+                    <b>Goal reached. Nice.</b>
+                  </div>
+                ) : (
+                  <div className="goal-receipt__row goal-receipt__row--total">
+                    <span>Still needed</span>
+                    <b>{fmtBDT(remaining)}</b>
+                  </div>
+                )}
+
+                {/* The footnote — the per-month ask, and the pace.
+                    Both are the receipt's small print: real, but
+                    secondary to the figures above. */}
                 {!completed && remaining > 0 && (
-                  <div className="text-[11.5px] text-muted tabular flex items-center justify-between gap-2 pt-1 mt-0.5 border-t border-border-2/60">
-                    <span>
-                      Need <b className="text-ink font-semibold">{fmtBDT(remaining)}</b> more
-                    </span>
+                  <div className="goal-receipt__pace">
                     {!Number.isFinite(required) ? (
-                      <span className="text-warn font-semibold">overdue</span>
+                      <span>Overdue — no monthly plan</span>
                     ) : required > 0 ? (
                       <span>
-                        <b className="text-ink font-semibold">{fmtBDT(required)}</b>/mo
+                        Save <b>{fmtBDT(required)}</b>/mo
                       </span>
                     ) : null}
                   </div>
                 )}
-                {completed && (
-                  <div className="text-[11.5px] text-muted tabular pt-1 mt-0.5 border-t border-border-2/60">
-                    Goal reached. <span className="text-primary font-semibold">Nice.</span>
-                  </div>
-                )}
 
-                {/* Pace indicator — small chip at the bottom-right of
-                    the meta block. Hidden if pace is on-track (the
-                    default, no-news state) to avoid noise. */}
+                {/* Pace — hidden on-track (the no-news default), and
+                    hidden for a goal that is done or past its date,
+                    since the stamp already says it. */}
                 {pace !== 'on-track' && pace !== 'completed' && pace !== 'expired' && (
-                  <div className="text-[10.5px] text-muted tabular -mt-1.5">
-                    Pace: <b style={{ color: PACE_TEXT_COLOR[pace] }}>{PACE_LABEL[pace]}</b>
+                  <div className="goal-receipt__pace" style={{ ['--pace' as string]: PACE_TEXT_COLOR[pace] }}>
+                    Pace: <b>{PACE_LABEL[pace]}</b>
                   </div>
                 )}
               </Link>

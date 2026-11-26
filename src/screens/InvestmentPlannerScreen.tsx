@@ -1,11 +1,10 @@
 /**
  * InvestmentPlannerScreen — list of mock investment plans.
  *
- * 2026-08-30 polish: each card mirrors the real InvestmentsListScreen
- * card (horizontal split, NOW / AT MATURITY on the right, terms on
- * the left) so the two surfaces feel like one product. The only
- * visible difference is a "PLANNED" pill — letting the user tell
- * projections apart from real money at a glance.
+ * 2026-11-26: the planner now uses the SAME certificate shell as the
+ * real Investments screen (`.inv-cert`), so a plan and a holding read
+ * as siblings of one document family. The rate seal is replaced by a
+ * PLANNED stamp — a plan is a promise, not a contract.
  *
  * Sort selector lives in the header. Default: soonest-maturity-first
  * because users care about "what's next", not "what I added first".
@@ -22,7 +21,7 @@ import {
   listInvestmentPlans,
 } from '../domain/investmentPlans';
 import { Button } from '../components/Button';
-import { fmtBDT } from '../lib/format';
+import { fmtBDT, fmtDate } from '../lib/format';
 import { daysBetween, today } from '../domain/math';
 import { formatDuration, formatDurationShort } from '../domain/duration';
 import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
@@ -145,7 +144,7 @@ export function InvestmentPlannerScreen() {
             {/* Left column — full-width planned cards stacked. The
                 2fr width matches the InvestmentsListScreen layout so
                 planned and real cards are visually identical. */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {sorted.map(plan => (
                 <InvestmentPlanCard
                   key={plan.id}
@@ -170,15 +169,14 @@ export function InvestmentPlannerScreen() {
 /* ── Sub-component ──────────────────────────────────────────────── */
 
 /**
- * PlannerSummary — totals sidebar that mirrors the InvestmentsListScreen
- * summary card so planned and real screens share the same shape:
- * "totals on the right, cards stacked on the left".
+ * PlannerSummary — the totals certificate, mirroring the real
+ * Investments screen's Summary so planned and real screens share one
+ * shape: "totals on the right, cards stacked on the left".
  *
- * Aggregates every projection's NOW-equivalent (principal, or monthly
- * contribution × completed months for DPS) and the AT MATURITY
- * projection. Splitting the two makes it obvious the difference is
- * "projected growth" — same logic the real screen uses for
- * `showProjection`.
+ * Aggregates every projection's committed money (principal, or the
+ * full DPS contribution over the term) and the AT MATURITY projection.
+ * Splitting the two makes it obvious the difference is projected
+ * growth.
  */
 function PlannerSummary({
   plans,
@@ -188,57 +186,75 @@ function PlannerSummary({
   let totalNow = 0;
   let totalProjected = 0;
   for (const plan of plans) {
-    // NOW = total contributed (or principal, for FDR / savings — it's
-    // all locked up on day 0). Projection = maturity value. Same math
-    // the list card uses to render NOW + AT MATURITY for every type.
     totalNow += investmentPlanTotalContributed(plan);
     totalProjected += investmentPlanMaturityValue(plan);
   }
-  const showProjection = totalProjected - totalNow > 0;
+  const interest = Math.max(0, totalProjected - totalNow);
+
+  // The per-type breakdown — one line per kind of plan, each in its
+  // own tone, so the card says WHERE the money is parked.
+  const breakdown = (['dps', 'fdr', 'savings'] as const)
+    .map(type => {
+      const ofType = plans.filter(p => p.type === type);
+      if (ofType.length === 0) return null;
+      return {
+        type,
+        label: planTypeLabel(type),
+        tone: investmentTone(type),
+        count: ofType.length,
+        current: ofType.reduce((s, p) => s + investmentPlanTotalContributed(p), 0),
+      };
+    })
+    .filter((b): b is NonNullable<typeof b> => b !== null);
 
   return (
-    <section className="card h-fit lg:sticky lg:top-4">
-      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
-        Summary
-      </h2>
-      <div className="flex flex-col gap-5">
-        <div>
-          <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-            Your money committed
-          </div>
-          <div className="text-[26px] font-bold text-accent mt-2 tabular tracking-tight leading-none">
-            {fmtBDT(totalNow)}
-          </div>
-          <div className="text-[11px] text-muted mt-1.5 tabular">
-            Across {plans.length} projection{plans.length === 1 ? '' : 's'}
+    <section className="h-fit lg:sticky lg:top-4">
+      <article className="inv-cert inv-cert--summary">
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">Summary</div>
+            <div className="inv-cert__serial">
+              NO. {String(plans.length).padStart(6, '0')} {MIDDOT} {plans.length} PLANNED {MIDDOT} PROJECTIONS
+            </div>
           </div>
         </div>
-        <div>
-          <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">
-            If every term matures
-          </div>
-          <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
-            {fmtBDT(totalProjected)}
-          </div>
-          {showProjection ? (
-            <div className="text-[11px] text-muted mt-1.5 tabular">
-              Projected growth {fmtBDT(totalProjected - totalNow)}
+
+        <div className="inv-cert__fields inv-cert__fields--stack">
+          {breakdown.map(b => (
+            <div className="inv-cert__f" key={b.label}>
+              <div className="k">
+                {b.label} {MIDDOT} {b.count}
+              </div>
+              <div className="v" style={{ color: `var(--${b.tone})` }}>
+                {fmtBDT(b.current)}
+              </div>
             </div>
-          ) : (
-            <div className="text-[11px] text-muted mt-1.5 tabular">
-              — No projected growth —
-            </div>
-          )}
+          ))}
         </div>
-      </div>
-      <div className="text-xs text-muted mt-5 leading-relaxed">
-        <strong className="text-ink">How it works:</strong>{' '}
-        <em>Your money committed</em> is the total principal (or
-        projected contributions for DPS) across every active plan.{' '}
-        <em>If every term matures</em> is what the banks would pay
-        out if every projection completed — the projected gains on
-        top of your committed money. Nothing here moves real money.
-      </div>
+
+        <div className="inv-cert__vals">
+          <div className="inv-cert__v inv-cert__v--now">
+            <div className="k">Committed</div>
+            <div className="n">{fmtBDT(totalNow)}</div>
+          </div>
+          <div className="inv-cert__v inv-cert__v--mat">
+            <div className="k">At maturity</div>
+            <div className="n">{fmtBDT(totalProjected)}</div>
+          </div>
+          <div className="inv-cert__grow">
+            <div className="gk">Interest if every term completes</div>
+            <div className="gn">{fmtBDT(interest)}</div>
+          </div>
+        </div>
+
+        <div className="inv-cert__note">
+          <strong className="text-ink">Committed</strong> is the money
+          you would put in across every plan.{' '}
+          <strong className="text-ink">At maturity</strong> is what you
+          would collect if every term ended. Nothing here moves real
+          money.
+        </div>
+      </article>
     </section>
   );
 }
@@ -247,6 +263,34 @@ function PlannerSummary({
  *  planner card reads as a sibling of the real investment card. */
 const MIDDOT = '\u00B7';
 
+/** The plan's type label — "DPS" / "FDR" / "Savings". */
+function planTypeLabel(type: string): string {
+  return type === 'dps' ? 'DPS' : type === 'fdr' ? 'FDR' : 'Savings';
+}
+
+/**
+ * A stable-looking serial number for a plan certificate.
+ *
+ * Derived from the plan's id so it never changes for a given plan — a
+ * serial that shuffled on every render would defeat the point of
+ * printing one.
+ */
+function serialFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 999999;
+  }
+  return String(hash).padStart(6, '0');
+}
+
+/**
+ * A planned holding — the SAME certificate shell as a real one, so the
+ * planner and the Investments screen read as one document family.
+ *
+ * A plan has no deposits on record, so its ledger shows the two lines
+ * a projection CAN state: the START and the MATURES. The rate seal is
+ * replaced by a PLANNED stamp — a plan is a promise, not a contract.
+ */
 function InvestmentPlanCard({
   plan, todayISO, onOpen,
 }: {
@@ -260,7 +304,7 @@ function InvestmentPlanCard({
   const interest = investmentPlanInterest(plan);
   const isDps = plan.type === 'dps';
   // Per-category tone — DPS / FDR / Savings each carry one color
-  // family. Used for wash + bar + pill + hero figure.
+  // family, exactly as on the real certificate.
   const cardTone = investmentTone(plan.type);
 
   // Maturity countdown label — mirrors InvestmentsListScreen so the
@@ -277,130 +321,132 @@ function InvestmentPlanCard({
         : matDate
           ? `Matured ${-days}d ago`
           : '';
-  const showBoth = matValue - totalContributed > 1;
+  const timeLeft =
+    days > 0
+      ? days >= 365
+        ? `~${(days / 365).toFixed(1)}y`
+        : `${days}d`
+      : days === 0
+        ? 'Today'
+        : 'Matured';
+
+  const monthly = Number(plan.monthlyContribution) || 0;
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative text-left"
-      style={cardSurfaceStyle(cardTone)}
+      className="block card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 text-left w-full"
     >
-      {/* Left accent bar — 3px tone-coloured stripe, matched to the
-          plan's category (DPS / FDR / Savings). The PLANNED pill carries
-          the "projection, no real money" message. */}
-      <span
-        aria-hidden
-        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
-      />
-
-      {/* Left zone — identity, terms, maturity countdown.
-          Mirrors InvestmentsListScreen's padding (py-1, no extra pl)
-          so the planned and real cards have the same visual weight. */}
-      <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-1">
-        {/* Row 1: emoji + (name + type pill + PLANNED pill) on one
-            row. Both pills hug the title text on the left. PLANNED
-            uses the same outlined treatment as the state stamp so
-            it reads as a sibling of the DPS/FDR/Savings pill, not
-            a different category. Title is truncated to 1 line so
-            the pills always sit against the title baseline. */}
-        <div className="flex items-center gap-2 min-w-0">
-          <InvestTile type={plan.type} />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-              {plan.name}
+      <article
+        className="inv-cert"
+        style={{ ...cardSurfaceStyle(cardTone), ['--tone' as string]: `var(--${cardTone})` }}
+      >
+        {/* The header — name + serial on the left, the PLANNED stamp on
+            the right, standing in for the real card's rate seal. */}
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">{plan.name}</div>
+            <div className="inv-cert__serial">
+              NO. {serialFor(plan.id)} {MIDDOT} {planTypeLabel(plan.type).toUpperCase()}
+              {plan.institution ? ` ${MIDDOT} ${plan.institution.toUpperCase()}` : ''}
+              {label ? ` ${MIDDOT} ${label}` : ''}
             </div>
-            <Pill tone={cardTone} variant="solid">
-              {isDps ? 'DPS' : plan.type === 'fdr' ? 'FDR' : 'Savings'}
-            </Pill>
-            {/* PLANNED pill — soft muted tone so it reads as a state
-                stamp rather than another category badge. Sits right
-                next to the type pill just like DPS does on the real
-                card. */}
-            <Pill tone="muted" variant="soft" title="This is a projection — no real money is involved.">
-              Planned
-            </Pill>
+          </div>
+          <div
+            className="inv-cert__stamp inv-cert__stamp--planned"
+            title="This is a projection — no real money is involved."
+          >
+            Planned
           </div>
         </div>
 
-        {/* Row 2: optional Draft pill — only when the plan has
-            unsaved edits. Sits on its own row so it doesn't crowd
-            the title row's pills. */}
+        {/* The engraved terms. A DPS's money arrives as a monthly
+            installment, so its first field names the installment
+            instead of mislabelling it as a principal. */}
+        <div className="inv-cert__fields">
+          <div className="inv-cert__f">
+            <div className="k">{isDps ? 'Monthly' : 'Principal'}</div>
+            <div className="v">{fmtBDT(isDps ? monthly : totalContributed)}</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Term</div>
+            <div className="v">{formatDurationShort(plan.termMonths)}</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Time left</div>
+            <div className="v">{timeLeft}</div>
+          </div>
+        </div>
+
+        {/* The ledger — a plan has no deposits on record, so the two
+            lines are the START and the MATURES. Same shape as the
+            real card, so the height never grows with the term. */}
+        <div className="inv-cert__ledger">
+          <div className="inv-cert__ledger-head">
+            <span className="t">Projection</span>
+            <span className="n">
+              {isDps ? `${plan.termMonths} installments` : '1 lump sum'}
+            </span>
+          </div>
+
+          <div className="inv-cert__dline">
+            <span className="inv-cert__dk">Starts</span>
+            <span className="inv-cert__dd">{fmtDate(plan.startDate)}</span>
+            <span className="inv-cert__da">
+              {fmtBDT(isDps ? monthly : totalContributed)}
+            </span>
+          </div>
+          <div className="inv-cert__dline inv-cert__dline--next">
+            <span className="inv-cert__dk">{days <= 0 ? 'Matured' : 'Matures'}</span>
+            <span className="inv-cert__dd">
+              {matDate ? fmtDate(matDate.toISOString().slice(0, 10)) : '—'}
+            </span>
+            <span className="inv-cert__da">{fmtBDT(matValue)}</span>
+          </div>
+
+          {/* The tally — the numbers the two date lines cannot carry. */}
+          <div className="inv-cert__tally">
+            <span className="pip" aria-hidden />
+            <span>
+              {isDps ? (
+                <>
+                  <b>{fmtBDT(totalContributed)}</b> over the full term {MIDDOT}{' '}
+                  <b>{fmtBDT(interest)}</b> interest
+                </>
+              ) : (
+                <>
+                  Lump sum {MIDDOT} <b>{fmtBDT(totalContributed)}</b> locked in at start
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* The footer — the same three-figure form the real card uses. */}
+        <div className="inv-cert__vals">
+          <div className="inv-cert__v inv-cert__v--now">
+            <div className="k">Committed</div>
+            <div className="n">{fmtBDT(totalContributed)}</div>
+          </div>
+          <div className="inv-cert__grow">
+            <div className="gk">Interest</div>
+            <div className="gn">{fmtBDT(interest)}</div>
+          </div>
+          <div className="inv-cert__v inv-cert__v--mat">
+            <div className="k">At maturity</div>
+            <div className="n">{fmtBDT(matValue)}</div>
+          </div>
+        </div>
+
+        {/* A dirty plan has unsaved edits — the DRAFT chip rides below
+            the footer so it never crowds the title. */}
         {plan.dirty && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="mt-2">
             <Pill tone="warn" variant="soft">Draft</Pill>
           </div>
         )}
-
-        {/* Row 3: rate · term · institution. Rate and term are the
-            critical pair — wrap them in a non-shrinking span so a
-            long institution doesn't push them off the line. */}
-        <div className="text-[12px] text-muted tabular truncate">
-          <span className="shrink-0">{plan.rate}% {MIDDOT} {formatDurationShort(plan.termMonths)}</span>
-          {plan.institution && <span className="opacity-70"> {MIDDOT} {plan.institution}</span>}
-        </div>
-
-        {/* Row 4: maturity countdown + contribution/principal +
-            interest earned. mt-auto pins to the bottom so cards
-            with different title heights still align their last row.
-            The interest hint is added vs. the real card so the
-            "projected gain" is visible at a glance — the whole
-            point of the planner. Each pair (Principal + number) is
-            wrapped in a single non-shrinking span so tokens like
-            "₹" and "2,00,000" never split across lines. */}
-        <div className="text-[12px] text-muted mt-auto flex flex-col gap-0.5">
-          {label && <div className="tabular shrink-0">{label}</div>}
-          <div className="tabular shrink-0">
-            <span>
-              {isDps && plan.monthlyContribution
-                ? `${fmtBDT(plan.monthlyContribution)}/mo`
-                : `Principal ${fmtBDT(totalContributed)}`}
-            </span>
-            {matDate && (
-              <span className="opacity-70">
-                {' '}{MIDDOT} Earns <b className="text-ink font-semibold">{fmtBDT(interest)}</b>
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Vertical divider between identity and amounts. self-stretch
-          + my-1 matches the real card so the divider length is
-          identical between planned and real. */}
-      <div
-        aria-hidden
-        className="w-px self-stretch my-1 shrink-0"
-        style={{ background: 'var(--divider)' }}
-      />
-
-      {/* Right zone — amounts, right-aligned. NOW is the hero (24px,
-          card tone); AT MATURITY is intentionally much smaller (12px,
-          ink) so the eye lands on NOW first. sm:min-w-[200px]
-          matches the real card. Hierarchy via size alone — no colour
-          shift needed. Both DPS and FDR/Savings show the pair
-          whenever there's projected growth (> 1৳); mirrors the real
-          list card so the two surfaces read identically. */}
-      <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
-        <div className="flex flex-col items-end leading-none">
-          <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-            {showBoth ? 'Now' : 'Value'}
-          </span>
-          <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(cardTone)}`}>
-            {fmtBDT(showBoth ? totalContributed : matValue)}
-          </span>
-        </div>
-        {showBoth && (
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-              At maturity
-            </span>
-            <span className="font-semibold tabular text-[12px] text-ink mt-1">
-              {fmtBDT(matValue)}
-            </span>
-          </div>
-        )}
-      </div>
+      </article>
     </button>
   );
 }

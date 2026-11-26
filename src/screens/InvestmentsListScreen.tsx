@@ -1,5 +1,5 @@
 /**
- * InvestmentsListScreen — one full-width card per investment, with
+ * InvestmentsListScreen — one certificate card per investment, with
  * the Summary card pinned to the right at lg+.
  *
  * 2026-08-18 polish: each active investment is its own full-width
@@ -10,11 +10,30 @@
  * the totals are always visible while scrolling the list; on smaller
  * screens it stacks below the list as a single full-width band.
  *
- * Card shape (one row, on the left column):
+ * 2026-11-26: the card is now a CERTIFICATE — a perforated bond
+ * instrument carrying engraved terms, a serial number, a tilted rate
+ * seal, a two-line deposit ledger and the two values separated by a
+ * named interest figure. See `.inv-cert` in `src/styles/app.css`.
+ *
+ * ONE SHELL FOR EVERY TYPE. A DPS pays a fixed installment every
+ * month for years, so its full deposit ledger can run to dozens of
+ * rows; an FDR has exactly one deposit. Both get the SAME two-line
+ * ledger — LAST DEPOSIT and NEXT DUE (or MATURES for a lump sum) —
+ * so the card's HEIGHT NEVER GROWS with the term. A 34-deposit DPS
+ * and a 1-deposit FDR are the same card, the same height.
+ *
+ * Card shape:
  *   ┌────────────────────────────────────────────────────────────────┐
- *   │  📅 Brac Bank DPS     5y · 8% · Brac Bank   [DPS]   │ ৳12,345 │
- *   │                                            NOW   │           │
- *   │  Matures in ~2.4y · ৳5,000/mo            MATURITY│ ৳15,234  │
+ *   │  Brac Bank DPS                         ⌒ 8.5% RATE              │
+ *   │  NO. 126784 · DPS · BRAC BANK                                   │
+ *   │  PRINCIPAL  TERM      MATURES                                   │
+ *   │  ৳ 3,00,000 60 mo    2.4y                                      │
+ *   │  DEPOSITS                              34 OF 60 PAID             │
+ *   │  LAST DEPOSIT  01 Nov 2026                            ৳ 5,000 │
+ *   │  NEXT DUE      01 Dec 2026                            ৳ 5,000 │
+ *   │  ● ৳ 1,70,000 contributed so far · ৳ 1,51,674 in the account    │
+ *   │  VALUE TODAY   INTEREST      AT MATURITY                       │
+ *   │  ৳ 1,51,674    ৳ 3,01,226    ৳ 4,52,900                        │
  *   └────────────────────────────────────────────────────────────────┘
  *
  * Hover lifts via .card-link. Closed investments stay in a quieter
@@ -27,11 +46,12 @@ import {
   investmentValue,
   isInvestmentHeld,
   daysToMaturity,
+  dpsLedger,
+  investmentMaturityDate,
 } from '../domain/math';
-import { fmtBDT } from '../lib/format';
-import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
-import { Pill } from '../components/Pill';
-import { InvestTile } from '../components/InvestLoanTile';
+import { fmtBDT, fmtDate } from '../lib/format';
+import { cardSurfaceStyle, investmentTone } from '../lib/cardSurface';
+import type { Investment, Transaction } from '../domain/types';
 
 const MIDDOT = '\u00B7';
 
@@ -56,7 +76,23 @@ export function InvestmentsListScreen() {
     totalProjected += v.projectedValue;
     return { inv, current: v.currentValue, projected: v.projectedValue };
   });
-  const showProjection = totalProjected - totalCurrent > 0;
+
+  // The per-type breakdown the summary certificate carries — one line
+  // per kind of holding, each in its own tone, so the card says WHERE
+  // the money is parked and not just how much.
+  const breakdown = (['dps', 'fdr', 'savings'] as const)
+    .map(type => {
+      const ofType = rows.filter(r => r.inv.type === type);
+      if (ofType.length === 0) return null;
+      return {
+        type,
+        label: type === 'dps' ? 'DPS' : type === 'fdr' ? 'FDR' : 'Savings',
+        tone: investmentTone(type),
+        count: ofType.length,
+        current: ofType.reduce((s, r) => s + r.current, 0),
+      };
+    })
+    .filter((b): b is NonNullable<typeof b> => b !== null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,60 +127,74 @@ export function InvestmentsListScreen() {
                   inv={inv}
                   current={current}
                   projected={projected}
+                  transactions={state.transactions}
                 />
               ))}
               {closed.length > 0 && (
-                <section className="card">
-                  <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-2.5">Closed</h2>
-                  <div>
+                <section className="flex flex-col gap-3">
+                  <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
+                    Closed {MIDDOT} {closed.length}
+                  </h2>
+                  <div className="grid grid-cols-1 gap-4">
                     {closed.map(inv => (
-                      <Link
-                        key={inv.id}
-                        to={`/investments/${inv.id}`}
-                        className="group relative block py-2.5 border-t border-border first:border-0 opacity-70 hover:opacity-100 transition"
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="font-semibold text-[14px] tracking-tight flex items-center gap-1.5">
-                            <InvestTile size={16} type={inv.type} />
-                            {inv.name}
-                          </div>
-                          <Pill tone="muted" variant="soft">{inv.status}</Pill>
-                        </div>
-                        <div className="text-[11.5px] text-muted tabular">
-                          {fmtBDT(inv.principal)} {MIDDOT} {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
-                        </div>
-                      </Link>
+                      <ClosedInvCard key={inv.id} inv={inv} />
                     ))}
                   </div>
                 </section>
               )}
             </div>
 
-            <section className="card h-fit lg:sticky lg:top-4">
-              <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">Summary</h2>
-              <div className="flex flex-col gap-5">
-                <div>
-                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">Current value</div>
-                  <div className="text-[26px] font-bold text-accent mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalCurrent)}
+            <section className="h-fit lg:sticky lg:top-4">
+              <article className="inv-cert inv-cert--summary">
+                <div className="inv-cert__head">
+                  <div className="min-w-0">
+                    <div className="inv-cert__name">Summary</div>
+                    <div className="inv-cert__serial">
+                      NO. {String(active.length).padStart(6, '0')} {MIDDOT} {active.length} ACTIVE {MIDDOT} HOLDINGS
+                    </div>
                   </div>
-                  <div className="text-[11px] text-muted mt-1.5 tabular">Money tied up right now</div>
                 </div>
-                <div>
-                  <div className="text-[11px] text-muted uppercase tracking-wider font-semibold">At maturity</div>
-                  <div className="text-[26px] font-bold text-primary mt-2 tabular tracking-tight leading-none">
-                    {fmtBDT(totalProjected)}
+
+                {/* The per-type breakdown — one line per kind of
+                    holding, each in its own tone, so the card says
+                    WHERE the money is parked and not just how much. */}
+                <div className="inv-cert__fields inv-cert__fields--stack">
+                  {breakdown.map(b => (
+                    <div className="inv-cert__f" key={b.label}>
+                      <div className="k">
+                        {b.label} {MIDDOT} {b.count}
+                      </div>
+                      <div className="v" style={{ color: `var(--${b.tone})` }}>
+                        {fmtBDT(b.current)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* The footer — the same three-figure form the cards
+                    use: value today, the interest between, at maturity. */}
+                <div className="inv-cert__vals">
+                  <div className="inv-cert__v inv-cert__v--now">
+                    <div className="k">Value today</div>
+                    <div className="n">{fmtBDT(totalCurrent)}</div>
                   </div>
-                  {showProjection ? (
-                    <div className="text-[11px] text-muted mt-1.5 tabular">If every term completes</div>
-                  ) : (
-                    <div className="text-[11px] text-muted mt-1.5 tabular">— No future growth —</div>
-                  )}
+                  <div className="inv-cert__v inv-cert__v--mat">
+                    <div className="k">At maturity</div>
+                    <div className="n">{fmtBDT(totalProjected)}</div>
+                  </div>
+                  <div className="inv-cert__grow">
+                    <div className="gk">Interest if every term completes</div>
+                    <div className="gn">{fmtBDT(Math.max(0, totalProjected - totalCurrent))}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-xs text-muted mt-5 leading-relaxed">
-                <strong className="text-ink">How it works:</strong> <em>Current value</em> is what you'd get if the bank paid out today (DPS = contributions compounded to today; FDR/savings = principal). <em>At maturity</em> projects what you'd receive when every active term ends. When the bank pays out, record it as Income to bring the money back to your account.
-              </div>
+
+                <div className="inv-cert__note">
+                  <strong className="text-ink">Value today</strong> is what the
+                  banks would pay out now. <strong className="text-ink">At maturity</strong>{' '}
+                  is what you collect when every term ends. Record a payout as
+                  Income to bring the money back to your account.
+                </div>
+              </article>
             </section>
           </div>
         </>
@@ -153,17 +203,132 @@ export function InvestmentsListScreen() {
   );
 }
 
-function InvCard({ inv, current, projected }: { inv: any; current: number; projected: number }) {
+/** The type's short label — "DPS" / "FDR" / "Savings". */
+function typeLabel(inv: Investment): string {
+  return inv.type === 'dps' ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings';
+}
+
+/**
+ * A stable-looking serial number for the certificate.
+ *
+ * Derived from the investment's id so it never changes for a given
+ * holding — a serial that shuffled on every render would defeat the
+ * point of printing one.
+ */
+function serialFor(inv: Investment): string {
+  let hash = 0;
+  for (let i = 0; i < inv.id.length; i += 1) {
+    hash = (hash * 31 + inv.id.charCodeAt(i)) % 999999;
+  }
+  return String(hash).padStart(6, '0');
+}
+
+/**
+ * The stamp on a retired holding.
+ *
+ * A stamp is a physical claim about a document, so the wording is
+ * document language, not app language — the same vocabulary the goal
+ * receipt uses. A scheme that was rolled into another reads ROLLED
+ * OVER; one the holder shut by hand reads CLOSED.
+ */
+const CLOSED_STAMP: Record<'closed' | 'rolled_over', string> = {
+  closed: 'Closed',
+  rolled_over: 'Rolled over',
+};
+
+/**
+ * A retired holding — the same certificate shell as a live one, but
+ * printed in the quiet ink of a spent document: no rate seal, no
+ * ledger, just the terms that were agreed and a status stamp.
+ *
+ * The stamp is the card's headline. It replaces the soft "CLOSED"
+ * pill, which read as a label rather than a verdict on a document.
+ */
+function ClosedInvCard({ inv }: { inv: Investment }) {
+  const stampKind = inv.status === 'rolled_over' ? 'rolled_over' : 'closed';
+  const maturity = investmentMaturityDate(inv);
+  const days = daysToMaturity(inv);
+  const term =
+    inv.termDays ? `${inv.termDays}d` : `${inv.termMonths} mo`;
+
+  return (
+    <Link
+      to={`/investments/${inv.id}`}
+      className="block card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    >
+      <article
+        className="inv-cert inv-cert--closed"
+        style={{ ...cardSurfaceStyle('muted'), ['--tone' as string]: 'var(--muted-2)' }}
+      >
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">{inv.name}</div>
+            <div className="inv-cert__serial">
+              NO. {serialFor(inv)} {MIDDOT} {typeLabel(inv).toUpperCase()}
+              {inv.institution ? ` ${MIDDOT} ${inv.institution.toUpperCase()}` : ''}
+            </div>
+          </div>
+          <div className="inv-cert__stamp">{CLOSED_STAMP[stampKind]}</div>
+        </div>
+
+        <div className="inv-cert__fields">
+          <div className="inv-cert__f">
+            <div className="k">Principal</div>
+            <div className="v">{fmtBDT(inv.principal)}</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Rate</div>
+            <div className="v">{inv.rate}%</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Term</div>
+            <div className="v">{term}</div>
+          </div>
+        </div>
+
+        <div className="inv-cert__tally">
+          <span className="pip" aria-hidden />
+          <span>
+            {maturity
+              ? `Ended ${fmtDate(maturity.toISOString().slice(0, 10))}`
+              : `Ended ${days > 0 ? 'recently' : 'earlier'}`}
+          </span>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+function InvCard({
+  inv,
+  current,
+  projected,
+  transactions,
+}: {
+  inv: Investment;
+  current: number;
+  projected: number;
+  transactions: Transaction[];
+}) {
   const days = daysToMaturity(inv);
   const isDps = inv.type === 'dps';
+  // A holding past its maturity date is a COMPLETED instrument: the
+  // bank owes the full mature amount and there is nothing left to
+  // project. `investmentValue` collapses current → the mature amount
+  // and leaves projected there too, so the two footer figures would
+  // read as an identical pair and the interest would print as zero.
+  // The card says so explicitly instead.
+  const matured = days <= 0;
   // Per-category tone — DPS / FDR / Savings each get their own color
-  // family. Applied to wash + bar + pill + hero figure so the whole
-  // card reads as one themed unit.
+  // family. Applied to the wash + seal + amounts so the whole card
+  // reads as one themed instrument.
   const cardTone = investmentTone(inv.type);
+  const interest = Math.max(0, projected - current);
+
   // Long durations (≥ 1 year) read more naturally as years; short
   // durations stay in days. 1 decimal keeps the precision while
-  // staying compact (e.g. "in ~2.4y" instead of "in 877d").
-  const label =
+  // staying compact (e.g. "2.4y" instead of "877d").
+  const maturityLabel =
     days > 0
       ? days >= 365
         ? `Matures in ~${(days / 365).toFixed(1)}y`
@@ -171,87 +336,172 @@ function InvCard({ inv, current, projected }: { inv: any; current: number; proje
       : days === 0
         ? 'Matures today'
         : `Matured ${-days}d ago`;
-  const showBoth = projected - current > 1;
+
+  // The "TIME LEFT" field — the same figure, phrased as a duration.
+  // A matured holding has no time left, so it reads "Matured" and
+  // the term length stands in for the gap.
+  const timeLeft =
+    days > 0
+      ? days >= 365
+        ? `~${(days / 365).toFixed(1)}y`
+        : `${days}d`
+      : days === 0
+        ? 'Today'
+        : 'Matured';
+
+  // The DPS ledger — the two dated lines the certificate shows.
+  const ledger = isDps ? dpsLedger(inv, transactions) : null;
+
+  // A lump sum's second ledger line is its MATURITY date; a DPS's is
+  // the NEXT installment due. Same shape, so the card's height never
+  // grows with the term.
+  const maturityDate = investmentMaturityDate(inv);
+
   return (
     <Link
       to={`/investments/${inv.id}`}
-      className="card card-link flex items-stretch gap-5 sm:gap-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 overflow-hidden relative"
-      style={cardSurfaceStyle(cardTone)}
+      className="block card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
-      {/* Left accent bar — 3px tone-coloured stripe, matched to the
-          card's category. */}
-      <span
-        aria-hidden
-        className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
-      />
-      {/* Left zone — identity, terms, maturity countdown. */}
-      <div className="flex-1 min-w-0 flex flex-col gap-2 py-1">
-        {/* Title row: emoji + (name + pill) on one row, vertically
-            centered. Title is truncated to 1 line so the pill
-            always sits against the title baseline. The pill is
-            wrapped in the same flex group as the title (no
-            flex-1 on the title), so it hugs the title text on the
-            left instead of being pushed to the far right. */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <InvestTile type={inv.type} />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="font-semibold text-[16px] tracking-tight leading-tight truncate min-w-0">
-              {inv.name}
+      <article
+        className="inv-cert"
+        style={{ ...cardSurfaceStyle(cardTone), ['--tone' as string]: `var(--${cardTone})` }}
+      >
+        {/* The header — name + serial on the left, the tilted rate
+            seal on the right. */}
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">{inv.name}</div>
+            <div className="inv-cert__serial">
+              NO. {serialFor(inv)} {MIDDOT} {typeLabel(inv).toUpperCase()}
+              {inv.institution ? ` ${MIDDOT} ${inv.institution.toUpperCase()}` : ''}
+              {` ${MIDDOT} ${maturityLabel}`}
             </div>
-            <Pill tone={cardTone} variant="solid">
-              {isDps ? 'DPS' : inv.type === 'fdr' ? 'FDR' : 'Savings'}
-            </Pill>
+          </div>
+          <div className="inv-cert__seal" aria-label={`${inv.rate}% rate`}>
+            <span className="p">{inv.rate}%</span>
+            <span className="l">RATE</span>
           </div>
         </div>
-        <div className="text-[12px] text-muted tabular truncate">
-          {inv.rate}% {MIDDOT} {inv.termMonths}mo{inv.institution ? ` ${MIDDOT} ${inv.institution}` : ''}
-        </div>
-        <div className="text-[12px] text-muted mt-auto flex items-center gap-3 flex-wrap">
-          <span>{label}</span>
-          <span className="opacity-50" aria-hidden>·</span>
-          <span className="tabular">
-            {isDps && inv.monthlyContribution ? `${fmtBDT(inv.monthlyContribution)}/mo` : `Principal ${fmtBDT(inv.principal)}`}
-          </span>
-        </div>
-      </div>
 
-      {/* Vertical divider between identity and amounts. */}
-      <div
-        aria-hidden
-        className="w-px self-stretch my-1 shrink-0"
-        style={{ background: 'var(--divider)' }}
-      />
-
-      {/* Right zone — amounts, right-aligned. flex flex-col + items-end
-          keeps the figures right-aligned and lets "At maturity" stack
-          under "Now". shrink-0 prevents the right zone from being
-          squeezed when the left zone gets long names. NOW is the
-          hero (24px, card tone); AT MATURITY is intentionally much
-          smaller (12px, ink) so the eye lands on NOW first.
-          Hierarchy via size alone — no colour shift needed. Both
-          DPS and FDR/Savings show the pair whenever there's projected
-          growth (> 1৳); the previous DPS-only gate is gone since
-          every type carries a meaningful NOW vs AT MATURITY split. */}
-      <div className="flex flex-col gap-3 items-end justify-center shrink-0 sm:min-w-[200px]">
-        <div className="flex flex-col items-end leading-none">
-          <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-            {showBoth ? 'Now' : 'Value'}
-          </span>
-          <span className={`font-bold tabular text-[24px] tracking-tight mt-1.5 ${toneTextClass(cardTone)}`}>
-            {fmtBDT(current)}
-          </span>
+        {/* The engraved terms. A DPS has no principal — its money
+            arrives as a monthly installment, so the first field names
+            the installment instead of mislabelling it. */}
+        <div className="inv-cert__fields">
+          <div className="inv-cert__f">
+            <div className="k">{isDps ? 'Monthly' : 'Principal'}</div>
+            <div className="v">{fmtBDT(isDps ? inv.monthlyContribution ?? 0 : inv.principal)}</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Term</div>
+            <div className="v">
+              {inv.termDays ? `${inv.termDays}d` : `${inv.termMonths} mo`}
+            </div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Time left</div>
+            <div className="v">{timeLeft}</div>
+          </div>
         </div>
-        {showBoth && (
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-[10px] text-muted uppercase tracking-wider font-semibold">
-              At maturity
+
+        {/* The ledger — exactly two dated lines, whatever the type. */}
+        <div className="inv-cert__ledger">
+          <div className="inv-cert__ledger-head">
+            <span className="t">{isDps ? 'Deposits' : 'Deposit record'}</span>
+            <span className="n">
+              {isDps
+                ? `${ledger?.installmentsPaid ?? 0} of ${inv.termMonths} paid`
+                : '1 lump sum'}
             </span>
-            <span className="font-semibold tabular text-[12px] text-ink mt-1">
-              {fmtBDT(projected)}
+          </div>
+
+          {isDps ? (
+            <>
+              <div className="inv-cert__dline">
+                <span className="inv-cert__dk">Last deposit</span>
+                <span className="inv-cert__dd">
+                  {ledger?.lastDeposit ? fmtDate(ledger.lastDeposit.date) : '—'}
+                </span>
+                <span className="inv-cert__da">
+                  {ledger?.lastDeposit ? fmtBDT(ledger.lastDeposit.amount) : '—'}
+                </span>
+              </div>
+              <div className="inv-cert__dline inv-cert__dline--next">
+                <span className="inv-cert__dk">Next due</span>
+                <span className="inv-cert__dd">{fmtDate(ledger?.nextDueDate ?? inv.startDate)}</span>
+                <span className="inv-cert__da">{fmtBDT(inv.monthlyContribution ?? 0)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="inv-cert__dline">
+                <span className="inv-cert__dk">Last deposit</span>
+                <span className="inv-cert__dd">{fmtDate(inv.startDate)}</span>
+                <span className="inv-cert__da">{fmtBDT(inv.principal)}</span>
+              </div>
+              <div className="inv-cert__dline inv-cert__dline--next">
+                <span className="inv-cert__dk">{matured ? 'Matured' : 'Matures'}</span>
+                <span className="inv-cert__dd">
+                  {maturityDate ? fmtDate(maturityDate) : '—'}
+                </span>
+                <span className="inv-cert__da">{fmtBDT(projected)}</span>
+              </div>
+            </>
+          )}
+
+          {/* The tally — the numbers the two date lines cannot carry. */}
+          <div className="inv-cert__tally">
+            <span className="pip" aria-hidden />
+            <span>
+              {isDps ? (
+                <>
+                  <b>{fmtBDT(ledger?.contributed ?? 0)}</b> contributed so far {MIDDOT}{' '}
+                  <b>{fmtBDT(current)}</b> in the account
+                </>
+              ) : (
+                <>
+                  Lump sum {MIDDOT} <b>{fmtBDT(inv.principal)}</b> locked in at start
+                </>
+              )}
             </span>
+          </div>
+        </div>
+
+        {/* The footer — value today, the interest between, at maturity.
+            A matured holding has nothing left to project: the two
+            figures would be identical and the interest would read as
+            zero, so it gets a single "payable now" figure and says so. */}
+        {matured ? (
+          <div className="inv-cert__vals">
+            <div className="inv-cert__v inv-cert__v--now">
+              <div className="k">Payable now</div>
+              <div className="n">{fmtBDT(current)}</div>
+            </div>
+            <div className="inv-cert__grow">
+              <div className="gk">Earned</div>
+              <div className="gn">{fmtBDT(Math.max(0, current - (isDps ? (ledger?.contributed ?? current) : inv.principal)))}</div>
+            </div>
+            <div className="inv-cert__v inv-cert__v--mat">
+              <div className="k">Term ended</div>
+              <div className="n">{maturityDate ? fmtDate(maturityDate) : '—'}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="inv-cert__vals">
+            <div className="inv-cert__v inv-cert__v--now">
+              <div className="k">Value today</div>
+              <div className="n">{fmtBDT(current)}</div>
+            </div>
+            <div className="inv-cert__grow">
+              <div className="gk">Interest</div>
+              <div className="gn">{fmtBDT(interest)}</div>
+            </div>
+            <div className="inv-cert__v inv-cert__v--mat">
+              <div className="k">At maturity</div>
+              <div className="n">{fmtBDT(projected)}</div>
+            </div>
           </div>
         )}
-      </div>
+      </article>
     </Link>
   );
 }

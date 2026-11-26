@@ -9,7 +9,10 @@
  *   - an empty state that leads with "How much could a 1-year FDR
  *     at 9% earn you?" and three starter kits — the DPS, FDR and
  *     savings kits — each a `card card-link` button;
- *   - once plans exist, one card per plan.
+ *   - once plans exist, one CERTIFICATE per plan — the same
+ *     `.inv-cert` shell the real Investments screen uses, with a
+ *     tilted PLANNED stamp in place of the real card's rate seal;
+ *   - a Summary certificate in the right-hand column.
  *
  * `src/screens/InvestmentPlannerDetailScreen.tsx` — the detail:
  *   - a hero "Projection" card with the maturity figure, the
@@ -61,9 +64,46 @@ export class InvestmentPlannerPage extends BasePage {
     return this.starterKits.filter({ hasText: name }).first();
   }
 
-  /** A saved plan card, by its name. */
+  /**
+   * A saved plan card, by its name.
+   *
+   * A plan is a CERTIFICATE — the same `.inv-cert` shell the real
+   * Investments screen uses — so the card is found by that class and
+   * the PLANNED stamp stands in for the real card's rate seal.
+   */
   planCard(name: string): Locator {
     return this.page.locator('button.card-link').filter({ hasText: name }).first();
+  }
+
+  /** A plan card's certificate surface. */
+  planCertificate(name: string): Locator {
+    return this.planCard(name).locator('.inv-cert');
+  }
+
+  /** A plan card's tilted PLANNED stamp. */
+  planStamp(name: string): Locator {
+    return this.planCertificate(name).locator('.inv-cert__stamp');
+  }
+
+  /**
+   * A plan card's serial line — "NO. 413365 · DPS · DUTCH-BANGLA ·
+   * Matures in ~4.8y".
+   */
+  planSerial(name: string): Locator {
+    return this.planCertificate(name).locator('.inv-cert__serial');
+  }
+
+  /** A plan card's footer figure, by its label — "Committed" / "At maturity". */
+  planValue(name: string, label: string): Locator {
+    return this.planCertificate(name)
+      .locator('.inv-cert__v')
+      .filter({ has: this.page.getByText(label, { exact: true }) })
+      .locator('.n');
+  }
+
+  /** The planner's Summary certificate. */
+  get summaryCertificate(): Locator {
+    return this.page.locator('.inv-cert--summary');
   }
 
   // ── Detail screen ──

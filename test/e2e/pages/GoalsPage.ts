@@ -2,10 +2,13 @@
  * GoalsPage — `/goals`, `/goals/add` and `/goals/:id` (detail + edit).
  *
  * `src/screens/GoalsListScreen.tsx`:
- *   - one `<a class="card card-link">` per goal, each with the name,
- *     a percent `Pill`, a progress bar, and a two-line meta block:
- *     `৳ 10,000 / ৳ 50,000` + `by 30 Jun 2027`, then
- *     `Need ৳ 40,000 more` + `৳ 10,000/mo`.
+ *   - one `<a class="goal-receipt card-link">` per goal, each a
+ *     till receipt: the goal's name in caps at the top-left, a
+ *     status STAMP at the top-right ("Open" / "Overdue" / "Done"),
+ *     then the line items TARGET / SAVED / PROGRESS / DUE, then
+ *     the dashed rule and the total "STILL NEEDED", then the
+ *     footnote (the per-month ask) and the pace line.
+ *   - the PROGRESS figure carries `role="progressbar"`.
  *   - the empty state is the shared `EmptyState` (illustration, title
  *     "Save toward something", CTA "+ New goal", learn-more link).
  *
@@ -33,12 +36,12 @@ export class GoalsPage extends BasePage {
 
   /** All goal cards. */
   get cards(): Locator {
-    return this.page.locator('a.card-link');
+    return this.page.locator('a.goal-receipt');
   }
 
   /** A goal card, by its name. */
   card(name: string): Locator {
-    return this.page.locator('a.card-link').filter({ hasText: name }).first();
+    return this.page.locator('a.goal-receipt').filter({ hasText: name }).first();
   }
 
   /** The empty-state CTA. */
@@ -54,19 +57,29 @@ export class GoalsPage extends BasePage {
   // ── Card anatomy ──
 
   /**
-   * A card's percentage chip.
+   * A card's PROGRESS figure — "62%".
    *
-   * The chip is the only `Pill` on the card — a `<span>` whose
-   * `title` carries the pace comparison ("62% saved vs target
-   * pace").
+   * The receipt has no percent PILL and no separate bar: the
+   * PROGRESS line's figure IS the percentage, and it carries
+   * `role="progressbar"` so the value is still announced.
    */
   percentChip(name: string): Locator {
-    return this.card(name).locator('span.rounded-pill').first();
+    return this.card(name).getByRole('progressbar');
   }
 
-  /** A card's progress bar. */
+  /** A card's progress bar — the same element as `percentChip`. */
   progressBar(name: string): Locator {
     return this.card(name).getByRole('progressbar');
+  }
+
+  /**
+   * A card's status STAMP — "Open", "Overdue" or "Done".
+   *
+   * It is the tilted, bordered label at the top-right of the
+   * receipt.
+   */
+  stamp(name: string): Locator {
+    return this.card(name).locator('.goal-receipt__stamp');
   }
 
   /**
@@ -80,34 +93,83 @@ export class GoalsPage extends BasePage {
   }
 
   /**
-   * A card's "overdue" marker.
+   * A card's overdue marker — the receipt's footnote.
    *
    * An expired goal has no finite per-month requirement, so the
-   * card shows "overdue" in that slot INSTEAD of a pace line.
+   * footnote says "Overdue — no monthly plan" INSTEAD of a
+   * per-month figure. It is scoped to the footnote block so it does
+   * not match the "Overdue" stamp in the header.
    */
   overdueLine(name: string): Locator {
-    return this.card(name).getByText('overdue', { exact: true });
+    return this.card(name).locator('.goal-receipt__pace').getByText('Overdue');
   }
 
-  /** A card's "Need ৳ X more" line. */
+  /**
+   * A card's "Still needed" total.
+   *
+   * The receipt's bottom line — `৳ 40,000` — sits under a label
+   * that reads "Still needed". The locator reaches the LABEL; the
+   * figure is its sibling, so use `totalValue` for the amount.
+   */
   remainingLine(name: string): Locator {
-    return this.card(name).getByText('Need', { exact: false });
+    return this.card(name).getByText('Still needed', { exact: true });
   }
 
-  /** A card's "৳ X/mo" line. */
+  /**
+   * A card's "Still needed" FIGURE — `৳ 40,000`.
+   *
+   * The total row is a `<div>` holding a label span and a value
+   * `<b>`, so the amount is the row's `<b>` child.
+   */
+  totalValue(name: string): Locator {
+    return this.card(name).locator('.goal-receipt__row--total > b');
+  }
+
+  /** A card's "৳ X/mo" figure — the per-month ask. */
   perMonthLine(name: string): Locator {
     return this.card(name).getByText('/mo', { exact: false });
   }
 
   /**
+   * A card's TARGET line — the target amount.
+   *
+   * The receipt states each fact on its own row, so the figure is
+   * the row's `<b>` sibling of the "Target" label.
+   *
+   * Named `cardTargetValue` (not `targetValue`) so it does not
+   * collide with the DETAIL screen's `targetValue` getter below.
+   */
+  cardTargetValue(name: string): Locator {
+    return this.card(name)
+      .locator('.goal-receipt__row')
+      .filter({ hasText: 'Target' })
+      .locator('> b');
+  }
+
+  /** A card's SAVED line — the saved amount. */
+  cardSavedValue(name: string): Locator {
+    return this.card(name)
+      .locator('.goal-receipt__row')
+      .filter({ hasText: 'Saved' })
+      .locator('> b');
+  }
+
+  /** A card's DUE line — the target date. */
+  cardDueValue(name: string): Locator {
+    return this.card(name)
+      .locator('.goal-receipt__row')
+      .filter({ hasText: 'Due' })
+      .locator('> b');
+  }
+
+  /**
    * A card's "Goal reached. Nice." line.
    *
-   * The line is a `<div>` whose text is "Goal reached. " followed by
-   * a `<span>` holding "Nice." — so the whole line is reached by a
-   * `hasText` filter on the card's own `<div>`s.
+   * On a completed goal the receipt's TOTAL row is replaced by a
+   * "Status" row whose figure reads "Goal reached. Nice.".
    */
   reachedLine(name: string): Locator {
-    return this.card(name).locator('div').filter({ hasText: 'Goal reached.' }).last();
+    return this.card(name).getByText('Goal reached. Nice.', { exact: false });
   }
 
   // ── Add form ──

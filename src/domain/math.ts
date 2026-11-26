@@ -529,6 +529,91 @@ export function dpsCurrentValue(investment: Investment, transactions: Transactio
 }
 
 /**
+ * The DPS deposit ledger — the two dated lines a certificate card shows.
+ *
+ * A DPS pays a fixed installment every month for the whole term, so the
+ * full ledger can run to dozens of rows. A card that lists them all is
+ * enormous, and a card that lists the last few says the same thing over
+ * and over. What the holder actually needs is the PAIR of dates — what
+ * has already happened, and what is due next.
+ */
+export interface DpsLedger {
+  /** The most recent contribution, or null if none was ever recorded. */
+  lastDeposit: { date: ISODate; amount: number } | null;
+  /** The next installment's due date — the 1st of the following month. */
+  nextDueDate: ISODate;
+  /** How many installments have been paid so far. */
+  installmentsPaid: number;
+  /** The total contributed so far (principal actually paid in). */
+  contributed: number;
+}
+
+/**
+ * The DPS deposit ledger, derived from the linked contribution
+ * transactions.
+ *
+ * `nextDueDate` is the 1st of the month after the most recent deposit —
+ * a DPS installment falls on the start date's day-of-month, so the
+ * natural next due date is the same day number in the following month.
+ * When no deposit has been recorded yet, the next due date falls on the
+ * start date's day in its own month (or the 1st, for a plan that starts
+ * mid-month).
+ *
+ * The most recent deposit is the one with the LATEST date; ties are
+ * broken by array order so the ordering is stable.
+ */
+export function dpsLedger(
+  investment: Investment,
+  transactions: Transaction[],
+): DpsLedger {
+  const empty: DpsLedger = {
+    lastDeposit: null,
+    nextDueDate: investment.startDate,
+    installmentsPaid: 0,
+    contributed: 0,
+  };
+  if (!investment) return empty;
+
+  let installmentsPaid = 0;
+  let contributed = 0;
+  let lastDeposit: { date: ISODate; amount: number } | null = null;
+
+  for (const t of transactions) {
+    if (t.linkedInvestmentId !== investment.id) continue;
+    if (t.type !== 'expense') continue;
+    const amount = Number(t.amount) || 0;
+    contributed += amount;
+    installmentsPaid += 1;
+    if (lastDeposit === null || t.date >= lastDeposit.date) {
+      lastDeposit = { date: t.date, amount };
+    }
+  }
+
+  // A DPS installment falls on the SAME day of every month — the day
+  // the scheme started. So the next due date is the start date's day
+  // in the month AFTER the last deposit's month.
+  //
+  // The month is taken from the last deposit (not from "today") so
+  // the schedule never drifts: a deposit recorded late, or one for a
+  // month already paid, still points at the same recurring date.
+  const start = parseISODate(investment.startDate);
+  const day = start.getUTCDate();
+  const anchor = lastDeposit ? parseISODate(lastDeposit.date) : start;
+  const targetMonth = anchor.getUTCMonth() + 1;
+  const yearShift = Math.floor(targetMonth / 12);
+  const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+  const year = anchor.getUTCFullYear() + yearShift;
+  // Clamp to the last day of the target month, so a scheme that
+  // started on the 31st still has a due date in a 30-day month.
+  const lastDay = new Date(Date.UTC(year, normalizedMonth + 1, 0)).getUTCDate();
+  const nextDueDate = `${year}-${String(normalizedMonth + 1).padStart(2, '0')}-${String(
+    Math.min(day, lastDay),
+  ).padStart(2, '0')}`;
+
+  return { lastDeposit, nextDueDate, installmentsPaid, contributed };
+}
+
+/**
  * Type-aware maturity value. Dispatches on type AND on which term field
  * the user filled in:
  *   - DPS  → always annuity-due via dpsMaturityValue() (months-based).

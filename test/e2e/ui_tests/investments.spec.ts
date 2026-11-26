@@ -35,6 +35,18 @@ import investmentsJson from '../../data/investments.json' with { type: 'json' };
 
 const data = investmentsJson;
 
+/**
+ * Today, formatted the way the app formats a date — "26 Nov 2026".
+ *
+ * The certificate's LAST DEPOSIT line shows the investment's start
+ * date, which the add form sets to today.
+ */
+function fmtToday(): string {
+  const d = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 test.describe('Investments', () => {
   let investments: InvestmentsPage;
 
@@ -89,33 +101,63 @@ test.describe('Investments', () => {
 
       await expect(page).toHaveURL(/#\/investments$/);
 
-      await expect(investments.cardTypePill(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.typePill,
+      // The certificate's serial line carries the type, the institution
+      // and the maturity countdown.
+      await expect(investments.cardTypeLabel(lifecycle.created.name)).toContainText(
+        lifecycle.expected.typeLabel,
       );
-      await expect(investments.cardTermsLine(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.termsLine,
-      );
-      await expect(investments.cardPrincipalLine(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.principalLine,
+      await expect(investments.cardSerial(lifecycle.created.name)).toContainText(
+        lifecycle.created.institution,
       );
 
       // The countdown is derived from the calendar, so its shape is
-      // asserted rather than its exact figure.
-      await expect(investments.cardCountdown(lifecycle.created.name)).toHaveText(
-        /^Matures in /,
+      // asserted rather than its exact figure. It is a segment of the
+      // serial line, so the assertion is a `toContainText`.
+      await expect(investments.cardCountdown(lifecycle.created.name)).toContainText(
+        /Matures in /,
       );
 
-      // "Now" carries the current value; "At maturity" the projection.
+      // The engraved terms.
+      await expect(investments.cardPrincipalValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.principalValue,
+      );
+      await expect(investments.cardTermValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.termValue,
+      );
+
+      // "Value today" carries the current value; "At maturity" the
+      // projection; "Interest" the gap between them.
       await expect(investments.cardCurrentLabel(lifecycle.created.name)).toHaveText(
-        'Now',
+        'Value today',
       );
       await expect(investments.cardCurrentFigure(lifecycle.created.name)).toHaveText(
         lifecycle.expected.nowValue,
+      );
+      await expect(investments.cardInterestLabel(lifecycle.created.name)).toHaveText(
+        'Interest',
+      );
+      await expect(investments.cardInterestFigure(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.interestValue,
       );
       await expect(investments.cardMaturityLabel(lifecycle.created.name)).toHaveText(
         'At maturity',
       );
       await expect(investments.cardMaturityFigure(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.maturityValue,
+      );
+
+      // The ledger holds exactly TWO dated lines — the deposit and the
+      // maturity — so a lump sum's card never grows with a term.
+      await expect(investments.cardLedgerCount(lifecycle.created.name)).toHaveText(
+        '1 lump sum',
+      );
+      await expect(investments.cardLedgerDate(lifecycle.created.name, 'Last deposit')).toHaveText(
+        fmtToday(),
+      );
+      await expect(investments.cardLedgerAmount(lifecycle.created.name, 'Last deposit')).toHaveText(
+        lifecycle.expected.principalValue,
+      );
+      await expect(investments.cardLedgerAmount(lifecycle.created.name, 'Matures')).toHaveText(
         lifecycle.expected.maturityValue,
       );
     });
@@ -227,14 +269,16 @@ test.describe('Investments', () => {
     });
 
     await test.step('Read the card', async () => {
-      await expect(investments.cardTypePill(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.typePill,
+      await expect(investments.cardTypeLabel(lifecycle.created.name)).toContainText(
+        lifecycle.expected.typeLabel,
       );
-      await expect(investments.cardTermsLine(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.termsLine,
+      // A DPS has no principal — the first engraved field names the
+      // monthly installment instead.
+      await expect(investments.cardMonthlyValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.monthlyValue,
       );
-      await expect(investments.cardMonthlyLine(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.monthlyLine,
+      await expect(investments.cardTermValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.termValue,
       );
       await expect(investments.cardCurrentFigure(lifecycle.created.name)).toHaveText(
         lifecycle.expected.nowValue,
@@ -242,6 +286,14 @@ test.describe('Investments', () => {
       await expect(investments.cardMaturityFigure(lifecycle.created.name)).toHaveText(
         lifecycle.expected.maturityValue,
       );
+
+      // The ledger holds exactly TWO dated lines — the last deposit and
+      // the next due — so the card's height never grows with the term.
+      await expect(investments.cardLedgerCount(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.ledgerCount,
+      );
+      await expect(investments.cardLedgerLine(lifecycle.created.name, 'Last deposit')).toHaveCount(1);
+      await expect(investments.cardLedgerLine(lifecycle.created.name, 'Next due')).toHaveCount(1);
     });
 
     await test.step('Read the Main Bank balance — no money moved', async () => {
@@ -612,22 +664,23 @@ test.describe('Investments', () => {
     await test.step('Read the old investment and the new one', async () => {
       await investments.goto();
 
-      // The old investment is retired and sits in the "Closed" group.
+      // The old investment is retired and sits in the "Closed" group,
+      // stamped as a document that has been rolled into another.
       await expect(investments.closedSection).toBeVisible();
-      await expect(investments.closedRow(data.fdr.name)).toContainText(
-        maturity.expected.rolledOverChip,
+      await expect(investments.closedStamp(data.fdr.name)).toHaveText(
+        maturity.expected.rolledOverStamp,
       );
 
       // The replacement carries the same principal, rate and term, and
       // starts the day after the old maturity date.
       const replacement = investments.card(data.fdr.name);
       await expect(replacement).toBeVisible();
-      await expect(investments.cardTypePill(data.fdr.name)).toHaveText('FDR');
-      await expect(investments.cardTermsLine(data.fdr.name)).toHaveText(
-        data.I01_fdrLifecycle.expected.termsLine,
+      await expect(investments.cardTypeLabel(data.fdr.name)).toContainText('FDR');
+      await expect(investments.cardTermValue(data.fdr.name)).toHaveText(
+        data.I01_fdrLifecycle.expected.termValue,
       );
-      await expect(investments.cardPrincipalLine(data.fdr.name)).toHaveText(
-        data.I01_fdrLifecycle.expected.principalLine,
+      await expect(investments.cardPrincipalValue(data.fdr.name)).toHaveText(
+        data.I01_fdrLifecycle.expected.principalValue,
       );
     });
 
@@ -658,11 +711,11 @@ test.describe('Investments', () => {
       await expect(investments.statusChip).toHaveText(maturity.expected.closedChip);
       await expect(investments.maturityCaption).toHaveText('Term ended');
 
-      // It sits in the "Closed" group on the list.
+      // It sits in the "Closed" group on the list, stamped as closed.
       await investments.goto();
       await expect(investments.closedSection).toBeVisible();
-      await expect(investments.closedRow(data.dps.name)).toContainText(
-        maturity.expected.closedChip,
+      await expect(investments.closedStamp(data.dps.name)).toHaveText(
+        maturity.expected.closedStamp,
       );
 
       // The count INCLUDES closed investments.
@@ -735,9 +788,12 @@ test.describe('Investments', () => {
       ).toHaveCount(0);
     });
 
-    await test.step('Read the Summary card on the Investments screen', async () => {
+    await test.step('Read the Summary certificate on the Investments screen', async () => {
       await investments.goto();
 
+      // The Summary is the same certificate shell as a holding's card,
+      // so its figures are labelled blocks: "VALUE TODAY" and "AT
+      // MATURITY", each with the figure under it.
       await expect(investments.summaryValue(split.expected.summaryCurrentLabel)).toHaveText(
         split.expected.summaryCurrentValue,
       );
@@ -750,6 +806,15 @@ test.describe('Investments', () => {
       await expect(investments.summaryMaturityCaption).toHaveText(
         split.expected.summaryMaturityCaption,
       );
+
+      // The interest between them is named, not left as a bare delta.
+      await expect(investments.summaryInterest).toHaveText(
+        split.expected.summaryInterestValue,
+      );
+
+      // The per-type breakdown says WHERE the money is parked.
+      await expect(investments.summaryBreakdown('DPS')).toContainText('৳ 5,101');
+      await expect(investments.summaryBreakdown('FDR')).toContainText('৳ 1,00,000');
     });
   });
 
@@ -831,8 +896,8 @@ test.describe('Investments', () => {
       // It leaves the active list and stays under "Closed".
       await investments.goto();
       await expect(investments.closedSection).toBeVisible();
-      await expect(investments.closedRow(data.fdr.name)).toContainText(
-        data.I05_maturity.expected.closedChip,
+      await expect(investments.closedStamp(data.fdr.name)).toHaveText(
+        data.I05_maturity.expected.closedStamp,
       );
       await expect(investments.card(data.fdr.name)).toHaveCount(0);
     });

@@ -76,20 +76,27 @@ test.describe('Goals', () => {
       const card = goals.card(lifecycle.created.name);
       await expect(card).toBeVisible();
 
-      // "৳ 10,000 / ৳ 50,000" and the deadline.
-      await expect(card).toContainText(
-        `${lifecycle.expected.cardSaved} / ${lifecycle.expected.cardTarget}`,
+      // The receipt states each fact on its own line — TARGET
+      // "৳ 50,000", SAVED "৳ 10,000", DUE "30 Jun 2027".
+      await expect(goals.cardTargetValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.cardTarget,
       );
-      await expect(card).toContainText(lifecycle.expected.cardDate);
+      await expect(goals.cardSavedValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.cardSaved,
+      );
+      await expect(goals.cardDueValue(lifecycle.created.name)).toHaveText(
+        lifecycle.expected.cardDate,
+      );
 
-      // The progress bar reads 20%.
+      // The PROGRESS figure reads 20%.
       await expect(goals.progressBar(lifecycle.created.name)).toHaveAttribute(
         'aria-valuenow',
         '20',
       );
 
-      // "Need ৳ 40,000 more".
-      await expect(goals.remainingLine(lifecycle.created.name)).toContainText(
+      // The receipt's total — "Still needed" ৳ 40,000.
+      await expect(goals.remainingLine(lifecycle.created.name)).toBeVisible();
+      await expect(goals.totalValue(lifecycle.created.name)).toHaveText(
         lifecycle.expected.cardRemaining,
       );
 
@@ -351,11 +358,15 @@ test.describe('Goals', () => {
       const card = goals.card(validation.expired.name);
       await expect(card).toBeVisible();
 
-      // The pace reads "overdue" — an expired goal has no finite
-      // per-month requirement, so the card shows the word in that
-      // slot instead of a "Pace:" line.
+      // The receipt's footnote reads "Overdue — no monthly plan" —
+      // an expired goal has no finite per-month requirement, so the
+      // footnote says so INSTEAD of a per-month figure. The stamp
+      // at the top-right reads "Overdue" too.
       await expect(goals.overdueLine(validation.expired.name)).toHaveText(
         validation.expired.pace,
+      );
+      await expect(goals.stamp(validation.expired.name)).toHaveText(
+        validation.expired.stamp,
       );
       await expect(goals.paceLine(validation.expired.name)).toHaveCount(0);
 
@@ -392,7 +403,7 @@ test.describe('Goals', () => {
       await expect(goals.paceLine(pace.behind.name)).toContainText(pace.expected.behindPace);
     });
 
-    await test.step('Read the percentage chip on each card', async () => {
+    await test.step('Read the PROGRESS figure on each card', async () => {
       await expect(goals.percentChip(pace.ahead.name)).toHaveText(
         pace.expected.aheadPercent,
       );
@@ -410,7 +421,7 @@ test.describe('Goals', () => {
       );
     });
 
-    await test.step('Open a goal that is neither complete nor expired and read its pace chip', async () => {
+    await test.step('Open a goal that is neither complete nor expired and read its progress figure', async () => {
       await goals.openGoal(pace.ahead.name);
 
       // The detail screen reports the same percentage — the pace

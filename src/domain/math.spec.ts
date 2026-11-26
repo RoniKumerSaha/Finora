@@ -30,6 +30,7 @@ import {
   dpsContributedSoFar,
   dpsPaidOutSoFar,
   dpsCurrentValue,
+  dpsLedger,
   investmentMaturityValueTyped,
   investmentValue,
   computeNetWorth,
@@ -309,6 +310,51 @@ describe('DPS — contributions aggregated from transactions', () => {
   it('dpsPaidOutSoFar returns 0 when no payouts', () => {
     expect(dpsPaidOutSoFar(inv, [])).toBe(0);
   });
+
+  it('dpsLedger counts installments and totals only linked expenses', () => {
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-02-01' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-03-01' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-04-01' }),
+      tx({ type: 'income',  amount: 5000, linkedInvestmentId: 'd1', date: '2026-05-01' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd2', date: '2026-02-01' }),
+    ];
+    const ledger = dpsLedger(inv, txs);
+    expect(ledger.installmentsPaid).toBe(3);
+    expect(ledger.contributed).toBe(15000);
+    expect(ledger.lastDeposit).toEqual({ date: '2026-04-01', amount: 5000 });
+  });
+
+  it('dpsLedger next due date is the start day in the month after the last deposit', () => {
+    // The scheme starts on the 27th, so every installment is due on
+    // the 27th. The last deposit was in October, so the next one is
+    // 27 November — the schedule never drifts.
+    const started27th: Investment = { ...inv, startDate: '2026-08-27' };
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-09-27' }),
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-10-27' }),
+    ];
+    expect(dpsLedger(started27th, txs).nextDueDate).toBe('2026-11-27');
+  });
+
+  it('dpsLedger next due date clamps to the last day of a short month', () => {
+    // Started on the 31st → February has no 31st, so it lands on the
+    // 28th rather than rolling into March.
+    const started31st: Investment = { ...inv, startDate: '2026-12-31' };
+    const txs: Transaction[] = [
+      tx({ type: 'expense', amount: 5000, linkedInvestmentId: 'd1', date: '2026-12-31' }),
+    ];
+    expect(dpsLedger(started31st, txs).nextDueDate).toBe('2027-01-31');
+  });
+
+  it('dpsLedger with no deposits reports nothing paid and the start date', () => {
+    const ledger = dpsLedger(inv, []);
+    expect(ledger.installmentsPaid).toBe(0);
+    expect(ledger.contributed).toBe(0);
+    expect(ledger.lastDeposit).toBeNull();
+    expect(ledger.nextDueDate).toBe(inv.startDate);
+  });
+
 
   it('dpsCurrentValue compounds each contribution to today', () => {
     // Two contributions: 5000 paid 6 months ago, 5000 paid 3 months ago.

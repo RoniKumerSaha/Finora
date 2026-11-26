@@ -3,11 +3,21 @@
  * `/investments/:id` (detail).
  *
  * `src/screens/InvestmentsListScreen.tsx`:
- *   - each investment is an `<a class="card card-link">` carrying the
- *     name, a type pill ("DPS" / "FDR" / "Savings"), the terms line
- *     "9% · 12mo · DBBL", a maturity countdown and either
- *     "৳ 5,000/mo" (DPS) or "Principal ৳ 1,00,000", then a right zone
- *     with "Now" (or "Value") and "At maturity".
+ *   - each investment is a CERTIFICATE — an `<article class="inv-cert">`
+ *     inside an `<a class="card-link">`. The certificate carries:
+ *       · the name, a serial line ("NO. 157596 · DPS · DUTCH-BANGLA ·
+ *         Matures in ~2.2y") and a tilted rate seal
+ *       · three engraved fields — "Monthly" (a DPS) or "Principal"
+ *         (a lump sum), "Term", and "Time left"
+ *       · a two-line deposit ledger — "Last deposit" and either
+ *         "Next due" (a DPS) or "Matures" (a lump sum), each with a
+ *         date and an amount
+ *       · a tally line — "৳ 1,70,000 contributed so far · ৳ 1,51,674 in
+ *         the account" (a DPS) or "Lump sum · ৳ 2,00,000 locked in at
+ *         start" (a lump sum)
+ *       · a footer — "Value today", "Interest" and "At maturity"
+ *     The ledger holds exactly TWO dated lines whatever the type, so
+ *     the card's height never grows with the term.
  *   - the summary card carries "Current value" and "At maturity".
  *
  * `src/screens/InvestmentAddScreen.tsx` — "Name", "Type",
@@ -26,42 +36,79 @@ export class InvestmentsPage extends BasePage {
     return this.page.getByRole('link', { name: '+ Add', exact: true });
   }
 
-  /** All investment cards. */
+  /**
+   * All ACTIVE investment cards.
+   *
+   * A retired holding also renders as a card-link (a closed
+   * certificate), so the active list is scoped to the certificates
+   * that are NOT closed — otherwise "the card for X" is ambiguous
+   * once X has been retired.
+   */
   get cards(): Locator {
-    return this.page.locator('a.card-link');
+    return this.page.locator('a.card-link').filter({ hasNot: this.page.locator('.inv-cert--closed') });
   }
 
-  /** An investment card, by its name. */
+  /** An ACTIVE investment card, by its name. */
   card(name: string): Locator {
-    return this.page.locator('a.card-link').filter({ hasText: name }).first();
+    return this.cards.filter({ hasText: name }).first();
   }
 
-  /** The summary card — always rendered when there is an investment. */
-  get summaryCard(): Locator {
-    return this.page.locator('section.card').filter({ hasText: 'How it works:' });
+  /** A card's certificate surface. */
+  certificate(name: string): Locator {
+    return this.card(name).locator('.inv-cert');
   }
 
   /**
-   * A figure from the summary card, by its label.
+   * The summary certificate — always rendered when there is an
+   * investment. It is the same shell as a holding's card, so it is
+   * located by its class rather than by its old prose.
+   */
+  get summaryCard(): Locator {
+    return this.page.locator('.inv-cert--summary');
+  }
+
+  /**
+   * A figure from the summary certificate, by its label.
    *
-   * The label / figure / caption are three siblings, so the figure is
-   * the `[26px]` div inside the label's parent.
+   * The label sits in a `.k` and the figure in a sibling `.n`, both
+   * inside the same `.inv-cert__v` block.
    */
   summaryValue(label: string): Locator {
     return this.summaryCard
-      .getByText(label, { exact: true })
-      .locator('..')
-      .locator('div.text-\\[26px\\]');
+      .locator('.inv-cert__v')
+      .filter({ has: this.page.getByText(label, { exact: true }) })
+      .locator('.n');
   }
 
-  /** The summary card's "Money tied up right now" caption. */
+  /**
+   * The summary's "Value today" caption.
+   *
+   * Scoped to the figure block's own key — the footnote repeats the
+   * phrase in bold, so a bare text match would be ambiguous.
+   */
   get summaryCurrentCaption(): Locator {
-    return this.summaryCard.getByText('Money tied up right now', { exact: true });
+    return this.summaryCard.locator('.inv-cert__v--now .k');
   }
 
-  /** The summary card's "If every term completes" caption. */
+  /** The summary's "At maturity" caption. */
   get summaryMaturityCaption(): Locator {
-    return this.summaryCard.getByText('If every term completes', { exact: true });
+    return this.summaryCard.locator('.inv-cert__v--mat .k');
+  }
+
+  /**
+   * A line of the summary's per-type breakdown, by its label —
+   * "DPS · 1", "FDR · 2", "Savings · 1".
+   */
+  summaryBreakdown(label: string): Locator {
+    return this.summaryCard
+      .locator('.inv-cert__fields--stack .inv-cert__f')
+      .filter({ hasText: label })
+      .first();
+  }
+
+  /** The summary's interest figure. */
+  get summaryInterest(): Locator {
+    return this.summaryCard.locator('.inv-cert__grow .gn');
   }
 
   /** The "{n} total" count under the page heading. */
@@ -74,94 +121,193 @@ export class InvestmentsPage extends BasePage {
     return this.page.getByText('No investments yet.', { exact: true });
   }
 
-  /** The "Closed" section card — only rendered when something is retired. */
+  /**
+   * The "Closed" section — only rendered when something is retired.
+   * It is a plain heading over a grid of closed certificates.
+   */
   get closedSection(): Locator {
     return this.page
-      .locator('section.card')
-      .filter({ has: this.page.getByRole('heading', { name: 'Closed', exact: true }) });
+      .locator('section')
+      .filter({ has: this.page.getByRole('heading', { name: /^Closed/ }) });
   }
 
-  /** A closed-investment row. */
+  /** A closed-investment certificate. */
   get closedRows(): Locator {
-    return this.closedSection.locator('a');
+    return this.page.locator('.inv-cert--closed');
   }
 
   /**
-   * A closed-investment row, by its name.
+   * A closed-investment certificate, by its name.
    *
    * The "Closed" section holds every retired investment, so the bare
-   * row locator is ambiguous as soon as there is more than one.
+   * locator is ambiguous as soon as there is more than one.
    */
   closedRow(name: string): Locator {
-    return this.closedSection.locator('a').filter({ hasText: name }).first();
+    return this.page.locator('.inv-cert--closed').filter({ hasText: name }).first();
+  }
+
+  /** A closed certificate's tilted status stamp — "Closed" / "Rolled over". */
+  closedStamp(name: string): Locator {
+    return this.closedRow(name).locator('.inv-cert__stamp');
   }
 
   // ── Card figures ──
 
-  /** The card's type pill — "DPS" / "FDR" / "Savings". */
-  cardTypePill(name: string): Locator {
-    return this.card(name).getByText(/^(DPS|FDR|Savings)$/, { exact: true });
-  }
+  // ── Certificate anatomy ──
 
   /**
-   * The card's terms line — "9% · 12mo · DBBL".
+   * The certificate's serial line — "NO. 157596 · DPS · DUTCH-BANGLA ·
+   * Matures in ~2.2y".
    *
-   * Only the terms div carries `tabular` — the countdown / principal
-   * row below it puts `tabular` on a child `<span>` instead.
+   * It carries the type, the institution and the maturity countdown,
+   * so it answers for all three of the old terms / countdown / type
+   * locators.
    */
-  cardTermsLine(name: string): Locator {
-    return this.card(name).locator('div.text-\\[12px\\].tabular');
+  cardSerial(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__serial');
   }
 
   /**
-   * The card's maturity countdown — "Matures in ~1.0y" / "Matures in 12d".
+   * The certificate's type — "DPS" / "FDR" / "SAVINGS".
    *
-   * The countdown is a `<span>` inside the row that also carries the
-   * principal, so it is addressed by its own text.
+   * The type is one segment of the serial line, so the assertion is a
+   * `toContainText` rather than `toHaveText`.
+   */
+  cardTypeLabel(name: string): Locator {
+    return this.cardSerial(name);
+  }
+
+  /**
+   * The certificate's maturity countdown — "Matures in ~1.0y" /
+   * "Matures in 30d" / "Matured 6d ago".
+   *
+   * The countdown is a SEGMENT of the serial line, not an element of
+   * its own, so the locator resolves to the whole line and the
+   * assertion must be a `toContainText`.
    */
   cardCountdown(name: string): Locator {
-    return this.card(name).locator('span', { hasText: /Matures in |Matured \d+d ago|Matures today/ });
+    return this.cardSerial(name);
   }
 
-  /** The card's "Principal ৳ X" line (FDR / savings). */
-  cardPrincipalLine(name: string): Locator {
-    return this.card(name).getByText(/^Principal ৳/);
-  }
-
-  /** The card's "৳ X/mo" line (DPS). */
-  cardMonthlyLine(name: string): Locator {
-    return this.card(name).getByText(/^৳ [\d,]+\/mo$/);
+  /** The certificate's tilted rate seal. */
+  cardSeal(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__seal');
   }
 
   /**
-   * The card's right-zone label — "Now" or "Value".
+   * One of the certificate's three engraved fields, by its label —
+   * "Monthly" (a DPS) / "Principal" (a lump sum), "Term", "Time left".
    *
-   * The right zone carries up to TWO of these (the "Now" label above
-   * the current figure and the "At maturity" label above the
-   * projection), so the caller narrows by the text it wants.
+   * The label and the figure are siblings, so the figure is the
+   * field's `.v` child.
    */
-  cardNowLabel(name: string): Locator {
-    return this.card(name).locator('span.text-\\[10px\\]');
+  cardField(name: string, label: 'Monthly' | 'Principal' | 'Term' | 'Time left'): Locator {
+    return this.certificate(name)
+      .locator('.inv-cert__f')
+      .filter({ hasText: label })
+      .locator('.v');
   }
 
-  /** The card's right-zone "Now" / "Value" label. */
-  cardCurrentLabel(name: string): Locator {
-    return this.card(name).getByText(/^(Now|Value)$/, { exact: true });
+  /** The card's "Principal" figure (FDR / savings). */
+  cardPrincipalValue(name: string): Locator {
+    return this.cardField(name, 'Principal');
   }
 
-  /** The card's right-zone "At maturity" label. */
-  cardMaturityLabel(name: string): Locator {
-    return this.card(name).getByText('At maturity', { exact: true });
+  /** The card's "Monthly" figure (DPS) — the installment amount. */
+  cardMonthlyValue(name: string): Locator {
+    return this.cardField(name, 'Monthly');
   }
 
-  /** The card's right-zone headline figure — the current value. */
+  /** The card's "Term" figure — "60 mo" / "181d". */
+  cardTermValue(name: string): Locator {
+    return this.cardField(name, 'Term');
+  }
+
+  /** The card's "Time left" figure — "~2.2y" / "30d" / "Matured". */
+  cardTimeLeftValue(name: string): Locator {
+    return this.cardField(name, 'Time left');
+  }
+
+  /** The ledger's section head — "Deposits" / "Deposit record". */
+  cardLedgerHead(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__ledger-head');
+  }
+
+  /**
+   * The ledger's installment count — "34 of 60 paid" (a DPS) or
+   * "1 lump sum" (a lump sum).
+   */
+  cardLedgerCount(name: string): Locator {
+    return this.cardLedgerHead(name).locator('.n');
+  }
+
+  /**
+   * A dated ledger line, by its label — "Last deposit" or
+   * "Next due" (a DPS) / "Matures" (a lump sum).
+   */
+  cardLedgerLine(name: string, label: 'Last deposit' | 'Next due' | 'Matures' | 'Matured'): Locator {
+    return this.certificate(name)
+      .locator('.inv-cert__dline')
+      .filter({ hasText: label })
+      .first();
+  }
+
+  /** A dated ledger line's DATE. */
+  cardLedgerDate(name: string, label: 'Last deposit' | 'Next due' | 'Matures' | 'Matured'): Locator {
+    return this.cardLedgerLine(name, label).locator('.inv-cert__dd');
+  }
+
+  /** A dated ledger line's AMOUNT. */
+  cardLedgerAmount(name: string, label: 'Last deposit' | 'Next due' | 'Matures' | 'Matured'): Locator {
+    return this.cardLedgerLine(name, label).locator('.inv-cert__da');
+  }
+
+  /** The tally line — the totals the two date lines cannot carry. */
+  cardTally(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__tally');
+  }
+
+  /**
+   * The card's "Value today" figure.
+   *
+   * On a matured holding the label is "Payable now" instead, so the
+   * locator accepts either.
+   */
   cardCurrentFigure(name: string): Locator {
-    return this.card(name).locator('span.text-\\[24px\\]');
+    return this.certificate(name)
+      .locator('.inv-cert__v--now')
+      .locator('.n');
   }
 
-  /** The card's right-zone "At maturity" figure. */
+  /** The card's "At maturity" figure. */
   cardMaturityFigure(name: string): Locator {
-    return this.card(name).locator('span.text-\\[12px\\].font-semibold');
+    return this.certificate(name)
+      .locator('.inv-cert__v--mat')
+      .locator('.n');
+  }
+
+  /** The card's "Interest" figure. */
+  cardInterestFigure(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__grow .gn');
+  }
+
+  /** The card's "Interest" label. */
+  cardInterestLabel(name: string): Locator {
+    return this.certificate(name).locator('.inv-cert__grow .gk');
+  }
+
+  /** The card's "Value today" / "Payable now" label. */
+  cardCurrentLabel(name: string): Locator {
+    return this.certificate(name)
+      .locator('.inv-cert__v--now')
+      .locator('.k');
+  }
+
+  /** The card's "At maturity" / "Term ended" label. */
+  cardMaturityLabel(name: string): Locator {
+    return this.certificate(name)
+      .locator('.inv-cert__v--mat')
+      .locator('.k');
   }
 
   // ── Add form ──

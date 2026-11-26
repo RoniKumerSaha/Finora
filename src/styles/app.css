@@ -496,6 +496,622 @@ main > * {
   to   { transform: scaleX(1); }
 }
 
+/* ============================================================
+   THE GOAL RECEIPT (2026-11-26).
+
+   A goal card rendered as a till receipt: monospaced line items,
+   dashed rules between the sections, and a perforated edge top and
+   bottom. The progress BAR is gone — the receipt is the record,
+   and the numbers carry the progress.
+
+   The perforation is drawn as a row of punched semicircles in the
+   PAGE background colour, so the card reads as torn from a roll.
+   The top row's semicircles bite DOWN into the paper; the bottom
+   row's bite UP. The card's `overflow: hidden` clips them to the
+   card's own rectangle, which is what makes the edge look torn.
+
+   The stamp is a rotated, bordered label — the one piece of
+   "physical" detail that carries the goal's status.
+   ============================================================ */
+
+.goal-receipt {
+  position: relative;
+  overflow: hidden;
+  /* A receipt is not a rounded app card. 6px is enough to read as
+     "a sheet" without looking like a torn-off corner. */
+  border-radius: 6px;
+  /* The extra top/bottom padding clears the punched edge so the
+     first and last line never sit inside a hole. */
+  padding: 22px 20px 24px;
+  /* The paper sits lighter than the page, so the receipt reads as a
+     separate sheet laid on the desk — and so the punched holes
+     (drawn in the PAGE colour) have something to be cut out of.
+     `--surface-3` plus a paper wash lifts the sheet clear of the
+     surface it lies on. */
+  background: var(--surface-3);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05),
+    transparent 46%
+  );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card), var(--card-inset);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* The punched edge. `--bg` is the page colour, so the holes read as
+   cut through to the page behind.
+   Both edges are drawn the SAME way — a 9px band whose circles are
+   centred 4.5px from the edge, so each hole is a full circle and the
+   top and bottom match. Drawing the top with the circles centred ON
+   the edge and the bottom with them centred 8px down looks symmetric
+   in the CSS but is not: the card's border-radius clips the top band
+   far more than the bottom, so the two edges never match. */
+.goal-receipt::before,
+.goal-receipt::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x;
+}
+.goal-receipt::before { top: 0; }
+.goal-receipt::after { bottom: 0; }
+
+/* The header — the goal's name, set in caps like a till heading,
+   with the status stamp tilted at the far right. */
+.goal-receipt__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.goal-receipt__name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The stamp — a bordered, rotated label. Its colour comes from the
+   `--stamp` custom property, set inline per status. */
+.goal-receipt__stamp {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 2px solid var(--stamp, var(--muted));
+  color: var(--stamp, var(--muted));
+  border-radius: 4px;
+  transform: rotate(-6deg);
+  white-space: nowrap;
+}
+
+/* A dashed rule between the receipt's sections. */
+.goal-receipt__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 12px 0 10px;
+  opacity: 0.9;
+}
+
+/* A line item — the label on the left, the figure on the right. */
+.goal-receipt__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 0;
+}
+.goal-receipt__row > b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The bottom line — "STILL NEEDED" — is the receipt's total, so it
+   gets its own rule and a larger figure. */
+.goal-receipt__row--total {
+  border-top: 1px dashed var(--divider);
+  margin-top: 9px;
+  padding-top: 9px;
+  font-size: 13px;
+}
+.goal-receipt__row--total > b {
+  font-size: 16px;
+}
+
+/* The pace note — the receipt's footnote. It sits under the total,
+   in the pace's own colour, and is the only line that names the
+   pace (ahead / behind). */
+.goal-receipt__pace {
+  margin-top: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.goal-receipt__pace b {
+  font-weight: 700;
+  color: var(--pace, var(--muted));
+}
+
+/* The "Goal reached" line — the receipt's paid stamp. */
+.goal-receipt__reached {
+  margin-top: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ============================================================
+   THE INVESTMENT CERTIFICATE (.inv-cert)
+   ============================================================
+   An investment is a contract with a bank, so the card IS the
+   instrument: a perforated bond certificate carrying engraved
+   terms, a serial number, a rate seal, and the two values the
+   holder cares about — what the bank would pay today and what it
+   owes at maturity — with the interest between them named.
+
+   ONE SHELL FOR EVERY TYPE. A DPS pays a fixed installment every
+   month for years, so its full deposit ledger can run to dozens of
+   rows; an FDR has exactly one deposit. Rather than let the card
+   grow with the term, both types get the SAME two-line ledger:
+
+     LAST DEPOSIT   what came in last        (date + amount)
+     NEXT DUE       what is due next         (date + amount)
+     ...or MATURES  when the term ends        (date + amount)
+
+   A DPS's second line is the next installment; a lump sum's is
+   its maturity date. The two lines are the same shape, so the
+   card's HEIGHT NEVER GROWS with the term — a 34-deposit DPS and
+   a 1-deposit FDR are the same card, the same height.
+
+   The section head carries the count ("34 OF 60 PAID") and a
+   tally line carries the totals, so the numbers the two date
+   lines cannot hold are never silently dropped.
+
+   The `--tone` custom property is set inline per investment type
+   (dps → primary, fdr → accent, savings → info) so the seal,
+   the amounts and the pip all share one colour identity.
+   ============================================================ */
+
+.inv-cert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 22px 22px 24px;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--tone) 7%, #1E2A24) 0%,
+      color-mix(in srgb, var(--tone) 4%, #22302A) 55%,
+      #1A241F 100%
+    );
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* The perforated edge — holes punched through to the page colour,
+   the same tear as the goal receipt.
+
+   Both edges are drawn the SAME way: a 9px band whose circles are
+   centred 4.5px from the card's own edge, so each hole is a full
+   circle and the top and bottom read identically. (Drawing the top
+   with the circles centred ON the edge and the bottom with them
+   centred 8px down looks symmetric in the CSS but is not — the
+   card's border-radius clips the top band far more than the
+   bottom, so the two edges never match.)
+
+   The holes are painted with `--bg`, the PAGE colour, so they read
+   as cut through to the page behind. The card's own wash runs from
+   #1E2A24 at the top to #1A241F at the bottom, so the holes only
+   stand out where the wash is lightest — which is why the bottom
+   row of holes used to disappear into the gradient. A soft shadow
+   ring under each hole gives the bottom edge the same bite as the
+   top. */
+.inv-cert::before,
+.inv-cert::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px) 0 0 / 14px 9px repeat-x;
+}
+.inv-cert::before { top: 0; }
+.inv-cert::after { bottom: 0; }
+
+/* The bite each hole leaves in the card's edge. Drawn as a second
+   layer UNDER the hole so the perforation reads as a punched-out
+   notch rather than a painted dot — this is what makes the bottom
+   edge match the top. */
+.inv-cert::before {
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px);
+}
+.inv-cert::after {
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px);
+}
+
+/* The header — the investment's name and serial on the left, the
+   tilted rate seal on the right. */
+.inv-cert__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.inv-cert__name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inv-cert__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The rate seal — a tilted circle carrying the interest rate. The
+   rotation widens the seal's box, so a margin pulls it in to keep
+   the tilted edge inside the certificate's border. */
+.inv-cert__seal {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--tone);
+  color: var(--tone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-9deg);
+  line-height: 1;
+  margin-right: 6px;
+}
+.inv-cert__seal .p {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.inv-cert__seal .l {
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  margin-top: 3px;
+}
+
+/* The engraved terms — principal, term, time to maturity. */
+.inv-cert__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.inv-cert__f .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inv-cert__f .v {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The ledger — the two dated lines. */
+.inv-cert__ledger {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--divider);
+}
+.inv-cert__ledger-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.inv-cert__ledger-head .t {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inv-cert__ledger-head .n {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A dated line — the label, the date, the amount. */
+.inv-cert__dline {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0 16px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.inv-cert__dline:last-child { border-bottom: 0; }
+.inv-cert__dk {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.inv-cert__dd {
+  font-size: 12.5px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inv-cert__da {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--tone);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* The next installment is what is still TO COME — it reads as a
+   future obligation, so its date is dimmer than a deposit already
+   made, but the AMOUNT stays in the tone colour because that is
+   the number you act on. */
+.inv-cert__dline--next .inv-cert__dd { color: var(--muted); }
+.inv-cert__dline--next .inv-cert__da { color: var(--tone); opacity: 0.85; }
+
+/* The tally — the count and the totals that the two date lines
+   cannot carry. This is what makes the bounded ledger honest. */
+.inv-cert__tally {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.inv-cert__tally .pip {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+.inv-cert__tally b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The footer — value today, the interest between, and at maturity. */
+.inv-cert__vals {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+}
+.inv-cert__v .k {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inv-cert__v .n {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.inv-cert__v--now .n { color: var(--tone); }
+.inv-cert__v--mat .n { font-size: 15px; color: var(--ink); }
+
+/* The interest figure — labelled, so it reads as a third value
+   rather than an unexplained delta between the other two. */
+.inv-cert__grow {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--primary);
+}
+.inv-cert__grow .gk {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inv-cert__grow .gn {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The SUMMARY certificate — the same shell, holding the totals
+   instead of one holding's terms. The per-type breakdown stacks
+   down the card instead of sitting in three columns, because each
+   line is one kind of holding and needs its own tone. */
+.inv-cert--summary {
+  --tone: var(--accent);
+}
+.inv-cert__fields--stack {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+}
+.inv-cert__fields--stack .inv-cert__f {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.inv-cert__fields--stack .inv-cert__f .v {
+  margin-top: 0;
+  font-size: 14px;
+}
+
+/* The summary's footer. The card lives in the narrow sidebar column,
+   so the three-figure row cannot sit side by side — the figures
+   wrap and collide. They stack instead: the two big numbers on one
+   row, the interest between them on its own. */
+.inv-cert--summary .inv-cert__vals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 12px 14px;
+}
+.inv-cert--summary .inv-cert__grow {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--divider);
+}
+.inv-cert--summary .inv-cert__grow .gk {
+  order: 1;
+}
+.inv-cert--summary .inv-cert__grow .gn {
+  order: 2;
+  font-size: 13px;
+}
+.inv-cert--summary .inv-cert__v--now .n {
+  font-size: 20px;
+}
+.inv-cert--summary .inv-cert__v--mat .n {
+  font-size: 20px;
+}
+
+/* The summary's explanatory note — the same footnote slot the goal
+   receipt uses, so the two instruments read as one family. */
+.inv-cert__note {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--divider);
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.inv-cert__note strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+.inv-cert__note em {
+  font-style: italic;
+}
+
+/* ============================================================
+   THE CLOSED CERTIFICATE (.inv-cert--closed)
+   ============================================================
+   A retired holding is a SPENT document — the same sheet, printed
+   in the quiet ink of something already dealt with. It keeps the
+   certificate's shape so the family reads as one, but drops the
+   rate seal and the ledger: there is nothing left to project and
+   no deposits still to come.
+
+   The status STAMP is the headline, and it is the goal receipt's
+   stamp: a bordered, tilted label. A stamp is a physical claim
+   about a document, so the wording is document language — CLOSED
+   or ROLLED OVER — never a soft grey pill.
+   ============================================================ */
+
+.inv-cert--closed {
+  /* No tone wash: a spent document should not carry a live
+     holding's colour identity. The muted grey is the ink. */
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--muted-2) 12%, #262F2B) 0%,
+    color-mix(in srgb, var(--muted-2) 7%, #222B27) 55%,
+    #1E2622 100%
+  );
+  padding: 18px 20px 20px;
+}
+
+/* The stamp — a bordered, rotated label, matching the goal
+   receipt's stamp so both documents speak the same language. */
+.inv-cert__stamp {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 2px solid var(--tone, var(--muted-2));
+  color: var(--tone, var(--muted-2));
+  border-radius: 4px;
+  transform: rotate(-6deg);
+  white-space: nowrap;
+}
+
+/* The PLANNED stamp — the planner's stand-in for the real card's rate
+   seal. A plan is a promise, not a contract, so it prints in the
+   neutral muted ink rather than the holding's own tone. */
+.inv-cert__stamp--planned {
+  --tone: var(--muted);
+  border-style: dashed;
+  transform: rotate(-4deg);
+}
+
+/* A closed card has no seal, so the fields sit closer to the
+   header, and the tally reads as the card's closing line. */
+.inv-cert--closed .inv-cert__fields {
+  margin-top: 13px;
+  padding-top: 12px;
+}
+.inv-cert--closed .inv-cert__tally {
+  margin-top: 12px;
+}
+
 /* Cash-flow polyline draw-in — uses stroke-dasharray + dashoffset
    to "draw" the line left-to-right. Caller sets `stroke-dasharray`
    and `stroke-dashoffset` on the polyline so the dash equals the

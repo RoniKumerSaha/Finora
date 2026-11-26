@@ -41,8 +41,8 @@
     "expected": {
       "cardSaved": "৳ 10,000",
       "cardTarget": "৳ 50,000",
-      "cardDate": "by 30 Jun 2027",
-      "cardRemaining": "Need ৳ 40,000 more",
+      "cardDate": "30 Jun 2027",
+      "cardRemaining": "৳ 40,000",
       "cardPerMonth": "৳ 10,000/mo",
       "contributionModalTitle": "Add a contribution",
       "contributionModalSubLine": "Records the amount you've set aside toward this goal. Your account balance is not changed.",
@@ -91,7 +91,8 @@
       "targetDate": "2020-06-30",
       "createdAt": "2020-01-01",
       "contributionDate": "2020-01-01",
-      "pace": "overdue",
+      "pace": "Overdue — no monthly plan",
+      "stamp": "Overdue",
       "detailText": "Target date passed. Either extend it or close the goal.",
       "requiredPerMonth": "— past due —"
     }
