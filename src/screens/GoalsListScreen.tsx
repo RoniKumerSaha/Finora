@@ -156,7 +156,7 @@ export function GoalsListScreen() {
               <Link
                 key={g.id}
                 to={`/goals/${g.id}`}
-                className="goal-receipt card-link flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="goal-receipt card-link card-link--doc flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 style={{ ['--stamp' as string]: STAMP_COLOR[stamp] }}
                 aria-label={`${g.name}. ${STAMP_TEXT[stamp]}. ${pct}% saved toward ${fmtBDT(target)}.`}
               >

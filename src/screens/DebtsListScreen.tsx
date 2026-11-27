@@ -170,7 +170,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
 
   return (
     <div
-      className="debt-cert card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative"
+      className="debt-cert card-link card-link--doc focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative"
       style={{ ['--tone' as string]: TONE_VAR[cardTone] }}
     >
       {/* The full-card link overlay. `z-0` puts it under the

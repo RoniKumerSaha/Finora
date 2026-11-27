@@ -251,7 +251,7 @@ function ClosedInvCard({ inv }: { inv: Investment }) {
   return (
     <Link
       to={`/investments/${inv.id}`}
-      className="block card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="block card-link card-link--wrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       <article
         className="inv-cert inv-cert--closed"
@@ -363,7 +363,7 @@ function InvCard({
   return (
     <Link
       to={`/investments/${inv.id}`}
-      className="block card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="block card-link card-link--wrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       <article
         className="inv-cert"

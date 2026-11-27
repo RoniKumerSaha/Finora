@@ -786,6 +786,35 @@ input::placeholder, textarea::placeholder {
   border-color: transparent;
 }
 
+/* The same story for the document sheets that ARE the link — the
+   goal receipt and the debt certificate. They are `.card-link`
+   elements, so the generic link lift would fight the sheet's own
+   lift (and, because the generic rule is more specific, would WIN).
+   Switching the generic lift off lets the sheet lift on its own
+   terms: -3px, a tone-tinted edge, a deeper shadow. */
+.card-link--doc:hover,
+.card-link--doc:focus-visible,
+[data-theme="dark"] .card-link--doc:hover,
+[data-theme="light"] .card-link--doc:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+}
+
+/* And the mirror case — the sheet is INSIDE the link (the
+   investment certificate). The link is only a wrapper; the SHEET
+   carries the shadow, the border and the lift. Without this the
+   link would lift -1px AND the sheet would lift -3px inside it, and
+   the two would stack into a lurch. */
+.card-link--wrap:hover,
+.card-link--wrap:focus-visible,
+[data-theme="dark"] .card-link--wrap:hover,
+[data-theme="light"] .card-link--wrap:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
 /* Focus ring contract: every interactive element uses the same primary
    ring at 40% opacity. Avoids the "everything has a slightly different
    focus style" problem. */
@@ -4290,6 +4319,205 @@ main > * {
   border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
   font-family: var(--font-app);
+  /* The sheet lifts off the desk when the pointer reaches for it. */
+  transition:
+    transform 240ms cubic-bezier(0.22, 0.9, 0.3, 1),
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+}
+
+/* ---- The sheet comes off the desk ----
+   The Plan hub is four sheets of paper laid out on a desk. Hovering
+   one should pick it up: it rises a few pixels, its shadow deepens
+   and spreads, and its edge takes the planner's own tone — green for
+   an investment, red for a loan — so the pointer knows which
+   document it has reached for before reading a word of it.
+
+   The PLANNED stamp presses down as the sheet comes up. A rubber
+   stamp sits on the paper; when the paper moves under it, the stamp
+   leans harder into the sheet and tilts a fraction further. That
+   one detail is what makes the sheet read as an OBJECT being
+   handled rather than a div being styled.
+
+   Hover-only, for the same reason as the ledger rows: a stuck
+   pseudo-hover on a touch screen leaves a sheet floating in mid-air. */
+@media (hover: hover) {
+  .plan-paper:has(.plan-paper__link:hover),
+  .plan-paper:has(.plan-paper__link:focus-visible) {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--tone, var(--primary)) 38%, var(--border));
+    box-shadow:
+      0 10px 26px -10px rgba(0, 0, 0, 0.6),
+      0 0 0 1px color-mix(in srgb, var(--tone, var(--primary)) 26%, transparent);
+  }
+  /* The stamp presses down and tilts a little further into the
+     sheet. Its WORD stays grey — the stamp says what it is, and
+     only the rule says which document it belongs to. */
+  .plan-paper:has(.plan-paper__link:hover) .debt-cert__stamp--planned,
+  .plan-paper:has(.plan-paper__link:focus-visible) .debt-cert__stamp--planned {
+    transform: rotate(-6deg) scale(1.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  /* The figures warm up — the sheet's numbers come alive under the
+     pointer. */
+  .plan-paper:has(.plan-paper__link:hover) .plan-paper__v,
+  .plan-paper:has(.plan-paper__link:focus-visible) .plan-paper__v {
+    filter: brightness(1.18);
+  }
+}
+/* The figures carry the transition, so the warmth eases in. */
+.plan-paper__v {
+  transition: filter 240ms ease;
+}
+.debt-cert__stamp--planned {
+  transition: transform 240ms cubic-bezier(0.22, 0.9, 0.3, 1),
+              color 240ms ease,
+              box-shadow 240ms ease;
+}
+
+/* ============================================================
+   THE SHEET LIFT — the one hover every document shares.
+
+   The goal receipt, the investment certificate, the debt
+   certificate and the plan sheet are all sheets of paper lying on
+   the same desk. So they all answer a pointer the same way: the
+   sheet comes up off the desk, its shadow deepens and spreads, and
+   its edge takes the document's own tone.
+
+   Three different DOM shapes share this one motion:
+
+     .goal-receipt     the link IS the sheet
+     .debt-cert        the link IS the sheet (the overlay Link is a
+                       child, so :hover on the sheet still fires)
+     .inv-cert         the link WRAPS the sheet, so the sheet needs
+                       the parent-hover trigger
+     .plan-paper       the link is a child, so the sheet needs the
+                       :has() trigger
+
+   Which is why the rule set below is written twice — once for the
+   sheets that ARE the link, once for the sheets that live INSIDE
+   one. Same motion, same numbers, one desk.
+
+   Hover-only, for the same reason as the ledger rows: a stuck
+   pseudo-hover on a touch screen leaves a sheet floating in
+   mid-air.
+   ============================================================ */
+
+/* The sheets that ARE the link element. */
+.goal-receipt,
+.debt-cert {
+  transition:
+    transform 240ms cubic-bezier(0.22, 0.9, 0.3, 1),
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+}
+
+/* The sheets that live inside a link. */
+.inv-cert {
+  transition:
+    transform 240ms cubic-bezier(0.22, 0.9, 0.3, 1),
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+}
+
+@media (hover: hover) {
+  /* --- The sheet IS the link (goal receipt, debt certificate) --- */
+  .card-link--doc.goal-receipt:hover,
+  .card-link--doc.goal-receipt:focus-visible,
+  .card-link--doc.debt-cert:hover,
+  .card-link--doc.debt-cert:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--tone, var(--primary)) 38%, var(--border));
+    box-shadow:
+      0 10px 26px -10px rgba(0, 0, 0, 0.6),
+      0 0 0 1px color-mix(in srgb, var(--tone, var(--primary)) 26%, transparent);
+  }
+
+  /* --- The sheet is INSIDE the link (investment certificate) --- */
+  .card-link:hover .inv-cert,
+  .card-link:focus-visible .inv-cert {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--tone, var(--primary)) 38%, var(--border));
+    box-shadow:
+      0 10px 26px -10px rgba(0, 0, 0, 0.6),
+      0 0 0 1px color-mix(in srgb, var(--tone, var(--primary)) 26%, transparent);
+  }
+
+  /* The figures warm up — the sheet's numbers come alive under the
+     pointer. Same gesture as the plan sheet. */
+  .card-link--doc.goal-receipt:hover .goal-receipt__row > b,
+  .card-link--doc.goal-receipt:focus-visible .goal-receipt__row > b,
+  .card-link--doc.debt-cert:hover .debt-cert__v .n,
+  .card-link--doc.debt-cert:focus-visible .debt-cert__v .n,
+  .card-link:hover .inv-cert .inv-cert__v .n,
+  .card-link:focus-visible .inv-cert .inv-cert__v .n {
+    filter: brightness(1.18);
+  }
+
+  /* ---- The stamp moves a little ----
+     A rubber stamp sits ON the paper. When the paper comes up off
+     the desk, the stamp travels with it — and it presses down into
+     the sheet, tilting a fraction further as it leans on the moving
+     paper. That one detail is what makes the sheet read as an
+     OBJECT being handled rather than a div being styled.
+
+     Each stamp already carries its own resting tilt (-6deg, or -9deg
+     for the investment's round rate seal), so the hover transform
+     has to restate that resting tilt before adding to it. Writing
+     `scale(...)` alone would snap the stamp upright, which reads as
+     a jump rather than a press.
+
+     The stamp's COLOUR never changes on hover — the stamp says what
+     it is, and only the rule says which document it belongs to. */
+  .card-link--doc.goal-receipt:hover .goal-receipt__stamp,
+  .card-link--doc.goal-receipt:focus-visible .goal-receipt__stamp,
+  .card-link--doc.debt-cert:hover .debt-cert__stamp,
+  .card-link--doc.debt-cert:focus-visible .debt-cert__stamp,
+  .card-link:hover .inv-cert .inv-cert__stamp,
+  .card-link:focus-visible .inv-cert .inv-cert__stamp {
+    transform: rotate(-7deg) scale(1.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  /* The round rate seals — the investment's and the loan debt's —
+     lean a little further too. */
+  .card-link:hover .inv-cert .inv-cert__seal,
+  .card-link:focus-visible .inv-cert .inv-cert__seal,
+  .card-link--doc.debt-cert:hover .debt-cert__seal,
+  .card-link--doc.debt-cert:focus-visible .debt-cert__seal {
+    transform: rotate(-10deg) scale(1.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* The figures carry the transition, so the warmth eases in. */
+.goal-receipt__row > b,
+.debt-cert__v .n,
+.inv-cert__v .n {
+  transition: filter 240ms ease;
+}
+
+/* The stamps and seals carry the transition, so the press eases in
+   rather than snapping. */
+.goal-receipt__stamp,
+.debt-cert__stamp,
+.debt-cert__seal,
+.inv-cert__stamp,
+.inv-cert__seal {
+  transition: transform 240ms cubic-bezier(0.22, 0.9, 0.3, 1),
+              box-shadow 240ms ease;
+}
+
+/* The lift is the whole point of the hover, so a reduced-motion user
+   still gets the state change — just without the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .card-link--doc.goal-receipt:hover,
+  .card-link--doc.goal-receipt:focus-visible,
+  .card-link--doc.debt-cert:hover,
+  .card-link--doc.debt-cert:focus-visible,
+  .card-link:hover .inv-cert,
+  .card-link:focus-visible .inv-cert {
+    transform: translateY(-1px);
+  }
 }
 
 /* The perforated tear — the same band the certificates use, so
