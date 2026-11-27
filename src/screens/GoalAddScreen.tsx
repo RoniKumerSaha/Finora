@@ -121,7 +121,7 @@ export function GoalAddScreen() {
         />
 
         {/* THE BLANKS. */}
-        <Blank label="Name" hint="What you’re saving for. “Emergency fund” is fine." empty={!name.trim()}>
+        <Blank label="Name" empty={!name.trim()}>
           <input
             type="text"
             value={name}
@@ -131,7 +131,7 @@ export function GoalAddScreen() {
           />
         </Blank>
 
-        <Blank label="By when" hint="The day you want to be there." empty={!targetDate}>
+        <Blank label="By when" empty={!targetDate}>
           <input
             type="date"
             value={targetDate}
@@ -142,7 +142,6 @@ export function GoalAddScreen() {
 
         <Blank
           label="Already saved"
-          hint="How much you’ve set aside so far. Enter 0 if you’re starting fresh."
           empty={saved === ''}
         >
           <input

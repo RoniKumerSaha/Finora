@@ -392,11 +392,6 @@ export function DebtEditScreen() {
         </div>
         <div>
           <h1 className="heading h1-screen">Edit debt</h1>
-          <div className="text-muted t-13 mt-1.5">
-            {debt.status === 'completed'
-              ? 'This debt is fully paid. Editing the total keeps the record accurate.'
-              : 'Change the debt details. Linked transactions stay as they are.'}
-          </div>
         </div>
       </header>
 
@@ -583,7 +578,6 @@ export function DebtEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Direction</div>
-                    <div className="dfline__hint">Changing direction flips how linked payments are interpreted.</div>
                   </div>
                   <div>
                     <Field label="Direction" hideLabel>
@@ -624,7 +618,6 @@ export function DebtEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Total amount</div>
-                    <div className="dfline__hint">Repayments are tracked via linked transactions, not here.</div>
                   </div>
                   <div>
                     <Field label="Total amount" hideLabel error={totalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
@@ -670,7 +663,6 @@ export function DebtEditScreen() {
                   <div className="dfline">
                     <div>
                       <div className="dfline__label">Is this a loan with interest?</div>
-                      <div className="dfline__hint">Each payment will be split into interest and principal based on the rate below.</div>
                     </div>
                     <div>
                       <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -704,12 +696,10 @@ export function DebtEditScreen() {
                   <div className="dfline">
                     <div>
                       <div className="dfline__label">Loan terms</div>
-                      <div className="dfline__hint">Only shown for loans with interest.</div>
                     </div>
                     <div className="subblock">
                       <Field
                         label="Annual interest rate (%)"
-                        hint="APR as a percentage, e.g. 12 for 12%."
                         error={rateInvalid ? POSITIVE_RATE_ERROR : undefined}
                       >
                         <Input
@@ -730,7 +720,6 @@ export function DebtEditScreen() {
                           than "—". */}
                       <Field
                         label="Term in months"
-                        hint="Whole months, e.g. 36 for 3 years. Drives the Pay button's pre-filled EMI."
                         error={termInvalid ? POSITIVE_TERM_ERROR : undefined}
                       >
                         <Input

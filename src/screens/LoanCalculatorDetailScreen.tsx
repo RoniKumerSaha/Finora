@@ -186,9 +186,6 @@ export function LoanCalculatorDetailScreen() {
       </div>
       <header>
         <h1 className="heading h1-screen">Loan projection</h1>
-        <div className="text-muted t-13 mt-1.5 max-w-prose">
-          Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.
-        </div>
       </header>
 
       <div className="loan-page">
@@ -349,7 +346,7 @@ export function LoanCalculatorDetailScreen() {
 
             <div className="loan-form" style={{ marginTop: 16 }}>
               <div className="loan-form__wide">
-                <Field label="Name" hint={'Free text. Try "Car loan" or "Personal loan 2026".'}>
+                <Field label="Name">
                   <Input
                     value={name}
                     onChange={e => { setName(e.target.value); updateLoanPlan(plan.id, { name: e.target.value }); }}
@@ -359,7 +356,7 @@ export function LoanCalculatorDetailScreen() {
                 </Field>
               </div>
 
-              <Field label="Principal" hint="Total amount borrowed.">
+              <Field label="Principal">
                 <Input
                   type="number" inputMode="decimal"
                   value={principal}
@@ -367,7 +364,7 @@ export function LoanCalculatorDetailScreen() {
                   placeholder="100000"
                 />
               </Field>
-              <Field label="Annual rate (%)" hint="Annual interest rate. Capped at 0–100%.">
+              <Field label="Annual rate (%)">
                 <Input
                   type="number" inputMode="decimal"
                   value={rate}
@@ -382,9 +379,8 @@ export function LoanCalculatorDetailScreen() {
                   setTermMonths(String(m));
                   updateLoanPlan(plan.id, { termMonths: m });
                 }}
-                hint="Total number of monthly payments. Enter the term in months or years."
               />
-              <Field label="First payment date" hint="When the first EMI is due.">
+              <Field label="First payment date">
                 <Input
                   type="date"
                   value={plan.startDate}

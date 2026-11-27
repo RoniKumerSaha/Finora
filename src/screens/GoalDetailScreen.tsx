@@ -295,9 +295,6 @@ export function GoalDetailScreen() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <h1 className="heading h1-screen">{goal.name}</h1>
-          <div className="text-muted t-13 mt-1.5">
-            A plan-only scratchpad. Contributions here never touch your accounts.
-          </div>
         </div>
         {mode === 'view' && (
           <div className="flex flex-wrap gap-2">
@@ -542,12 +539,6 @@ export function GoalDetailScreen() {
               <b>{completed ? '—' : Math.max(0, monthsLeft)}</b>
             </div>
           </section>
-
-          <div className="goal-note">
-            <strong>One slip, three states.</strong> The receipt&apos;s tone follows the goal: mint
-            while it&apos;s running, sage once it&apos;s reached, coral once the date has passed. The
-            stamp names the state in plain words.
-          </div>
         </div>
       </div>
 

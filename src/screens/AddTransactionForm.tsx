@@ -311,17 +311,17 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
         {/* THE BLANKS. */}
         {isTransfer ? (
           <>
-            <Blank label="From" hint="Where the money is now.">
+            <Blank label="From">
               <Select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)} aria-label="From">
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select>
             </Blank>
-            <Blank label="To" hint="Where the money is going.">
+            <Blank label="To">
               <Select value={toAccountId} onChange={e => setToAccountId(e.target.value)} aria-label="To">
                 {accs.filter(a => a.id !== fromAccountId).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select>
             </Blank>
-            <Blank label="Date" hint="When it moved.">
+            <Blank label="Date">
               <input
                 type="date"
                 value={date}
@@ -332,7 +332,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
           </>
         ) : (
           <>
-            <Blank label="Account" hint="The balance this entry changes.">
+            <Blank label="Account">
               <Select value={accountId} onChange={e => setAccountId(e.target.value)} aria-label="Account">
                 {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select>
@@ -340,7 +340,6 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
 
             <BlankStack
               label="Category (optional)"
-              hint="Pick a category, or skip — transactions can be uncategorised."
             >
               {cats.length > 0 ? (
                 <CategoryGrid
@@ -364,7 +363,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
               )}
             </BlankStack>
 
-            <Blank label="Date" hint="When it happened.">
+            <Blank label="Date">
               <input
                 type="date"
                 value={date}
@@ -373,7 +372,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
               />
             </Blank>
 
-            <Blank label="Note (optional)" hint="What was it for?" empty={!note.trim()}>
+            <Blank label="Note (optional)" empty={!note.trim()}>
               <Textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
@@ -387,7 +386,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
 
         {/* The linked-debt block, shown only when it applies. */}
         {type === 'expense' && activeDebts.length > 0 && (
-          <Blank label="Linked debt (optional)" hint="Tag this entry as a payment toward a debt.">
+          <Blank label="Linked debt (optional)">
             <Select
               value={linkedDebtId}
               onChange={e => {
@@ -403,7 +402,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
         )}
 
         {type === 'income' && activeDebts.filter(d => d.direction === 'owed_to_me').length > 0 && (
-          <Blank label="Linked debt (optional)" hint="Tag this income as repayment of money someone owed you.">
+          <Blank label="Linked debt (optional)">
             <Select
               value={linkedDebtId}
               onChange={e => {
@@ -421,7 +420,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
         )}
 
         {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
-          <Blank label="Linked investment (optional)" hint="Routes the money to that investment's payout account.">
+          <Blank label="Linked investment (optional)">
             <Select
               value={linkedInvestmentId}
               onChange={e => {

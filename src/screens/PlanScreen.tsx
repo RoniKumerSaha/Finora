@@ -81,9 +81,6 @@ export function PlanScreen() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="heading h1-screen">Plan</h1>
-        <div className="text-muted t-13 mt-1.5 max-w-prose">
-          Scratchpads for what you intend to spend. Nothing here is recorded in your ledger — it's a way to think ahead.
-        </div>
       </header>
 
       <div className="plan-grid">

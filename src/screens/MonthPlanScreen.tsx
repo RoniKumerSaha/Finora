@@ -96,9 +96,6 @@ export function MonthPlanScreen() {
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="heading h1-screen">Plan my month</h1>
-          <div className="text-muted t-13 mt-1.5 max-w-prose">
-            Fill the items with budgets for what you intend to spend. Changes save as you go.
-          </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {plan.categories.length > 0 && (

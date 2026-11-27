@@ -920,7 +920,6 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
           </Field>
           <Field
             label="Spent"
-            hint="Sum of all line items below."
           >
             <Input
               value={fmtBDT(spent)}

@@ -151,7 +151,7 @@ export function AccountAddScreen() {
         />
 
         {/* THE BLANKS. */}
-        <Blank label="Name" hint="What you call it in lists and transactions." empty={!name.trim()}>
+        <Blank label="Name" empty={!name.trim()}>
           <input
             type="text"
             value={name}

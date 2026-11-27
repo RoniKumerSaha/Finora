@@ -153,7 +153,6 @@ export function AccountEditScreen() {
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-2xl">
       <header>
         <h1 className="heading h1-screen">Edit account</h1>
-        <div className="text-muted t-13 mt-1.5">Changes apply to this account only.</div>
       </header>
 
       <section
@@ -180,7 +179,6 @@ export function AccountEditScreen() {
         <div className="acct-cert__line">
           <div>
             <label className="acct-cert__label" htmlFor="acct-name">Name</label>
-            <div className="acct-cert__hint">How this account appears everywhere.</div>
           </div>
           <Input
             id="acct-name"
@@ -194,7 +192,6 @@ export function AccountEditScreen() {
         <div className="acct-cert__line">
           <div>
             <span className="acct-cert__label" id="acct-type-label">Type</span>
-            <div className="acct-cert__hint">Cash, bank account, or mobile wallet.</div>
           </div>
           <div
             className="acct-typepick"
@@ -221,7 +218,6 @@ export function AccountEditScreen() {
         <div className="acct-cert__line">
           <div>
             <label className="acct-cert__label" htmlFor="acct-opening">Opening balance</label>
-            <div className="acct-cert__hint">Changing this adjusts the account&apos;s starting balance only.</div>
           </div>
           <div>
             <Input

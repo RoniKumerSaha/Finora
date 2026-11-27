@@ -57,7 +57,7 @@ export function DurationField({
   /** Called with the new term, in whole months. */
   onChange: (months: number) => void;
   label?: string;
-  /** Overrides the default hint for the active unit. */
+  /** Optional helper text shown under the field. */
   hint?: string;
   /**
    * Hide the label VISUALLY while keeping it in the accessibility
@@ -69,9 +69,8 @@ export function DurationField({
   /**
    * Render as the SLIP's ruled line: the number sits on the rule the
    * blanks use, and the unit toggle sits beside it. The default
-   * rendering stacks them in a `Field` with a hint underneath, which
-   * is right for the planner forms but wrong for a slip, where every
-   * value is a line and nothing has a hint of its own.
+   * rendering stacks them in a `Field`, which is right for the planner
+   * forms but wrong for a slip, where every value is a line.
    */
   bare?: boolean;
 }) {
@@ -92,10 +91,6 @@ export function DurationField({
     const n = Number(raw);
     onChange(durationToMonths(Number.isFinite(n) ? n : 0, unit));
   }
-
-  const defaultHint = unit === 'years'
-    ? 'Years are converted to months — 1 year = 12 months.'
-    : 'Use the same number of months as your bank contract.';
 
   // The number input comes FIRST so `Field` associates the "Term"
   // label with it.
@@ -156,7 +151,7 @@ export function DurationField({
   }
 
   return (
-    <Field label={label} hint={hint ?? defaultHint} hideLabel={hideLabel}>
+    <Field label={label} hint={hint} hideLabel={hideLabel}>
       {numberInput}
       {toggle}
     </Field>

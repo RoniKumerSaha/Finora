@@ -294,9 +294,6 @@ export function InvestmentPlannerDetailScreen() {
 
       <header>
         <h1 className="heading h1-screen">Plan</h1>
-        <div className="text-muted t-13 mt-1.5 max-w-prose">
-          Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
-        </div>
       </header>
 
       {/* ═══ THE PROJECTED CERTIFICATE ═══════════════════════════ */}
@@ -500,9 +497,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Name</div>
-              <div className="dfline__hint">
-                What you call this plan. Try &ldquo;DBBL 1-year FDR&rdquo;.
-              </div>
             </div>
             <div>
               <Field label="Name" hideLabel>
@@ -518,9 +512,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Type</div>
-              <div className="dfline__hint">
-                The scheme you are planning. Switching reshapes the terms below.
-              </div>
             </div>
             <div>
               <Field label="Type" hideLabel>
@@ -548,9 +539,6 @@ export function InvestmentPlannerDetailScreen() {
             <div className="dfline">
               <div>
                 <div className="dfline__label">Installment</div>
-                <div className="dfline__hint">
-                  What you would deposit each month into this scheme.
-                </div>
               </div>
               <div>
                 <Field label="Monthly installment" hideLabel>
@@ -567,9 +555,6 @@ export function InvestmentPlannerDetailScreen() {
             <div className="dfline">
               <div>
                 <div className="dfline__label">Principal</div>
-                <div className="dfline__hint">
-                  The lump sum you would lock into the deposit.
-                </div>
               </div>
               <div>
                 <Field label="Principal" hideLabel>
@@ -587,10 +572,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Rate</div>
-              <div className="dfline__hint">
-                Annual rate. Compounded monthly for a DPS, simple interest for a
-                lump sum.
-              </div>
             </div>
             <div>
               <Field label="Annual rate (%)" hideLabel>
@@ -607,9 +588,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Term</div>
-              <div className="dfline__hint">
-                Use the same term as your bank contract. Months or years.
-              </div>
             </div>
             <div>
               {/* `DurationField` renders its own `Field`, so its label
@@ -629,9 +607,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Start date</div>
-              <div className="dfline__hint">
-                The day the first deposit would land.
-              </div>
             </div>
             <div>
               <Field label="Start date" hideLabel>
@@ -647,9 +622,6 @@ export function InvestmentPlannerDetailScreen() {
           <div className="dfline">
             <div>
               <div className="dfline__label">Institution</div>
-              <div className="dfline__hint">
-                The bank or NBFI that would hold the money.
-              </div>
             </div>
             <div>
               <Field label="Institution (optional)" hideLabel>

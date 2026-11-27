@@ -141,9 +141,6 @@ export function EventPlanScreen() {
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="heading h1-screen">Plan an event</h1>
-          <div className="text-muted t-13 mt-1.5">
-            Weddings, trips, Eid, anything with a date and a budget. Each event is its own scratchpad.
-          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!creating && (
@@ -165,10 +162,7 @@ export function EventPlanScreen() {
             <Field label="Event date">
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </Field>
-            <Field
-              label="Unallocated (optional)"
-              hint="Top-down ballpark. Add categories below to split it; the event's total budget is the sum of categories."
-            >
+            <Field label="Unallocated (optional)">
               <Input
                 type="number"
                 inputMode="decimal"

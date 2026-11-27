@@ -150,9 +150,6 @@ export function LoanCalculatorListScreen() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Loan Calculator</h1>
-          <div className="text-muted t-13 mt-1.5 max-w-prose">
-            Project what a loan will cost. Enter principal, rate, and term — the app fills the amortization table for you.
-          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="primary" onClick={startNew}>+ New projection</Button>

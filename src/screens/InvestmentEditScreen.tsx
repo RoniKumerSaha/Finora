@@ -210,9 +210,6 @@ export function InvestmentEditScreen() {
 
       <header>
         <h1 className="heading h1-screen">Edit investment</h1>
-        <div className="text-muted t-13 mt-1.5">
-          Rate, term, and payout destination can change. Past contributions stay as they are.
-        </div>
       </header>
 
       <div className="inv-page">
@@ -251,7 +248,7 @@ export function InvestmentEditScreen() {
                     <div className="v">
                       {Number(termMonths) > 0 ? formatDuration(Number(termMonths)) : '\u2014'}
                     </div>
-                  </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -268,7 +265,7 @@ export function InvestmentEditScreen() {
                           ? formatDuration(Number(termMonths))
                           : '\u2014'}
                     </div>
-                  </div>
+                  </div>
                 </>
               )}
             </div>
@@ -323,7 +320,6 @@ export function InvestmentEditScreen() {
               <div className="dfline">
                 <div>
                   <div className="dfline__label">Type</div>
-                  <div className="dfline__hint">DPS, FDR or savings.</div>
                 </div>
                 <div>
                   <Field label="Type" hideLabel>
@@ -351,11 +347,11 @@ export function InvestmentEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Monthly contribution</div>
-                    <div className="dfline__hint">
-                      {dpsLocked
-                        ? `Locked \u2014 ${linkedContributions} contributions already recorded.`
-                        : 'The amount you pay each month into this DPS.'}
-                    </div>
+                    {dpsLocked && (
+                      <div className="dfline__hint">
+                        {`Locked \u2014 ${linkedContributions} contributions already recorded.`}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Field
@@ -379,7 +375,6 @@ export function InvestmentEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Principal</div>
-                    <div className="dfline__hint">The amount you've placed into this investment.</div>
                   </div>
                   <div>
                     <Field
@@ -403,9 +398,6 @@ export function InvestmentEditScreen() {
               <div className="dfline">
                 <div>
                   <div className="dfline__label">Rate (% per year)</div>
-                  <div className="dfline__hint">
-                    Annual rate. Simple interest for FDR/savings, compounded monthly for DPS.
-                  </div>
                 </div>
                 <div>
                   <Field label="Rate (% per year)" hideLabel>
@@ -429,11 +421,6 @@ export function InvestmentEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Term</div>
-                    <div className="dfline__hint">
-                      {useDays
-                        ? 'Maturity = start + this many days.'
-                        : 'Changing this shifts the maturity date forward.'}
-                    </div>
                   </div>
                   <div>
                     <div className="flex flex-col gap-2">
@@ -475,7 +462,6 @@ export function InvestmentEditScreen() {
                 <div className="dfline">
                   <div>
                     <div className="dfline__label">Term</div>
-                    <div className="dfline__hint">Changing this shifts the maturity date forward.</div>
                   </div>
                   <div>
                     <Field label="Term (months)" hideLabel>
@@ -493,7 +479,6 @@ export function InvestmentEditScreen() {
               <div className="dfline">
                 <div>
                   <div className="dfline__label">Payout account</div>
-                  <div className="dfline__hint">Where the matured value lands.</div>
                 </div>
                 <div>
                   <Field label="Payout account (optional)" hideLabel>
@@ -508,7 +493,6 @@ export function InvestmentEditScreen() {
               <div className="dfline">
                 <div>
                   <div className="dfline__label">Institution</div>
-                  <div className="dfline__hint">The bank holding your money.</div>
                 </div>
                 <div>
                   <Field label="Institution (optional)" hideLabel>

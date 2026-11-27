@@ -242,9 +242,6 @@ export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
         <div className="flex flex-col gap-4">
           <Field
             label="Amount"
-            hint={emi > 0
-              ? `Pre-filled with the standard EMI for ${debt.termMonths}-month term. Adjust if you paid a different amount.`
-              : 'Enter whatever you paid.'}
             error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}
           >
             <Input

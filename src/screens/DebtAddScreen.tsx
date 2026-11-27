@@ -275,7 +275,7 @@ export function DebtAddScreen() {
         />
 
         {/* THE BLANKS. */}
-        <Blank label="Name" hint="What you call this debt. “Loan from Rahim” is fine." empty={!name.trim()}>
+        <Blank label="Name" empty={!name.trim()}>
           <input
             type="text"
             value={name}
@@ -285,14 +285,7 @@ export function DebtAddScreen() {
           />
         </Blank>
 
-        <Blank
-          label={direction === 'i_owe' ? 'Cash went into' : 'Cash went from'}
-          hint={
-            direction === 'i_owe'
-              ? 'The account the borrowed money landed in.'
-              : 'The account the lent money came from.'
-          }
-        >
+        <Blank label={direction === 'i_owe' ? 'Cash went into' : 'Cash went from'}>
           <Select value={accountId} onChange={e => setAccountId(e.target.value)} aria-label="Account">
             {state.accounts.map(a => (
               <option key={a.id} value={a.id}>{a.name}</option>
@@ -300,7 +293,7 @@ export function DebtAddScreen() {
           </Select>
         </Blank>
 
-        <Blank label="Person" hint="Who is on the other side of this?" empty={!person.trim()}>
+        <Blank label="Person" empty={!person.trim()}>
           <input
             type="text"
             value={person}
@@ -310,7 +303,7 @@ export function DebtAddScreen() {
           />
         </Blank>
 
-        <Blank label="Due on" hint="When it should be settled by." empty={!dueDate}>
+        <Blank label="Due on" empty={!dueDate}>
           <input
             type="date"
             value={dueDate}
@@ -323,7 +316,7 @@ export function DebtAddScreen() {
             exist, so they live in their own block, not scattered
             through the blanks. */}
         {showLoanToggle && (
-          <BlankStack label="Interest" hint="A loan with interest splits each payment into interest and principal.">
+          <BlankStack label="Interest">
             <div className="chipset">
               <button
                 type="button"
@@ -347,7 +340,7 @@ export function DebtAddScreen() {
 
         {isLoan && (
           <>
-            <Blank label="Annual rate" hint="APR as a percentage, e.g. 12 for 12%.">
+            <Blank label="Annual rate">
               <input
                 type="number"
                 inputMode="decimal"
@@ -363,7 +356,7 @@ export function DebtAddScreen() {
               />
             </Blank>
 
-            <Blank label="Pay it back over" hint="Months or years — the term drives the monthly payment.">
+            <Blank label="Pay it back over">
               <DurationField
                 months={Math.max(0, Math.floor(Number(termMonths) || 0))}
                 onChange={m => setTermMonths(String(m))}

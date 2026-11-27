@@ -1672,23 +1672,6 @@ main > * {
   font-weight: 700;
 }
 
-/* The note box at the foot of the side column — the page's own
-   small print, explaining the three states in one sentence. */
-.goal-note {
-  font-size: var(--text-11);
-  line-height: 1.7;
-  color: var(--muted);
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-family: var(--font-body);
-}
-.goal-note strong {
-  color: var(--ink);
-  font-weight: 700;
-}
-
 /* ============================================================
    THE INVESTMENT CERTIFICATE (.inv-cert)
    ============================================================

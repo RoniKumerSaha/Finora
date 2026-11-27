@@ -256,7 +256,7 @@ export function InvestmentAddScreen() {
         />
 
         {/* THE BLANKS. */}
-        <Blank label="Name" hint="What you call this. “DPS #1” or the bank’s scheme name is fine." empty={!name.trim()}>
+        <Blank label="Name" empty={!name.trim()}>
           <input
             type="text"
             value={name}
@@ -268,9 +268,6 @@ export function InvestmentAddScreen() {
 
         <Blank
           label="Rate"
-          hint={isDps
-            ? 'Annual rate. A DPS compounds it every month.'
-            : 'Annual rate. Simple interest — no compounding.'}
           empty={rate === ''}
         >
           <input
@@ -286,7 +283,7 @@ export function InvestmentAddScreen() {
         </Blank>
 
         {!isDps && (
-          <BlankStack label="Term" hint="How long it stays parked. Days are for short deposits under a month.">
+          <BlankStack label="Term">
             <div className="chipset">
               <button
                 type="button"
@@ -309,7 +306,7 @@ export function InvestmentAddScreen() {
         )}
 
         {termInDays ? (
-          <Blank label="Days" hint="For short-term deposits. Maturity = start + this many days." empty={termDays === ''}>
+          <Blank label="Days" empty={termDays === ''}>
             <input
               type="number"
               inputMode="numeric"
@@ -321,9 +318,7 @@ export function InvestmentAddScreen() {
             />
           </Blank>
         ) : (
-          <Blank label={isDps ? 'Months' : 'Term'} hint={isDps
-            ? 'How many monthly installments run before it matures.'
-            : 'The same number of months as your bank contract.'}
+          <Blank label={isDps ? 'Months' : 'Term'}
             empty={termMonths === ''}>
             <input
               type="number"
@@ -337,7 +332,7 @@ export function InvestmentAddScreen() {
           </Blank>
         )}
 
-        <Blank label="Starts on" hint="The day the first money moves." empty={!startDate}>
+        <Blank label="Starts on" empty={!startDate}>
           <input
             type="date"
             value={startDate}
@@ -349,7 +344,7 @@ export function InvestmentAddScreen() {
         <Blank
           label="Payout to"
           hint={isDps
-            ? 'Where the maturity value comes back to.'
+            ? undefined
             : 'Required — the principal is deducted from this account now, and the maturity value returns here.'}
         >
           <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)} aria-label="Payout account">
@@ -358,7 +353,7 @@ export function InvestmentAddScreen() {
           </Select>
         </Blank>
 
-        <Blank label="Institution" hint="Bank or NBFI holding this. Optional." empty={!institution.trim()}>
+        <Blank label="Institution" empty={!institution.trim()}>
           <input
             type="text"
             value={institution}
