@@ -63,3 +63,9 @@ blob-report/
 
 # Working scratch area — throwaway scripts and screenshots
 scratchpad/
+
+# Standalone design mockups — throwaway HTML explorations built while
+# deciding on a screen. They are not part of the app and nothing
+# imports them, so they live outside the repo now.
+preview/
+scratch/
