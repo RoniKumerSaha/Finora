@@ -102,12 +102,11 @@ test.describe('Debts', () => {
       await expect(debts.cardHeadlineFigure(lifecycle.created.name)).toHaveText(
         lifecycle.expected.remaining,
       );
-      await expect(debts.cardTotalCaption(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.totalCaption,
-      );
-      await expect(debts.cardPercentPaid(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.percentPaid,
-      );
+      // A FLAT debt carries ONE figure — the amount still owed. It has
+      // no "of ৳ Y total" caption and no "% paid" rail, because both
+      // would be a second measure competing with the hero amount.
+      await expect(debts.cardTotalCaption(lifecycle.created.name)).toHaveCount(0);
+      await expect(debts.cardPercentPaid(lifecycle.created.name)).toHaveCount(0);
 
       // The "Pay now" chip is offered for an active debt.
       await expect(debts.payChip(lifecycle.created.name)).toBeVisible();
@@ -188,9 +187,8 @@ test.describe('Debts', () => {
       await expect(debts.cardHeadlineFigure(lifecycle.created.name)).toHaveText(
         lifecycle.expected.remainingAfter,
       );
-      await expect(debts.cardPercentPaid(lifecycle.created.name)).toHaveText(
-        lifecycle.expected.percentPaidAfter,
-      );
+      // Still one figure only — the hero amount drops, no rail appears.
+      await expect(debts.cardPercentPaid(lifecycle.created.name)).toHaveCount(0);
     });
 
     await test.step('Read the Main Bank balance once more', async () => {
@@ -573,17 +571,20 @@ test.describe('Debts', () => {
       },
     );
 
-    await test.step('Read the before/after "% paid" and Remaining figures', async () => {
+    await test.step('Read the before/after direction stamp and the amount due', async () => {
       await debts.goto();
 
       // The direction flip re-derives the paid figure against the new
       // polarity — a payment-free debt reads 0% either way, and the
-      // card now carries the owed-to-me wording.
-      await expect(debts.cardPercentPaid(lifecycle.debtWithoutPayment.name)).toHaveText(
-        lifecycle.expected.flipAfter,
-      );
+      // card now carries the owed-to-me wording. The flat card has no
+      // "% paid" rail at all, so what the flip is asserted on is the
+      // stamp and the single amount.
+      await expect(debts.cardPercentPaid(lifecycle.debtWithoutPayment.name)).toHaveCount(0);
       await expect(debts.cardDirectionTag(lifecycle.debtWithoutPayment.name)).toHaveText(
         'Owed to me',
+      );
+      await expect(debts.cardPaidLine(lifecycle.debtWithoutPayment.name)).toHaveText(
+        'Nothing received yet',
       );
     });
 
@@ -820,9 +821,8 @@ test.describe('Debts', () => {
       await expect(debts.cardPaidLine(repayment.debtName)).toHaveText(
         repayment.expected.paidLine,
       );
-      await expect(debts.cardPercentPaid(repayment.debtName)).toHaveText(
-        repayment.expected.percentPaid,
-      );
+      // A flat card states one figure — no rail, no "% paid" caption.
+      await expect(debts.cardPercentPaid(repayment.debtName)).toHaveCount(0);
     });
 
     await test.step('Read the Cash balance', async () => {

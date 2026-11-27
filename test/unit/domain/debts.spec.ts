@@ -68,14 +68,31 @@ describe('debts.update with kind + interestRate (L1.3)', () => {
     expect(s1.debts[0].interestRate).toBe(9);
   });
 
-  it('downgrades a loan-kind debt back to flat and clears rate', () => {
+  it('refuses to downgrade a loan-kind debt back to flat (the loan lock)', () => {
     const s0 = debts.add(baseState(), {
       name: 'A', direction: 'i_owe', total: 100000,
       kind: 'loan', interestRate: 9,
     });
+    // A debt that IS a loan with interest can never become an
+    // interest-free debt: its payments were already split against a
+    // rate, and reinterpreting that history would rewrite money
+    // already recorded.
     const s1 = debts.update(s0, s0.debts[0].id, { kind: 'flat' });
-    expect(s1.debts[0].kind).toBe('flat');
-    expect(s1.debts[0].interestRate).toBeUndefined();
+    expect(s1.debts[0].kind).toBe('loan');
+    expect(s1.debts[0].interestRate).toBe(9);
+  });
+
+  it('keeps the loan when a downgrade patch also tries to clear the rate', () => {
+    const s0 = debts.add(baseState(), {
+      name: 'A', direction: 'i_owe', total: 100000,
+      kind: 'loan', interestRate: 9, termMonths: 24,
+    });
+    const s1 = debts.update(s0, s0.debts[0].id, {
+      kind: 'flat', interestRate: undefined, termMonths: undefined,
+    });
+    expect(s1.debts[0].kind).toBe('loan');
+    expect(s1.debts[0].interestRate).toBe(9);
+    expect(s1.debts[0].termMonths).toBe(24);
   });
 
   it('rejects setting kind=loan with rate <= 0', () => {

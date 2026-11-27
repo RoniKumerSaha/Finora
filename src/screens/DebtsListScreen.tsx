@@ -9,9 +9,6 @@
  *
  *   - the STAMP states the polarity ("I owe" / "Owed to me"), so the
  *     direction is readable before any number is;
- *   - a flat debt gets a TEAR-OFF STUB — the counterparty's copy,
- *     perforated down the left edge, which is what makes a flat debt
- *     read as an IOU slip;
  *   - a loan gets an APR rate SEAL (a tilted circle, the same shape
  *     as the investment certificate's rate seal), because a loan is
  *     an instrument with a rate;
@@ -21,16 +18,33 @@
  *   - the Summary is a STATEMENT — the rolled-up view, holding the
  *     totals instead of one debt's terms.
  *
+ * 2026-11-27 simplification: a FLAT debt now carries ONE figure —
+ * the amount still owed — with the counterparty engraved beside it.
+ * The card used to state that fact four ways (Total, Paid, Settled %,
+ * Still owed %), plus a rail, which meant the reader had to work out
+ * which number was the real one. One figure, stated once, is the whole
+ * document. The LOAN card keeps its terms: it is an instrument, and
+ * its rate, principal and interest are what it exists to report.
+ *
+ * 2026-11-27 polish: the flat card's tally became a three-track
+ * grid, the SAME grid the loan card's engraved terms use — the
+ * FIGURE on the left, the counterparty in the MIDDLE column, so a
+ * flat debt and a loan debt on the same sheet share one rhythm and
+ * their columns line up. The serial line stopped repeating the
+ * stamp's polarity: the stamp already says "I owe" or "Owed to me",
+ * so the serial now carries only what the stamp does not — the
+ * counterparty's name.
+ *
  * The `--tone` custom property is set inline per debt: danger for
  * "I owe", primary for "Owed to me". The wash, the stamp, the rail
  * and the hero figure all share that one colour identity.
  *
  * The e2e suite addresses the cards structurally, so the contract
- * below is load-bearing: the direction tag, the paid line, the
- * counterparty line, the `t-22` headline figure, the "of ৳ Y
- * total" caption, the "% paid" hint, the loan terms line, the loan
- * amount and split lines, the Monthly EMI / Outstanding pair, and
- * the Summary's "You owe" / "Owed to you" figures and captions.
+ * below is load-bearing: the direction tag, the status line, the
+ * counterparty field, the `t-22` headline figure, the loan terms
+ * line, the loan amount and split lines, the Monthly EMI /
+ * Outstanding pair, and the Summary's "You owe" / "Owed to you"
+ * figures and captions.
  */
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -156,7 +170,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
 
   return (
     <div
-      className={`debt-cert ${isLoan ? '' : 'debt-cert--stub'} card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative`}
+      className="debt-cert card-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 relative"
       style={{ ['--tone' as string]: TONE_VAR[cardTone] }}
     >
       {/* The full-card link overlay. `z-0` puts it under the
@@ -167,15 +181,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         className="absolute inset-0 z-0"
         aria-label={`Edit debt "${d.name}"`}
       />
-
-      {/* The tear-off stub — a flat debt is an IOU slip with the
-          counterparty's copy down the left margin. */}
-      {!isLoan && (
-        <>
-          <span className="debt-cert__stublabel" aria-hidden />
-          <span className="debt-cert__stubtail" aria-hidden>Counterparty copy</span>
-        </>
-      )}
 
       <div className="debt-cert__head">
         <div className="min-w-0">
@@ -203,7 +208,13 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             NO. {serial}
             {isLoan
               ? ` ${MIDDOT} LOAN${term > 0 ? ` ${term} MO` : ''}`
-              : ` ${MIDDOT} ${isIOwe ? 'I OWE' : 'OWED TO ME'}${d.person ? ` ${MIDDOT} ${d.person.toUpperCase()}` : ''}`}
+              /* The polarity is NOT repeated here. The stamp at the
+                 top-right already says "I owe" or "Owed to me", and
+                 printing it twice on one document made the header
+                 read like a form that could not decide. The serial
+                 line carries only what the stamp does not: the
+                 counterparty, which the stamp does not name. */
+              : d.person ? ` ${MIDDOT} ${d.person.toUpperCase()}` : ''}
           </div>
         </div>
 
@@ -228,20 +239,43 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         )}
       </div>
 
-      {/* The counterparty line — a flat note has no term and no rate,
-          so the one fact it still owes the reader is WHO it is with.
-          A loan does not need this line at all: its APR is engraved
+      {/* The amount and the counterparty — a flat note has no term and
+          no rate, so the two facts it owes the reader are HOW MUCH is
+          owed and WHO it is with.
+
+          The FIGURE leads on the LEFT, because it is the number the
+          card is opened for; the NAME sits in the MIDDLE column, so
+          the eye travels left-to-right across the document the same
+          way it travels across a line of writing. The rule above them
+          separates the document's tally from its header.
+
+          They are one row, not two blocks: the counterparty is a NAME
+          (a word), the amount is a FIGURE (a number), and they are
+          set at deliberately different sizes — but they share a
+          baseline, so the eye reads them as a pair rather than as a
+          caption followed by an unrelated headline.
+
+          A loan does not need the counterparty: its APR is engraved
           in the seal above and its term is named in the serial line
-          beside the name ("LOAN 36 MO"). The line used to repeat
-          both — "12.75% APR · 36mo" sat directly under a seal
-          already reading 12.75% and a serial already reading 36 MO. */}
-      {!isLoan && d.person && (
-        <div className="t-12 text-muted tabular truncate mt-2">
-          {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
+          beside the name ("LOAN 36 MO"). */}
+      {!isLoan && (
+        <div className="debt-cert__vals debt-cert__vals--flat">
+          <div className="debt-cert__v debt-cert__v--now">
+            <div className="k">Amount due</div>
+            <div className="n">{fmtBDT(outstanding)}</div>
+          </div>
+          <div className="debt-cert__v debt-cert__v--mat">
+            {d.person && (
+              <>
+                <div className="k">{isIOwe ? 'Owed to' : 'Owed by'}</div>
+                <div className="n">{d.person}</div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {isLoan ? (
+      {isLoan && (
         <>
           {/* The loan's engraved terms — all three read the same way:
               a small uppercase label with its figure on the line
@@ -261,24 +295,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             </div>
           </div>
         </>
-      ) : (
-        <>
-          {/* The flat debt's engraved terms. */}
-          <div className="debt-cert__fields">
-            <div className="debt-cert__f">
-              <div className="k">Total</div>
-              <div className="v">{fmtBDT(d.total)}</div>
-            </div>
-            <div className="debt-cert__f">
-              <div className="k">Paid</div>
-              <div className="v">{fmtBDT(d.paidSoFar || 0)}</div>
-            </div>
-            <div className="debt-cert__f">
-              <div className="k">Settled</div>
-              <div className="v">{pct}%</div>
-            </div>
-          </div>
-        </>
       )}
 
       {/* The rail — the share of the PRINCIPAL already retired.
@@ -287,33 +303,37 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
           would run ahead of the truth and could read 100% while
           principal was still outstanding. So the bar shows principal,
           and the CAPTION says so — "principal settled", not "paid".
-          On a flat debt the two are the same thing, so the caption
-          drops the qualifier. */}
-      <ProgressRail
-        value={pct}
-        state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
-        measure={isLoan ? 'principal settled' : 'debt settled'}
-        label={`${d.name} settled`}
-        animDelay={animDelay}
-        caption={
-          pct <= 0 ? (
-            // Nothing paid yet — say so. "0%" is a number pretending to
-            // be a fact; "nothing paid yet" is the fact.
-            <>Nothing paid yet</>
-          ) : isLoan ? (
-            <>
-              <b className="text-ink font-semibold">{pct}%</b> of the principal settled
-            </>
-          ) : (
-            <>
-              <b className="text-ink font-semibold">{pct}%</b> paid
-            </>
-          )
-        }
-      />
 
-      {/* The document's closing figures. */}
-      {isLoan ? (
+          A FLAT debt has no rail. It carries one figure — the amount
+          still owed — and a bar beside it would be a second measure
+          competing for the same attention, reading "0%" when the real
+          fact is "nothing has come in yet". The footnote at the foot
+          says that in words instead. */}
+      {isLoan && (
+        <ProgressRail
+          value={pct}
+          state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
+          measure="principal settled"
+          label={`${d.name} settled`}
+          animDelay={animDelay}
+          caption={
+            pct <= 0 ? (
+              // Nothing paid yet — say so. "0%" is a number pretending to
+              // be a fact; "nothing paid yet" is the fact.
+              <>Nothing paid yet</>
+            ) : (
+              <>
+                <b className="text-ink font-semibold">{pct}%</b> of the principal settled
+              </>
+            )
+          }
+        />
+      )}
+
+      {/* The document's closing figures — a LOAN's EMI and what is
+          still outstanding. A flat debt's closing figures are the
+          parallel counterparty-and-amount row above. */}
+      {isLoan && (
         <div className="debt-cert__vals">
           <div className="debt-cert__v debt-cert__v--now">
             <div className="k">Monthly EMI</div>
@@ -322,23 +342,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
           <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
             <div className="k">Outstanding</div>
             <div className="n">{fmtBDT(outstanding)}</div>
-          </div>
-        </div>
-      ) : (
-        <div className="debt-cert__vals">
-          <div className="debt-cert__v debt-cert__v--now">
-            <div className="k">Remaining</div>
-            <div className="n">{fmtBDT(outstanding)}</div>
-          </div>
-          <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
-            {/* The unpaid share — the complement of the "Settled %"
-                field above. That field says how much is done; this
-                one says how much is still owed, and it is the only
-                figure on the card not already stated. It used to
-                repeat the total instead, printing the same number
-                twice thirty pixels apart. */}
-            <div className="k">Still owed</div>
-            <div className="n">{100 - pct}%</div>
           </div>
         </div>
       )}
@@ -371,8 +374,15 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         </div>
       ) : (
         <div className="debt-cert__note flex items-center justify-between gap-3">
-          <span className="tabular">
-            {isIOwe ? 'You\'ve paid' : 'They\'ve paid'} {fmtBDT(d.paidSoFar || 0)} of {fmtBDT(d.total)}
+          {/* The status of the document, in words. The old line repeated
+              the total ("You've paid ৳ 0 of ৳ 12,324") — the same
+              figure the hero amount above already states, thirty
+              pixels away. Now it says only what the hero amount cannot:
+              whether anything has come in yet. */}
+          <span>
+            {(d.paidSoFar || 0) > 0
+              ? `${fmtBDT(d.paidSoFar || 0)} received so far`
+              : isIOwe ? 'Nothing paid yet' : 'Nothing received yet'}
           </span>
           {d.status === 'active' && (
             <button

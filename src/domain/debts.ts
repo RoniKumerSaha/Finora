@@ -9,6 +9,11 @@
  * add/update. Validation: kind === 'loan' requires interestRate > 0.
  * Missing kind defaults to 'flat' on read so older JSON in localStorage
  * continues to deserialize unchanged.
+ *
+ * THE LOAN LOCK: a debt that IS a loan with interest can never be
+ * converted back into an interest-free debt. `update()` enforces this
+ * for every writer — the edit screen's toggle is locked to match, but
+ * the domain layer is where the invariant actually lives.
  */
 import type { Debt, DebtDirection, DebtKind, State, Transaction } from './types';
 import { uid } from './ids';
@@ -103,6 +108,21 @@ export function update(state: State, id: string, patch: Partial<AddDebtInput>): 
       ? patch.termMonths
       : existing.termMonths,
   };
+  // THE LOAN LOCK: a debt that IS a loan with interest can never be
+  // converted back into an interest-free debt. Its payments have
+  // already been split into interest and principal against a specific
+  // rate and term; reinterpreting that history as a flat IOU would
+  // silently rewrite the meaning of money already recorded.
+  //
+  // The rule lives here — in the domain layer — so it holds for every
+  // writer, not just the edit screen's toggle.
+  const wasLoan = (existing.kind ?? 'flat') === 'loan';
+  const locked = wasLoan && merged.kind !== 'loan';
+  if (locked) {
+    merged.kind = 'loan';
+    merged.interestRate = existing.interestRate;
+    merged.termMonths = existing.termMonths;
+  }
   validateKindAndRate(merged.kind, merged.interestRate);
 
   // When the patch sets kind back to 'flat', clear interestRate so the
@@ -116,6 +136,9 @@ export function update(state: State, id: string, patch: Partial<AddDebtInput>): 
       ...patch,
       kind: merged.kind,
       interestRate: clearedInterest,
+      // The locked loan keeps its term too — the patch's `undefined`
+      // would otherwise blank it through the spread above.
+      termMonths: locked ? merged.termMonths : patch.termMonths,
     } : d),
   };
 }

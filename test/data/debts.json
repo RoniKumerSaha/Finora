@@ -74,19 +74,16 @@
     "payment": { "amount": "5000", "account": "Main Bank", "note": "Part payment" },
     "expected": {
       "directionTag": "I owe",
-      "paidLine": "You've paid ৳ 0 of ৳ 20,000",
+      "paidLine": "Nothing paid yet",
       "counterparty": "Owed to Rahim",
       "remaining": "৳ 20,000",
-      "totalCaption": "of ৳ 20,000 total",
-      "percentPaid": "0% paid",
       "openingTransactionNote": "Debt: Loan from Rahim",
       "openingTag": "category: borrowed",
       "paymentModalTitle": "Pay toward \"Loan from Rahim\"",
       "paymentOutstanding": "Outstanding: ৳ 20,000",
       "paymentToast": "Payment paid — ৳ 5,000",
-      "paidAfter": "You've paid ৳ 5,000 of ৳ 20,000",
+      "paidAfter": "৳ 5,000 received so far",
       "remainingAfter": "৳ 15,000",
-      "percentPaidAfter": "25% paid",
       "balanceBefore": "৳ 1,20,000",
       "balanceAfterOpening": "৳ 1,40,000",
       "balanceAfterPayment": "৳ 1,35,000"
@@ -142,7 +139,7 @@
     "accountHint": "Pick an account.",
     "created": { "direction": "Owed to me (you lent)", "total": "15000", "account": "Cash", "person": "Karim" },
     "expected": {
-      "paidLine": "They've paid ৳ 0 of ৳ 15,000",
+      "paidLine": "Nothing received yet",
       "counterparty": "Owed by Karim",
       "receiveChip": "Receive now",
       "directionTag": "Owed to me",
@@ -166,7 +163,6 @@
       "orphanTagLabel": "Debt received",
       "completedHeading": "Completed (1)",
       "paidOffLabel": "৳ 60,000 paid off",
-      "flipAfter": "0% paid",
       "deleteBanner": "Debt deleted",
       "archivedTagLabel": "Archived debt",
       "paidOffToast": "paid off. Nice."
@@ -190,9 +186,8 @@
     "outstanding": 20000,
     "paymentAmount": "25000",
     "expected": {
-      "paidAfter": "You've paid ৳ 25,000 of ৳ 20,000",
+      "paidAfter": "৳ 25,000 received so far",
       "outstandingAfter": "৳ 0",
-      "percentPaid": "100% paid",
       "toast": "Payment paid — ৳ 25,000",
       "completedHeading": "Completed (1)",
       "paidOffLabel": "৳ 20,000 paid off",
@@ -206,8 +201,7 @@
     "expected": {
       "remainingBefore": "Remaining: ৳ 15,000",
       "remainingAfter": "Remaining: ৳ 10,000",
-      "paidLine": "They've paid ৳ 5,000 of ৳ 15,000",
-      "percentPaid": "33% paid",
+      "paidLine": "৳ 5,000 received so far",
       "cashBefore": "৳ 5,000",
       "cashAfter": "৳ 10,000"
     }

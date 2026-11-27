@@ -6,11 +6,20 @@
  * the modal confirm pattern from TransactionEditScreen.
  *
  * The page wears the debt certificate's shell: an IOU SLIP with the
- * counterparty's tear-off stub down the left edge, the amount and the
- * rate engraved on the face, and the closing figures. Below it, the
- * "Terms" edit pass writes the changes straight onto the slip — one
- * ruled line per field. The right column is the ACTIVITY LEDGER: the
- * running account of every payment against this debt.
+ * amount and the rate engraved on the face, and the closing figures.
+ * Below it, the "Terms" edit pass writes the changes straight onto
+ * the slip — one ruled line per field. The right column is the
+ * ACTIVITY LEDGER: the running account of every payment against this
+ * debt.
+ *
+ * The slip here is the SAME document as the one on the debts list —
+ * it has its own copy of the certificate markup, so both were
+ * changed together: a FLAT debt carries ONE figure (the amount
+ * still owed) with the counterparty engraved beside it in the
+ * middle column, and a LOAN carries its instrument terms. The
+ * counterparty and the amount used to be printed TWICE on this
+ * slip — as "Outstanding" and again as "Remaining payments" — which
+ * is why the flat card now states the figure once.
  *
  * There is deliberately NO progress bar in the EDIT FORM below. This
  * page is for EDITING the terms, and a bar there invites the reader
@@ -80,9 +89,13 @@ export function DebtEditScreen() {
   const [isLoan, setIsLoan] = useState(debt?.kind === 'loan');
   const [interestRate, setInterestRate] = useState(debt?.interestRate != null ? String(debt.interestRate) : '');
   const [termMonths, setTermMonths] = useState(debt?.termMonths != null ? String(debt.termMonths) : '');
-  // Snapshot the debt's kind at mount so we can detect a
-  // loan → flat downgrade and prompt for confirmation (the prior
-  // ledger entries will be reinterpreted as 1-for-1).
+  // Snapshot the debt's kind at mount. A debt that IS a loan with
+  // interest is LOCKED as one: an interest-bearing loan can never be
+  // converted back into an interest-free debt. The reason is
+  // arithmetic, not preference — once a loan exists, its payments
+  // have been split into interest and principal against a specific
+  // rate and term. Reinterpreting that history as a flat IOU would
+  // silently rewrite the meaning of money already recorded.
   const [wasLoanAtMount] = useState(debt?.kind === 'loan');
   // One-shot confirm-state for the Save button. Pulse + ✓ glyph render
   // for the 600ms window before navigate.
@@ -105,10 +118,20 @@ export function DebtEditScreen() {
   // Term in months is REQUIRED when isLoan is true so the Pay button
   // can always pre-fill with a meaningful EMI. Must be a positive
   // integer.
+  //
+  // The ERROR is shown only once the user has touched the field. A
+  // loan that was saved without a term (legacy data, or a record
+  // written before the term became required) opens with the field
+  // blank — and marking that blank as invalid the moment the screen
+  // loads scolds the user for a value they were never asked for. The
+  // field still READS as required and the Save button still stays
+  // disabled; the red border and the message wait for an edit.
+  const [termTouched, setTermTouched] = useState(false);
   const termInvalid = isLoan && !(Number(termMonths) > 0);
-  const termErrorClass = termInvalid
+  const termErrorClass = termInvalid && termTouched
     ? 'border-danger focus:border-danger focus:ring-danger/30'
     : '';
+  const termError = termInvalid && termTouched ? POSITIVE_TERM_ERROR : undefined;
   // Loan toggle only shows for i_owe — same rationale as the Add
   // screen. You only pay interest on money you borrowed, not on
   // money you lent.
@@ -291,9 +314,11 @@ export function DebtEditScreen() {
     submitRef.current?.();
   }
 
-  // Split the actual save into an async helper so we can intercept
-  // loan → flat downgrades with a confirm dialog before persisting.
+  // The save itself. A debt that was a loan with interest keeps its
+  // kind whatever the form says — an interest-bearing loan can never
+  // be converted into an interest-free debt.
   async function performSave() {
+    const keepsLoan = wasLoanAtMount || isLoan;
     try {
       update(s => debts.update(s, debt!.id, {
         name,
@@ -301,9 +326,9 @@ export function DebtEditScreen() {
         total: Number(total),
         person: person.trim() || undefined,
         dueDate: dueDate || undefined,
-        kind: isLoan ? 'loan' as DebtKind : undefined,
-        interestRate: isLoan ? Number(interestRate) : undefined,
-        termMonths: isLoan && termMonths ? Number(termMonths) : undefined,
+        kind: keepsLoan ? 'loan' as DebtKind : undefined,
+        interestRate: keepsLoan ? Number(interestRate) : undefined,
+        termMonths: keepsLoan && termMonths ? Number(termMonths) : undefined,
       }));
       showToast({
         kind: 'success',
@@ -323,21 +348,12 @@ export function DebtEditScreen() {
   }
 
   // Imperative bridge: onSubmit does synchronous validation and then
-  // calls into this ref so we can `await confirm(...)` for the
-  // loan → flat downgrade path before mutating state.
+  // calls into this ref so the save can be awaited before navigating.
   const submitRef = useRef<() => Promise<void>>(async () => { /* replaced below */ });
   submitRef.current = async () => {
-    // Downgrade guard: if this debt was a loan at mount and the user
-    // is flipping it back to flat, prompt before saving. The ledger
-    // entries stay; only their interpretation changes.
-    if (wasLoanAtMount && !isLoan) {
-      const ok = await confirm({
-        title: 'Treat this debt as a flat IOU?',
-        body: 'Past payments will be reinterpreted 1-for-1 going forward. The transaction records themselves stay unchanged.',
-        confirmLabel: 'Save as flat',
-      });
-      if (!ok) return;
-    }
+    // A debt that WAS a loan with interest stays one. The toggle is
+    // disabled for it, so this is belt-and-braces: the save can never
+    // write a loan-kind debt back as a flat debt.
     await performSave();
   };
 
@@ -378,7 +394,6 @@ export function DebtEditScreen() {
   // A loan has no tear-off stub — the counterparty holds a bank
   // contract, not a slip. A flat IOU does.
   const tone = isIOwe ? 'var(--danger)' : 'var(--primary)';
-  const directionLabel = isIOwe ? 'I OWE' : 'OWED TO ME';
 
   return (
     // Page-level layout: a full-width header (back-link + title +
@@ -423,23 +438,18 @@ export function DebtEditScreen() {
           )}
 
           <section
-            className={`debt-cert ${debtIsLoan ? 'debt-cert--plain' : 'debt-cert--stub'}`}
+            className={`debt-cert ${debtIsLoan ? 'debt-cert--plain' : ''}`}
             style={{ ['--tone' as string]: tone }}
           >
-            {/* The tear-off stub — a flat debt is an IOU slip with the
-                counterparty's copy down the left margin. */}
-            {!debtIsLoan && (
-              <>
-                <span className="debt-cert__stublabel" aria-hidden />
-                <span className="debt-cert__stubtail" aria-hidden>Copy</span>
-              </>
-            )}
-
             <div className="debt-cert__head">
               <div className="min-w-0">
                 <div className="debt-cert__name">{debt.name}</div>
                 <div className="debt-cert__serial">
-                  NO. {serial} {MIDDOT} {directionLabel}
+                  NO. {serial}
+                  {/* The polarity is NOT repeated here. The stamp
+                      already says "I owe" or "Owed to me"; printing it
+                      twice on one document made the header read like
+                      a form that could not decide. */}
                   {debt.person ? ` ${MIDDOT} ${debt.person.toUpperCase()}` : ''}
                 </div>
               </div>
@@ -455,40 +465,26 @@ export function DebtEditScreen() {
               )}
             </div>
 
-            {/* The engraved terms. */}
-            <div className="debt-cert__fields">
-              {debtIsLoan ? (
-                <>
-                  <div className="debt-cert__f">
-                    <div className="k">Loan amount</div>
-                    <div className="v">{fmtBDT(debtTotal)}</div>
-                  </div>
-                  <div className="debt-cert__f">
-                    <div className="k">Interest paid</div>
-                    <div className="v v--danger">{fmtBDT(totalInterest)}</div>
-                  </div>
-                  <div className="debt-cert__f">
-                    <div className="k">Principal paid</div>
-                    <div className="v v--primary">{fmtBDT(totalPrincipal)}</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="debt-cert__f">
-                    <div className="k">Total</div>
-                    <div className="v">{fmtBDT(debtTotal)}</div>
-                  </div>
-                  <div className="debt-cert__f">
-                    <div className="k">Paid</div>
-                    <div className="v">{fmtBDT(debt.paidSoFar || 0)}</div>
-                  </div>
-                  <div className="debt-cert__f">
-                    <div className="k">Settled</div>
-                    <div className="v">{pct}%</div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* The engraved terms. A LOAN reports its instrument
+                figures; a FLAT debt has none — it carries the
+                counterparty and the amount instead, in the parallel
+                row further down. */}
+            {debtIsLoan && (
+              <div className="debt-cert__fields">
+                <div className="debt-cert__f">
+                  <div className="k">Loan amount</div>
+                  <div className="v">{fmtBDT(debtTotal)}</div>
+                </div>
+                <div className="debt-cert__f">
+                  <div className="k">Interest paid</div>
+                  <div className="v v--danger">{fmtBDT(totalInterest)}</div>
+                </div>
+                <div className="debt-cert__f">
+                  <div className="k">Principal paid</div>
+                  <div className="v v--primary">{fmtBDT(totalPrincipal)}</div>
+                </div>
+              </div>
+            )}
 
             {/* The rail — the share of the PRINCIPAL already retired.
                 It is the same bar the debts list card carries, and it
@@ -496,29 +492,31 @@ export function DebtEditScreen() {
                 carried interest, so gross-paid-over-total would run
                 ahead of the truth and could read 100% while principal
                 was still outstanding. The bar shows principal, and the
-                caption says so. */}
-            <ProgressRail
-              value={pct}
-              state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
-              measure={debtIsLoan ? 'principal settled' : 'debt settled'}
-              label={`${debt.name} settled`}
-              caption={
-                pct <= 0 ? (
-                  // Nothing paid yet — say so. "0%" is a number
-                  // pretending to be a fact; "nothing paid yet" is the
-                  // fact.
-                  <>Nothing paid yet</>
-                ) : debtIsLoan ? (
-                  <>
-                    <b className="text-ink font-semibold">{pct}%</b> of the principal settled
-                  </>
-                ) : (
-                  <>
-                    <b className="text-ink font-semibold">{pct}%</b> paid
-                  </>
-                )
-              }
-            />
+                caption says so.
+
+                A FLAT debt has no rail — it carries one figure, and a
+                bar beside it would be a second measure competing for
+                the same attention. */}
+            {debtIsLoan && (
+              <ProgressRail
+                value={pct}
+                state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
+                measure="principal settled"
+                label={`${debt.name} settled`}
+                caption={
+                  pct <= 0 ? (
+                    // Nothing paid yet — say so. "0%" is a number
+                    // pretending to be a fact; "nothing paid yet" is the
+                    // fact.
+                    <>Nothing paid yet</>
+                  ) : (
+                    <>
+                      <b className="text-ink font-semibold">{pct}%</b> of the principal settled
+                    </>
+                  )
+                }
+              />
+            )}
 
             {/* The tally — the next payment the slip expects. */}
             {!isFullyPaid && nextPayment > 0 && (
@@ -531,22 +529,39 @@ export function DebtEditScreen() {
               </div>
             )}
 
-            {/* The closing figures — what is still owed, with the
-                payment that retires it. */}
-            <div className="debt-cert__vals">
-              <div className="debt-cert__v debt-cert__v--now">
-                <div className="k">Outstanding</div>
-                <div className="n">{fmtBDT(outstanding)}</div>
-              </div>
-              <div className="debt-cert__v debt-cert__v--mat">
-                <div className="k">{debtIsLoan ? 'Monthly payment' : 'Remaining payments'}</div>
-                <div className="n">
-                  {debtIsLoan
-                    ? (monthlyEmi > 0 ? fmtBDT(monthlyEmi) : '\u2014')
-                    : (outstanding > 0 ? fmtBDT(outstanding) : '\u2014')}
+            {/* The closing figures. A FLAT debt carries the
+                counterparty and the amount side by side — the two
+                facts it owes the reader — and states the amount
+                ONCE. It used to print the same figure twice, as
+                "Outstanding" and as "Remaining payments". A LOAN
+                reports its EMI beside what is still outstanding. */}
+            {debtIsLoan ? (
+              <div className="debt-cert__vals">
+                <div className="debt-cert__v debt-cert__v--now">
+                  <div className="k">Monthly payment</div>
+                  <div className="n">{monthlyEmi > 0 ? fmtBDT(monthlyEmi) : '\u2014'}</div>
+                </div>
+                <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
+                  <div className="k">Outstanding</div>
+                  <div className="n">{outstanding > 0 ? fmtBDT(outstanding) : '\u2014'}</div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="debt-cert__vals debt-cert__vals--flat">
+                <div className="debt-cert__v debt-cert__v--now">
+                  <div className="k">Amount due</div>
+                  <div className="n">{fmtBDT(outstanding)}</div>
+                </div>
+                <div className="debt-cert__v debt-cert__v--mat">
+                  {debt.person && (
+                    <>
+                      <div className="k">{isIOwe ? 'Owed to' : 'Owed by'}</div>
+                      <div className="n">{debt.person}</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* The footnote. Only the due date belongs here: the
                 polarity of the ledger (payments are expenses, receipts
@@ -590,7 +605,12 @@ export function DebtEditScreen() {
                           // have been on) to owed_to_me, clear the loan state —
                           // the toggle is hidden for that direction so leaving it
                           // set would leave orphan form fields the user can't see.
-                          if (next !== 'i_owe' && isLoan) {
+                          //
+                          // A debt that WAS a loan with interest is exempt: it is
+                          // locked as a loan (see `wasLoanAtMount`), so flipping
+                          // the direction must not quietly convert it into an
+                          // interest-free debt. The loan terms travel with it.
+                          if (next !== 'i_owe' && isLoan && !wasLoanAtMount) {
                             setIsLoan(false);
                             setInterestRate('');
                             setTermMonths('');
@@ -658,17 +678,27 @@ export function DebtEditScreen() {
                 {/* V1.1: optional loan toggle — same shape as DebtAddScreen.
                     Pre-filled from `debt.kind` / `debt.interestRate` / `debt.termMonths`.
                     Only shown when direction is 'i_owe' — interest only applies
-                    to money you borrowed. */}
+                    to money you borrowed.
+
+                    A debt that WAS a loan with interest is LOCKED: the
+                    checkbox is disabled and checked, because an
+                    interest-bearing loan can never be converted back
+                    into an interest-free debt. Its payments were already
+                    split against a rate and term, and reinterpreting
+                    that history would rewrite money already recorded. */}
                 {showLoanToggle && (
                   <div className="dfline">
                     <div>
                       <div className="dfline__label">Is this a loan with interest?</div>
                     </div>
                     <div>
-                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <label
+                        className={`flex items-start gap-2.5 select-none ${wasLoanAtMount ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
                         <input
                           type="checkbox"
                           checked={isLoan}
+                          disabled={wasLoanAtMount}
                           onChange={e => {
                             setIsLoan(e.target.checked);
                             if (!e.target.checked) {
@@ -684,7 +714,9 @@ export function DebtEditScreen() {
                             Loan with interest
                           </div>
                           <div className="t-12 text-muted mt-1 leading-relaxed">
-                            Splits every payment into interest and principal.
+                            {wasLoanAtMount
+                              ? 'Locked — this loan cannot become an interest-free debt.'
+                              : 'Splits every payment into interest and principal.'}
                           </div>
                         </div>
                       </label>
@@ -720,14 +752,17 @@ export function DebtEditScreen() {
                           than "—". */}
                       <Field
                         label="Term in months"
-                        error={termInvalid ? POSITIVE_TERM_ERROR : undefined}
+                        error={termError}
                       >
                         <Input
                           type="number"
                           inputMode="numeric"
                           min="1"
                           value={termMonths}
-                          onChange={e => setTermMonths(e.target.value)}
+                          onChange={e => {
+                            setTermTouched(true);
+                            setTermMonths(e.target.value);
+                          }}
                           aria-invalid={termInvalid || undefined}
                           className={termErrorClass}
                         />

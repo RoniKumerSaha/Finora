@@ -75,20 +75,36 @@ export class DebtsPage extends BasePage {
     return this.card(name).locator('.debt-cert__stamp').filter({ hasText: /^(I owe|Owed to me)$/ });
   }
 
-  /** The flat card's "You've paid ৳ X of ৳ Y" line. */
+  /**
+   * The flat card's status line — "Nothing paid yet" /
+   * "Nothing received yet" / "৳ X received so far".
+   *
+   * The card carries ONE figure (the amount still owed). This line
+   * says in words whether anything has come in yet, which is the one
+   * fact the hero amount cannot carry on its own.
+   */
   cardPaidLine(name: string): Locator {
-    return this.card(name).getByText(/(You've|They've) paid/, { exact: false });
+    return this.card(name).locator('.debt-cert__note span').first();
   }
 
   /**
-   * The flat card's "Owed to Rahim" / "Owed by Karim" line.
+   * The flat card's counterparty — the engraved "OWED TO" / "OWED BY"
+   * label with the counterparty's name on the line beneath, sitting
+   * beside the amount.
    *
-   * The direction stamp above it also starts with "Owed to", so the
-   * pattern requires a capitalised name after the preposition — the
-   * stamp's own wording is "Owed to me".
+   * The direction stamp in the header also starts with "Owed to", so
+   * the locator reads the engraved FIELD, not a loose text match: the
+   * stamp is a `.debt-cert__stamp`, the counterparty is a
+   * `.debt-cert__v` whose `.k` is the label and whose `.n` is the name.
+   *
+   * It returns the whole BLOCK, so a spec can assert on the pair
+   * ("Owed to Rahim") rather than on the name alone — the label is
+   * half the fact.
    */
   cardCounterpartyLine(name: string): Locator {
-    return this.card(name).getByText(/^Owed (to|by) [A-Z]/, { exact: false });
+    return this.card(name)
+      .locator('.debt-cert__v')
+      .filter({ has: this.card(name).locator('.k', { hasText: /Owed (to|by)/i }) });
   }
 
   /**
@@ -107,17 +123,31 @@ export class DebtsPage extends BasePage {
   /**
    * The flat card's "of ৳ Y total" caption.
    *
-   * The certificate states the total as the SECOND closing figure —
-   * "Of total" beside the remaining — so the caption is read from
-   * that block's value.
+   * The figure was REMOVED from the flat card: it repeated the amount
+   * the hero figure already stated. This locator still points at the
+   * place that figure used to sit, so a spec can assert it is gone.
+   *
+   * It matches on the field's LABEL ("Total"), not on the block's
+   * class, because `.debt-cert__v--mat` is now the counterparty's
+   * block on a flat card — matching the class would find the name
+   * and the "it is gone" assertion would fail for the wrong reason.
    */
   cardTotalCaption(name: string): Locator {
     return this.card(name)
-      .locator('.debt-cert__v--mat')
+      .locator('.debt-cert__v')
+      .filter({ has: this.card(name).locator('.k', { hasText: /^total$/i }) })
       .locator('.n');
   }
 
-  /** The card's "{n}% paid" progress caption. */
+  /**
+   * The card's "{n}% paid" progress caption.
+   *
+   * Only a LOAN card carries a rail and its caption — a flat card
+   * states one figure and nothing else, so it has no "% paid" line.
+   * This locator therefore resolves to a zero-count locator on a flat
+   * card, which is how the suite asserts the flat card's
+   * single-figure shape.
+   */
   cardPercentPaid(name: string): Locator {
     return this.card(name).getByText(/% paid/, { exact: false });
   }
