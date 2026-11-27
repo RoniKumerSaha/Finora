@@ -196,7 +196,7 @@ export function Shell({ children }: { children: ReactNode }) {
          scroll. The hamburger sits on the left; the brand wordmark is
          centered; no right-side CTA (the drawer's Add tx is enough). */}
       <header
-        className="md:hidden sticky top-0 z-30 flex items-center px-4 h-14 gap-3"
+        className="finora-nav md:hidden sticky top-0 z-30 flex items-center px-4 h-14 gap-3"
         style={{
           background: 'var(--surface)',
           borderBottom: '1px solid var(--border)',
@@ -251,7 +251,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
         <aside
           className={[
-            'flex flex-col px-4 py-5 gap-1',
+            'finora-nav flex flex-col px-4 py-5 gap-1',
             // Mobile: fixed drawer that slides off-canvas by default
             'fixed top-0 left-0 h-screen w-[280px] z-50',
             drawerOpen ? 'translate-x-0' : '-translate-x-full',

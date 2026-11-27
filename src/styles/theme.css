@@ -67,25 +67,38 @@
   --color-divider: var(--divider);
 
   /* ---- Type families --------------------------------------------
-     Two families, and only two:
-       --font-sans  the app UI. Every screen, row, label, button —
-                    and every DOCUMENT surface too (certificates,
-                    receipts, ledger sheets, plan paper).
-       --font-mono  reserved for the few places that are genuinely
-                    monospaced by nature: PIN digits, and code-like
-                    runs. It is NOT the document language any more.
+     Three families, and only three:
+       --font-app   the APPLICATION FACE — every screen, row, label,
+                    button and document surface (certificates,
+                    receipts, ledger sheets, plan paper). This is the
+                    monospaced instrument face, chosen on 2026-11-27
+                    to match the investment certificate, which is the
+                    app's most "official" document and the one the
+                    whole document family grew out of.
+       --font-nav   the navigation chrome — the sidebar, the mobile
+                    topbar and the drawer. SANS, deliberately, so the
+                    menu reads as the app's furniture and the
+                    documents read as its content.
+       --font-sans  the plain sans, kept for the nav and for the few
+                    places that genuinely want a proportional face.
+       --font-mono  the monospace stack itself, kept as the alias
+                    for --font-app so existing `.mono` rules and any
+                    inline reference keep working.
 
-     The document family used to be --font-mono. That was a
-     deliberate identity at the time ("monospaced engraving, dashed
-     rules"), but it was switched on 2026-11-27: mono at these sizes
-     read as typewritten, and it made the engraved figures WIDER
-     than the sans UI beside them, so a certificate felt louder
-     than the screen around it. The perforated edges, dashed rules
-     and paper texture carry the document idea on their own — the
-     typeface does not need to.
+     The document family was sans from 2026-11-27 until later the
+     same day. That switch was made for a reason — mono at these
+     sizes read as typewritten, and the engraved figures sat WIDER
+     than the sans UI beside them — but the investment certificate
+     showed that the monospaced instrument is the stronger idea,
+     and that the document family should follow it rather than the
+     other way round. So the monospace face is now the app's face.
+
+     The nav keeps its sans because a menu is not a document. It is
+     chrome — the frame around the content — and the frame should
+     not compete with what it frames.
 
      --font-heading / --font-body / --font-numeric are aliases for
-     --font-sans, kept so existing rules keep working. Numeric values
+     --font-app, kept so existing rules keep working. Numeric values
      get tabular-nums via the .tabular utility where alignment
      matters.
 
@@ -104,9 +117,14 @@
   --font-sans: "Nirmala UI", "Noto Sans Bengali", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
   --font-mono: "Nirmala UI", "Noto Sans Bengali", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --font-heading: var(--font-sans);
-  --font-body: var(--font-sans);
-  --font-numeric: var(--font-sans);
+  /* The application face — the monospaced instrument. */
+  --font-app: var(--font-mono);
+  /* The navigation chrome stays sans. */
+  --font-nav: var(--font-sans);
+
+  --font-heading: var(--font-app);
+  --font-body: var(--font-app);
+  --font-numeric: var(--font-app);
 
   /* ---- Type scale -----------------------------------------------
      The whole app draws its sizes from these eight steps. Use the

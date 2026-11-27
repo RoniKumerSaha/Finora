@@ -397,33 +397,20 @@ export function TransactionsListScreen() {
                 {scopedAccount ? `${scopedAccount.name} · balance now` : 'Total balance now'}
               </div>
               <div className="txbook__v">{fmtBDT(figs.now)}</div>
-              <div className="txbook__d">
-                {figs.total === 0 ? (
-                  'No movements yet.'
-                ) : (
-                  <>
-                    Up <b>{fmtBDT(figs.sumIn)}</b> · down{' '}
-                    {fmtBDT(figs.sumOut)} · {figs.total} movements
-                  </>
-                )}
-              </div>
             </div>
 
             <div className="txbook__figs">
               <div className="txfig">
                 <div className="txfig__k">In</div>
                 <div className="txfig__v txfig__v--in">{fmtBDT(figs.sumIn)}</div>
-                <div className="txfig__n">{figs.inCount} in</div>
               </div>
               <div className="txfig">
                 <div className="txfig__k">Out</div>
                 <div className="txfig__v txfig__v--out">{fmtBDT(figs.sumOut)}</div>
-                <div className="txfig__n">{figs.outCount} out</div>
               </div>
               <div className="txfig">
                 <div className="txfig__k">Transfers</div>
                 <div className="txfig__v txfig__v--ink">{fmtBDT(figs.sumXfr)}</div>
-                <div className="txfig__n">net unchanged</div>
               </div>
               <div className="txfig">
                 <div className="txfig__k">Lowest</div>
@@ -431,11 +418,6 @@ export function TransactionsListScreen() {
                   {activeId
                     ? fmtBDT(figs.low)
                     : `${Math.max(0, Math.round(figs.lowPct))}%`}
-                </div>
-                <div className="txfig__n">
-                  {figs.lowTx
-                    ? `after ${figs.lowTx.note || 'an entry'}`
-                    : 'at opening'}
                 </div>
               </div>
             </div>
@@ -665,9 +647,11 @@ function TxRow({
       <div className="txrow__balwrap">
         {balance !== undefined && (
           <>
-            <div className="txrow__bal">{fmtBDT(balance)}</div>
-            <div className="txrow__bar" aria-hidden>
-              <i className={barTone} style={{ '--w': `${pct}%` } as any} />
+            <div className="txrow__balrow">
+              <div className="txrow__bal">{fmtBDT(balance)}</div>
+              <div className="txrow__bar" aria-hidden>
+                <i className={barTone} style={{ '--w': `${pct}%` } as any} />
+              </div>
             </div>
             {/* In the "all accounts" book each row's balance belongs to
                 a different account, so the balance names the account
