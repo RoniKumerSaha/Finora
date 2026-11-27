@@ -5,8 +5,11 @@
  * driven from settings via a hook into the Zustand store. RoleAlertBanner
  * is mounted globally so any screen can surface an error.
  *
- * Add-transaction flow (v1 mockup): /transactions/new is the picker,
- *   /transactions/new/{expense|income|transfer} are the per-type forms,
+ * Add-transaction flow: /transactions/new opens the EXPENSE form,
+ *   and /transactions/new/{expense|income|transfer} open a specific
+ *   one. There used to be a separate picker page in between, but the
+ *   form carries its own direction stamps — pressing one reshapes the
+ *   whole document — so the picker was a click that bought nothing.
  *   /transactions/:id/edit edits.
  */
 
@@ -21,7 +24,6 @@ import { useStore } from './domain/store';
 import { HomeScreen } from './screens/HomeScreen';
 import { InsightsScreen } from './screens/InsightsScreen';
 import { TransactionsListScreen } from './screens/TransactionsListScreen';
-import { AddTransactionPickerScreen } from './screens/AddTransactionPickerScreen';
 import { AddExpenseScreen } from './screens/AddExpenseScreen';
 import { AddIncomeScreen } from './screens/AddIncomeScreen';
 import { AddTransferScreen } from './screens/AddTransferScreen';
@@ -125,7 +127,7 @@ export function App() {
           <Route path="/insights" element={<InsightsScreen />} />
 
           <Route path="/transactions" element={<TransactionsListScreen />} />
-          <Route path="/transactions/new"                  element={<AddTransactionPickerScreen />} />
+          <Route path="/transactions/new"                  element={<Navigate to="/transactions/new/expense" replace />} />
           <Route path="/transactions/new/expense"          element={<AddExpenseScreen />} />
           <Route path="/transactions/new/income"           element={<AddIncomeScreen />} />
           <Route path="/transactions/new/transfer"         element={<AddTransferScreen />} />
@@ -156,6 +158,12 @@ export function App() {
           <Route path="/plan/event" element={<EventPlanScreen />} />
           <Route path="/plan/event/:id" element={<EventPlanDetailScreen />} />
           <Route path="/plan/invest" element={<InvestmentPlannerScreen />} />
+          {/* There used to be a kit-picker at /plan/invest/new — three
+              starter cards for DPS / FDR / Savings. The plan screen
+              carries its own type picker (a three-way stamp that
+              reshapes the terms below it), so the picker was a click
+              that bought nothing. "/plan/invest/new" now creates a
+              blank plan and lands straight on it. */}
           <Route path="/plan/invest/new" element={<InvestmentPlannerNewScreen />} />
           <Route path="/plan/invest/:id" element={<InvestmentPlannerDetailScreen />} />
           <Route path="/plan/loan" element={<LoanCalculatorListScreen />} />

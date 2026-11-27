@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Finora — The add slips</title>
+<link rel="stylesheet" href="demo-assets/demo-chrome.css" />
+<link rel="stylesheet" href="demo-assets/add-designs2.css" />
+<style>
+body{padding-bottom:80px}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>The add screens, round two — one slip you write on</h1>
+  <p>
+    The first attempt put a <b>form</b> on the left and a <b>live certificate</b> on the right.
+    Two documents, and to check a number you had to look across the gap and back. It read as a
+    web form with a receipt preview stapled to it.
+  </p>
+  <p style="margin-top:10px">
+    This round takes one position: <b>the record is the page</b>. There is no form and no preview —
+    there is ONE document, drawn at full width, with its blanks still open. You fill it in place.
+    The consequence (<i>"Cash goes from ৳ 53,500 to ৳ 51,000"</i>) is a clause <b>of</b> the
+    document, not a toast bolted under it.
+  </p>
+  <p style="margin-top:10px">
+    Three consequences of that position, applied identically to all five screens:
+    the <b>amount is the headline</b> (the loudest thing on the page, because it is the one thing
+    you always know); the <b>one big decision is a stamp</b> you press, not a dropdown that hides
+    the alternative; and the <b>lines you fill are blanks</b> — the label engraved, the rule
+    waiting for your ink.
+  </p>
+  <div class="legend">
+    <span class="lg">5 screens</span>
+    <span class="lg">One document</span>
+    <span class="lg on">Amount as headline</span>
+    <span class="lg">Decision as stamp</span>
+  </div>
+</div>
+
+<div class="switcher">
+  <div class="switcher-in">
+    <span class="lbl">Demo</span>
+    <a href="demo-transactions.html">Transactions (current)</a>
+    <a href="demo-add-transaction.html">Add transaction (current)</a>
+    <a href="tx-add-options.html">Add screens · attempt 1</a>
+    <a href="add-slip-options.html" class="on">Add screens · the slip</a>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i></span>
+      <span class="wm">Finora</span>
+    </div>
+    <nav>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>Home</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/><path d="m8.5 14.5 2 2 4-4"/></svg></span>Plan</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 4.5 12 4.5z"/><circle cx="12" cy="12" r="2.6"/><path d="M16.5 4l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4L14.5 6l1.4-.6z" fill="currentColor" stroke="none"/></svg></span>Insight</a>
+      <a href="#" class="on"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>Transactions</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3"/><path d="M3 19c.5-3 3-5 6-5s5.5 2 6 5"/><circle cx="16.5" cy="8" r="2.2"/><path d="M14.5 14.5c2.4-.4 5 .7 6 3"/></svg></span>Accounts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 4 2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg></span>Goals</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M6 16l4-4 3 3 5-6"/><path d="m14 9h4v4"/></svg></span>Investments</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17"/><path d="m7 8-3 4 3 4"/><path d="m17 8 3 4-3 4"/></svg></span>Debts</a>
+      <a href="#"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Settings</a>
+    </nav>
+    <div class="cta"><span>+</span> Add transaction</div>
+  </aside>
+
+  <main class="page">
+
+<!-- ══════════════════════════════════════════════════════════════
+     1 · ADD TRANSACTION
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">1 · Add transaction — the slip, not a form</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--danger)">
+      <div class="slip__wash"></div>
+
+      <!-- The head names the record; the stamp below IS the decision. -->
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New entry</div>
+          <div class="slip__title">A transaction</div>
+          <div class="slip__sub">One line in your ledger. Every entry changes a balance — this one, by ৳ 2,500.</div>
+        </div>
+      </div>
+
+      <!-- THE STAMP. Three options, all visible. A dropdown would
+           hide the other two; a stamp never does. -->
+      <div class="stamps" style="margin-top:16px">
+        <button class="stamp" style="--tone:var(--primary)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+          <span><span class="stamp__t">Came in</span><span class="stamp__s">Salary · interest</span></span>
+        </button>
+        <button class="stamp on" style="--tone:var(--danger)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+          <span><span class="stamp__t">Went out</span><span class="stamp__s">Groceries · rent</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--info)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>
+          <span><span class="stamp__t">Moved</span><span class="stamp__s">Between accounts</span></span>
+        </button>
+      </div>
+
+      <!-- THE AMOUNT. The headline. 40px, in the record's own tone. -->
+      <div class="slip__amount">
+        <div class="slip__amount-l">Amount</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="2,500" />
+        </div>
+      </div>
+
+      <!-- THE BLANKS. Engraved labels, empty rules waiting for ink. -->
+      <div class="blank">
+        <div>
+          <div class="blank__k">Account</div>
+          <div class="blank__hint">The balance this entry changes.</div>
+        </div>
+        <div class="blank__v"><select><option>Cash</option><option>Main Bank</option><option>bKash</option></select></div>
+      </div>
+
+      <div class="blank blank--stack">
+        <div>
+          <div class="blank__k">Category</div>
+          <div class="blank__hint">Pick the closest one — you can change it later.</div>
+        </div>
+        <div class="chipset">
+          <button class="chipset__c">Rent</button>
+          <button class="chipset__c">Utilities</button>
+          <button class="chipset__c">Internet</button>
+          <button class="chipset__c on">Groceries</button>
+          <button class="chipset__c">Dining out</button>
+          <button class="chipset__c">Transport</button>
+          <button class="chipset__c">Health</button>
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Date</div>
+          <div class="blank__hint">When it happened.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2026-11-26" /></div>
+      </div>
+
+      <div class="blank blank--empty">
+        <div>
+          <div class="blank__k">Note</div>
+          <div class="blank__hint">Optional. What was it for?</div>
+        </div>
+        <div class="blank__v"><input type="text" placeholder="Weekly shop" /></div>
+      </div>
+
+      <!-- THE CLAUSE. The consequence, written inside the document. -->
+      <div class="clause">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+        <span class="clause__t">
+          Cash goes from <b>৳ 53,500</b> to <b>৳ 51,000</b>. This is the line that lands in your ledger.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          Filed against <b style="color:var(--ink)">Cash</b> under <b style="color:var(--ink)">Groceries</b>.
+          You can edit or delete it any time afterwards.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Save entry</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Direction</span><b style="color:var(--danger)">Out</b></div>
+        <div class="recap__row"><span>Amount</span><b>−৳ 2,500</b></div>
+        <div class="recap__row"><span>Account</span><b>Cash</b></div>
+        <div class="recap__row"><span>Category</span><b>Groceries</b></div>
+        <div class="recap__row recap__row--total"><span>Cash after</span><b>৳ 51,000</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--primary)">
+      <div class="note__h">What changed</div>
+      The old add form had three <b>cards</b> to choose from and a separate <b>preview card</b>
+      on the right. You picked a type, the screen re-rendered a different form, and the effect
+      of your entry appeared in a banner at the very bottom — below the fold, in the case of
+      most phones.
+      <br /><br />
+      Here the direction <b>is</b> the first stamp on the slip, the amount <b>is</b> the headline,
+      and the consequence sits in the same sheet, four lines below the fields that caused it.
+    </div>
+
+    <div class="note" style="--tone:var(--warn)">
+      <div class="note__h">Why a stamp and not a dropdown</div>
+      "Money went out" and "moved between accounts" get confused more than any other pair —
+      an ATM withdrawal looks like an expense until you remember it's your own money walking
+      to another account. A dropdown hides that alternative behind a closed list. Three stamps
+      show all three options, side by side, every time.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     2 · ADD TRANSFER — the same slip, two balances
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">2 · Add transfer — the same slip, two balances</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--info)">
+      <div class="slip__wash"></div>
+
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New entry</div>
+          <div class="slip__title">A transfer</div>
+          <div class="slip__sub">Your money, moving. Two balances change; your net worth does not.</div>
+        </div>
+      </div>
+
+      <div class="stamps" style="margin-top:16px">
+        <button class="stamp" style="--tone:var(--primary)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+          <span><span class="stamp__t">Came in</span><span class="stamp__s">Salary · interest</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--danger)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+          <span><span class="stamp__t">Went out</span><span class="stamp__s">Groceries · rent</span></span>
+        </button>
+        <button class="stamp on" style="--tone:var(--info)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>
+          <span><span class="stamp__t">Moved</span><span class="stamp__s">Between accounts</span></span>
+        </button>
+      </div>
+
+      <div class="slip__amount">
+        <div class="slip__amount-l">Amount moved</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="10,000" />
+        </div>
+      </div>
+
+      <!-- From → To, as two blanks with the arrow between them.
+           Two names side by side read faster than two stacked
+           dropdowns, and the arrow carries the direction. -->
+      <div class="blank">
+        <div>
+          <div class="blank__k">From</div>
+          <div class="blank__hint">Where the money is now.</div>
+        </div>
+        <div class="blank__v"><select><option>Main Bank</option><option>Cash</option></select></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">To</div>
+          <div class="blank__hint">Where the money is going.</div>
+        </div>
+        <div class="blank__v"><select><option>Cash</option><option>Main Bank</option></select></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Date</div>
+          <div class="blank__hint">When it moved.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2026-11-26" /></div>
+      </div>
+
+      <!-- Two balances get a ruled strip, not a sentence. -->
+      <div class="effects">
+        <div class="effects__side">
+          <div class="effects__l">Main Bank</div>
+          <div class="effects__n">৳ 2,31,110</div>
+          <div class="effects__move">was <b>৳ 2,41,110</b></div>
+        </div>
+        <div class="effects__arrow"><svg viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></div>
+        <div class="effects__side">
+          <div class="effects__l">Cash</div>
+          <div class="effects__n">৳ 63,500</div>
+          <div class="effects__move">was <b>৳ 53,500</b></div>
+        </div>
+      </div>
+
+      <div class="clause">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>
+        <span class="clause__t">
+          Two balances move. Your <b>net worth does not</b> — this is your own money, changing pockets.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          A transfer is filed in your ledger but never counted as income or spending.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Save transfer</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Amount moved</span><b>৳ 10,000</b></div>
+        <div class="recap__row"><span>Main Bank</span><b>৳ 2,31,110</b></div>
+        <div class="recap__row"><span>Cash</span><b>৳ 63,500</b></div>
+        <div class="recap__row recap__row--total"><span>Net worth</span><b>unchanged</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--info)">
+      <div class="note__h">One slip, one grammar</div>
+      The transfer isn't a different screen with a different look — it's the <b>same slip</b> with
+      the third stamp pressed. The amount headline, the blanks, the clause, the foot: all identical.
+      You learn one screen and you know all three transactions.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     3 · ADD ACCOUNT
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">3 · Add account — the smallest slip</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--info)">
+      <div class="slip__wash"></div>
+
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New account</div>
+          <div class="slip__title">An account</div>
+          <div class="slip__sub">Cash, a bank account, a mobile wallet, a card. Everything else in the app hangs off this.</div>
+        </div>
+      </div>
+
+      <!-- Four stamps — the type is a pictogram choice. -->
+      <div class="stamps stamps--4" style="margin-top:16px">
+        <button class="stamp" style="--tone:var(--muted)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17"/></svg></span>
+          <span><span class="stamp__t">Cash</span><span class="stamp__s">In hand</span></span>
+        </button>
+        <button class="stamp on" style="--tone:var(--info)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M3.5 10h17"/><path d="M5 10v9.5h14V10"/><path d="M10 19.5v-5h4v5"/></svg></span>
+          <span><span class="stamp__t">Bank</span><span class="stamp__s">Account</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--primary)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg></span>
+          <span><span class="stamp__t">Wallet</span><span class="stamp__s">Mobile</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--accent)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 14.5h4"/></svg></span>
+          <span><span class="stamp__t">Card</span><span class="stamp__s">Credit</span></span>
+        </button>
+      </div>
+
+      <div class="blank" style="margin-top:6px">
+        <div>
+          <div class="blank__k">Name</div>
+          <div class="blank__hint">What you call this account. "Main Bank" is fine.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="Main Bank" /></div>
+      </div>
+
+      <!-- The opening balance is the amount — so it gets the amount
+           treatment. An account opens with money in it or it doesn't. -->
+      <div class="slip__amount">
+        <div class="slip__amount-l">Opening balance</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="2,41,110" />
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Opened on</div>
+          <div class="blank__hint">Defaults to today.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2026-11-26" /></div>
+      </div>
+
+      <div class="clause">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg></span>
+        <span class="clause__t">
+          A new account with <b>৳ 2,41,110</b> in it. Your net worth doesn't change — you already
+          had that money; now it has a name.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          Every transaction you record will point at an account. Opening one is the first step.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Open account</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Type</span><b>Bank account</b></div>
+        <div class="recap__row"><span>Opening balance</span><b>৳ 2,41,110</b></div>
+        <div class="recap__row"><span>Opened</span><b>26 Nov 2026</b></div>
+        <div class="recap__row recap__row--total"><span>Net worth</span><b>unchanged</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--primary)">
+      <div class="note__h">The smallest form, the most ceremony</div>
+      An account is three fields. But it is the <b>root</b> of the ledger — every transaction
+      points at one, and an account opened with the wrong type wears the wrong icon for the rest
+      of your life. So the type gets four big stamps, and the opening balance gets the same
+      headline treatment as a transaction amount, because it's the same kind of fact: a quantity
+      of money.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     4 · ADD GOAL
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">4 · Add goal — a target with a date on it</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--primary)">
+      <div class="slip__wash"></div>
+
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New goal</div>
+          <div class="slip__title">A goal</div>
+          <div class="slip__sub">Something you want money for, by a date you choose. The gap between the two is the whole point.</div>
+        </div>
+      </div>
+
+      <!-- A goal's headline is the TARGET, not a deposit. The target
+           and the deadline together are the goal. -->
+      <div class="slip__amount">
+        <div class="slip__amount-l">Target amount</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="1,20,000" />
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Name</div>
+          <div class="blank__hint">What are you saving for?</div>
+        </div>
+        <div class="blank__v"><input type="text" value="Laptop" /></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">By when</div>
+          <div class="blank__hint">The date it should be paid for by.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2027-06-30" /></div>
+      </div>
+
+      <!-- The saving rate is the one field a goal screen can't do
+           without — a target with no rate is a wish. -->
+      <div class="blank">
+        <div>
+          <div class="blank__k">Saving each month</div>
+          <div class="blank__hint">How much you plan to put in. We'll tell you if it adds up.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="৳ 10,000" /></div>
+      </div>
+
+      <div class="blank blank--stack">
+        <div>
+          <div class="blank__k">Saved in</div>
+          <div class="blank__hint">Which account the money sits in.</div>
+        </div>
+        <div class="chipset">
+          <button class="chipset__c on">Main Bank</button>
+          <button class="chipset__c">Cash</button>
+          <button class="chipset__c">bKash</button>
+        </div>
+      </div>
+
+      <!-- The clause does real arithmetic here: it tells you whether
+           the plan works, which is the only question a goal screen
+           can answer that a note field can't. -->
+      <div class="clause" style="--tone:var(--warn)">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M12 8v5"/><path d="M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></span>
+        <span class="clause__t">
+          ৳ 10,000 a month reaches <b>৳ 1,20,000</b> in <b>12 months</b> — you hit your target
+          in <b>June 2027</b>, just in time.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          A goal is a promise to yourself. It lives on your planner until you reach it.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Save goal</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Target</span><b>৳ 1,20,000</b></div>
+        <div class="recap__row"><span>Each month</span><b>৳ 10,000</b></div>
+        <div class="recap__row"><span>Months to target</span><b>12</b></div>
+        <div class="recap__row recap__row--total"><span>Reached</span><b>June 2027</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--primary)">
+      <div class="note__h">The clause earns its place</div>
+      On the other four screens the clause just restates a balance. Here it does <b>arithmetic</b>:
+      it tells you whether the number you typed and the date you picked actually meet. That's the
+      one question a goal screen can answer that a note field can't — so it's the one screen where
+      the clause is the point rather than a reassurance.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     5 · ADD DEBT
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">5 · Add debt — an IOU, with the direction stamped</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--danger)">
+      <div class="slip__wash"></div>
+
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New debt</div>
+          <div class="slip__title">An IOU</div>
+          <div class="slip__sub">Who owes whom, how much, and by when. The direction is the whole thing, so it's the first stamp.</div>
+        </div>
+      </div>
+
+      <!-- Two stamps — the direction. Two big buttons labelled in
+           plain words, so "I owe" and "owed to me" can never be
+           confused the way a dropdown's two options can. -->
+      <div class="stamps stamps--2" style="margin-top:16px">
+        <button class="stamp on" style="--tone:var(--danger)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+          <span><span class="stamp__t">I owe them</span><span class="stamp__s">You borrowed</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--primary)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+          <span><span class="stamp__t">They owe me</span><span class="stamp__s">You lent</span></span>
+        </button>
+      </div>
+
+      <div class="slip__amount">
+        <div class="slip__amount-l">Total owed</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="25,000" />
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Person</div>
+          <div class="blank__hint">Who is on the other side of this?</div>
+        </div>
+        <div class="blank__v"><input type="text" value="Rahim" /></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Due on</div>
+          <div class="blank__hint">When it should be settled by.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2027-03-01" /></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Cash went into</div>
+          <div class="blank__hint">The account that received the money when you borrowed it.</div>
+        </div>
+        <div class="blank__v"><select><option>Main Bank</option><option>Cash</option></select></div>
+      </div>
+
+      <!-- The loan terms are conditional — interest may or may not
+           exist, so they live in their own block, not scattered
+           through the blanks. -->
+      <div class="blank blank--stack" style="border-bottom:0">
+        <div>
+          <div class="blank__k">Interest</div>
+          <div class="blank__hint">Leave at zero for a free loan.</div>
+        </div>
+        <div class="chipset">
+          <button class="chipset__c">No interest</button>
+          <button class="chipset__c on">12% a year</button>
+          <button class="chipset__c">Flat ৳ 2,000</button>
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Pay it back over</div>
+          <div class="blank__hint">Months or years.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="36 months" /></div>
+      </div>
+
+      <div class="clause">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+        <span class="clause__t">
+          Main Bank goes from <b>৳ 2,16,110</b> to <b>৳ 2,41,110</b>, and a debt of <b>৳ 25,000</b>
+          opens against it. Pay <b>৳ 992</b> a month for 36 months to clear it.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          The account balance you entered when you borrowed stays as it is. The debt tracks what's
+          left to repay, separately.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Write the IOU</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Direction</span><b style="color:var(--danger)">I owe</b></div>
+        <div class="recap__row"><span>Total</span><b>৳ 25,000</b></div>
+        <div class="recap__row"><span>Interest</span><b>12% / yr</b></div>
+        <div class="recap__row"><span>Monthly</span><b>৳ 992</b></div>
+        <div class="recap__row recap__row--total"><span>Total repaid</span><b>৳ 35,712</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--danger)">
+      <div class="note__h">The direction flip is the point</div>
+      The old form used a dropdown, so switching between "I owe" and "owed to me" changed a label
+      but left the whole rest of the form ambiguous — which account, which number, all of it read
+      as if it were still an expense. Two big stamps, each labelled in plain words — <b>"You
+      borrowed"</b> / <b>"You lent"</b> — remove the ambiguity entirely, because you can see both
+      options at the moment you're choosing.
+    </div>
+
+    <div class="note" style="--tone:var(--primary)">
+      <div class="note__h">What every screen shares</div>
+      One slip · a stamp for the decision · the amount as the headline · engraved blanks ·
+      a clause with the consequence · a foot with the save.
+      <br /><br />
+      Learn it once on transactions, and accounts, goals, investments and debts are already
+      familiar.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     6 · ADD INVESTMENT — the same grammar, a projection clause
+     ══════════════════════════════════════════════════════════════ -->
+<div class="dsec">6 · Add investment — the same grammar, and the clause projects</div>
+
+<div class="addpage">
+  <div>
+    <section class="slip" style="--tone:var(--primary)">
+      <div class="slip__wash"></div>
+
+      <div class="slip__head">
+        <div>
+          <div class="slip__what">New investment</div>
+          <div class="slip__title">A deposit scheme</div>
+          <div class="slip__sub">A DPS you pay into monthly, or an FDR you lock in once. The stamp decides which.</div>
+        </div>
+      </div>
+
+      <div class="stamps" style="margin-top:16px">
+        <button class="stamp on" style="--tone:var(--primary)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3.5v3"/><path d="M16 3.5v3"/></svg></span>
+          <span><span class="stamp__t">DPS</span><span class="stamp__s">Monthly</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--accent)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="2"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span>
+          <span><span class="stamp__t">FDR</span><span class="stamp__s">Lump-sum</span></span>
+        </button>
+        <button class="stamp" style="--tone:var(--info)">
+          <span class="stamp__ico"><svg viewBox="0 0 24 24"><path d="M12 3.5c4.5 0 8.2 3 9.2 7.5-.9 4.5-4.6 7.5-9.2 7.5S3.7 16.5 2.8 12C3.8 7.5 7.5 3.5 12 3.5z"/><circle cx="12" cy="12" r="2.6"/></svg></span>
+          <span><span class="stamp__t">Savings</span><span class="stamp__s">Interest-bearing</span></span>
+        </button>
+      </div>
+
+      <div class="blank" style="margin-top:6px">
+        <div>
+          <div class="blank__k">Name</div>
+          <div class="blank__hint">What you call it. "DBBL 1-year FDR" is fine.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="Dutch-Bangla DPS" /></div>
+      </div>
+
+      <!-- The amount is the installment for a DPS, the deposit for
+           an FDR. Same headline, different word. -->
+      <div class="slip__amount">
+        <div class="slip__amount-l">Every month</div>
+        <div class="slip__amount-v">
+          <span class="slip__cur">৳</span>
+          <input type="text" value="5,000" />
+        </div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Rate</div>
+          <div class="blank__hint">Per year, as the bank quotes it.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="8%" /></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Term</div>
+          <div class="blank__hint">Months or years — switch the unit as you type.</div>
+        </div>
+        <div class="blank__v"><input type="text" value="60 months" /></div>
+      </div>
+
+      <div class="blank">
+        <div>
+          <div class="blank__k">Starts</div>
+          <div class="blank__hint">When the first installment lands.</div>
+        </div>
+        <div class="blank__v"><input type="date" value="2026-01-15" /></div>
+      </div>
+
+      <div class="blank blank--stack">
+        <div>
+          <div class="blank__k">Payout to</div>
+          <div class="blank__hint">Where the maturity amount should land.</div>
+        </div>
+        <div class="chipset">
+          <button class="chipset__c on">Main Bank</button>
+          <button class="chipset__c">Cash</button>
+        </div>
+      </div>
+
+      <!-- The clause projects here — and it's the one place a
+           projection belongs, because it's the one place the future
+           number isn't yet a fact. -->
+      <div class="clause">
+        <span class="clause__ico"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5"/></svg></span>
+        <span class="clause__t">
+          Over 60 months you'd put in <b>৳ 3,00,000</b> and it would grow to <b>৳ 3,67,466</b> —
+          <b>৳ 67,466</b> of interest. Actual payout may differ.
+        </span>
+      </div>
+
+      <div class="slip__foot">
+        <div class="slip__foot-note">
+          This is a <b>plan</b>. Nothing is recorded in your ledger until you actually pay an
+          installment.
+        </div>
+        <div class="actions">
+          <button class="page btn btn--outline-primary">Save plan</button>
+          <button class="page btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="addpage__side">
+    <div class="recap">
+      <div class="recap__h">At a glance</div>
+      <div class="recap__rows">
+        <div class="recap__row"><span>Type</span><b>DPS · monthly</b></div>
+        <div class="recap__row"><span>Each month</span><b>৳ 5,000</b></div>
+        <div class="recap__row"><span>Term</span><b>5 years</b></div>
+        <div class="recap__row"><span>You put in</span><b>৳ 3,00,000</b></div>
+        <div class="recap__row recap__row--total"><span>At maturity</span><b>৳ 3,67,466</b></div>
+      </div>
+    </div>
+
+    <div class="note" style="--tone:var(--primary)">
+      <div class="note__h">Five screens, one grammar</div>
+      Transactions · Accounts · Goals · Investments · Debts.
+      <br /><br />
+      Each one is a slip. Each one stamps its one big decision. Each one puts the quantity of
+      money at the top, where your eye lands first. Each one writes its consequences in the same
+      ruled clause. Nothing new to learn after the first.
+    </div>
+  </div>
+</div>
+
+  </main>
+</div>
+
+</body>
+</html>

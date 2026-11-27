@@ -1,25 +1,37 @@
 /**
- * GoalAddScreen — create a new savings goal.
+ * GoalAddScreen — a savings plan, as a slip.
  *
- * Goals are a plan-only scratchpad. The "Already saved" field is
- * *required* — the user must think about how much they have set aside
- * before they start tracking toward a target. Leaving it at zero is
- * fine if they're starting fresh, but it must be a deliberate choice,
- * not an oversight. The value becomes the first contribution entry
- * on the goal's contributions array.
+ * A goal is a NUMBER and a DATE, and everything else about it is
+ * derived. So the target sits in the headline slot — it is the thing
+ * you know the moment you open the screen — and the blanks below
+ * fill in the rest of the promise.
+ *
+ * The clause at the foot is where this screen earns its keep: it
+ * does the arithmetic that decides whether the plan actually works.
+ * "৳ 8,334 a month reaches ৳ 1,00,008 in 12 months — you hit your
+ * target in December 2027, with ৳ 8 to spare." A form field cannot
+ * answer that; a note field cannot either. This is the one add screen
+ * where the consequence is a projection, and a projection belongs in
+ * the document.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../domain/store';
 import * as goals from '../domain/goals';
 import { Button } from '../components/Button';
-import { Field, Input } from '../components/Field';
 import {
-  isPositiveMoney,
-  isNonNegativeMoney,
-  POSITIVE_MONEY_ERROR,
-  NON_NEGATIVE_MONEY_ERROR,
-} from '../lib/validation';
+  Blank,
+  Clause,
+  Recap,
+  Slip,
+  SlipAmount,
+  SlipFoot,
+  SlipHead,
+} from '../components/AddSlip';
+import { monthsBetween, parseISODate, today } from '../domain/math';
+import { fmtBDT } from '../lib/format';
+import { isPositiveMoney, isNonNegativeMoney } from '../lib/validation';
+import { Check } from '../components/icons/Icons';
 
 export function GoalAddScreen() {
   const navigate = useNavigate();
@@ -37,7 +49,23 @@ export function GoalAddScreen() {
   // even if that's "0".
   const targetInvalid = !isPositiveMoney(target);
   const savedInvalid = !isNonNegativeMoney(saved);
-  const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
+
+  const targetNum = Number(target) || 0;
+  const savedNum = Number(saved) || 0;
+  const remaining = Math.max(0, targetNum - savedNum);
+
+  // The arithmetic: how many months are left, and what a month has to
+  // be for the plan to land on the target.
+  const monthsLeft = targetDate ? monthsBetween(today(new Date()), targetDate) : 0;
+  const perMonth = monthsLeft > 0 ? remaining / monthsLeft : 0;
+
+  // Where the plan actually lands: the projected total, and the month
+  // the TARGET is in — not "today + N months". Adding N months to today
+  // lands one month early whenever the target date is early in its
+  // month, which would tell the user they finish in October when they
+  // asked for November.
+  const projected = savedNum + perMonth * Math.max(0, monthsLeft);
+  const landsOn = targetDate ? parseISODate(targetDate) : null;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,56 +98,111 @@ export function GoalAddScreen() {
     }
   }
 
+  const tone = 'var(--accent)';
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <header>
-        <h1 className="heading h1-screen">Add goal</h1>
-        <div className="text-muted text-[13px] mt-1.5">A target amount and a date — plus what you've already set aside.</div>
-      </header>
-      <section className="card flex flex-col gap-5">
-        <Field label="Name">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency fund, laptop…" autoFocus />
-        </Field>
-        <Field
+    <form onSubmit={onSubmit} className="addpage">
+      <Slip tone={tone}>
+        <SlipHead
+          what="New goal"
+          title="A promise to yourself"
+          sub="A target and a date. The gap between them is the monthly amount you’ll need to set aside."
+        />
+
+        {/* THE AMOUNT — the target is the headline. */}
+        <SlipAmount
+          label="Target amount"
+          value={target}
+          onChange={setTarget}
+          placeholder="100,000"
+          autoFocus
+          invalid={targetInvalid}
+        />
+
+        {/* THE BLANKS. */}
+        <Blank label="Name" hint="What you’re saving for. “Emergency fund” is fine." empty={!name.trim()}>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Emergency fund"
+            aria-label="Name"
+          />
+        </Blank>
+
+        <Blank label="By when" hint="The day you want to be there." empty={!targetDate}>
+          <input
+            type="date"
+            value={targetDate}
+            onChange={e => setTargetDate(e.target.value)}
+            aria-label="Target date"
+          />
+        </Blank>
+
+        <Blank
           label="Already saved"
-          hint="How much you've already set aside toward this goal. Enter 0 if you're starting fresh."
-          error={savedInvalid ? NON_NEGATIVE_MONEY_ERROR : undefined}
+          hint="How much you’ve set aside so far. Enter 0 if you’re starting fresh."
+          empty={saved === ''}
         >
-          <Input
+          <input
             type="number"
             inputMode="decimal"
+            min="0"
             value={saved}
             onChange={e => setSaved(e.target.value)}
             placeholder="0"
+            aria-label="Already saved"
             aria-invalid={savedInvalid || undefined}
-            className={savedInvalid ? invalidClass : ''}
+            className={savedInvalid ? 'border-danger focus:border-danger focus:ring-danger/30' : ''}
           />
-        </Field>
-        <Field label="Target amount" hint="Total amount you want to reach by the deadline." error={targetInvalid ? POSITIVE_MONEY_ERROR : undefined}>
-          <Input
-            type="number"
-            inputMode="decimal"
-            value={target}
-            onChange={e => setTarget(e.target.value)}
-            placeholder="50000"
-            aria-invalid={targetInvalid || undefined}
-            className={targetInvalid ? invalidClass : ''}
-          />
-        </Field>
-        <Field label="Target date" hint="Drives the 'save ৳X / month' suggestion on the goal.">
-          <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
-        </Field>
-        <div className="flex gap-2">
+        </Blank>
+
+        {/* THE CLAUSE — does the plan work? */}
+        <Clause tone={tone} icon={<Check strokeWidth={2} />}>
+          {!targetDate ? (
+            <>Pick a date and this will tell you what to save each month to get there.</>
+          ) : monthsLeft <= 0 ? (
+            <>That date has already passed — pick a future one to work out a monthly plan.</>
+          ) : (
+            <>
+              <b>{fmtBDT(Math.round(perMonth))}</b> a month reaches <b>{fmtBDT(Math.round(projected))}</b> in{' '}
+              {monthsLeft} {monthsLeft === 1 ? 'month' : 'months'}
+              {landsOn && (
+                <>
+                  {' '}— you hit your target in {monthNames[landsOn.getUTCMonth()]} {landsOn.getUTCFullYear()}
+                </>
+              )}
+              {projected >= targetNum ? ', just in time.' : ', a little short — save a bit more each month.'}
+            </>
+          )}
+        </Clause>
+
+        <SlipFoot
+          note="You can add contributions as you save them, and the goal page tracks what is left."
+        >
+          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/goals')}>Cancel</Button>
           <Button
             variant="outlined-primary"
             type="submit"
             disabled={targetInvalid || savedInvalid || !name.trim() || !targetDate}
           >
-            Save goal
+            Set the goal
           </Button>
-          <Button variant="outlined-ghost" onClick={() => navigate('/goals')}>Cancel</Button>
-        </div>
-      </section>
+        </SlipFoot>
+      </Slip>
+
+      <div className="addpage__side">
+        <Recap
+          rows={[
+            { k: 'Target', v: target.trim() ? fmtBDT(targetNum) : '—' },
+            { k: 'Already saved', v: saved.trim() ? fmtBDT(savedNum) : '—' },
+            { k: 'Still to go', v: target.trim() ? fmtBDT(remaining) : '—' },
+            { k: 'Time left', v: monthsLeft > 0 ? `${monthsLeft} months` : '—' },
+            { k: 'Save each month', v: perMonth > 0 ? fmtBDT(Math.round(perMonth)) : '—', total: true },
+          ]}
+        />
+      </div>
     </form>
   );
 }

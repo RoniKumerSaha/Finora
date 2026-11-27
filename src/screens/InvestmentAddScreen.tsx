@@ -1,16 +1,19 @@
 /**
- * InvestmentAddScreen — add a new investment (DPS / FDR / Savings).
+ * InvestmentAddScreen — park your money, as a slip.
  *
- * Type-aware: when type === 'dps', the form shows a monthlyContribution
- * field and the "principal" field is hidden (DPS is contribution-based).
- * Maturity preview uses annuity-due for DPS, simple interest otherwise.
+ * An investment is a PLACE, and the three kinds of place are not
+ * variations on one form — a DPS is money that arrives every month,
+ * an FDR is a lump sum that sits still for a term, and savings is
+ * the same shape as an FDR with a softer name. So the TYPE is the
+ * first stamp, and each stamp brings its own question with it:
+ * "every month" for a DPS, "principal" for an FDR or savings.
  *
- * The payout-account dropdown shows the live balance beneath it, matching
- * the transfer form's From/To pattern so users see what'll receive the
- * maturity value.
- *
- * 2026-08-14 polish: header section, polished review callout with
- * subtle accent surface, refined spacing rhythm.
+ * The clause at the foot does the one piece of arithmetic the form
+ * cannot: where this money ends up. "Over 60 months you'd put in
+ * ৳ 3,00,000 and it would grow to ৳ 3,67,466 — ৳ 67,466 of
+ * interest." That is the question people actually have when they
+ * open this screen, so it is answered inside the document rather
+ * than in a review box they might not scroll to.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,11 +21,31 @@ import { useStore } from '../domain/store';
 import * as investments from '../domain/investments';
 import * as accounts from '../domain/accounts';
 import { Button } from '../components/Button';
-import { Field, Input, Select } from '../components/Field';
+import { Select } from '../components/Field';
+import {
+  Blank,
+  BlankStack,
+  Clause,
+  Recap,
+  Slip,
+  SlipAmount,
+  SlipFoot,
+  SlipHead,
+  Stamp,
+  StampGroup,
+} from '../components/AddSlip';
 import { accountBalance } from '../domain/math';
 import { fmtBDT } from '../lib/format';
-import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
+import { isPositiveMoney } from '../lib/validation';
+import { ArrowUp, Clock } from '../components/icons/Icons';
 import type { InvestmentType } from '../domain/types';
+
+/** Each kind of place has its own colour identity. */
+const TONE: Record<InvestmentType, string> = {
+  dps: 'var(--primary)',
+  fdr: 'var(--accent)',
+  savings: 'var(--info)',
+};
 
 export function InvestmentAddScreen() {
   const navigate = useNavigate();
@@ -48,12 +71,23 @@ export function InvestmentAddScreen() {
   const isDps = type === 'dps';
   const termInDays = !isDps && useDays;
 
+  // Switching type has to clear the other type's amount field, or a
+  // leftover principal would silently follow you from an FDR to a DPS.
+  function onChangeType(next: InvestmentType) {
+    setType(next);
+    if (next === 'dps') {
+      setPrincipal('');
+    } else {
+      setMonthlyContribution('');
+    }
+  }
+
   // Inline guard (spine: ux-finora-2026-08-14-negative-guard).
   // Principal applies only to non-DPS (FDR / savings); monthlyContribution
   // applies only to DPS. Each field independently validates.
   const principalInvalid = !isPositiveMoney(principal);
   const monthlyInvalid = !isPositiveMoney(monthlyContribution);
-  const invalidClass = 'border-danger focus:border-danger focus:ring-danger/30';
+  const amountInvalid = isDps ? monthlyInvalid : principalInvalid;
 
   const matPreview = (() => {
     const r = Number(rate);
@@ -90,6 +124,16 @@ export function InvestmentAddScreen() {
     if (next) setTermMonths('');
     else setTermDays('');
   }
+
+  // What actually goes IN, and what comes OUT at the end.
+  const putIn = isDps
+    ? Number(monthlyContribution) * (Number(termMonths) || 0)
+    : Number(principal) || 0;
+  const growth = matPreview != null ? Math.max(0, matPreview - putIn) : 0;
+
+  const payoutAcc = accs.find(a => a.id === payoutAccountId);
+  const payoutBal = accountBalance(payoutAcc, state.transactions);
+  const payoutAfter = !isDps ? payoutBal - (Number(principal) || 0) : payoutBal;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -159,134 +203,235 @@ export function InvestmentAddScreen() {
     }
   }
 
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-md">
-      <header>
-        <h1 className="heading h1-screen">Add investment</h1>
-        <div className="text-muted text-[13px] mt-1.5">DPS, FDR, or interest-bearing savings.</div>
-      </header>
+  const tone = TONE[type];
+  const termMonthsNum = Number(termMonths) || 0;
 
-      <section className="card flex flex-col gap-5">
-        <Field label="Name">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="DPS #1, Main FDR…" autoFocus />
-        </Field>
-        <Field label="Type">
-          <Select value={type} onChange={e => setType(e.target.value as InvestmentType)}>
-            <option value="dps">DPS (monthly installment)</option>
-            <option value="fdr">FDR (lump-sum, fixed term)</option>
-            <option value="savings">Savings (interest-bearing)</option>
-          </Select>
-        </Field>
-        {isDps ? (
-          <Field label="Monthly contribution" hint="What you pay each month into this DPS." error={monthlyInvalid ? POSITIVE_MONEY_ERROR : undefined}>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={monthlyContribution}
-              onChange={e => setMonthlyContribution(e.target.value)}
-              placeholder="5000"
-              aria-invalid={monthlyInvalid || undefined}
-              className={monthlyInvalid ? invalidClass : ''}
-            />
-          </Field>
-        ) : (
-          <Field label="Principal" hint="The amount you're placing into this investment." error={principalInvalid ? POSITIVE_MONEY_ERROR : undefined}>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={principal}
-              onChange={e => setPrincipal(e.target.value)}
-              placeholder="100000"
-              aria-invalid={principalInvalid || undefined}
-              className={principalInvalid ? invalidClass : ''}
-            />
-          </Field>
-        )}
-        <Field label="Rate (% per year)" hint="Annual rate. Simple interest for FDR/savings (compounded monthly for DPS).">
-          <Input type="number" inputMode="decimal" value={rate} onChange={e => setRate(e.target.value)} placeholder="8" />
-        </Field>
-        <Field label="Start date">
-          <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        </Field>
+  return (
+    <form onSubmit={onSubmit} className="addpage">
+      <Slip tone={tone}>
+        <SlipHead
+          what="New investment"
+          title={isDps ? 'A monthly scheme' : type === 'fdr' ? 'A fixed deposit' : 'An interest account'}
+          sub={
+            isDps
+              ? 'You pay a fixed amount every month and the bank grows it until the term ends.'
+              : 'You park a lump sum for a fixed term and collect it back with interest.'
+          }
+        />
+
+        {/* THE KIND — three stamps, each with its own question. */}
+        <StampGroup label="Kind">
+          <Stamp
+            on={isDps}
+            onClick={() => onChangeType('dps')}
+            icon={<ArrowUp strokeWidth={2} />}
+            title="DPS"
+            sub="Every month"
+          />
+          <Stamp
+            on={type === 'fdr'}
+            onClick={() => onChangeType('fdr')}
+            icon={<Clock strokeWidth={2} />}
+            title="FDR"
+            sub="Lump sum · fixed term"
+          />
+          <Stamp
+            on={type === 'savings'}
+            onClick={() => onChangeType('savings')}
+            icon={<Clock strokeWidth={2} />}
+            title="Savings"
+            sub="Interest-bearing"
+          />
+        </StampGroup>
+
+        {/* THE AMOUNT — the headline, and it means different things
+            per kind, so the label follows the stamp. */}
+        <SlipAmount
+          label={isDps ? 'Every month' : 'Principal'}
+          value={isDps ? monthlyContribution : principal}
+          onChange={isDps ? setMonthlyContribution : setPrincipal}
+          placeholder={isDps ? '5,000' : '100,000'}
+          autoFocus
+          invalid={amountInvalid}
+        />
+
+        {/* THE BLANKS. */}
+        <Blank label="Name" hint="What you call this. “DPS #1” or the bank’s scheme name is fine." empty={!name.trim()}>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="DPS #1"
+            aria-label="Name"
+          />
+        </Blank>
+
+        <Blank
+          label="Rate"
+          hint={isDps
+            ? 'Annual rate. A DPS compounds it every month.'
+            : 'Annual rate. Simple interest — no compounding.'}
+          empty={rate === ''}
+        >
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={rate}
+            onChange={e => setRate(e.target.value)}
+            placeholder="8"
+            aria-label="Rate"
+          />
+        </Blank>
+
         {!isDps && (
-          <label className="flex items-center gap-2 text-[13px] text-muted -mt-2">
-            <input
-              type="checkbox"
-              checked={useDays}
-              onChange={e => toggleUseDays(e.target.checked)}
-              className="accent-[var(--accent)]"
-            />
-            <span>Use days instead of months (for short-term terms &lt; 1 month)</span>
-          </label>
+          <BlankStack label="Term" hint="How long it stays parked. Days are for short deposits under a month.">
+            <div className="chipset">
+              <button
+                type="button"
+                className={`chipset__c${!useDays ? ' on' : ''}`}
+                onClick={() => toggleUseDays(false)}
+                aria-pressed={!useDays}
+              >
+                Months
+              </button>
+              <button
+                type="button"
+                className={`chipset__c${useDays ? ' on' : ''}`}
+                onClick={() => toggleUseDays(true)}
+                aria-pressed={useDays}
+              >
+                Days
+              </button>
+            </div>
+          </BlankStack>
         )}
+
         {termInDays ? (
-          <Field label="Term (days)" hint="For short-term deposits under a month. Maturity = start + this many days.">
-            <Input type="number" inputMode="numeric" value={termDays} onChange={e => setTermDays(e.target.value)} placeholder="15" />
-          </Field>
+          <Blank label="Days" hint="For short-term deposits. Maturity = start + this many days." empty={termDays === ''}>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={termDays}
+              onChange={e => setTermDays(e.target.value)}
+              placeholder="15"
+              aria-label="Term in days"
+            />
+          </Blank>
         ) : (
-          <Field label="Term (months)" hint="Use the same number of months as your bank contract.">
-            <Input type="number" inputMode="numeric" value={termMonths} onChange={e => setTermMonths(e.target.value)} placeholder="12" />
-          </Field>
+          <Blank label={isDps ? 'Months' : 'Term'} hint={isDps
+            ? 'How many monthly installments run before it matures.'
+            : 'The same number of months as your bank contract.'}
+            empty={termMonths === ''}>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={termMonths}
+              onChange={e => setTermMonths(e.target.value)}
+              placeholder="60"
+              aria-label="Term in months"
+            />
+          </Blank>
         )}
-        <Field label="Account" hint={isDps ? 'Where each monthly contribution comes from. (You\'ll pick it again on each contribution.)' : 'Required for FDR and savings — the principal is deducted from this account on creation and the maturity value returns here.'}>
-          <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)}>
+
+        <Blank label="Starts on" hint="The day the first money moves." empty={!startDate}>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            aria-label="Start date"
+          />
+        </Blank>
+
+        <Blank
+          label="Payout to"
+          hint={isDps
+            ? 'Where the maturity value comes back to.'
+            : 'Required — the principal is deducted from this account now, and the maturity value returns here.'}
+        >
+          <Select value={payoutAccountId} onChange={e => setPayoutAccountId(e.target.value)} aria-label="Payout account">
             <option value="">— None —</option>
             {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </Select>
-          {payoutAccountId && (
-            <div className="text-xs text-muted mt-1.5 tabular">
-              Balance: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions))}
-              {!isDps && Number(principal) > 0 && (
-                <span className="text-ink/70">
-                  {' '}→ after parking: {fmtBDT(accountBalance(accs.find(a => a.id === payoutAccountId), state.transactions) - Number(principal))}
-                </span>
-              )}
-            </div>
+        </Blank>
+
+        <Blank label="Institution" hint="Bank or NBFI holding this. Optional." empty={!institution.trim()}>
+          <input
+            type="text"
+            value={institution}
+            onChange={e => setInstitution(e.target.value)}
+            placeholder="Bank name"
+            aria-label="Institution"
+          />
+        </Blank>
+
+        {/* THE CLAUSE — where the money ends up. */}
+        <Clause tone={tone} icon={<Clock strokeWidth={2} />}>
+          {matPreview != null ? (
+            <>
+              Over {termInDays ? Number(termDays) : termMonthsNum}{' '}
+              {termInDays ? 'days' : 'months'} you’d put in <b>{fmtBDT(putIn)}</b> and it would grow to{' '}
+              <b>{fmtBDT(matPreview)}</b>
+              {growth > 0 && <> — <b>{fmtBDT(growth)}</b> of interest</>}. Actual payout may differ.
+            </>
+          ) : (
+            <>Fill in the amount, rate and term and this will show what the money grows to.</>
           )}
-        </Field>
-        <Field label="Institution (optional)" hint="Bank or NBFI holding this investment.">
-          <Input value={institution} onChange={e => setInstitution(e.target.value)} placeholder="Bank name…" />
-        </Field>
-        {matPreview != null && (
-          <div
-            className="rounded-btn px-3.5 py-3 text-[13px] leading-relaxed"
-            style={{
-              background: 'var(--accent-soft)',
-              border: '1px solid var(--accent)',
-              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent)',
-              color: 'var(--ink)',
-            }}
-          >
-            <div>
-              <strong style={{ color: 'var(--accent)' }}>Review:</strong> You'll receive about{' '}
-              <strong className="tabular">৳{Math.round(matPreview).toLocaleString('en-IN')}</strong>{' '}
-              at maturity <span className="opacity-70">(projection — actual payout may differ).</span>
-            </div>
-            <div className="text-muted text-[12.5px] mt-1">
-              {isDps
-                ? 'Annuity-due: monthly contribution compounded at the stated rate for the full term.'
-                : termInDays
-                  ? 'Formula: principal × (1 + rate/100 × termDays/365). Simple interest, no compounding.'
-                  : 'Formula: principal × (1 + rate/100 × termMonths/12). Simple interest, no compounding.'}
-            </div>
-          </div>
-        )}
-        <div className="flex gap-2">
+        </Clause>
+
+        <SlipFoot
+          note={
+            isDps
+              ? 'Each monthly installment is recorded on the scheme’s own page, and you choose the account each time.'
+              : 'The principal leaves your account the moment you save this. The maturity value comes back to the same account.'
+          }
+        >
+          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/investments')}>Cancel</Button>
           <Button
             variant="outlined-primary"
             type="submit"
-            disabled={
-              !name.trim()
-              || (isDps ? monthlyInvalid : principalInvalid)
-              || !(Number(rate) >= 0)
-              || !termValid
-            }
+            disabled={!name.trim() || amountInvalid || !(Number(rate) >= 0) || !termValid}
           >
             Save investment
           </Button>
-          <Button variant="outlined-ghost" onClick={() => navigate('/investments')}>Cancel</Button>
-        </div>
-      </section>
+        </SlipFoot>
+      </Slip>
+
+      <div className="addpage__side">
+        <Recap
+          rows={[
+            { k: 'Kind', v: isDps ? 'DPS' : type === 'fdr' ? 'FDR' : 'Savings', tone },
+            {
+              k: isDps ? 'Every month' : 'Principal',
+              v: isDps
+                ? (monthlyContribution.trim() ? fmtBDT(Number(monthlyContribution) || 0) : '—')
+                : (principal.trim() ? fmtBDT(Number(principal) || 0) : '—'),
+            },
+            { k: 'Rate', v: rate.trim() ? `${Number(rate) || 0}% / yr` : '—' },
+            {
+              k: 'Term',
+              v: termInDays
+                ? (termDays.trim() ? `${Number(termDays) || 0} days` : '—')
+                : (termMonths.trim() ? `${termMonthsNum} months` : '—'),
+            },
+            { k: 'Account', v: payoutAcc?.name ?? '—' },
+            ...(matPreview != null
+              ? [{ k: 'At maturity', v: fmtBDT(matPreview), total: true }]
+              : [{ k: 'At maturity', v: '—', total: true }]),
+          ]}
+        />
+        {payoutAcc && !isDps && Number(principal) > 0 && (
+          <div className="notes" style={{ marginTop: 12 }}>
+            <div className="note">
+              {payoutAcc.name} goes from <b>{fmtBDT(payoutBal)}</b> to <b>{fmtBDT(payoutAfter)}</b> when
+              you park the money.
+            </div>
+          </div>
+        )}
+      </div>
     </form>
   );
 }

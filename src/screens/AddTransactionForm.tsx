@@ -1,20 +1,32 @@
 /**
- * AddTransactionForm — shared body for the three per-type add screens
- * (AddExpenseScreen / AddIncomeScreen / AddTransferScreen).
+ * AddTransactionForm — the add-transaction screen, as a SLIP.
  *
- * Visual target: docs/ux-designs/.../mockups/v1/index.html#add-expense
- *   - .card max-width 720px, padding 24px (rounded-card)
- *   - label micro-uppercase 12px tracked muted
- *   - big primary amount field (32px, primary text, r-btn)
- *   - chip cloud for category picker (expense grouped, income flat)
- *   - 1fr 1fr grid for Account + Date
- *   - action row: right-aligned Cancel + Save primary buttons
+ * The screen is ONE document: the entry you are about to write into
+ * your ledger, drawn at full width with its blanks still open. You
+ * fill it in place.
  *
- * Behavior:
- *   - amount stored as string so the input is fully editable
- *   - "Save" submits via transactions.add and navigates to /transactions
- *   - validation errors come back as a banner (no inline three-part
- *     here — that lives in lib/errors.ts if you want it)
+ * That shape comes from three decisions:
+ *
+ *   1. **The amount is the headline.** It is the one thing you always
+ *      know the moment you open the screen, so it gets the biggest
+ *      type on the page — not a field among fields.
+ *
+ *   2. **The direction is a stamp you press, not a dropdown.** Came
+ *      in / Went out / Moved are all visible at once, so you always
+ *      see the alternative you are not choosing. This matters most
+ *      here: "I withdrew cash from the ATM" reads like an expense
+ *      until you remember it is your own money walking to another
+ *      account — and a dropdown hides that option behind a closed
+ *      list.
+ *
+ *   3. **The consequence is a clause of the record**, written inside
+ *      the document: "Cash goes from ৳ 53,500 to ৳ 51,000". It is not
+ *      a toast bolted under the form, where most phones never see it.
+ *
+ * The three per-type routes (`/transactions/new/{expense,income,
+ * transfer}`) still work — they set which stamp starts pressed — but
+ * pressing a different stamp on the slip switches the whole document
+ * under your hands, because that is what the direction decides.
  *
  * Linked-investment payout prefill (income only):
  *   When the user picks a `linkedInvestmentId`, auto-sync the Account
@@ -29,20 +41,55 @@ import { useStore } from '../domain/store';
 import * as accounts from '../domain/accounts';
 import * as transactions from '../domain/transactions';
 import { Button } from '../components/Button';
-import { Field, Input, Select, Textarea, AmountInput } from '../components/Field';
+import { Select, Textarea } from '../components/Field';
 import { CategoryGrid, PresetChips } from '../components/TypePicker';
-import { isPositiveMoney, POSITIVE_MONEY_ERROR } from '../lib/validation';
-import { ArrowLeftRight } from '../components/icons/Icons';
+import {
+  Blank,
+  BlankStack,
+  Clause,
+  Effects,
+  Recap,
+  Slip,
+  SlipAmount,
+  SlipFoot,
+  SlipHead,
+  Stamp,
+  StampGroup,
+} from '../components/AddSlip';
+import { isPositiveMoney } from '../lib/validation';
+import { ArrowLeftRight, ArrowDown, ArrowUp, Check } from '../components/icons/Icons';
 import type { TxType } from '../domain/types';
 import { mergeDefaults } from '../domain/persistence';
 
 interface AddTransactionFormProps {
   type: TxType;
-  title: string;
-  subtitle: string;
+  /** The old per-route heading. The slip derives its own head from the
+   *  pressed stamp, so this is accepted but no longer used. */
+  title?: string;
+  /** Same as `title` — kept so the route wrappers need no change. */
+  subtitle?: string;
 }
 
-export function AddTransactionForm({ type, title, subtitle }: AddTransactionFormProps) {
+/** Each direction wears its own colour, and the whole slip follows. */
+const TONE: Record<TxType, string> = {
+  income: 'var(--primary)',
+  expense: 'var(--danger)',
+  transfer: 'var(--info)',
+};
+
+/** The stamp labels — plain words, plus the examples that decide. */
+const DIRECTIONS: Array<{
+  key: TxType;
+  title: string;
+  sub: string;
+  icon: React.ReactNode;
+}> = [
+  { key: 'income',   title: 'Came in', sub: 'Salary · interest',      icon: <ArrowUp strokeWidth={2} /> },
+  { key: 'expense',  title: 'Went out', sub: 'Groceries · rent',       icon: <ArrowDown strokeWidth={2} /> },
+  { key: 'transfer', title: 'Moved',   sub: 'Between accounts',        icon: <ArrowLeftRight strokeWidth={2} /> },
+];
+
+export function AddTransactionForm({ type: initialType }: AddTransactionFormProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const update = useStore(s => s.update);
@@ -50,7 +97,10 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   const showToast = useStore(s => s.showToast);
   const state = useStore(s => s.state);
   const accs = accounts.list(state);
-  const cats = state.categories.filter(c => c.type === type);
+
+  // The direction is local state, seeded from the route. Pressing a
+  // stamp switches it — and the whole document below reshapes.
+  const [type, setType] = useState<TxType>(initialType);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -84,6 +134,8 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   useEffect(() => {
     if (saved) setSaved(false);
   }, [amount, accountId, fromAccountId, toAccountId, categoryId, date, note, linkedDebtId, linkedInvestmentId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cats = state.categories.filter(c => c.type === type);
 
   // When the user picks a From account that matches the current To
   // account, the To dropdown would be left holding an id that's no
@@ -143,9 +195,28 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
   // Inline negative-amount guard (spine: ux-finora-2026-08-14-negative-guard).
   // Transactions use the strict > 0 rule (zero is meaningless).
   const amountInvalid = !isPositiveMoney(amount);
-  const amountErrorClass = amountInvalid
-    ? 'border-danger focus:border-danger focus:ring-danger/30'
-    : '';
+
+  const amountNum = Number(amount) || 0;
+
+  // The consequence, computed from the live form.
+  const fromBal = type === 'transfer'
+    ? accountBalance(accs.find(a => a.id === fromAccountId), state.transactions)
+    : 0;
+  const toBal = type === 'transfer'
+    ? accountBalance(accs.find(a => a.id === toAccountId), state.transactions)
+    : 0;
+  const singleBal = type === 'transfer'
+    ? 0
+    : accountBalance(accs.find(a => a.id === accountId), state.transactions);
+  const afterSingle = type === 'income'
+    ? singleBal + amountNum
+    : type === 'expense'
+      ? singleBal - amountNum
+      : singleBal;
+
+  const fromAcc = accs.find(a => a.id === fromAccountId);
+  const toAcc = accs.find(a => a.id === toAccountId);
+  const singleAcc = accs.find(a => a.id === accountId);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -190,39 +261,84 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
     }
   }
 
+  const isTransfer = type === 'transfer';
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[720px]">
-      <div>
-        <h1 className="heading h1-screen">{title}</h1>
-        <div className="text-muted text-[13px] mt-1.5">{subtitle}</div>
-      </div>
+    <form onSubmit={onSubmit} className="addpage">
+      <Slip tone={TONE[type]}>
+        <SlipHead
+          what="New entry"
+          title={isTransfer ? 'A transfer' : type === 'income' ? 'An income' : 'An expense'}
+          sub={
+            isTransfer
+              ? 'Your money, moving. Two balances change — your net worth does not.'
+              : type === 'income'
+                ? 'One line in your ledger. This raises the balance of the account you name.'
+                : 'One line in your ledger. This lowers the balance of the account you name.'
+          }
+        />
 
-      <section className="card">
-        <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>
-          <AmountInput
-            type="number"
-            inputMode="decimal"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            placeholder={type === 'transfer' ? '5,000' : type === 'expense' ? '250' : '60,000'}
-            autoFocus
-            aria-invalid={amountInvalid || undefined}
-            className={amountErrorClass}
-          />
-          {type === 'expense' && (
-            <>
-              <div className="text-xs text-muted mt-1">Tap a preset chip to autofill common amounts.</div>
-              <PresetChips
-                amounts={[50, 100, 250, 500, 1000]}
-                onPick={n => setAmount(String(n))}
+        {/* THE STAMP — the one big decision, pressed not selected. */}
+        <StampGroup label="Direction">
+          {DIRECTIONS.map(d => (
+            <Stamp
+              key={d.key}
+              on={type === d.key}
+              onClick={() => setType(d.key)}
+              icon={d.icon}
+              title={d.title}
+              sub={d.sub}
+            />
+          ))}
+        </StampGroup>
+
+        {/* THE AMOUNT — the headline. */}
+        <SlipAmount
+          label={isTransfer ? 'Amount moved' : 'Amount'}
+          value={amount}
+          onChange={setAmount}
+          placeholder={isTransfer ? '10,000' : type === 'expense' ? '2,500' : '60,000'}
+          autoFocus
+          invalid={amountInvalid}
+        />
+
+        {type === 'expense' && (
+          <div className="pt-3">
+            <PresetChips amounts={[50, 100, 250, 500, 1000]} onPick={n => setAmount(String(n))} />
+          </div>
+        )}
+
+        {/* THE BLANKS. */}
+        {isTransfer ? (
+          <>
+            <Blank label="From" hint="Where the money is now.">
+              <Select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)} aria-label="From">
+                {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </Select>
+            </Blank>
+            <Blank label="To" hint="Where the money is going.">
+              <Select value={toAccountId} onChange={e => setToAccountId(e.target.value)} aria-label="To">
+                {accs.filter(a => a.id !== fromAccountId).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </Select>
+            </Blank>
+            <Blank label="Date" hint="When it moved.">
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                aria-label="Date"
               />
-            </>
-          )}
-        </Field>
+            </Blank>
+          </>
+        ) : (
+          <>
+            <Blank label="Account" hint="The balance this entry changes.">
+              <Select value={accountId} onChange={e => setAccountId(e.target.value)} aria-label="Account">
+                {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </Select>
+            </Blank>
 
-        {type !== 'transfer' && (
-          <div className="mt-5">
-            <Field
+            <BlankStack
               label="Category (optional)"
               hint="Pick a category, or skip — transactions can be uncategorised."
             >
@@ -246,66 +362,83 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
                    hint explains why the section is appearing empty. */
                 <EmptyCategoryState type={type} />
               )}
-            </Field>
-          </div>
+            </BlankStack>
+
+            <Blank label="Date" hint="When it happened.">
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                aria-label="Date"
+              />
+            </Blank>
+
+            <Blank label="Note (optional)" hint="What was it for?" empty={!note.trim()}>
+              <Textarea
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder={type === 'expense' ? 'Lunch with team' : 'September salary'}
+                aria-label="Note"
+                className="min-h-[52px]"
+              />
+            </Blank>
+          </>
         )}
 
-        {type === 'transfer' ? (
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 sm:items-center">
-            <Field label="From">
-              <Select value={fromAccountId} onChange={e => setFromAccountId(e.target.value)}>
-                {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </Select>
-              <div className="text-xs text-muted mt-1.5">
-                Balance: {fmtAccountBalance(fromAccountId, state)}
-                {Number(amount) > 0 && (
-                  <span className="text-ink/70">
-                    {' '}→ projected balance after save: {fmtBDT(accountBalance(accs.find(a => a.id === fromAccountId), state.transactions) - Number(amount))}
-                  </span>
-                )}
-              </div>
-            </Field>
-            <div className="flex items-center justify-center self-center text-accent">
-              <ArrowLeftRight className="w-7 h-7" strokeWidth={1.75} />
-            </div>
-            <Field label="To">
-              <Select value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
-                {accs.filter(a => a.id !== fromAccountId).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </Select>
-              <div className="text-xs text-muted mt-1.5">
-                Balance: {fmtAccountBalance(toAccountId, state)}
-                {Number(amount) > 0 && (
-                  <span className="text-ink/70">
-                    {' '}→ projected balance after save: {fmtBDT(accountBalance(accs.find(a => a.id === toAccountId), state.transactions) + Number(amount))}
-                  </span>
-                )}
-              </div>
-            </Field>
-          </div>
-        ) : (
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Account">
-              <Select value={accountId} onChange={e => setAccountId(e.target.value)}>
-                {accs.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </Select>
-              {accountId && (
-                <div className="text-xs text-muted mt-1.5">
-                  Balance: {fmtAccountBalance(accountId, state)}
-                  {Number(amount) > 0 && (
-                    <span className="text-ink/70">
-                      {' '}→ projected balance after save: {fmtBDT(afterBalance(accountId, Number(amount), type, state))}
-                    </span>
-                  )}
-                </div>
-              )}
-            </Field>
-            <Field label="Date">
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </Field>
-          </div>
+        {/* The linked-debt block, shown only when it applies. */}
+        {type === 'expense' && activeDebts.length > 0 && (
+          <Blank label="Linked debt (optional)" hint="Tag this entry as a payment toward a debt.">
+            <Select
+              value={linkedDebtId}
+              onChange={e => {
+                setLinkedDebtId(e.target.value);
+                if (e.target.value) setLinkedInvestmentId('');
+              }}
+              aria-label="Linked debt"
+            >
+              <option value="">— None —</option>
+              {activeDebts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </Select>
+          </Blank>
         )}
 
-        {type === 'income' && payoutMismatch && (
+        {type === 'income' && activeDebts.filter(d => d.direction === 'owed_to_me').length > 0 && (
+          <Blank label="Linked debt (optional)" hint="Tag this income as repayment of money someone owed you.">
+            <Select
+              value={linkedDebtId}
+              onChange={e => {
+                setLinkedDebtId(e.target.value);
+                if (e.target.value) setLinkedInvestmentId('');
+              }}
+              aria-label="Linked debt"
+            >
+              <option value="">— None —</option>
+              {activeDebts
+                .filter(d => d.direction === 'owed_to_me')
+                .map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </Select>
+          </Blank>
+        )}
+
+        {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
+          <Blank label="Linked investment (optional)" hint="Routes the money to that investment's payout account.">
+            <Select
+              value={linkedInvestmentId}
+              onChange={e => {
+                setLinkedInvestmentId(e.target.value);
+                if (e.target.value) setLinkedDebtId('');
+              }}
+              aria-label="Linked investment"
+            >
+              <option value="">— None —</option>
+              {state.investments
+                .filter(i => i.status !== 'closed')
+                .map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            </Select>
+          </Blank>
+        )}
+
+        {payoutMismatch && (
           <div className="mt-4 text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
             <strong>Heads up:</strong> payout account for <span className="font-semibold">{linkedInv?.name}</span> is{' '}
             <span className="font-semibold">{payoutAccName}</span>. You're sending this income to{' '}
@@ -314,104 +447,90 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
           </div>
         )}
 
-        {type !== 'transfer' && (
-          <div className="mt-5">
-            <Field label="Note (optional)">
-              <Textarea
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder={type === 'expense' ? 'Lunch with team' : type === 'income' ? 'September salary' : ''}
-              />
-            </Field>
-          </div>
+        {/* THE CLAUSE — the consequence, written inside the document. */}
+        {isTransfer ? (
+          <>
+            <Effects
+              fromLabel="From"
+              fromName={fromAcc?.name ?? '—'}
+              fromBefore={fmtBDT(fromBal)}
+              fromAfter={fmtBDT(fromBal - amountNum)}
+              toLabel="To"
+              toName={toAcc?.name ?? '—'}
+              toBefore={fmtBDT(toBal)}
+              toAfter={fmtBDT(toBal + amountNum)}
+              arrow={<ArrowLeftRight strokeWidth={2} />}
+            />
+            <Clause tone={TONE[type]} icon={<ArrowLeftRight strokeWidth={2} />}>
+              Two balances move. Your <b>net worth does not</b> — this is your own money, changing pockets.
+            </Clause>
+          </>
+        ) : (
+          <Clause tone={TONE[type]} icon={type === 'income' ? <ArrowUp strokeWidth={2} /> : <ArrowDown strokeWidth={2} />}>
+            {!singleAcc ? (
+              <>Pick an account to see what this entry does to your balance.</>
+            ) : amountNum <= 0 ? (
+              // With no amount typed, "goes from ৳ 53,500 to ৳ 53,500" is
+              // a true sentence about nothing. Say what is pending instead.
+              <>
+                {singleAcc.name} sits at <b>{fmtBDT(singleBal)}</b>. Type an amount and
+                this line will show where it lands.
+              </>
+            ) : (
+              <>
+                {singleAcc.name} goes from <b>{fmtBDT(singleBal)}</b> to <b>{fmtBDT(afterSingle)}</b>.
+                This is the line that lands in your ledger.
+              </>
+            )}
+          </Clause>
         )}
 
-        {type === 'expense' && activeDebts.length > 0 && (
-          <div className="mt-5">
-            <Field label="Linked debt (optional)" hint="Tag this transaction as a payment toward a debt.">
-              <Select value={linkedDebtId} onChange={e => {
-                setLinkedDebtId(e.target.value);
-                if (e.target.value) setLinkedInvestmentId('');
-              }}>
-                <option value="">— None —</option>
-                {activeDebts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </Select>
-              {linkedDebtId && (() => {
-                const d = state.debts.find(x => x.id === linkedDebtId);
-                if (!d) return null;
-                const paid = debtPaidSoFar(d, state.transactions);
-                const remaining = Math.max(0, (Number(d.total) || 0) - paid);
-                return (
-                  <div className="text-xs text-muted mt-1.5">
-                    Remaining: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
-                  </div>
-                );
-              })()}
-            </Field>
-          </div>
-        )}
+        <SlipFoot
+          note={
+            singleAcc && !isTransfer ? (
+              <>
+                Filed against <b>{singleAcc.name}</b>
+                {categoryId ? <> under <b>{cats.find(c => c.id === categoryId)?.name}</b></> : null}.
+                You can edit or delete it any time afterwards.
+              </>
+            ) : (
+              <>A transfer is filed in your ledger but never counted as income or spending.</>
+            )
+          }
+        >
+          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/transactions')}>Cancel</Button>
+          <Button variant="outlined-primary" type="submit" disabled={amountInvalid} success={saved}>
+            {saved ? <><Check strokeWidth={2.5} /> Saved</> : isTransfer ? 'Save transfer' : type === 'income' ? 'Save income' : 'Save expense'}
+          </Button>
+        </SlipFoot>
+      </Slip>
 
-        {type === 'income' && activeDebts.filter(d => d.direction === 'owed_to_me').length > 0 && (
-          <div className="mt-5">
-            <Field label="Linked debt (optional)" hint="Tag this income as repayment of money someone owed you.">
-              <Select value={linkedDebtId} onChange={e => {
-                setLinkedDebtId(e.target.value);
-                if (e.target.value) setLinkedInvestmentId('');
-              }}>
-                <option value="">— None —</option>
-                {activeDebts
-                  .filter(d => d.direction === 'owed_to_me')
-                  .map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </Select>
-              {linkedDebtId && (() => {
-                const d = state.debts.find(x => x.id === linkedDebtId);
-                if (!d) return null;
-                const paid = debtPaidSoFar(d, state.transactions);
-                const remaining = Math.max(0, (Number(d.total) || 0) - paid);
-                return (
-                  <div className="text-xs text-muted mt-1.5">
-                    Remaining: <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
-                  </div>
-                );
-              })()}
-            </Field>
-          </div>
-        )}
-
-        {type === 'income' && state.investments.filter(i => i.status !== 'closed').length > 0 && (
-          <div className="mt-5">
-            <Field label="Linked investment (optional)" hint="Selecting one routes the money to that investment's payout account.">
-              <Select value={linkedInvestmentId} onChange={e => {
-                setLinkedInvestmentId(e.target.value);
-                if (e.target.value) setLinkedDebtId('');
-              }}>
-                <option value="">— None —</option>
-                {state.investments
-                  .filter(i => i.status !== 'closed')
-                  .map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </Select>
-              {linkedInvestmentId && (() => {
-                const i = state.investments.find(x => x.id === linkedInvestmentId);
-                if (!i) return null;
-                const isDps = i.type === 'dps';
-                const base = isDps ? dpsCurrentValue(i, state.transactions) : investmentMaturityValue(i);
-                const paidOut = dpsPaidOutSoFar(i, state.transactions);
-                const remaining = Math.max(0, base - paidOut);
-                return (
-                  <div className="text-xs text-muted mt-1.5">
-                    {isDps ? 'Current value' : 'At maturity'} (projection): <span className="font-semibold tabular">{fmtBDT(remaining)}</span>
-                  </div>
-                );
-              })()}
-            </Field>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2.5 mt-6">
-          <Button variant="outlined-ghost" type="button" onClick={() => navigate('/transactions/new')}>Cancel</Button>
-          <Button variant="outlined-primary" type="submit" disabled={amountInvalid} success={saved}>Save</Button>
-        </div>
-      </section>
+      <div className="addpage__side">
+        <Recap
+          rows={
+            isTransfer
+              ? [
+                  { k: 'Direction', v: 'Moved' },
+                  { k: 'Amount moved', v: amount.trim() ? fmtBDT(amountNum) : '—' },
+                  { k: 'From', v: fromAcc?.name ?? '—' },
+                  { k: 'To', v: toAcc?.name ?? '—' },
+                  { k: 'Net worth', v: 'unchanged', total: true },
+                ]
+              : [
+                  { k: 'Direction', v: type === 'income' ? 'Came in' : 'Went out', tone: TONE[type] },
+                  {
+                    k: 'Amount',
+                    v: amount.trim()
+                      ? `${type === 'income' ? '+' : '−'}${fmtBDT(amountNum)}`
+                      : '—',
+                  },
+                  { k: 'Account', v: singleAcc?.name ?? '—' },
+                  { k: 'Category', v: cats.find(c => c.id === categoryId)?.name ?? '—' },
+                  { k: `${singleAcc?.name ?? 'Account'} after`, v: fmtBDT(afterSingle), total: true },
+                ]
+          }
+        />
+      </div>
     </form>
   );
 }
@@ -419,7 +538,7 @@ export function AddTransactionForm({ type, title, subtitle }: AddTransactionForm
 /* ---------- helpers ---------- */
 
 import * as debts from '../domain/debts';
-import { accountBalance, debtPaidSoFar, dpsCurrentValue, dpsPaidOutSoFar, investmentMaturityValue } from '../domain/math';
+import { accountBalance } from '../domain/math';
 import { fmtBDT } from '../lib/format';
 import type { State } from '../domain/types';
 
@@ -453,7 +572,7 @@ function EmptyCategoryState({ type }: { type: 'income' | 'expense' }) {
   }
 
   return (
-    <div className="rounded-card border border-warn/40 bg-warn-soft px-4 py-3 flex flex-col gap-2">
+    <div className="rounded-btn border border-warn/40 bg-warn-soft px-4 py-3 flex flex-col gap-2">
       <div className="text-[13px] text-ink">
         No <span className="font-semibold">{type === 'income' ? 'income' : 'expense'}</span> categories available.
         Your saved data is safe — only the category list needs restoring.
@@ -469,23 +588,4 @@ function EmptyCategoryState({ type }: { type: 'income' | 'expense' }) {
 
 function debtsForCurrentType(state: State, _type: TxType) {
   return debts.list(state).filter(d => d.status === 'active');
-}
-
-function fmtAccountBalance(accountId: string, state: State): string {
-  const a = state.accounts.find(x => x.id === accountId);
-  if (!a) return '—';
-  return fmtBDT(accountBalance(a, state.transactions));
-}
-
-/**
- * Projected balance after the user saves the form. Income adds the
- * amount to the account; expense subtracts it. Uses the live state (not
- * the in-progress form state) so the number reflects "what the balance
- * will be once this transaction is recorded" rather than a double-count.
- */
-function afterBalance(accountId: string, amount: number, type: TxType, state: State): number {
-  const current = accountBalance(state.accounts.find(a => a.id === accountId), state.transactions);
-  if (type === 'income') return current + amount;
-  if (type === 'expense') return current - amount;
-  return current;
 }

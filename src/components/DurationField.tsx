@@ -49,6 +49,8 @@ export function DurationField({
   onChange,
   label = 'Term',
   hint,
+  hideLabel = false,
+  bare = false,
 }: {
   /** The canonical term, in whole months. */
   months: number;
@@ -57,6 +59,21 @@ export function DurationField({
   label?: string;
   /** Overrides the default hint for the active unit. */
   hint?: string;
+  /**
+   * Hide the label VISUALLY while keeping it in the accessibility
+   * tree. Used by the ruled forms, which already print the field name
+   * in their own left column — rendering it twice would say the same
+   * thing twice.
+   */
+  hideLabel?: boolean;
+  /**
+   * Render as the SLIP's ruled line: the number sits on the rule the
+   * blanks use, and the unit toggle sits beside it. The default
+   * rendering stacks them in a `Field` with a hint underneath, which
+   * is right for the planner forms but wrong for a slip, where every
+   * value is a line and nothing has a hint of its own.
+   */
+  bare?: boolean;
 }) {
   // The unit the user last chose. Seeded from the stored value so an
   // existing 36-month plan opens in Years ("3") rather than forcing the
@@ -80,47 +97,68 @@ export function DurationField({
     ? 'Years are converted to months — 1 year = 12 months.'
     : 'Use the same number of months as your bank contract.';
 
-  return (
-    <Field label={label} hint={hint ?? defaultHint}>
-      {/* The number input comes FIRST so `Field` associates the "Term"
-          label with it. */}
-      <Input
-        type="number"
-        inputMode={unit === 'years' ? 'decimal' : 'numeric'}
-        min={0}
-        step={unit === 'years' ? '0.5' : '1'}
-        value={value === 0 && months === 0 ? '' : String(value)}
-        onChange={e => onValueChange(e.target.value)}
-        placeholder={unit === 'years' ? '3' : '12'}
-      />
+  // The number input comes FIRST so `Field` associates the "Term"
+  // label with it.
+  const numberInput = (
+    <Input
+      type="number"
+      inputMode={unit === 'years' ? 'decimal' : 'numeric'}
+      min={0}
+      step={unit === 'years' ? '0.5' : '1'}
+      value={value === 0 && months === 0 ? '' : String(value)}
+      onChange={e => onValueChange(e.target.value)}
+      placeholder={unit === 'years' ? '3' : '12'}
+    />
+  );
 
-      {/* Unit toggle — a `group` of two `aria-pressed` buttons, using
-          the segmented idiom already established by SignInDialog and
-          BatchBudgetEditor. A decorative sibling of the control, so it
-          renders untouched by `Field`'s id-cloning. */}
-      <div
-        role="group"
-        aria-label="Term unit"
-        className="flex rounded-btn p-1 shrink-0 self-start"
-        style={{ background: 'var(--surface-2)' }}
-      >
-        {(['months', 'years'] as const).map(u => (
-          <button
-            key={u}
-            type="button"
-            aria-pressed={unit === u}
-            onClick={() => switchUnit(u)}
-            className={[
-              'px-2.5 py-1.5 rounded-btn text-[12px] font-semibold transition',
-              unit === u
-                ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
-                : 'text-muted hover:text-ink',
-            ].join(' ')}
-          >
-            {UNIT_LABEL[u]}
-          </button>
-        ))}
+  // Unit toggle — a `group` of two `aria-pressed` buttons, using
+  // the segmented idiom already established by SignInDialog and
+  // BatchBudgetEditor. A decorative sibling of the control, so it
+  // renders untouched by `Field`'s id-cloning.
+  const toggle = (
+    <div
+      role="group"
+      aria-label="Term unit"
+      className="flex rounded-btn p-1 shrink-0 self-start"
+      style={{ background: 'var(--surface-2)' }}
+    >
+      {(['months', 'years'] as const).map(u => (
+        <button
+          key={u}
+          type="button"
+          aria-pressed={unit === u}
+          onClick={() => switchUnit(u)}
+          className={[
+            'px-2.5 py-1.5 rounded-btn text-[12px] font-semibold transition',
+            unit === u
+              ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
+              : 'text-muted hover:text-ink',
+          ].join(' ')}
+        >
+          {UNIT_LABEL[u]}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (bare) {
+    // The slip's grammar: the number on its rule, the toggle beside
+    // it. `Field` is still used — invisibly — so the "Term" label
+    // keeps pointing at the input for screen readers and tests.
+    return (
+      <div className="flex items-center gap-2.5">
+        <Field label={label} hideLabel>
+          {numberInput}
+        </Field>
+        {toggle}
       </div>
+    );
+  }
+
+  return (
+    <Field label={label} hint={hint ?? defaultHint} hideLabel={hideLabel}>
+      {numberInput}
+      {toggle}
     </Field>
   );
 }
