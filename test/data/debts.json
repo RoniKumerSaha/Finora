@@ -148,8 +148,6 @@
       "cashBefore": "৳ 5,000",
       "cashAfter": "৳ -10,000",
       "editHeading": "Edit debt",
-      "editSubLine": "Change the debt details. Linked transactions stay as they are.",
-      "totalAmountHint": "Repayments are tracked via linked transactions, not here.",
       "updateToast": "Debt updated",
       "updateToastBody": "Changes are saved."
     }

@@ -722,13 +722,13 @@ Only one chip is active at a time — the filters are mutually exclusive.
 **Steps:** Open `#/debts/add`.
 **Expected:** A modal replaces the form: title **"Add an account first"**, body **"A debt records the cash that gave rise to it. Add an account in Settings → Accounts, then come back to track this debt."**, buttons **"Back"** and **"Open Settings"**.
 
-### FIN-DBT-10 — Debt edit screen is the detail screen
+### FIN-DBT-10 — The debt card opens the slip, and Edit opens the form
 **Steps:** Click a debt card.
-**Expected:** The app navigates to `#/debts/:id/edit` with H1 **"Edit debt"** and sub **"Change the debt details. Linked transactions stay as they are."** There is **no** separate debt-detail route.
+**Expected:** The app navigates to `#/debts/:id` — a read-only **slip** with H1 **the debt's name**, the certificate (terms, stamp, figures) and the Activity ledger. The screen is for **reading**; it carries an **"Edit"** button in its header. Clicking **"Edit"** navigates to `#/debts/:id/edit` with H1 **"Edit debt"**.
 
 ### FIN-DBT-11 — Edit screen has no account picker
 **Steps:** Inspect the edit form.
-**Expected:** Direction, Name, Total amount, Person (optional), Due date (optional) and the loan toggle. The account picker from the add form is **absent**. The sub-copy for Total amount changes to **"Repayments are tracked via linked transactions, not here."**
+**Expected:** Direction, Name, Total amount, Person (optional), Due date (optional) and the loan toggle. The account picker from the add form is **absent**. The form's back-link and the **"Cancel"** button both return to the slip at `#/debts/:id`.
 
 ### FIN-DBT-12 — Record a flat payment
 **Steps:** On the flat debt card, click **"Pay now"**.

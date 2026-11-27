@@ -986,8 +986,7 @@
 - Step 5 — the save is disabled and the field reads **"Pick an account."**
 - Step 6 — the card shows **"They've paid ৳ 0 of ৳ 15,000"**, **"Owed by Karim"** and a **"Receive now"** chip.
 - Step 7 — an **Expense** opening transaction of ৳15,000 is created, noted **"Debt: Lent to Karim"**, and `Cash` is debited by ৳15,000.
-- Step 8 — there is no separate detail route; the card opens `#/debts/:id/edit` with H1 **"Edit debt"** and the sub-line *"Change the debt details. Linked transactions stay as they are."* There is **no account picker**, the total-amount hint reads *"Repayments are tracked via linked transactions, not here."*, and saving raises a **toast** (not a banner) **"Debt updated"** / *"Changes are saved."*
-- *Known gap:* the PRD's debt detail screen is a distinct read-only view; the build folds it into the edit form.
+- Step 8 — the card opens the **slip** at `#/debts/:id` — a read-only view with H1 **the debt's name**, the certificate and the activity ledger. Clicking **"Edit"** opens `#/debts/:id/edit` with H1 **"Edit debt"**. There is **no account picker** on the edit screen, and saving raises a **toast** (not a banner) **"Debt updated"** / *"Changes are saved."* The save returns to the slip.
 
 **Automation:** `test/e2e/ui_tests/debts.spec.ts` → "FIN-D03 Debt direction, validation and the detail screen"
 

@@ -175,11 +175,16 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
     >
       {/* The full-card link overlay. `z-0` puts it under the
           document's own content, and every interactive child sits
-          above it via `z-[1]`. */}
+          above it via `z-[1]`.
+
+          The card opens the SLIP — the document you READ — and the
+          slip's own Edit button opens the edit pass. Opening the edit
+          form directly meant the card was never a place you could
+          look, only a place you could type. */}
       <Link
-        to={`/debts/${d.id}/edit`}
+        to={`/debts/${d.id}`}
         className="absolute inset-0 z-0"
-        aria-label={`Edit debt "${d.name}"`}
+        aria-label={`View debt "${d.name}"`}
       />
 
       <div className="debt-cert__head">
@@ -575,7 +580,7 @@ function CompletedSection({ rows }: { rows: any[] }) {
           return (
             <Link
               key={d.id}
-              to={`/debts/${d.id}/edit`}
+              to={`/debts/${d.id}`}
               className="group relative block py-3 border-t border-border first:border-0 row-hover -mx-2 px-2 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               <div className="flex justify-between items-center gap-3">

@@ -36,6 +36,7 @@ import { GoalAddScreen } from './screens/GoalAddScreen';
 import { GoalDetailScreen } from './screens/GoalDetailScreen';
 import { DebtsListScreen } from './screens/DebtsListScreen';
 import { DebtAddScreen } from './screens/DebtAddScreen';
+import { DebtDetailScreen } from './screens/DebtDetailScreen';
 import { DebtEditScreen } from './screens/DebtEditScreen';
 import { InvestmentsListScreen } from './screens/InvestmentsListScreen';
 import { InvestmentAddScreen } from './screens/InvestmentAddScreen';
@@ -143,6 +144,7 @@ export function App() {
 
           <Route path="/debts" element={<DebtsListScreen />} />
           <Route path="/debts/add" element={<DebtAddScreen />} />
+          <Route path="/debts/:id" element={<DebtDetailScreen />} />
           <Route path="/debts/:id/edit" element={<DebtEditScreen />} />
 
           <Route path="/investments" element={<InvestmentsListScreen />} />

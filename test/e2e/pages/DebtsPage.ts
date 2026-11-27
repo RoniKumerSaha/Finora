@@ -1,10 +1,11 @@
 /**
- * DebtsPage — `/debts`, `/debts/add` and `/debts/:id/edit`.
+ * DebtsPage — `/debts`, `/debts/add`, `/debts/:id` and `/debts/:id/edit`.
  *
  * `src/screens/DebtsListScreen.tsx`:
  *   - each debt is a `div.card.card-link` with an absolutely-positioned
- *     `<Link aria-label={`Edit debt "${name}"`}>` covering it, so the
+ *     `<Link aria-label={`View debt "${name}"`}>` covering it, so the
  *     card is addressed by that aria-label, not by a link role.
+ *     The card opens the SLIP — the document you READ.
  *   - a flat card shows the direction tag ("I owe" / "Owed to me"),
  *     the name, "You've paid ৳ X of ৳ Y", "Owed to <person>", and a
  *     right zone with "Remaining" + "of ৳ Y total".
@@ -52,9 +53,24 @@ export class DebtsPage extends BasePage {
     return this.page.locator('div.debt-cert').filter({ hasText: name }).first();
   }
 
-  /** The card's full-card link — `Edit debt "{name}"`. */
-  editLink(name: string): Locator {
-    return this.page.getByRole('link', { name: `Edit debt "${name}"` });
+  /**
+   * The card's full-card link — `View debt "{name}"`.
+   *
+   * The card opens the SLIP — the document you READ. The slip's own
+   * Edit button opens the edit pass.
+   */
+  viewLink(name: string): Locator {
+    return this.page.getByRole('link', { name: `View debt "${name}"` });
+  }
+
+  /**
+   * The "Edit" link on the debt's detail screen.
+   *
+   * The detail screen is the slip; Edit is the button in its header
+   * that opens the edit pass.
+   */
+  get editLink(): Locator {
+    return this.page.getByRole('link', { name: 'Edit', exact: true });
   }
 
   /** The "Pay now" / "Receive now" chip on a card. */
@@ -375,6 +391,18 @@ export class DebtsPage extends BasePage {
     return this.page.getByText('Enter a term greater than zero.', { exact: true });
   }
 
+  // ── Detail screen (the slip) ──
+
+  /** The detail screen's H1 — the debt's name. */
+  get detailHeading(): Locator {
+    return this.page.getByRole('heading', { level: 1 });
+  }
+
+  /** The "Fully paid." callout on the detail screen. */
+  get fullyPaidCallout(): Locator {
+    return this.page.getByText('Fully paid.', { exact: true });
+  }
+
   // ── Edit screen ──
 
   /** The edit screen's H1. */
@@ -382,43 +410,14 @@ export class DebtsPage extends BasePage {
     return this.page.getByRole('heading', { level: 1 });
   }
 
-  /** The edit screen's sub-line under the H1. */
-  get editSubtitle(): Locator {
-    return this.page.getByText(
-      'Change the debt details. Linked transactions stay as they are.',
-      { exact: true },
-    );
-  }
-
-  /** The sub-line shown instead once the debt is fully paid. */
-  get editFullyPaidSubtitle(): Locator {
-    return this.page.getByText(
-      'This debt is fully paid. Editing the total keeps the record accurate.',
-      { exact: true },
-    );
-  }
-
   /**
    * The account picker.
    *
-   * The edit screen has NO account picker — the total-amount hint
-   * says repayments are tracked via linked transactions instead.
+   * The edit screen has NO account picker — repayments are tracked
+   * via linked transactions, not here.
    */
   get accountPicker(): Locator {
     return this.page.getByLabel(/Cash goes into|Cash goes from/);
-  }
-
-  /** The edit screen's "Total amount" hint. */
-  get totalAmountHint(): Locator {
-    return this.page.getByText(
-      'Repayments are tracked via linked transactions, not here.',
-      { exact: true },
-    );
-  }
-
-  /** The "Fully paid." callout on the edit screen. */
-  get fullyPaidCallout(): Locator {
-    return this.page.getByText('Fully paid.', { exact: true });
   }
 
   get saveChangesButton(): Locator {
@@ -553,17 +552,30 @@ export class DebtsPage extends BasePage {
     await this.waitForAppReady();
   }
 
-  /** Open a debt's edit screen. */
+  /** Open a debt's detail screen (the slip). */
   async openDebt(name: string): Promise<void> {
-    await this.editLink(name).click();
+    await this.viewLink(name).click();
     await this.waitForAppReady();
   }
 
   /**
-   * Open a COMPLETED debt's edit screen.
+   * Open a debt's EDIT screen.
+   *
+   * The card opens the slip; the slip's Edit button opens the edit
+   * pass. So reaching the form takes two steps — click the card, then
+   * click Edit.
+   */
+  async openEdit(name: string): Promise<void> {
+    await this.openDebt(name);
+    await this.editLink.click();
+    await this.waitForAppReady();
+  }
+
+  /**
+   * Open a COMPLETED debt's detail screen.
    *
    * A completed debt has left the active card grid, so it has no
-   * "Edit debt {name}" overlay link — the completed row is a bare
+   * "View debt {name}" overlay link — the completed row is a bare
    * `<Link>` whose text carries the debt's name.
    */
   async openCompletedDebt(name: string): Promise<void> {

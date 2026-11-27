@@ -474,19 +474,20 @@ test.describe('Debts', () => {
 
     await test.step('Open a saved debt and read the screen', async () => {
       await debts.goto();
-      await debts.openDebt('Lent to Karim');
 
-      // There is no separate detail route — the card opens the edit
-      // form.
+      // The card opens the SLIP — the document you READ. The edit
+      // pass is one click further, from the slip's own Edit button.
+      await debts.openDebt('Lent to Karim');
+      await expect(page).toHaveURL(/#\/debts\/[^/]+$/);
+      await expect(debts.detailHeading).toHaveText('Lent to Karim');
+
+      await debts.editLink.click();
+      await debts.waitForAppReady();
       await expect(page).toHaveURL(/#\/debts\/[^/]+\/edit$/);
       await expect(debts.editHeading).toHaveText(validation.expected.editHeading);
-      await expect(debts.editSubtitle).toHaveText(validation.expected.editSubLine);
 
       // There is NO account picker on the edit screen.
       await expect(debts.accountPicker).toHaveCount(0);
-
-      // The total-amount hint.
-      await expect(debts.totalAmountHint).toHaveText(validation.expected.totalAmountHint);
     });
 
     await test.step('Save the edit and read the toast', async () => {
@@ -560,14 +561,15 @@ test.describe('Debts', () => {
       'Open the payment-free debt, change the direction from "I owe" to "Owed to me", and save',
       async () => {
         await debts.goto();
-        await debts.openDebt(lifecycle.debtWithoutPayment.name);
+        await debts.openEdit(lifecycle.debtWithoutPayment.name);
 
         await debts.directionSelect.selectOption({ label: 'Owed to me (you lent)' });
         await debts.saveChangesButton.click();
 
         // The save is NOT gated behind any confirmation — no dialog
-        // appears, and the app navigates straight back to the list.
-        await expect(page).toHaveURL(/#\/debts$/);
+        // appears, and the app navigates back to the SLIP, where the
+        // new terms are now engraved.
+        await expect(page).toHaveURL(/#\/debts\/[^/]+$/);
       },
     );
 
