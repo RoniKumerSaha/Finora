@@ -1,0 +1,364 @@
+/* ============================================================
+   FINORA — PAPER SHELLS FOR THE REDESIGN DEMOS
+   The perforated-paper vocabulary extracted from app.css so the
+   option sheets build on the SAME shells the app ships, rather
+   than inventing a third look.
+
+   Three shells live here:
+     .plan-paper  — the hub sheet (perforated, dashed rule, tally)
+     .ledger-sheet — the ruled page that holds a table
+     .act-sheet    — the running account of entries
+   Plus the shared atoms: the stamp, the seal, the engraved label.
+
+   Extracted from src/styles/app.css (2026-11-27). Kept verbatim
+   in shape; only the token names were mapped onto the demo
+   chrome's palette.
+   ============================================================ */
+
+/* ── the engraved label ──────────────────────────────────────
+   The app's micro-caption: 10-11px, uppercase, wide tracking,
+   muted. Used for "Principal", "Term", "Allocated" — anything
+   that names a figure without being the figure. */
+.eng {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.eng--sm {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+/* ── the stamp ────────────────────────────────────────────────
+   A rubber stamp: bordered, uppercase, tilted a few degrees.
+   The dashed variant marks a PROMOTION — a plan, not a contract. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transform: rotate(-6deg);
+  white-space: nowrap;
+  flex: none;
+}
+.stamp--planned {
+  border-style: dashed;
+  color: var(--muted);
+}
+.stamp--live {
+  color: var(--success);
+}
+.stamp--warn {
+  color: var(--warn);
+}
+.stamp--danger {
+  color: var(--danger-title);
+}
+
+/* ── the seal ─────────────────────────────────────────────────
+   A circular rate/dates seal, as on the debt certificate. */
+.seal {
+  width: 74px;
+  height: 74px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--tone, var(--primary));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.05;
+  color: var(--tone, var(--primary));
+  position: relative;
+}
+.seal::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--tone, var(--primary)) 45%, transparent);
+}
+.seal__big {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.seal__small {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── the plan sheet ───────────────────────────────────────────
+   A sheet of perforated paper: the hub's quiet document. */
+.plan-paper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 20px 22px 22px;
+  background: var(--surface-3);
+  background-image:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent 46%),
+    linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font);
+}
+.plan-paper::before,
+.plan-paper::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px);
+  background-size: 14px 9px, 14px 9px;
+}
+.plan-paper::before { top: 0; }
+.plan-paper::after { bottom: 0; }
+
+.plan-paper__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.plan-paper__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-paper__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-paper__rule {
+  border-top: 1px dashed var(--divider);
+  margin: 14px 0 12px;
+}
+.plan-paper__lines {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding-bottom: 14px;
+}
+.plan-paper__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.plan-paper__k {
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.plan-paper__sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.plan-paper__v {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+.plan-paper__tally {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--divider);
+}
+.plan-paper__tally .k {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.plan-paper__tally .v {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.v--primary { color: var(--primary); }
+.v--danger { color: var(--danger-title); }
+.v--accent { color: var(--accent); }
+.v--info { color: var(--info); }
+.v--warn { color: var(--warn); }
+.v--success { color: var(--success-title); }
+.v--muted { color: var(--muted); }
+
+/* ── the ledger sheet ─────────────────────────────────────────
+   A ruled page of the SAME paper, holding a table. */
+.ledger-sheet {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  background: var(--surface-3);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent 46%);
+  padding: 20px 22px 22px;
+}
+.ledger-sheet::before,
+.ledger-sheet::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, 0.55) 3.4px, transparent 4.2px);
+  background-size: 14px 9px, 14px 9px;
+}
+.ledger-sheet::before { top: 0; }
+.ledger-sheet::after { bottom: 0; }
+
+.ledger-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.ledger-sheet__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ledger-sheet__serial {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  margin-top: 3px;
+}
+.ledger-sheet__table {
+  width: 100%;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+.ledger-sheet__table th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.ledger-sheet__table th.is-n,
+.ledger-sheet__table td.is-n { text-align: right; }
+.ledger-sheet__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-2);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ledger-sheet__table tbody tr:last-child td { border-bottom: 0; }
+.ledger-sheet__table td.is-dim { color: var(--muted); }
+.ledger-sheet__table td.is-danger { color: var(--danger-title); }
+.ledger-sheet__table td.is-primary { color: var(--primary); }
+.ledger-sheet__table tbody tr.is-done td { color: var(--muted); }
+.ledger-sheet__table tbody tr.is-done td.is-struck {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  color: var(--muted-2);
+}
+.ledger-sheet__scroll {
+  overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 4px;
+}
+.ledger-sheet__foot {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* ── the running account ──────────────────────────────────────
+   The activity sheet: a count strip and a list of stamped tags. */
+.act-sheet__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+.act-sheet__stat .k {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.act-sheet__stat .n {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── a tagged row ─────────────────────────────────────────────
+   A small chip in the row's own tone — the "tag" the ledger
+   uses to mark an entry. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--tone, var(--primary)) 45%, transparent);
+  color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 12%, transparent);
+  white-space: nowrap;
+  flex: none;
+}
