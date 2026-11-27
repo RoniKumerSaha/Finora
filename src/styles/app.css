@@ -482,6 +482,74 @@ input::placeholder, textarea::placeholder {
   border-bottom: 1px solid var(--border-2);
 }
 .txrow:last-child { border-bottom: 0; }
+
+/* ---- The row lifts off the page ----
+   The transaction book is a sheet of ruled lines. On hover, the line
+   under the pointer ELEVATES: it lifts a couple of pixels off the
+   sheet, gains a soft shadow, rounds its corners and takes the
+   surface colour of a raised card.
+
+   That is the whole effect, and it replaces the older affordance —
+   a coloured tick in the left margin plus a sideways nudge — which
+   read as decoration on a ruled sheet rather than as the line
+   itself coming forward.
+
+   The row keeps its place in the sheet: the lift is a transform, so
+   nothing reflows, and the row's own bottom rule stays put under it
+   (the rule lives on the row, and the row's background covers it
+   while lifted).
+
+   A hover is a hover, so the effect only exists where there IS a
+   hover. On a touch screen the pseudo-hover sticks after a tap, and a
+   row left floating reads as broken. */
+.txrow {
+  position: relative;
+  z-index: 1;
+  transition:
+    transform 200ms cubic-bezier(0.22, 0.9, 0.3, 1),
+    box-shadow 200ms ease,
+    background-color 200ms ease;
+}
+@media (hover: hover) {
+  .txrow:hover {
+    z-index: 2;
+    transform: translateY(-2px);
+    background: var(--surface-2);
+    border-radius: 8px;
+    /* The card's edge replaces the row's own bottom rule, and a
+       softened rule rides just above it so the lifted line reads as
+       detached from the sheet rather than as a line that suddenly got
+       thicker. */
+    border-bottom-color: transparent;
+    box-shadow:
+      0 6px 16px -8px rgba(0, 0, 0, 0.55),
+      0 0 0 1px color-mix(in srgb, var(--tx-tick, var(--primary)) 22%, transparent),
+      0 -1px 0 0 color-mix(in srgb, var(--border-2) 40%, transparent);
+  }
+  /* The balance bar brightens as the row comes forward — it is the
+     row's most alive element and it should reward the attention. */
+  .txrow:hover .txrow__bar {
+    background: var(--surface-3);
+  }
+  /* The glyph tile lights up — the row's own little lamp. */
+  .txrow:hover .txleft__glyph {
+    transform: scale(1.05);
+  }
+}
+/* The direction colour comes from the row's own glyph class, so the
+   lifted row's edge always agrees with the arrow beside it. */
+.txrow:has(.txleft__glyph--in)  { --tx-tick: var(--primary); }
+.txrow:has(.txleft__glyph--out) { --tx-tick: var(--danger); }
+.txrow:has(.txleft__glyph--xfr) { --tx-tick: var(--ink); }
+
+/* The bar and the glyph tile carry the transition, so the effect
+   eases in rather than snapping. */
+.txrow__bar {
+  transition: background-color 200ms ease;
+}
+.txleft__glyph {
+  transition: transform 200ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
 /* Without a per-row date stamp — the day rule above already names the
    day — the date column collapses and the title takes the space. The
    date cell is not rendered at all in that case, so the grid has to
@@ -705,6 +773,19 @@ input::placeholder, textarea::placeholder {
   border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
 }
 
+/* The account card's link is only a wrapper — the CARD inside it
+   carries the shadow, the border and the hover animation. So the
+   generic link lift is switched off here: otherwise the link would
+   lift -1px AND the card would lift -4px inside it, and the two
+   would stack into a lurch. The card's own lift is the whole
+   effect. */
+.card-link--acct:hover,
+.card-link--acct:focus-visible {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
 /* Focus ring contract: every interactive element uses the same primary
    ring at 40% opacity. Avoids the "everything has a slightly different
    focus style" problem. */
@@ -893,6 +974,102 @@ main > * {
     linear-gradient(104deg, transparent 18%, rgba(255, 255, 255, 0.045) 32%, transparent 44%),
     radial-gradient(120% 90% at 6% -10%, rgba(255, 255, 255, 0.08), transparent 58%),
     radial-gradient(80% 60% at 96% 104%, color-mix(in srgb, var(--tone) 16%, transparent), transparent 68%);
+}
+
+/* ---- The card picks itself up ----
+   A bank card is a held object, so the hover should feel like
+   lifting it, not like a web button changing colour.
+
+   Three things happen at once:
+     1. the card RISES further than the generic `.card-link` lift
+        (-1px) — 4px here, with a slight tilt towards the reader;
+     2. a GLINT sweeps across the face, left to right, as if the
+        card caught the light while it turned;
+     3. the tone glow in the corner blooms a little.
+
+   The glint is a separate pseudo-element rather than a change to
+   `.acct-card--sheen::before`, because the sheen is the card's
+   resting texture — the glint has to travel ACROSS it, and a
+   background-position animation on the sheen would drag the whole
+   texture with it. */
+.acct-card--sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  background: linear-gradient(
+    108deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.16) 45%,
+    rgba(255, 255, 255, 0.05) 55%,
+    transparent 68%
+  );
+  transform: translateX(-62%);
+}
+.acct-card {
+  transition: transform 260ms cubic-bezier(0.22, 0.9, 0.3, 1),
+              box-shadow 260ms ease;
+}
+/* The card lifts, tilts a degree towards the reader and catches the
+   light. The chip brightens with it — gold catching a lamp. */
+.card-link:hover .acct-card,
+.card-link:focus-visible .acct-card {
+  transform: translateY(-4px) rotate(-0.5deg);
+  /* The card comes forward, so its shadow deepens and spreads. */
+  box-shadow:
+    var(--shadow-modal),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 30px -12px rgba(0, 0, 0, 0.55);
+}
+.card-link:hover .acct-card--sheen::after,
+.card-link:focus-visible .acct-card--sheen::after {
+  animation: acct-glint 900ms cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
+}
+/* The corner bloom — the tone glow comes up as the card comes
+   forward. */
+.card-link:hover .acct-card--sheen::before,
+.card-link:focus-visible .acct-card--sheen::before {
+  background:
+    linear-gradient(104deg, transparent 18%, rgba(255, 255, 255, 0.045) 32%, transparent 44%),
+    radial-gradient(120% 90% at 6% -10%, rgba(255, 255, 255, 0.1), transparent 58%),
+    radial-gradient(85% 65% at 96% 104%, color-mix(in srgb, var(--tone) 30%, transparent), transparent 70%);
+}
+/* The chip and the number plate catch the light with the card. */
+.card-link:hover .acct-chip,
+.card-link:focus-visible .acct-chip {
+  filter: brightness(1.16) saturate(1.05);
+}
+.acct-chip {
+  transition: filter 260ms ease;
+}
+.card-link:hover .acct-num,
+.card-link:focus-visible .acct-num {
+  opacity: 0.95;
+}
+.acct-num {
+  transition: opacity 260ms ease;
+}
+
+@keyframes acct-glint {
+  from { opacity: 0; transform: translateX(-62%); }
+  35%  { opacity: 1; }
+  to   { opacity: 0; transform: translateX(62%); }
+}
+
+/* The lift is the whole point of the hover, so a reduced-motion user
+   still gets the state change — just without the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .card-link:hover .acct-card,
+  .card-link:focus-visible .acct-card {
+    transform: translateY(-1px);
+  }
+  .card-link:hover .acct-card--sheen::after,
+  .card-link:focus-visible .acct-card--sheen::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* ---- Shared card furniture ---- */

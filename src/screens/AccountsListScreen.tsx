@@ -270,7 +270,7 @@ export function AccountsListScreen() {
               <Link
                 key={a.id}
                 to={`/accounts/${a.id}/edit`}
-                className="card-link rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 block"
+                className="card-link card-link--acct rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 block"
                 aria-label={`${a.name}. ${accountTypeLabel(a.type)}. Balance ${fmtBDT(bal)}.`}
               >
                 <AccountCard
