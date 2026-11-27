@@ -54,19 +54,19 @@ export class ConfirmDialog {
 
   /** The dialog's body copy. */
   get body(): Locator {
-    return this.dialog.locator('div.text-\\[13\\.5px\\]');
+    return this.dialog.locator('div.t-13.text-muted');
   }
 
   /**
    * The dialog's danger callout.
    *
    * `ConfirmDialog` renders `dangerText` as its own callout block —
-   * a `text-[13px]` div with a danger background — separate from the
+   * a `t-13` div with a danger background — separate from the
    * body paragraph. It is absent when the caller passes no
    * `dangerText`.
    */
   get dangerLine(): Locator {
-    return this.dialog.locator('div.text-\\[13px\\].rounded-btn');
+    return this.dialog.locator('div.t-13.rounded-btn');
   }
 
   get cancelButton(): Locator {

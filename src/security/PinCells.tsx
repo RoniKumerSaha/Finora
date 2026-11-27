@@ -211,8 +211,8 @@ export function PinCells({
                 width: '100%',
                 height: '100%',
                 textAlign: 'center',
-                fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
-                fontSize: '22px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 'var(--text-22)',
                 fontWeight: 600,
                 lineHeight: 1,
                 color: 'transparent',
@@ -263,10 +263,10 @@ export function PinCells({
                 ) : (
                   <span
                     style={{
-                      fontSize: '22px',
+                      fontSize: 'var(--text-22)',
                       fontWeight: 700,
                       color: 'var(--ink)',
-                      fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+                      fontFamily: 'var(--font-mono)',
                       lineHeight: 1,
                     }}
                   >

@@ -52,7 +52,7 @@ export function EmojiPicker({
               title="Remove icon"
               aria-label="Remove icon"
               onClick={() => { onRemove(); setOpen(false); }}
-              className="rounded-md hover:bg-surface-2 text-muted flex items-center justify-center text-lg"
+              className="rounded-md hover:bg-surface-2 text-muted flex items-center justify-center t-18"
               style={{ width: tileSize, height: tileSize }}
             >×</button>
           )}
@@ -65,7 +65,7 @@ export function EmojiPicker({
               onClick={() => { onChange(entry.emoji); setOpen(false); }}
               className={[
                 'rounded-md',
-                'flex items-center justify-center text-lg',
+                'flex items-center justify-center t-18',
                 selectedEmoji === entry.emoji ? 'bg-bg ring-1 ring-primary' : 'hover:bg-surface-2',
               ].join(' ')}
               style={{ width: tileSize, height: tileSize }}

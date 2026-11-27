@@ -41,7 +41,7 @@ export function SaveResetBar({
   const dotColor = dirty ? 'var(--warn)' : 'var(--success)';
   return (
     <div className="card-flat flex justify-between items-center border border-border rounded-card bg-surface px-4 py-2.5 gap-3 flex-wrap">
-      <div className="flex items-center gap-2.5 text-[12.5px] text-muted min-w-0">
+      <div className="flex items-center gap-2.5 t-12 text-muted min-w-0">
         <span
           aria-hidden
           className="w-2 h-2 rounded-full shrink-0"

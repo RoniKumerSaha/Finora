@@ -163,7 +163,7 @@ export function SettingsScreen() {
     <div className="flex flex-col gap-6 max-w-[1100px]">
       <div>
         <h1 className="heading h1-screen">Settings</h1>
-        <div className="text-muted text-[13px] mt-1.5">Backup and reset.</div>
+        <div className="text-muted t-13 mt-1.5">Backup and reset.</div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
@@ -184,7 +184,7 @@ export function SettingsScreen() {
                 className="hidden"
               />
             </div>
-            <p className="text-xs text-muted mt-4">
+            <p className="t-12 text-muted mt-4">
               Save a JSON file to your device. Use Import to restore from a backup later (replaces all data after confirmation).
             </p>
           </section>
@@ -198,14 +198,14 @@ export function SettingsScreen() {
             }}
           >
             <h2 className="heading h3-modal mb-3" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-            <p className="text-[13px] text-muted mb-5">
+            <p className="t-13 text-muted mb-5">
               This action is destructive. Export first if unsure.
             </p>
 
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1 max-w-prose">
-                <div className="font-semibold text-[14px] text-ink">Wipe all data</div>
-                <div className="text-[12px] text-muted mt-1">
+                <div className="font-semibold t-13 text-ink">Wipe all data</div>
+                <div className="t-12 text-muted mt-1">
                   Deletes every account, transaction, goal, debt, investment, and plan from this device{syncEngine.getEmail() ? ' and from your cloud copy on Supabase' : ''} — leaves the app as a clean install.
                 </div>
               </div>
@@ -242,16 +242,16 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
 
   return (
     <aside className="card">
-      <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-4">
+      <h2 className="label m-0 mb-4">
         About
       </h2>
 
       <div className="heading h3-modal mb-2">Finora</div>
-      <p className="text-[13px] text-muted leading-[1.5] mb-5">
+      <p className="t-13 text-muted leading-[1.5] mb-5">
         A quiet place for your money. Track what you have, where it goes, and what you're aiming for — without an account, an inbox, or a notification asking for anything back.
       </p>
 
-      <dl className="flex flex-col gap-3 text-[12.5px] mb-5">
+      <dl className="flex flex-col gap-3 t-12 mb-5">
         <MetaRow label="Version" value={`v${version}`} />
         <MetaRow
           label="Privacy"
@@ -276,7 +276,7 @@ function AboutPanel({ onReset }: { onReset: () => void | Promise<void> }) {
         <button
           type="button"
           onClick={onReset}
-          className="self-start text-primary text-[12.5px] font-semibold hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+          className="self-start text-primary t-12 font-semibold hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
         >
           Erase everything and start over {'\u2192'}
         </button>

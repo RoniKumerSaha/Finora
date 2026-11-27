@@ -90,26 +90,26 @@ export function MonthPlanScreen() {
         <button
           type="button"
           onClick={() => navigate('/plan')}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Plans</button>
       </div>
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="heading h1-screen">Plan my month</h1>
-          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+          <div className="text-muted t-13 mt-1.5 max-w-prose">
             Fill the items with budgets for what you intend to spend. Changes save as you go.
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {plan.categories.length > 0 && (
-            <div className="flex items-center gap-2 text-[12px] text-muted">
+            <div className="flex items-center gap-2 t-12 text-muted">
               <span
                 aria-hidden
                 className="w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--primary)' }}
               />
               <span>
-                <b className="text-ink font-bold text-[15px]">{plan.categories.length}</b>
+                <b className="text-ink font-bold t-15">{plan.categories.length}</b>
                 <span className="ml-1">card{plan.categories.length === 1 ? '' : 's'} in plan</span>
               </span>
             </div>
@@ -148,14 +148,14 @@ export function MonthPlanScreen() {
       <div className="rounded-card border border-border p-6" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+            <div className="label">
               Your items
             </div>
-            <div className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-pill bg-surface-2 text-[11px] font-bold tabular text-ink border border-border">
+            <div className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-pill bg-surface-2 t-11 font-bold tabular text-ink border border-border">
               {plan.categories.length}
             </div>
             {selectionMode && (
-              <span className="text-[12px] text-primary font-semibold">
+              <span className="t-12 text-primary font-semibold">
                 · Tap cards to select
               </span>
             )}
@@ -221,7 +221,7 @@ export function MonthPlanScreen() {
             type="button"
             onClick={startNewCategory}
             aria-label="Add new item"
-            className="min-h-[110px] rounded-card border border-dashed border-border text-muted hover:text-primary hover:border-primary text-[13px] font-semibold px-4 py-3 flex flex-col items-center justify-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="min-h-[110px] rounded-card border border-dashed border-border text-muted hover:text-primary hover:border-primary t-13 font-semibold px-4 py-3 flex flex-col items-center justify-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             style={{ background: 'color-mix(in srgb, var(--surface-2) 60%, transparent)' }}
           >
             <span className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-dashed border-current" aria-hidden>
@@ -230,7 +230,7 @@ export function MonthPlanScreen() {
               </svg>
             </span>
             <span>New item</span>
-            <span className="text-[10.5px] font-normal text-muted/80 text-center leading-tight px-1">
+            <span className="t-10 font-normal text-muted/80 text-center leading-tight px-1">
               Custom card not in the picker
             </span>
           </button>
@@ -239,7 +239,7 @@ export function MonthPlanScreen() {
             the items grid does so users don't have to guess. The
             "tap to edit" hint is universal, but selection mode,
             delete-X, and the new-item button are easy to miss. */}
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[11.5px] text-muted">
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 t-11 text-muted">
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-on" aria-hidden>
               <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
@@ -313,7 +313,7 @@ export function MonthPlanScreen() {
         />
       )}
 
-      <div className="text-xs text-muted text-center">
+      <div className="t-12 text-muted text-center">
         ⓘ Tap an item to edit it in a pop-up. Changes save automatically.
       </div>
       {confirmDialog}
@@ -426,16 +426,16 @@ function JarTile({
         {/* Body — title and budget figure. */}
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div
-            className="text-[14px] font-semibold text-ink leading-snug truncate"
+            className="t-13 font-semibold text-ink leading-snug truncate"
             title={cat.name}
           >
             {cat.name}
           </div>
           <div className="flex items-baseline gap-1 min-w-0">
-            <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+            <span className="label-sm shrink-0">
               Budget
             </span>
-            <span className="font-bold text-[15px] text-ink tabular leading-none whitespace-nowrap truncate">
+            <span className="font-bold t-15 text-ink tabular leading-none whitespace-nowrap truncate">
               {hasBudget ? fmtBDT(budget) : '—'}
             </span>
           </div>
@@ -565,14 +565,14 @@ function NewItemModal({ onSave, onClose }: {
 
         <div className="mb-4 pr-8">
           <h3 id="new-item-title" className="heading h3-modal m-0">Add new item</h3>
-          <div className="text-muted text-[12.5px] mt-1">
+          <div className="text-muted t-12 mt-1">
             Pick an icon, name the item, set the budget. You can edit the budget later.
           </div>
         </div>
 
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] text-muted font-semibold mb-1.5">Icon</div>
+            <div className="label mb-1.5">Icon</div>
             <EmojiPicker value={emoji} onChange={(next) => { userPickedEmojiRef.current = true; setEmoji(next); }} />
           </div>
           <Field label="Name">
@@ -681,10 +681,10 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
               <CategoryGlyph name={cat.emoji} className="w-6 h-6 text-primary" />
               {cat.name}
             </h3>
-            <div className="text-muted text-[12.5px] mt-1">Set the budget.</div>
+            <div className="text-muted t-12 mt-1">Set the budget.</div>
           </div>
           <span
-            className="text-[11px] font-bold uppercase tracking-[0.04em] px-2.5 py-1 rounded-pill whitespace-nowrap flex items-center gap-1.5"
+            className="t-11 font-bold uppercase tracking-narrow px-2.5 py-1 rounded-pill whitespace-nowrap flex items-center gap-1.5"
             style={{
               background: 'var(--surface-2)',
               color: 'var(--ink)',
@@ -717,16 +717,16 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
             </span>
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div
-                className="text-[14px] font-semibold text-ink leading-snug truncate"
+                className="t-13 font-semibold text-ink leading-snug truncate"
                 title={cat.name}
               >
                 {cat.name}
               </div>
               <div className="flex items-baseline gap-1 min-w-0">
-                <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] font-semibold text-muted">
+                <span className="label-sm shrink-0">
                   Budget
                 </span>
-                <span className="font-bold text-[15px] text-ink tabular leading-none whitespace-nowrap truncate">
+                <span className="font-bold t-15 text-ink tabular leading-none whitespace-nowrap truncate">
                   {budget > 0 ? fmtBDT(budget) : '—'}
                 </span>
               </div>
@@ -764,7 +764,7 @@ function JarEditorModal({ cat, onUpdate, onRemove, onEmpty, onClose }: {
 
         {/* Danger zone — visually separated so users don't hit Remove by accident. */}
         <div
-          className="mt-4 pt-3 flex justify-between items-center text-[12px]"
+          className="mt-4 pt-3 flex justify-between items-center t-12"
           style={{
             borderTop: '1px dashed var(--border)',
           }}

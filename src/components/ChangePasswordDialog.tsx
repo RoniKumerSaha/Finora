@@ -147,7 +147,7 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
         <h3 id="change-password-title" className="heading h3-modal m-0 mb-2">
           Change password
         </h3>
-        <p className="text-[13px] text-muted leading-relaxed mb-5">
+        <p className="t-13 text-muted leading-relaxed mb-5">
           Choose a new password for your account. Use at least 8 characters.
           You'll stay signed in on this device.
         </p>

@@ -129,7 +129,7 @@ export function DurationField({
           aria-pressed={unit === u}
           onClick={() => switchUnit(u)}
           className={[
-            'px-2.5 py-1.5 rounded-btn text-[12px] font-semibold transition',
+            'px-2.5 py-1.5 rounded-btn t-12 font-semibold transition',
             unit === u
               ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
               : 'text-muted hover:text-ink',

@@ -263,7 +263,7 @@ export function SignInDialog({ open, onClose }: Props) {
         }}
       >
         <h3 id="signin-title" className="heading h3-modal m-0 mb-2">{headline}</h3>
-        <p className="text-[13px] text-muted leading-relaxed mb-5">{subtitle}</p>
+        <p className="t-13 text-muted leading-relaxed mb-5">{subtitle}</p>
 
         {/* Mode toggle — two pill-style buttons. Keeps the dialog to a
             single screen so users don't have to navigate between two
@@ -284,7 +284,7 @@ export function SignInDialog({ open, onClose }: Props) {
               onClick={() => { if (!submitting) setMode('signIn'); }}
               disabled={submitting}
               className={[
-                'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
+                'flex-1 px-3 py-1.5 rounded-btn t-12 font-semibold transition',
                 isSignIn
                   ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
                   : 'text-muted hover:text-ink',
@@ -299,7 +299,7 @@ export function SignInDialog({ open, onClose }: Props) {
               onClick={() => { if (!submitting) setMode('signUp'); }}
               disabled={submitting}
               className={[
-                'flex-1 px-3 py-1.5 rounded-btn text-[12.5px] font-semibold transition',
+                'flex-1 px-3 py-1.5 rounded-btn t-12 font-semibold transition',
                 !isSignIn
                   ? 'bg-surface text-ink shadow-[var(--shadow-inset)]'
                   : 'text-muted hover:text-ink',
@@ -314,7 +314,7 @@ export function SignInDialog({ open, onClose }: Props) {
           {fieldErrors.form && (
             <div
               role="alert"
-              className="rounded-btn px-3.5 py-2.5 text-[12.5px] text-danger leading-snug"
+              className="rounded-btn px-3.5 py-2.5 t-12 text-danger leading-snug"
               style={{
                 background: 'var(--danger-callout-bg)',
                 border: '1px solid var(--danger)',
@@ -363,7 +363,7 @@ export function SignInDialog({ open, onClose }: Props) {
               type="button"
               onClick={() => { if (!submitting) { setFieldErrors({}); setTouched({}); setMode('resetRequest'); } }}
               disabled={submitting}
-              className="text-[12.5px] text-muted hover:text-ink hover:underline underline-offset-2 transition focus-visible:outline-none focus-visible:underline"
+              className="t-12 text-muted hover:text-ink hover:underline underline-offset-2 transition focus-visible:outline-none focus-visible:underline"
             >
               Forgot password?
             </button>

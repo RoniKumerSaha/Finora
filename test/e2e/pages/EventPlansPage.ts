@@ -110,7 +110,7 @@ export class EventPlansPage extends BasePage {
    * for "N days ago".
    */
   cardDateLine(name: string): Locator {
-    return this.card(name).locator('div.text-xs.text-muted').first();
+    return this.card(name).locator('div.t-12.text-muted').first();
   }
 
   /**
@@ -135,7 +135,7 @@ export class EventPlansPage extends BasePage {
 
   /** An event card's category-count line. */
   cardCategoryCount(name: string): Locator {
-    return this.card(name).locator('div.flex.justify-between.text-xs.text-muted.tabular');
+    return this.card(name).locator('div.flex.justify-between.t-12.text-muted.tabular');
   }
 
   // ── Create form ──
@@ -186,7 +186,7 @@ export class EventPlansPage extends BasePage {
   get daysToGoValue(): Locator {
     return this.page
       .locator('div.text-right')
-      .locator('div.text-\\[22px\\]');
+      .locator('div.t-22');
   }
 
   /**
@@ -251,10 +251,10 @@ export class EventPlansPage extends BasePage {
    * The header's "Days to go" / "Days ago" figure — the big number.
    *
    * The label and the number are separate nodes, so the number is the
-   * `text-[22px]` child of the header's right-hand block.
+   * `t-22` child of the header's right-hand block.
    */
   get headerDaysValue(): Locator {
-    return this.page.locator('div.text-right').locator('div.text-\\[22px\\]');
+    return this.page.locator('div.text-right').locator('div.t-22');
   }
 
   /**

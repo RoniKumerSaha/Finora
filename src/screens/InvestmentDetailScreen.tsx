@@ -285,13 +285,13 @@ export function InvestmentDetailScreen() {
   return (
     <div className="flex flex-col gap-[18px]">
       <div className="flex items-center gap-3">
-        <Link to="/investments" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Investments</Link>
+        <Link to="/investments" className="text-muted t-13 hover:text-ink transition">{'\u2190'} Investments</Link>
       </div>
 
       {/* ═══ THE HEADER ═══════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
-          <div className="text-[13px] text-muted flex items-center gap-2">
+          <div className="t-13 text-muted flex items-center gap-2">
             <span className="uppercase tracking-wider">{inv.type}</span>
             {isDps && inv.monthlyContribution ? (
               <Pill tone="primary" variant="solid">
@@ -306,14 +306,14 @@ export function InvestmentDetailScreen() {
             <button
               type="button"
               onClick={() => setShowContributeForm(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               style={{ background: 'var(--primary)' }}
             >
               + Add a contribution
             </button>
           )}
           {status === 'active' && (
-            <Link to={`/investments/${inv!.id}/edit`} className="inline-flex items-center justify-center gap-2 px-[18px] py-2.5 rounded-btn font-bold text-[13px] bg-surface text-ink border border-border hover:bg-surface-2 transition">
+            <Link to={`/investments/${inv!.id}/edit`} className="inline-flex items-center justify-center gap-2 px-[18px] py-2.5 rounded-btn font-bold t-13 bg-surface text-ink border border-border hover:bg-surface-2 transition">
               Edit
             </Link>
           )}
@@ -351,7 +351,13 @@ export function InvestmentDetailScreen() {
               )}
             </div>
 
-            <div className="inv-cert__fields">
+            {/* The engraved terms. The rate is NOT one of them: it
+                lives in the seal above, in the way an engraved rate
+                lives on a real instrument. Printing it here too
+                meant the same number appeared twice on one
+                certificate, and a reader landing on the second copy
+                stopped trusting the first. */}
+            <div className="inv-cert__fields inv-cert__fields--pair">
               {isDps ? (
                 <>
                   <div className="inv-cert__f">
@@ -361,10 +367,6 @@ export function InvestmentDetailScreen() {
                   <div className="inv-cert__f">
                     <div className="k">Term</div>
                     <div className="v">{formatDuration(inv.termMonths)}</div>
-                  </div>
-                  <div className="inv-cert__f">
-                    <div className="k">Rate</div>
-                    <div className="v">{inv.rate}% / yr</div>
                   </div>
                 </>
               ) : (
@@ -380,10 +382,6 @@ export function InvestmentDetailScreen() {
                         ? `${inv.termDays} days`
                         : formatDuration(inv.termMonths)}
                     </div>
-                  </div>
-                  <div className="inv-cert__f">
-                    <div className="k">Rate</div>
-                    <div className="v">{inv.rate}% / yr</div>
                   </div>
                 </>
               )}
@@ -464,10 +462,12 @@ export function InvestmentDetailScreen() {
                   <div className="inv-cert__v inv-cert__v--now">
                     <div className="k">Current value</div>
                     <div className="n">{fmtBDT(currentValue)}</div>
+                    <div className="c">compounded to today</div>
                   </div>
                   <div className="inv-cert__v inv-cert__v--mat">
-                    <div className="k">Estimated payout when the term ends</div>
+                    <div className="k">Estimated payout</div>
                     <div className="n">{fmtBDT(projected)}</div>
+                    <div className="c">if every installment is paid</div>
                   </div>
                 </>
               ) : (
@@ -481,25 +481,10 @@ export function InvestmentDetailScreen() {
                   <div className="inv-cert__v inv-cert__v--mat">
                     <div className="k">Maturity value</div>
                     <div className="n">{fmtBDT(projected)}</div>
+                    <div className="c">
+                      {fmtBDT(inv.principal)} principal + {fmtBDT(expectedInterest)} interest
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
-
-            <div className="inv-cert__note">
-              {isDps ? (
-                <>
-                  <strong>What you have now:</strong> {fmtBDT(currentValue)} (compounded to today).{' '}
-                  <strong>At maturity:</strong> {fmtBDT(projected)}{' '}
-                  <em>(projection if every installment is paid)</em>. Maturity uses
-                  annuity-due: {fmtBDT(inv.monthlyContribution || 0)} × ((1 + r)^T − 1) / r × (1 + r)
-                  where r = {inv.rate}%/12 and T = {inv.termMonths} months.
-                </>
-              ) : (
-                <>
-                  <strong>Maturity value:</strong> {fmtBDT(projected)} — principal {fmtBDT(inv.principal)}
-                  {' '}+ {fmtBDT(expectedInterest)} interest. Maturity uses simple interest:
-                  principal × (1 + rate × years). No compounding.
                 </>
               )}
             </div>
@@ -530,7 +515,7 @@ export function InvestmentDetailScreen() {
                   <div className="maturity-opt__body">
                     <div className="maturity-opt__k">Record bank payout</div>
                     <div className="maturity-opt__v">
-                      Opens the income form with {fmtBDT(isDps ? currentValue : projected)} pre-filled
+                      Opens the income form with the payout pre-filled
                       {payoutAcc ? <> and {payoutAcc.name} already chosen</> : null}.
                     </div>
                   </div>
@@ -568,7 +553,7 @@ export function InvestmentDetailScreen() {
               </div>
 
               {!inv.payoutAccountId && (
-                <div className="mt-3 text-[12px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+                <div className="mt-3 t-12 text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
                   Choose which <strong>account receives the money</strong> when the bank pays out this
                   {inv.type.toUpperCase()}.{' '}
                   <Link to={`/investments/${inv.id}/edit`} className="underline font-semibold">Edit the investment</Link>{' '}
@@ -577,9 +562,8 @@ export function InvestmentDetailScreen() {
               )}
 
               <div className="inv-cert__note">
-                <strong>Record bank payout</strong> saves as Income, which then shows in the
-                activity ledger — and auto-closes this {typeLabel(inv)} once the contributions
-                have been fully paid back.
+                <strong>Record bank payout</strong> saves as Income and auto-closes this
+                {' '}{typeLabel(inv)} once it is fully paid back.
               </div>
             </section>
           )}
@@ -594,7 +578,7 @@ export function InvestmentDetailScreen() {
             }}
           >
             <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-            <p className="text-[13px] text-muted mb-4">
+            <p className="t-13 text-muted mb-4">
               Removes the investment record only. The {contribs.length} linked contribution
               transactions stay in your records.
             </p>
@@ -655,7 +639,7 @@ export function InvestmentDetailScreen() {
               </>
             ) : (
               <div className="act-sheet__rows">
-                <div className="text-[12px] text-muted py-2">
+                <div className="t-12 text-muted py-2">
                   Nothing recorded yet — contributions and payouts will appear here.
                 </div>
               </div>
@@ -663,7 +647,7 @@ export function InvestmentDetailScreen() {
 
             <div className="debt-cert__note" style={{ marginTop: 12 }}>
               Contributions are expenses; payouts are income. Both stay linked to this
-              investment, so the ledger always reconciles with the certificate.
+              investment.
             </div>
           </section>
         </div>
@@ -768,7 +752,7 @@ function ContributeModal({
         className="relative bg-surface border border-border rounded-card p-7 w-[420px] max-w-[90vw] shadow-modal flex flex-col gap-5"
       >
         <h3 id="contribute-title" className="heading h3-modal m-0">Add a contribution</h3>
-        <p className="text-[13px] text-muted m-0 -mt-3">
+        <p className="t-13 text-muted m-0 -mt-3">
           Records an expense from the chosen account and links it to this DPS.
         </p>
         <Field
@@ -794,7 +778,7 @@ function ContributeModal({
           <select
             value={contribAccount}
             onChange={e => setContribAccount(e.target.value)}
-            className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
+            className="w-full bg-surface-2 border border-border text-ink rounded-btn px-[14px] py-3 t-13 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/40"
           >
             {accountOptions.map(a => (
               <option key={a.id} value={a.id}>{a.name}</option>

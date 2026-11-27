@@ -34,12 +34,12 @@ export function EmptyState({ illustration, title, description, cta, learnMoreTop
             {illustration}
           </div>
         )}
-        <div className="text-[15px] font-semibold text-ink">{title}</div>
-        {description && <p className="mt-2 text-sm">{description}</p>}
+        <div className="heading h4-item text-ink">{title}</div>
+        {description && <p className="mt-2 t-13">{description}</p>}
         {cta && (
           <Link
             to={cta.to}
-            className="inline-block mt-4 px-4 py-2.5 rounded-btn text-[13px] font-bold text-primary-on hover:opacity-95 transition"
+            className="inline-block mt-4 px-4 py-2.5 rounded-btn t-13 font-bold text-primary-on hover:opacity-95 transition"
             style={{ background: 'var(--primary)' }}
           >
             {cta.label}
@@ -49,7 +49,7 @@ export function EmptyState({ illustration, title, description, cta, learnMoreTop
           <button
             type="button"
             onClick={() => open(learnMoreTopic)}
-            className="block mx-auto mt-3 text-[13px] text-primary hover:underline focus-visible:outline-none focus-visible:underline"
+            className="block mx-auto mt-3 t-13 text-primary hover:underline focus-visible:outline-none focus-visible:underline"
           >
             How {learnMoreTopic} work →
           </button>

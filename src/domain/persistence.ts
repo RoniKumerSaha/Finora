@@ -42,6 +42,31 @@ const SCHEMA_KEY = 'schema';
 const CURRENT_SCHEMA_VERSION = 1;
 
 /**
+ * Fill in every collection the State is expected to carry, so that a
+ * consumer can always call `.find()` / `.map()` on it without a
+ * guard.
+ *
+ * This runs on BOTH paths that produce a State from outside — the
+ * boot read from IndexedDB and the import of a backup file. The
+ * import path had its own copy of this list; the boot path had none,
+ * which meant a state persisted before a collection existed loaded
+ * with that collection simply `undefined`. The first screen to touch
+ * it then threw on `state.monthPlans.find(...)` and React unmounted
+ * the whole tree — a blank page with a single typo's worth of cause.
+ *
+ * Keeping one list here means a new collection is added in one place.
+ */
+export function normaliseState(next: Partial<State>): State {
+  return {
+    ...(next as State),
+    monthPlans: next.monthPlans ?? [],
+    eventPlans: next.eventPlans ?? [],
+    investmentPlans: next.investmentPlans ?? [],
+    loanPlans: next.loanPlans ?? [],
+  };
+}
+
+/**
  * Cloud-sync auxiliary rows, all sharing the `kv` table.
  *   cloudQueue        — JSON array of queued State snapshots waiting to
  *                       be pushed once the device comes back online.
@@ -262,7 +287,7 @@ export function ensureReady(): Promise<State> {
       const db = await getIDB();
       const result = await migrateFromLocalStorage(db);
       const row = await db.kv.get(SINGLETON_KEY);
-      const state: State = row ? (row.data as State) : result.state;
+      const state: State = normaliseState(row ? (row.data as State) : result.state);
       cached = state;
 
       // Track schema version for future migrations.

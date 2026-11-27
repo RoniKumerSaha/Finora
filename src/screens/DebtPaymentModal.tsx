@@ -125,7 +125,7 @@ export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
           }}
         >
           <h3 className="heading h3-modal m-0 mb-3">Add an account first</h3>
-          <p className="text-[13.5px] text-muted leading-relaxed mb-5">
+          <p className="t-13 text-muted leading-relaxed mb-5">
             Payments need an account to debit or credit. Add an account in Settings → Accounts, then come back to record this payment.
           </p>
           <div className="flex gap-2 justify-end">
@@ -228,7 +228,7 @@ export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
         <h3 id="debt-pay-title" className="heading h3-modal m-0 mb-1.5">
           {modalTitle}
         </h3>
-        <div className="text-[12.5px] text-muted leading-relaxed mb-5">
+        <div className="t-12 text-muted leading-relaxed mb-5">
           Outstanding: <span className="tabular font-semibold text-ink">{fmtBDT(outstandingAtOpen)}</span>
           {/* Rate subtitle — loan-kind only. Flat-kind debts don't carry
               a rate so the subtitle would just be noise. */}
@@ -284,7 +284,7 @@ export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
               split so we hide this block entirely. */}
           {isLoan && amt > 0 && (
             <div
-              className="rounded-btn px-3.5 py-3 text-[12.5px] leading-relaxed"
+              className="rounded-btn px-3.5 py-3 t-12 leading-relaxed"
               style={{
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
@@ -298,7 +298,7 @@ export function DebtPaymentModal({ debt, outstandingAtOpen, onClose }: Props) {
               </div>
               {underpayment && (
                 <div
-                  className="mt-2 text-[12px] leading-relaxed rounded-pill px-2 py-1 inline-block"
+                  className="mt-2 t-12 leading-relaxed rounded-pill px-2 py-1 inline-block"
                   style={{
                     background: 'var(--warn-soft, rgba(234, 179, 8, 0.16))',
                     color: 'var(--warn)',

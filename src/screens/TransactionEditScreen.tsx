@@ -166,7 +166,7 @@ export function TransactionEditScreen() {
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-[560px]">
       <header>
         <h1 className="heading h1-screen">Edit transaction</h1>
-        <div className="text-muted text-[13px] mt-1.5 capitalize tabular">
+        <div className="text-muted t-13 mt-1.5 capitalize tabular">
           {type}{note ? ` · ${note}` : ''} · {fmtDateShort(date)}
         </div>
       </header>
@@ -225,7 +225,7 @@ export function TransactionEditScreen() {
 
         {type === 'income' && payoutMismatch && (
           <div
-            className="mt-4 text-[13px] rounded-btn px-3.5 py-2.5"
+            className="mt-4 t-13 rounded-btn px-3.5 py-2.5"
             style={{
               background: 'var(--warn-soft)',
               border: '1px solid var(--warn)',

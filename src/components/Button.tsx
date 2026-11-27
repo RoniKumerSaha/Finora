@@ -83,8 +83,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ' +
     'active:translate-y-px';
   const sizeCls = size === 'sm'
-    ? (isOutlined ? 'px-2.5 py-1.5 text-[13px]' : 'px-3 py-1.5 text-[13px]')
-    : (isOutlined ? 'px-2.5 py-1.5 text-[12.5px]' : 'px-[18px] py-2.5 text-sm');
+    ? (isOutlined ? 'px-2.5 py-1.5 t-13' : 'px-3 py-1.5 t-13')
+    : (isOutlined ? 'px-2.5 py-1.5 t-12' : 'px-[18px] py-2.5 t-13');
 
   // Filled variants. Outlined ones branch below.
   let variantClass: string;

@@ -63,7 +63,7 @@ export function SplitBar({
           />
         )}
       </div>
-      <div className="flex items-center gap-3 text-[11px] text-muted tabular">
+      <div className="flex items-center gap-3 t-11 text-muted tabular">
         <span className="inline-flex items-center gap-1.5 min-w-0">
           <span
             aria-hidden

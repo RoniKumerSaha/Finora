@@ -201,7 +201,7 @@ export function ChangePinDialog({ onClose, onSuccess }: ChangePinDialogProps) {
           </div>
           <div className="flex flex-col items-center gap-1">
             <h3 id="change-pin-title" className="heading h3-modal m-0 text-center">{title}</h3>
-            <p className="text-[13px] text-muted m-0 text-center">{subtitle}</p>
+            <p className="t-13 text-muted m-0 text-center">{subtitle}</p>
           </div>
         </div>
 
@@ -219,12 +219,12 @@ export function ChangePinDialog({ onClose, onSuccess }: ChangePinDialogProps) {
             ariaLabel={`${value.length} of ${PIN_LENGTH} digits entered`}
           />
           {error && (
-            <div role="alert" className="text-[12px] text-danger font-semibold">
+            <div role="alert" className="t-12 text-danger font-semibold">
               {error}
             </div>
           )}
           {!error && lockoutActive && (
-            <div className="text-[12px] text-muted">
+            <div className="t-12 text-muted">
               {lockoutRemaining >= Number.MAX_SAFE_INTEGER / 2
                 ? 'Locked. Reload the page to continue.'
                 : `Try again in ${Math.ceil(lockoutRemaining / 1000)}s`}
@@ -232,7 +232,7 @@ export function ChangePinDialog({ onClose, onSuccess }: ChangePinDialogProps) {
           )}
         </div>
 
-        <p className="text-[11px] text-muted-2 text-center m-0">
+        <p className="t-11 text-muted-2 text-center m-0">
           Type with your keyboard. Each box accepts one digit.
         </p>
 

@@ -222,7 +222,7 @@ export function DebtAddScreen() {
           }}
         >
           <h3 className="heading h3-modal m-0 mb-3">Add an account first</h3>
-          <p className="text-[13.5px] text-muted leading-relaxed mb-5">
+          <p className="t-13 text-muted leading-relaxed mb-5">
             A debt records the cash that gave rise to it. Add an account in Settings → Accounts, then come back to track this debt.
           </p>
           <div className="flex gap-2 justify-end">

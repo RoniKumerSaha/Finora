@@ -379,11 +379,6 @@ export function DebtEditScreen() {
   // contract, not a slip. A flat IOU does.
   const tone = isIOwe ? 'var(--danger)' : 'var(--primary)';
   const directionLabel = isIOwe ? 'I OWE' : 'OWED TO ME';
-  const dueNote = debt.dueDate
-    ? `Due ${fmtDate(debt.dueDate)}. Payments are recorded as expenses tagged with this debt, so the ledger on the right always reconciles with this slip.`
-    : isIOwe
-      ? 'Payments are recorded as expenses tagged with this debt, so the ledger on the right always reconciles with this slip.'
-      : 'Payments you receive are recorded as income tagged with this debt, so the ledger on the right always reconciles with this slip.';
 
   return (
     // Page-level layout: a full-width header (back-link + title +
@@ -393,11 +388,11 @@ export function DebtEditScreen() {
     <div className="flex flex-col gap-6">
       <header>
         <div className="flex items-center gap-3 mb-2">
-          <Link to="/debts" className="text-muted text-sm hover:text-ink transition">{'\u2190'} Debts</Link>
+          <Link to="/debts" className="text-muted t-13 hover:text-ink transition">{'\u2190'} Debts</Link>
         </div>
         <div>
           <h1 className="heading h1-screen">Edit debt</h1>
-          <div className="text-muted text-[13px] mt-1.5">
+          <div className="text-muted t-13 mt-1.5">
             {debt.status === 'completed'
               ? 'This debt is fully paid. Editing the total keeps the record accurate.'
               : 'Change the debt details. Linked transactions stay as they are.'}
@@ -411,7 +406,7 @@ export function DebtEditScreen() {
 
           {isFullyPaid && (
             <div
-              className="text-[13px] rounded-btn px-3.5 py-3"
+              className="t-13 rounded-btn px-3.5 py-3"
               style={{
                 background: 'var(--success-callout-bg)',
                 border: '1px solid var(--success)',
@@ -558,10 +553,16 @@ export function DebtEditScreen() {
               </div>
             </div>
 
-            <div className="debt-cert__note">
-              <strong>{dueNote.split('. ')[0]}.</strong>{' '}
-              {dueNote.split('. ').slice(1).join('. ')}
-            </div>
+            {/* The footnote. Only the due date belongs here: the
+                polarity of the ledger (payments are expenses, receipts
+                are income) is stated once, in the ledger's own
+                section, and repeating it here made the same sentence
+                appear twice on one page. */}
+            {debt.dueDate && (
+              <div className="debt-cert__note">
+                <strong>Due {fmtDate(debt.dueDate)}.</strong>
+              </div>
+            )}
           </section>
 
           {/* ═══ THE EDIT PASS ═════════════════════════════════ */}
@@ -687,10 +688,10 @@ export function DebtEditScreen() {
                           aria-label="Mark this debt as a loan with interest"
                         />
                         <div className="min-w-0">
-                          <div className="text-[13.5px] font-semibold text-ink leading-tight">
+                          <div className="t-13 font-semibold text-ink leading-tight">
                             Loan with interest
                           </div>
-                          <div className="text-[12px] text-muted mt-1 leading-relaxed">
+                          <div className="t-12 text-muted mt-1 leading-relaxed">
                             Splits every payment into interest and principal.
                           </div>
                         </div>
@@ -770,7 +771,7 @@ export function DebtEditScreen() {
             }}
           >
             <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-            <p className="text-[13px] text-muted mb-4">
+            <p className="t-13 text-muted mb-4">
               {linkedTxCount > 0
                 ? `Removes the debt record only. The ${linkedTxCount} linked transaction(s) stay in your records.`
                 : 'Removes the debt record. No transactions are linked.'}
@@ -907,17 +908,19 @@ export function DebtEditScreen() {
                   </span>
                   <div className="act-row__amount text-muted">
                     {isIOwe
-                      ? 'Payments you receive are recorded as income tagged with this debt.'
-                      : 'Payments you make are recorded as expenses tagged with this debt.'}
+                      ? 'Payments you receive are recorded as income.'
+                      : 'Payments you make are recorded as expenses.'}
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* The colour key — the one thing the row above does NOT
+                say. The polarity (income vs expense) is stated once,
+                in the row; this adds only what the row cannot: which
+                colour means which direction. */}
             <div className="debt-cert__note" style={{ marginTop: 10 }}>
-              {isIOwe
-                ? <>Payments you receive against a debt are recorded as income tagged with it. <strong>Received</strong> is green; <strong>Payment</strong> is red.</>
-                : <>Payments you make against a debt are recorded as expenses tagged with it. <strong>Payment</strong> is red; <strong>Received</strong> is green.</>}
+              <strong>Received</strong> is green; <strong>Payment</strong> is red.
             </div>
           </section>
         </div>

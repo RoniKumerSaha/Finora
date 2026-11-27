@@ -37,19 +37,19 @@ export class A11yPage extends BasePage {
    * (`src/components/Field.tsx`), so the hint is the SIBLING that
    * follows the label — not a descendant of it. The wrapper is found
    * by the label it contains, and the hint is that wrapper's own
-   * `div.text-xs.text-muted` child.
+   * `div.t-12.text-muted` child.
    *
    * The wrapper is matched by its DIRECT label child, so an ancestor
    * that merely CONTAINS the label (the form, the section, the
    * screen) is not matched.
    */
   fieldHint(label: string): Locator {
-    return this.fieldWrapper(label).locator('div.text-xs.text-muted');
+    return this.fieldWrapper(label).locator('div.t-12.text-muted');
   }
 
   /** The error line under a labelled field. */
   fieldError(label: string): Locator {
-    return this.fieldWrapper(label).locator('div.text-xs.text-danger');
+    return this.fieldWrapper(label).locator('div.t-12.text-danger');
   }
 
   /**

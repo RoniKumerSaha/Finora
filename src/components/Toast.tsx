@@ -84,11 +84,11 @@ export function Toast() {
       >
         <span aria-hidden className={`shrink-0 w-[3px] self-stretch rounded ${accentBar}`} />
         <div className="min-w-0 flex-1">
-          <div className={`text-[13px] font-semibold tracking-tight ${titleColor}`}>
+          <div className={`t-13 font-semibold tracking-tight ${titleColor}`}>
             {toast.what}
           </div>
           {toast.why && (
-            <div className="text-[12px] text-muted mt-0.5 leading-snug">{toast.why}</div>
+            <div className="t-12 text-muted mt-0.5 leading-snug">{toast.why}</div>
           )}
         </div>
         {toast.action && (
@@ -98,7 +98,7 @@ export function Toast() {
               toast.action?.onClick();
               clearToast();
             }}
-            className="shrink-0 self-center text-[12px] font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:underline"
+            className="shrink-0 self-center t-12 font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:underline"
           >
             {toast.action.label}
           </button>

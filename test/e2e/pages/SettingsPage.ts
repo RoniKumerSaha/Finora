@@ -169,7 +169,7 @@ export class SettingsPage extends BasePage {
    * wrapper, so the value is the caption's NEXT sibling.
    */
   get signedInEmail(): Locator {
-    return this.signedInAsLabel.locator('..').locator('div.text-\\[14px\\]');
+    return this.signedInAsLabel.locator('..').locator('div.t-13.text-ink');
   }
 
   /**
@@ -178,7 +178,7 @@ export class SettingsPage extends BasePage {
    * "never" / "just now" / "Ns ago" / "Nm ago" / "Nh ago" / "Nd ago".
    */
   get lastSyncedValue(): Locator {
-    return this.lastSyncedLabel.locator('..').locator('div.text-\\[14px\\]');
+    return this.lastSyncedLabel.locator('..').locator('div.t-13.text-ink');
   }
 
   /** The "Sign out" button — signed-in only. */
@@ -286,7 +286,7 @@ export class SettingsPage extends BasePage {
    * The inline error under the EMAIL field specifically.
    *
    * `Field` renders the error as the wrapper's own
-   * `div.text-xs.text-danger` child, so the error is scoped to the
+   * `div.t-12.text-danger` child, so the error is scoped to the
    * wrapper that owns the "Email" label. `signInFieldError` matches
    * ANY alert in the dialog — this one pins it to the email field.
    */
@@ -295,7 +295,7 @@ export class SettingsPage extends BasePage {
       .getByRole('dialog')
       .locator('label:text-is("Email")')
       .locator('..')
-      .locator('div.text-xs.text-danger');
+      .locator('div.t-12.text-danger');
   }
 
   /**
@@ -306,7 +306,7 @@ export class SettingsPage extends BasePage {
       .getByRole('dialog')
       .locator('label:text-is("Password")')
       .locator('..')
-      .locator('div.text-xs.text-danger');
+      .locator('div.t-12.text-danger');
   }
 
   /** The "Forgot password?" link. */

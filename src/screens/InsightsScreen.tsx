@@ -133,7 +133,7 @@ export function InsightsScreen() {
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="heading h1-screen">Insight</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{subLine}</div>
+          <div className="text-muted t-13 mt-1.5 tabular">{subLine}</div>
         </div>
         <div className="flex gap-2 flex-wrap">
           {RANGE_ORDER.map(key => (
@@ -229,7 +229,7 @@ function RangePill({
       type="button"
       onClick={onSelect}
       className={[
-        'px-3 py-1.5 rounded-pill text-[12px] font-semibold transition border',
+        'px-3 py-1.5 rounded-pill t-12 font-semibold transition border',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         active
           ? 'bg-primary-soft text-primary border-transparent'
@@ -292,12 +292,12 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
 
   return (
     <div className="card">
-      <div className="flex justify-between items-end mb-3">
+      <div className="flex flex-wrap justify-between items-end gap-x-4 gap-y-2 mb-3">
         <div>
           <h2 className="heading h3-modal">Cash flow</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">Income &amp; expense by month</div>
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">Income &amp; expense by month</div>
         </div>
-        <div className="flex items-center gap-3 text-[12px] tabular">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 t-12 tabular">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-muted">Income</span>
@@ -448,7 +448,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
           {/* Tooltip */}
           {hoverBar && (
             <div
-              className="text-[11px] pointer-events-none"
+              className="t-11 pointer-events-none"
               role="tooltip"
               style={{
                 position: 'relative',
@@ -468,7 +468,7 @@ function CashFlowCard({ data }: { data: ReturnType<typeof monthlyCashFlow> }) {
               <div className="text-danger tabular">{fmtBDT(hoverBar.expense)}</div>
             </div>
           )}
-          <div className="flex justify-between items-center text-[11px] text-muted mt-2 tabular">
+          <div className="flex justify-between items-center t-11 text-muted mt-2 tabular">
             <span>Net cash flow <span className={totalIncome - totalExpense >= 0 ? 'text-primary font-semibold' : 'text-danger font-semibold'}>
               {totalIncome - totalExpense >= 0 ? '+' : '\u2212'}{fmtBDT(Math.abs(totalIncome - totalExpense))}
             </span></span>
@@ -656,7 +656,7 @@ function InsightFeedCard({ items }: { items: InsightItem[] }) {
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">What stands out</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">
             Generated from the chosen range
           </div>
         </div>
@@ -676,16 +676,16 @@ function InsightFeedCard({ items }: { items: InsightItem[] }) {
             >
               <span
                 aria-hidden
-                className={`w-[26px] h-[26px] rounded-lg flex items-center justify-center text-[13px] font-extrabold shrink-0 ${TONE_TEXT[item.tone]}`}
+                className={`w-[26px] h-[26px] rounded-lg flex items-center justify-center t-13 font-extrabold shrink-0 ${TONE_TEXT[item.tone]}`}
                 style={{ background: TONE_BG[item.tone] }}
               >
                 {ICON[item.tone]}
               </span>
               <div className="min-w-0">
-                <div className="text-[13px] font-semibold">{item.title}</div>
-                <div className="text-[11.5px] text-muted mt-0.5">{item.detail}</div>
+                <div className="t-13 font-semibold">{item.title}</div>
+                <div className="t-11 text-muted mt-0.5">{item.detail}</div>
               </div>
-              <div className={`text-[14px] font-extrabold tabular whitespace-nowrap text-right ${TONE_TEXT[item.tone]}`}>
+              <div className={`t-13 font-extrabold tabular whitespace-nowrap text-right ${TONE_TEXT[item.tone]}`}>
                 {item.value}
               </div>
             </div>
@@ -761,11 +761,11 @@ function CompositionCard({
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">Where your money sits</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">
             Composition of net worth
           </div>
         </div>
-        <div className="text-[12px] text-muted tabular shrink-0">
+        <div className="t-12 text-muted tabular shrink-0">
           Assets <span className="text-ink font-semibold">{fmtBDT(total)}</span>
         </div>
       </div>
@@ -792,10 +792,10 @@ function CompositionCard({
                 }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <div className="text-[18px] font-extrabold tracking-tight tabular leading-none">
+                <div className="t-18 font-extrabold tracking-tight tabular leading-none">
                   {netLabel}
                 </div>
-                <div className="text-[10.5px] text-muted mt-1">net worth</div>
+                <div className="t-10 text-muted mt-1">net worth</div>
               </div>
             </div>
 
@@ -803,7 +803,7 @@ function CompositionCard({
               {slices.map(s => (
                 <div
                   key={s.key}
-                  className="grid grid-cols-[10px_minmax(0,1fr)_auto_auto] gap-2 items-center text-[12.5px]"
+                  className="grid grid-cols-[10px_minmax(0,1fr)_auto_auto] gap-2 items-center t-12"
                   data-composition-slice={s.key}
                 >
                   <span
@@ -811,8 +811,8 @@ function CompositionCard({
                     style={{ background: COMPOSITION_COLORS[s.key] }}
                   />
                   <span className="truncate">{s.label}</span>
-                  <span className="text-[12.5px] font-bold tabular">{fmtBDT(s.amount)}</span>
-                  <span className="text-[11.5px] text-muted tabular w-[34px] text-right">
+                  <span className="t-12 font-bold tabular">{fmtBDT(s.amount)}</span>
+                  <span className="t-11 text-muted tabular w-[34px] text-right">
                     {Math.round(s.pct)}%
                   </span>
                 </div>
@@ -823,7 +823,7 @@ function CompositionCard({
                   ring adds up to. */}
               {debt > 0 && (
                 <div
-                  className="grid grid-cols-[10px_minmax(0,1fr)_auto_auto] gap-2 items-center text-[12.5px] mt-1 pt-2 border-t border-border"
+                  className="grid grid-cols-[10px_minmax(0,1fr)_auto_auto] gap-2 items-center t-12 mt-1 pt-2 border-t border-border"
                   data-composition-slice="debt"
                 >
                   <span
@@ -831,16 +831,16 @@ function CompositionCard({
                     style={{ background: COMPOSITION_COLORS.debt }}
                   />
                   <span className="truncate">Less: debt</span>
-                  <span className="text-[12.5px] font-bold tabular text-danger">
+                  <span className="t-12 font-bold tabular text-danger">
                     {'\u2212'}{fmtBDT(debt)}
                   </span>
-                  <span className="text-[11.5px] text-muted tabular w-[34px] text-right" />
+                  <span className="t-11 text-muted tabular w-[34px] text-right" />
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-border text-[12px] text-muted">
+          <div className="mt-auto pt-4 border-t border-border t-12 text-muted">
             {slices.find(s => s.key === 'cash')?.pct !== undefined ? (
               <>
                 Cash covers{' '}
@@ -883,13 +883,13 @@ function InvestmentsSummaryCard({
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">Investments</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">
             {data.rows.length} active scheme{data.rows.length === 1 ? '' : 's'}
           </div>
         </div>
         <Link
           to="/investments"
-          className="text-[12px] text-primary font-bold hover:underline underline-offset-2 shrink-0"
+          className="t-12 text-primary font-bold hover:underline underline-offset-2 shrink-0"
         >
           See all {'→'}
         </Link>
@@ -903,18 +903,18 @@ function InvestmentsSummaryCard({
       ) : (
         <>
           <div className="flex items-baseline gap-2.5 mb-2">
-            <span className="text-[24px] font-extrabold tracking-tight tabular leading-none">
+            <span className="t-22 font-extrabold tracking-tight tabular leading-none">
               {fmtBDT(data.totalContributed)}
             </span>
-            <span className="text-[12px] text-muted">invested</span>
+            <span className="t-12 text-muted">invested</span>
           </div>
           <div className="flex items-baseline gap-2.5 mb-1">
-            <span className="text-[15px] font-extrabold tabular text-primary">
+            <span className="t-15 font-extrabold tabular text-primary">
               {data.totalEarnings >= 0 ? '+' : '\u2212'}{fmtBDT(Math.abs(data.totalEarnings))}
             </span>
-            <span className="text-[12px] text-muted">total earnings at maturity</span>
+            <span className="t-12 text-muted">total earnings at maturity</span>
           </div>
-          <div className="text-[12px] text-muted mb-4">
+          <div className="t-12 text-muted mb-4">
             Worth{' '}
             <span className="text-ink font-semibold tabular">{fmtBDT(data.totalMaturity)}</span>{' '}
             when every scheme matures · average rate{' '}
@@ -929,7 +929,7 @@ function InvestmentsSummaryCard({
             ))}
           </div>
 
-          <div className="mt-3 pt-3 border-t border-border text-[11.5px] text-muted">
+          <div className="mt-3 pt-3 border-t border-border t-11 text-muted">
             Earnings are what each scheme is projected to pay at maturity, not profit
             already banked.
           </div>
@@ -942,11 +942,11 @@ function InvestmentsSummaryCard({
 function InvestmentSummaryRowView({ row }: { row: InvestmentSummaryRow }) {
   return (
     <div
-      className="grid grid-cols-[minmax(0,1fr)_96px_84px] gap-2.5 items-center text-[12.5px]"
+      className="grid grid-cols-[minmax(0,1fr)_96px_84px] gap-2.5 items-center t-12"
       data-investment-row={row.id}
     >
       <span className="truncate">{row.name}</span>
-      <span className="text-muted tabular text-[11.5px] whitespace-nowrap">
+      <span className="text-muted tabular t-11 whitespace-nowrap">
         {row.rate}% · {row.termMonths}mo
       </span>
       <span
@@ -977,13 +977,13 @@ function LoansSummaryCard({ data }: { data: ReturnType<typeof loanSummary> }) {
       <div className="flex justify-between items-end mb-3">
         <div>
           <h2 className="heading h3-modal">Loans</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">
             {data.rows.length} active loan{data.rows.length === 1 ? '' : 's'}
           </div>
         </div>
         <Link
           to="/debts"
-          className="text-[12px] text-primary font-bold hover:underline underline-offset-2 shrink-0"
+          className="t-12 text-primary font-bold hover:underline underline-offset-2 shrink-0"
         >
           See all {'→'}
         </Link>
@@ -997,18 +997,18 @@ function LoansSummaryCard({ data }: { data: ReturnType<typeof loanSummary> }) {
       ) : (
         <>
           <div className="flex items-baseline gap-2.5 mb-2">
-            <span className="text-[24px] font-extrabold tracking-tight tabular leading-none">
+            <span className="t-22 font-extrabold tracking-tight tabular leading-none">
               {fmtBDT(data.totalOutstanding)}
             </span>
-            <span className="text-[12px] text-muted">still owed</span>
+            <span className="t-12 text-muted">still owed</span>
           </div>
           <div className="flex items-baseline gap-2.5 mb-1">
-            <span className="text-[15px] font-extrabold tabular text-danger">
+            <span className="t-15 font-extrabold tabular text-danger">
               {fmtBDT(data.totalInterestLeft)}
             </span>
-            <span className="text-[12px] text-muted">interest left to pay</span>
+            <span className="t-12 text-muted">interest left to pay</span>
           </div>
-          <div className="text-[12px] text-muted mb-4">
+          <div className="t-12 text-muted mb-4">
             <span className="tabular text-ink font-semibold">
               {fmtBDT(data.totalMonthlyInterest)}
             </span>{' '}
@@ -1021,7 +1021,7 @@ function LoansSummaryCard({ data }: { data: ReturnType<typeof loanSummary> }) {
             ))}
           </div>
 
-          <div className="mt-3 pt-3 border-t border-border text-[11.5px] text-muted">
+          <div className="mt-3 pt-3 border-t border-border t-11 text-muted">
             Only the principal portion of a payment reduces what you owe — interest is the
             bank's cut.
           </div>
@@ -1042,8 +1042,8 @@ function LoanSummaryRowView({ row }: { row: LoanSummaryRow }) {
   return (
     <div data-loan-row={row.id}>
       <div className="flex justify-between items-baseline gap-3 mb-1.5">
-        <span className="text-[12.5px] font-bold truncate">{row.name}</span>
-        <span className="text-[12px] text-muted tabular whitespace-nowrap">
+        <span className="t-12 font-bold truncate">{row.name}</span>
+        <span className="t-12 text-muted tabular whitespace-nowrap">
           {row.monthly > 0 ? `${fmtBDT(row.monthly)}/mo` : 'no fixed payment'}
         </span>
       </div>
@@ -1057,7 +1057,7 @@ function LoanSummaryRowView({ row }: { row: LoanSummaryRow }) {
           style={{ width: `${interestPct}%`, background: 'var(--danger)' }}
         />
       </div>
-      <div className="flex justify-between items-baseline gap-3 mt-1.5 text-[11px] text-muted tabular">
+      <div className="flex justify-between items-baseline gap-3 mt-1.5 t-11 text-muted tabular">
         <span>
           <span className="text-primary font-semibold">{fmtBDT(row.principalPaid)}</span>{' '}
           principal
@@ -1232,14 +1232,19 @@ function MonthlyStatementCard({
 
   return (
     <div className="card">
-      <div className="flex justify-between items-end mb-3">
+      {/* The header wraps on narrow screens. The legend carries three
+          label-and-figure pairs, which is wider than a 390px phone
+          once the ৳ amounts are counted — and because it was
+          `shrink-0`, it could not give way, so the whole card
+          overflowed the viewport instead of wrapping. */}
+      <div className="flex flex-wrap justify-between items-end gap-x-4 gap-y-2 mb-3">
         <div>
           <h2 className="heading h3-modal">Monthly statement</h2>
-          <div className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
+          <div className="t-11 text-muted uppercase tracking-wider mt-0.5">
             Income, expense and net by month
           </div>
         </div>
-        <div className="flex items-center gap-3 text-[12px] tabular shrink-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 t-12 tabular">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-muted">Income</span>
@@ -1268,8 +1273,16 @@ function MonthlyStatementCard({
         />
       ) : (
         <>
+          {/* The statement is a five-column table with fixed widths,
+              which is wider than a phone. It scrolls sideways inside
+              its own box rather than pushing the page wide — the
+              same treatment the Home screen's transaction table gets.
+              Without this the whole card overflowed the viewport and
+              the Net column sat past the right edge of the screen. */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[456px]">
           {/* Column headers */}
-          <div className="text-[10.5px] uppercase tracking-[0.08em] font-bold text-muted grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 pb-2 border-b border-border">
+          <div className="label-sm grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 pb-2 border-b border-border">
             <div>Month</div>
             <div className="flex items-center gap-2">
               <span>Net flow</span>
@@ -1288,7 +1301,7 @@ function MonthlyStatementCard({
           </div>
 
           {/* Rows */}
-          <div className="text-[13px] tabular">
+          <div className="t-13 tabular">
             {bars.map(b => {
               const net = b.income - b.expense;
               const hasActivity = b.income > 0 || b.expense > 0;
@@ -1298,7 +1311,7 @@ function MonthlyStatementCard({
                   className="grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 items-center py-1.5 border-b border-border/60 last:border-b-0 group"
                   data-statement-row={b.label}
                 >
-                  <div className={`text-[12.5px] ${hasActivity ? 'font-semibold text-ink' : 'text-muted'}`}>
+                  <div className={`t-12 ${hasActivity ? 'font-semibold text-ink' : 'text-muted'}`}>
                     {b.label}
                   </div>
                   <FlowBar income={b.income} expense={b.expense} maxNet={maxNet} />
@@ -1322,7 +1335,7 @@ function MonthlyStatementCard({
           </div>
 
           {/* Total row */}
-          <div className="grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 items-center pt-3 border-t border-divider text-[12px] font-extrabold uppercase tracking-[0.08em] text-muted">
+          <div className="grid grid-cols-[72px_minmax(0,1fr)_96px_96px_96px] gap-3 items-center pt-3 border-t border-divider label t-12 font-extrabold">
             <div>Total</div>
             <div />
             <div className="text-right tabular text-primary">{fmtBDT(totalIncome)}</div>
@@ -1340,6 +1353,8 @@ function MonthlyStatementCard({
               {fmtBDT(Math.abs(totalIncome - totalExpense))}
             </div>
           </div>
+          </div>
+          </div>
         </>
       )}
     </div>
@@ -1351,11 +1366,11 @@ function MonthlyStatementCard({
 function EmptyState({ message, cta }: { message: string; cta?: { to: string; label: string } }) {
   return (
     <div className="py-8 text-center">
-      <div className="text-[14px] text-muted">{message}</div>
+      <div className="t-13 text-muted">{message}</div>
       {cta && (
         <Link
           to={cta.to}
-          className="inline-block mt-3 text-[13px] font-semibold text-primary hover:underline"
+          className="inline-block mt-3 t-13 font-semibold text-primary hover:underline"
         >
           {cta.label}
         </Link>

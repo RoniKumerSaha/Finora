@@ -164,7 +164,7 @@ export function LockScreen() {
 
         <div className="flex flex-col items-center gap-1">
           <h1 className="heading h1-display m-0">Secure Finora</h1>
-          <p className="text-[13px] text-muted m-0">
+          <p className="t-13 text-muted m-0">
             Enter your 6-digit PIN to unlock
           </p>
         </div>
@@ -179,12 +179,12 @@ export function LockScreen() {
         />
 
         {error && (
-          <div role="alert" className="text-[12.5px] text-danger font-semibold">
+          <div role="alert" className="t-12 text-danger font-semibold">
             {error}
           </div>
         )}
         {!error && lockoutActive && (
-          <div className="text-[12px] text-muted">
+          <div className="t-12 text-muted">
             {indefiniteLockout ? 'Locked. Reload the page to continue.' : `Try again in ${Math.ceil(remaining / 1000)}s`}
           </div>
         )}
@@ -192,7 +192,7 @@ export function LockScreen() {
         <button
           type="button"
           onClick={onForgotPin}
-          className="text-[12px] text-danger hover:opacity-80 underline underline-offset-2 transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+          className="t-12 text-danger hover:opacity-80 underline underline-offset-2 transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
         >
           Forgot PIN? Wipe all data
         </button>

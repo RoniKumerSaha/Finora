@@ -2,7 +2,7 @@
  * Field — single form field with label + input + error slot.
  *
  * v1 visual target: docs/ux-designs/.../mockups/v1/index.html
- *   - label: 11px muted uppercase tracked
+ *   - label: the shared `.label` class — 11px muted uppercase tracked
  *   - input:  bg-surface-2, border-border, padding 10×14,
  *             radius 10px (r-input), focus → 2px primary outline
  *   - error:  danger text (inline three-part error formatting is
@@ -24,7 +24,7 @@ import type { InputHTMLAttributes, ReactElement, ReactNode, SelectHTMLAttributes
 
 const INPUT_BASE =
   'w-full bg-surface-2 text-ink rounded-input border border-border ' +
-  'px-[14px] py-2.5 text-sm leading-tight ' +
+  'px-[14px] py-2.5 t-13 leading-tight ' +
   'transition shadow-[var(--shadow-inset)] ' +
   'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 ' +
   'disabled:opacity-50';
@@ -131,15 +131,15 @@ export function Field({
       <label
         htmlFor={labelable ? controlId : undefined}
         className={[
-          'text-[11px] text-muted uppercase tracking-[0.08em] font-semibold',
+          'label',
           hideLabel ? 'sr-only' : '',
         ].join(' ').trim()}
       >
         {label}
       </label>
       {rendered}
-      {hint && !error && <div className="text-xs text-muted mt-0.5">{hint}</div>}
-      {error && <div className="text-xs text-danger mt-0.5">{error}</div>}
+      {hint && !error && <div className="t-12 text-muted mt-0.5">{hint}</div>}
+      {error && <div className="t-12 text-danger mt-0.5">{error}</div>}
     </div>
   );
 }
@@ -173,7 +173,7 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement>) {
       onWheel={blurOnWheel ? (e => { (e.target as HTMLInputElement).blur(); onWheel?.(e); }) : onWheel}
       className={[
         INPUT_BASE,
-        'rounded-btn text-[32px] font-bold tabular text-primary py-3.5',
+        'rounded-btn t-30 font-bold tabular text-primary py-3.5',
         'shadow-[var(--shadow-inset)]',
         className || '',
       ].join(' ')}
@@ -196,7 +196,7 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted t-12"
       >
         {'\u25BE'}
       </span>

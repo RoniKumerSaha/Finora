@@ -79,7 +79,7 @@ export function SecuritySection() {
     return (
       <section className="card">
         <h2 className="heading h3-modal mb-2">Security</h2>
-        <p className="text-[13px] text-muted">
+        <p className="t-13 text-muted">
           PIN lock is unavailable in this browser mode. The app stays open
           without a PIN until storage is restored.
         </p>
@@ -90,7 +90,7 @@ export function SecuritySection() {
   return (
     <section className="card" data-testid="security-section">
       <h2 className="heading h3-modal mb-2">Security</h2>
-      <p className="text-[13px] text-muted mb-4">
+      <p className="t-13 text-muted mb-4">
         Protect this device data with a 6-digit PIN. You'll need to enter it
         every time the app loads.
       </p>
@@ -111,7 +111,7 @@ export function SecuritySection() {
         )}
       </div>
       {pinSet && (
-        <div className="text-[11px] text-muted mt-3">
+        <div className="t-11 text-muted mt-3">
           Forgot your PIN? Wipe all data from the Danger Zone — there's no
           recovery, by design.
         </div>

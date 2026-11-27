@@ -59,13 +59,13 @@ export function CardTotalChecker() {
       {/* Header row — section label + clear button */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+          <div className="label">
             Quick total
           </div>
-          <h2 id="card-checker-title" className="font-semibold text-[18px] tracking-tight mt-1.5">
+          <h2 id="card-checker-title" className="heading h2-section mt-1.5">
             Check the cards you'll pay
           </h2>
-          <div className="text-sm text-muted mt-1.5 whitespace-nowrap">
+          <div className="t-13 text-muted mt-1.5 whitespace-nowrap">
             Tick items, set your income, see how much you'd save (or overspend). Nothing is saved.
           </div>
         </div>
@@ -73,7 +73,7 @@ export function CardTotalChecker() {
           <button
             type="button"
             onClick={clear}
-            className="text-[12.5px] text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+            className="t-12 text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
           >
             Clear selection
           </button>
@@ -85,14 +85,14 @@ export function CardTotalChecker() {
           pill. Empty income → no Saving line in the footer. */}
       <div className="flex items-center gap-3 flex-wrap">
         <IncomeInput value={income} onCommit={setIncome} />
-        <span className="text-[11.5px] text-muted">
+        <span className="t-11 text-muted">
           Type your expected income for the month
         </span>
       </div>
 
       {/* Body: chips grid or empty state */}
       {items.length === 0 ? (
-        <div className="text-[12.5px] text-muted">
+        <div className="t-12 text-muted">
           No items in this month's plan yet — open the planner to start.
         </div>
       ) : (
@@ -129,11 +129,11 @@ export function CardTotalChecker() {
                       </svg>
                     )}
                   </span>
-                  <span className="shrink-0 text-base leading-none" aria-hidden>
+                  <span className="shrink-0 t-13 leading-none" aria-hidden>
                     {cat.emoji}
                   </span>
-                  <span className="text-[13px] font-semibold truncate max-w-[160px]">{cat.name}</span>
-                  <span className="text-[12.5px] text-muted tabular shrink-0">
+                  <span className="t-13 font-semibold truncate max-w-[160px]">{cat.name}</span>
+                  <span className="t-12 text-muted tabular shrink-0">
                     {fmtBDT(budget)}
                   </span>
                 </button>
@@ -147,27 +147,27 @@ export function CardTotalChecker() {
           <div
             className="pt-3 border-t border-border flex flex-wrap items-baseline gap-x-6 gap-y-2"
           >
-            <span className="text-[12.5px] text-muted tabular">
-              <b className="text-ink text-[15px]">{selected.size}</b>
+            <span className="t-12 text-muted tabular">
+              <b className="text-ink t-15">{selected.size}</b>
               <span className="ml-1">of {items.length} selected</span>
             </span>
-            <span className="text-[12.5px] text-muted tabular">
-              Total <b className="text-ink text-[18px] font-bold tabular ml-1">{fmtBDT(total)}</b>
+            <span className="t-12 text-muted tabular">
+              Total <b className="text-ink t-18 font-bold tabular ml-1">{fmtBDT(total)}</b>
             </span>
             {income > 0 && (
               saving >= 0 ? (
-                <span className="text-[12.5px] text-muted tabular">
+                <span className="t-12 text-muted tabular">
                   Saved <b
-                    className="font-bold tabular ml-1 text-[18px]"
+                    className="font-bold tabular ml-1 t-18"
                     style={{ color: 'var(--success-title)' }}
                   >
                     {fmtBDT(saving)}
                   </b>
                 </span>
               ) : (
-                <span className="text-[12.5px] text-muted tabular">
+                <span className="t-12 text-muted tabular">
                   Over by <b
-                    className="font-bold tabular ml-1 text-[18px]"
+                    className="font-bold tabular ml-1 t-18"
                     style={{ color: 'var(--danger-title)' }}
                   >
                     {fmtBDT(Math.abs(saving))}
@@ -200,11 +200,11 @@ function IncomeInput({ value, onCommit }: { value: number; onCommit: (n: number)
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted">
+      <span className="label">
         Income
       </span>
       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-input border border-border bg-surface-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 transition">
-        <span className="text-[13px] text-muted">৳</span>
+        <span className="t-13 text-muted">৳</span>
         <input
           ref={inputRef}
           type="number"
@@ -222,7 +222,7 @@ function IncomeInput({ value, onCommit }: { value: number; onCommit: (n: number)
           onBlur={commit}
           placeholder="0"
           aria-label="Income"
-          className="bg-transparent border-0 outline-none tabular w-[110px] text-right font-semibold text-ink text-[14px]"
+          className="bg-transparent border-0 outline-none tabular w-[110px] text-right font-semibold text-ink t-13"
         />
       </span>
     </div>

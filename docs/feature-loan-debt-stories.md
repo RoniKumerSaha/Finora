@@ -213,7 +213,7 @@ Where the user sees the result.
 - Otherwise: no change.
 
 **AC:**
-- Copy is visually integrated (same `text-xs text-muted`, same italic emphasis).
+- Copy is visually integrated (same `t-12 text-muted`, same italic emphasis).
 
 ☐ todo
 

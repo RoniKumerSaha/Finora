@@ -27,7 +27,7 @@
  *
  * The e2e suite addresses the cards structurally, so the contract
  * below is load-bearing: the direction tag, the paid line, the
- * counterparty line, the `text-[24px]` headline figure, the "of ৳ Y
+ * counterparty line, the `t-22` headline figure, the "of ৳ Y
  * total" caption, the "% paid" hint, the loan terms line, the loan
  * amount and split lines, the Monthly EMI / Outstanding pair, and
  * the Summary's "You owe" / "Owed to you" figures and captions.
@@ -181,15 +181,19 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         <div className="min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <div className="debt-cert__name">{d.name}</div>
-            {/* The "Loan" pill — the loan sub-type. A flat debt has
-                no pill: the stamp already says what it is. */}
+            {/* The "LOAN" chip — the loan sub-type. A flat debt has
+                no chip: the stamp already says what it is.
+
+                It wears the STAMP treatment — a hairline rule in the
+                card's own tone, square corners, the wide tracking of
+                an engraved label — because it sits directly beside the
+                card's own stamp. As a soft filled blob it read as a
+                different badge family from the stamp next to it; as a
+                miniature stamp the two speak one language. */}
             {isLoan && (
               <span
-                className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded"
-                style={{
-                  background: 'color-mix(in srgb, var(--tone) 22%, transparent)',
-                  color: 'var(--tone)',
-                }}
+                className="shrink-0 inline-flex items-center px-2 py-[3px] rounded-[4px] border border-current t-10 font-bold uppercase tracking-label"
+                style={{ color: 'var(--tone)' }}
               >
                 Loan
               </span>
@@ -224,21 +228,17 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         )}
       </div>
 
-      {/* The loan's terms — the APR and the term, the critical pair a
-          borrower reads first. On a flat note there is no term, so
-          the line names the counterparty instead. */}
-      {isLoan ? (
-        <div className="text-[12px] text-muted tabular truncate mt-2">
-          {rate > 0 && <span className="shrink-0">{rate}% APR</span>}
-          {rate > 0 && term > 0 && <span> {MIDDOT} </span>}
-          {term > 0 && <span className="shrink-0">{term}mo</span>}
+      {/* The counterparty line — a flat note has no term and no rate,
+          so the one fact it still owes the reader is WHO it is with.
+          A loan does not need this line at all: its APR is engraved
+          in the seal above and its term is named in the serial line
+          beside the name ("LOAN 36 MO"). The line used to repeat
+          both — "12.75% APR · 36mo" sat directly under a seal
+          already reading 12.75% and a serial already reading 36 MO. */}
+      {!isLoan && d.person && (
+        <div className="t-12 text-muted tabular truncate mt-2">
+          {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
         </div>
-      ) : (
-        d.person && (
-          <div className="text-[12px] text-muted tabular truncate mt-2">
-            {isIOwe ? 'Owed to' : 'Owed by'} <span className="text-ink font-semibold">{d.person}</span>
-          </div>
-        )
       )}
 
       {isLoan ? (
@@ -312,18 +312,6 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         }
       />
 
-      {/* The loan's tally — the split of everything paid so far into
-          interest (money paid to the lender) and principal (money
-          that actually reduced what you owe). */}
-      {isLoan && (
-        <div className="debt-cert__tally tabular">
-          <span className="pip" aria-hidden />
-          <span>
-            Paid <b>{fmtBDT(totalInterest)}</b> interest and <b>{fmtBDT(totalPrincipal)}</b> principal
-          </span>
-        </div>
-      )}
-
       {/* The document's closing figures. */}
       {isLoan ? (
         <div className="debt-cert__vals">
@@ -343,8 +331,14 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
             <div className="n">{fmtBDT(outstanding)}</div>
           </div>
           <div className="debt-cert__v debt-cert__v--mat" style={{ textAlign: 'right' }}>
-            <div className="k">Of total</div>
-            <div className="n">of {fmtBDT(d.total)} total</div>
+            {/* The unpaid share — the complement of the "Settled %"
+                field above. That field says how much is done; this
+                one says how much is still owed, and it is the only
+                figure on the card not already stated. It used to
+                repeat the total instead, printing the same number
+                twice thirty pixels apart. */}
+            <div className="k">Still owed</div>
+            <div className="n">{100 - pct}%</div>
           </div>
         </div>
       )}
@@ -368,7 +362,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
                   ? 'color-mix(in srgb, var(--danger) 65%, black)'
                   : 'color-mix(in srgb, var(--primary) 65%, black)',
               }}
-              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
+              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] t-13 font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
             >
               <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
               {isIOwe ? 'Pay now' : 'Receive now'}
@@ -390,7 +384,7 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
                   ? 'color-mix(in srgb, var(--danger) 65%, black)'
                   : 'color-mix(in srgb, var(--primary) 65%, black)',
               }}
-              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] text-[13px] font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
+              className={`relative z-[1] shrink-0 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[#ffffff] t-13 font-bold tracking-tight border-0 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 transition active:translate-y-px ${isIOwe ? 'focus-visible:ring-danger/40' : 'focus-visible:ring-primary/40'}`}
             >
               <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-white" />
               {isIOwe ? 'Pay now' : 'Receive now'}
@@ -509,12 +503,19 @@ function DebtSummary({
         </div>
       </div>
 
+      {/* This note earns its place: the mechanics it describes —
+          opening transactions, income vs expense polarity, the split
+          between interest and principal — appear NOWHERE else in the
+          app. It is genuinely additive, so it stays. */}
       <div className="debt-cert__note">
-        <strong>How it works:</strong> Each debt records an opening transaction for the cash that gave rise to it — borrowed cash lands as <em>Income</em> in your account for <em>i_owe</em>; lent cash lands as <em>Expense</em> for <em>owed_to_me</em>. Use the <em>Pay now</em> / <em>Receive now</em> chip on a card to record a partial repayment against the same account.
+        <strong>How it works:</strong> borrowed cash lands as <em>Income</em>; lent cash lands as{' '}
+        <em>Expense</em>. Use the <em>Pay now</em> / <em>Receive now</em> chip on a card to record
+        a partial repayment.
         {hasAnyLoan && (
           <>
             {' '}
-            For loans with interest, each payment is split into <em>interest</em> (calculated on the outstanding principal) and <em>principal</em> — only the principal portion reduces what you still owe.
+            On loans, each payment splits into <em>interest</em> and <em>principal</em> — only the
+            principal reduces what you still owe.
           </>
         )}
       </div>
@@ -537,7 +538,7 @@ function CompletedSection({ rows }: { rows: any[] }) {
     <section className="debt-cert debt-cert--settled" style={{ ['--tone' as string]: 'var(--muted-2)' }}>
       <div className="debt-cert__head">
         <div className="min-w-0">
-          <h2 className="debt-cert__name" style={{ textTransform: 'uppercase', fontSize: '13px', margin: 0 }}>
+          <h2 className="debt-cert__name" style={{ margin: 0 }}>
             Completed ({rows.length})
           </h2>
           <div className="debt-cert__serial">SETTLED IN FULL</div>
@@ -569,14 +570,14 @@ function CompletedSection({ rows }: { rows: any[] }) {
             >
               <div className="flex justify-between items-center gap-3">
                 <div className="min-w-0">
-                  <div className="debt-cert__name" style={{ fontSize: '14px' }}>{d.name}</div>
-                  <div className="text-[11px] text-muted leading-tight mt-1 truncate tabular">
+                  <div className="debt-cert__name">{d.name}</div>
+                  <div className="t-11 text-muted leading-tight mt-1 truncate tabular">
                     {fmtBDT(d.total)} paid off
                     {d.person ? ` ${MIDDOT} ${d.person}` : ''}
                     {acc ? ` ${MIDDOT} ${acc.name}` : ''}
                   </div>
                 </div>
-                <div className="shrink-0 text-[10px] text-muted uppercase tracking-wider font-semibold opacity-0 group-hover:opacity-100 transition">
+                <div className="shrink-0 t-10 text-muted uppercase tracking-wider font-semibold opacity-0 group-hover:opacity-100 transition">
                   View
                 </div>
               </div>
@@ -628,16 +629,16 @@ export function DebtsListScreen() {
       <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <h1 className="heading h1-screen">Debts</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">
+          <div className="text-muted t-13 mt-1.5 tabular">
             {active.length} active{completed.length > 0 ? ` ${MIDDOT} ${completed.length} completed` : ''}
           </div>
         </div>
         <Link
           to="/debts/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           style={{ background: 'var(--primary)' }}
         >
-          <span className="text-base leading-none">+</span>
+          <span className="t-13 leading-none">+</span>
           <span>Add</span>
         </Link>
       </div>
@@ -645,8 +646,8 @@ export function DebtsListScreen() {
       {ds.length === 0 ? (
         <section className="card">
           <div className="py-10 text-center text-muted">
-            <div className="text-[14px] font-semibold text-ink">No debts yet.</div>
-            <div className="text-[12.5px] mt-2">Add a debt to track who owes whom.</div>
+            <div className="t-13 font-semibold text-ink">No debts yet.</div>
+            <div className="t-12 mt-2">Add a debt to track who owes whom.</div>
           </div>
         </section>
       ) : (

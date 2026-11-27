@@ -14,6 +14,13 @@
  * sidebar, and cards.
  *
  * 2026-09-01 single-mode: light-mode token block removed.
+ *
+ * 2026-11-27 typography unification: the type system now lives here as
+ * tokens — two families (--font-sans, --font-mono), one size scale
+ * (--text-10 … --text-30) and one tracking scale (--tracking-label,
+ * --tracking-narrow, --tracking-wide, --tracking-tight). The
+ * --font-heading / --font-body / --font-numeric names are kept as
+ * aliases of --font-sans so existing rules keep working.
  */
 
 @import "tailwindcss";
@@ -59,13 +66,85 @@
   --color-border-2: var(--border-2);
   --color-divider: var(--divider);
 
-  /* Type families — single system font everywhere for visual consistency.
-     Heading, body, and numeric all reference the same family; numeric
-     values still get tabular-nums via the .tabular utility where
-     alignment matters. */
-  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
-  --font-numeric: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  /* ---- Type families --------------------------------------------
+     Two families, and only two:
+       --font-sans  the app UI. Every screen, row, label, button —
+                    and every DOCUMENT surface too (certificates,
+                    receipts, ledger sheets, plan paper).
+       --font-mono  reserved for the few places that are genuinely
+                    monospaced by nature: PIN digits, and code-like
+                    runs. It is NOT the document language any more.
+
+     The document family used to be --font-mono. That was a
+     deliberate identity at the time ("monospaced engraving, dashed
+     rules"), but it was switched on 2026-11-27: mono at these sizes
+     read as typewritten, and it made the engraved figures WIDER
+     than the sans UI beside them, so a certificate felt louder
+     than the screen around it. The perforated edges, dashed rules
+     and paper texture carry the document idea on their own — the
+     typeface does not need to.
+
+     --font-heading / --font-body / --font-numeric are aliases for
+     --font-sans, kept so existing rules keep working. Numeric values
+     get tabular-nums via the .tabular utility where alignment
+     matters.
+
+     The TAKA SIGN. Every price in this app is prefixed with ৳
+     (U+09F3). Segoe UI does have that glyph, but only a NARROW
+     one — 68% the width of a digit — so the browser stopped there
+     and the sign came out as a small thin mark beside a full-size
+     number. "Nirmala UI" (Windows) and "Noto Sans Bengali"
+     (cross-platform) draw it at full size and full weight.
+
+     So the Bengali faces go FIRST in the stack. They only contain
+     Bengali, so they contribute nothing to the Latin text — but
+     they DO claim the ৳, and the sign ends up drawn by the face
+     that draws it properly. Everything else — digits, words —
+     falls through to the Latin face exactly as before. */
+  --font-sans: "Nirmala UI", "Noto Sans Bengali", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  --font-mono: "Nirmala UI", "Noto Sans Bengali", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --font-heading: var(--font-sans);
+  --font-body: var(--font-sans);
+  --font-numeric: var(--font-sans);
+
+  /* ---- Type scale -----------------------------------------------
+     The whole app draws its sizes from these eight steps. Use the
+     matching .t-* utility (see app.css) rather than an arbitrary
+     text-[Npx] value, so one edit rescales every screen.
+
+     Stepped down one notch on 2026-11-27: at the old scale the
+     figures were too loud against the labels they sat next to. The
+     small steps (10–13) were left alone — they were already tight
+     enough, and they carry the micro-labels that need to stay
+     legible. */
+  --text-10: 10px;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-15: 14px;
+  --text-18: 16px;
+  --text-22: 18px;
+  --text-30: 24px;
+
+  /* ---- Tracking scale -------------------------------------------
+     Four values cover every tracked run in the app:
+       --tracking-label   uppercase micro-labels
+       --tracking-narrow  uppercase pills and badges that carry a
+                          long word and need to stay compact
+       --tracking-wide    serials, certificate engraving
+       --tracking-tight   large numerals, headings
+
+     --tracking-wide was 0.12em while the documents were monospaced:
+     mono glyphs are wide and need the air to stop a serial running
+     together. Sans glyphs are narrower already, and at 0.12em the
+     uppercase runs came apart into individual letters, which read
+     as broken rather than engraved. It is 0.07em now — still
+     clearly tracked, no longer gappy. */
+  --tracking-label: 0.08em;
+  --tracking-narrow: 0.05em;
+  --tracking-wide: 0.07em;
+  --tracking-tight: -0.02em;
 
   /* Radii — refined for a more premium feel: 12/10/10/999.
      Cards pull in slightly (r-card 12) so dense lists don't feel

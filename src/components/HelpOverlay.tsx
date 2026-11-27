@@ -119,19 +119,19 @@ function HelpOverlay({ topic, onClose }: { topic: HelpTopic; onClose: () => void
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 w-8 h-8 -mt-1 -mr-1 inline-flex items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 text-lg leading-none"
+            className="shrink-0 w-8 h-8 -mt-1 -mr-1 inline-flex items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 t-18 leading-none"
           >
             {'\u00D7'}
           </button>
         </div>
-        <div className="text-[13.5px] text-ink leading-relaxed flex flex-col gap-3 [&_p]:m-0">
+        <div className="t-13 text-ink leading-relaxed flex flex-col gap-3 [&_p]:m-0">
           {page.body}
         </div>
         <div className="flex justify-end mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center px-[18px] py-2.5 rounded-btn font-bold text-sm bg-primary text-primary-on hover:opacity-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="inline-flex items-center justify-center px-[18px] py-2.5 rounded-btn font-bold t-13 bg-primary text-primary-on hover:opacity-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             Got it
           </button>

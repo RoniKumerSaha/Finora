@@ -74,14 +74,14 @@ export function RoleAlertBanner() {
         borderLeft: `3px solid ${colorBar}`,
       }}
     >
-      <div className={`font-semibold text-[14px] ${titleFor(kind)}`}>{banner.what}</div>
-      <div className="text-[12.5px] text-muted leading-snug">{banner.why}</div>
-      <div className="text-[12.5px] text-ink leading-snug">{banner.fix}</div>
+      <div className={`font-semibold t-13 ${titleFor(kind)}`}>{banner.what}</div>
+      <div className="t-12 text-muted leading-snug">{banner.why}</div>
+      <div className="t-12 text-ink leading-snug">{banner.fix}</div>
       <button
         type="button"
         onClick={dismiss}
         aria-label="Dismiss"
-        className="absolute top-2.5 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md text-sm text-muted hover:bg-surface-3 hover:text-ink transition"
+        className="absolute top-2.5 right-3 w-7 h-7 inline-flex items-center justify-center rounded-md t-13 text-muted hover:bg-surface-3 hover:text-ink transition"
       >
         <Close className="w-4 h-4" />
       </button>

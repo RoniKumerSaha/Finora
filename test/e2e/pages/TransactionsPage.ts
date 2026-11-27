@@ -155,7 +155,7 @@ export class TransactionsPage extends BasePage {
 
   /** A row's subtitle — the account, the category, or the transfer. */
   subtitleOf(row: Locator): Locator {
-    return row.locator('div.text-xs.text-muted');
+    return row.locator('div.t-12.text-muted');
   }
 
   /** A row's amount — the bold, tabular figure. */
@@ -525,7 +525,7 @@ export class TransactionsPage extends BasePage {
    * form, and one under the Account picker on income / expense.
    */
   get projectionLines(): Locator {
-    return this.page.locator('div.text-xs.text-muted').filter({
+    return this.page.locator('div.t-12.text-muted').filter({
       hasText: 'projected balance after save',
     });
   }
@@ -544,7 +544,7 @@ export class TransactionsPage extends BasePage {
 
   /** The edit screen's sub-line — "{type} · {note} · {date}". */
   get editSubLine(): Locator {
-    return this.page.locator('div.text-muted.text-\\[13px\\].capitalize');
+    return this.page.locator('div.text-muted.t-13.capitalize');
   }
 
   /** The not-found state on an edit URL whose transaction is gone. */
@@ -667,8 +667,8 @@ export class TransactionsPage extends BasePage {
     // already mounted — but it is read through the auto-waiting
     // locator to tolerate a slow frame.
     await toast.waitFor({ state: 'visible' });
-    const title = (await toast.locator('div.text-\\[13px\\]').textContent()) ?? '';
-    const body = (await toast.locator('div.text-\\[12px\\]').textContent()) ?? '';
+    const title = (await toast.locator('div.t-13.font-semibold').textContent()) ?? '';
+    const body = (await toast.locator('div.t-12.text-muted').textContent()) ?? '';
 
     await this.page.waitForURL(/#\/transactions$/);
     return { title: title.trim(), body: body.trim() };

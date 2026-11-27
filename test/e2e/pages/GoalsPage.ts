@@ -390,14 +390,14 @@ export class GoalsPage extends BasePage {
    *
    * `Field` renders `<div><label/><control/><hint/><error/></div>`
    * (`src/components/Field.tsx`), so the error is the wrapper's own
-   * `div.text-xs.text-danger` child — the wrapper being the label's
+   * `div.t-12.text-danger` child — the wrapper being the label's
    * PARENT.
    */
   fieldError(label: string): Locator {
     return this.page
       .locator(`label:text-is("${label}")`)
       .locator('..')
-      .locator('div.text-xs.text-danger');
+      .locator('div.t-12.text-danger');
   }
 
   // ── navigation ──

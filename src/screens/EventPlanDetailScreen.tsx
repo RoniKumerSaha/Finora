@@ -75,7 +75,7 @@ export function EventPlanDetailScreen() {
   if (!plan) {
     return (
       <div className="flex flex-col gap-4">
-        <button onClick={() => navigate('/plan/event')} className="text-muted text-sm hover:text-ink w-fit">← Back to events</button>
+        <button onClick={() => navigate('/plan/event')} className="text-muted t-13 hover:text-ink w-fit">← Back to events</button>
         <div className="card text-center text-muted py-10">Event not found.</div>
       </div>
     );
@@ -190,17 +190,17 @@ export function EventPlanDetailScreen() {
         <button
           type="button"
           onClick={() => navigate('/plan/event')}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Events</button>
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <span
           aria-hidden
           className="w-10 h-10 rounded-input inline-flex items-center justify-center shrink-0 bg-surface-2 text-muted"
-        ><span className="text-2xl leading-none">{plan.emoji || '📅'}</span></span>
+        ><span className="t-22 leading-none">{plan.emoji || '📅'}</span></span>
         <div className="flex-1 min-w-0">
           <h1 className="heading h1-screen truncate">{plan.name}</h1>
-          <div className="text-muted text-[12.5px] mt-1">
+          <div className="text-muted t-12 mt-1">
             {fmtDate(plan.eventDate)} ·{' '}
             {summary.budget > 0
               ? <><span className="text-ink font-semibold">{fmtBDT(summary.budget)}</span> total (sum of categories)</>
@@ -212,10 +212,10 @@ export function EventPlanDetailScreen() {
             className="text-right"
             title={daysToGo >= 0 ? 'Days until the event' : 'Days since the event'}
           >
-            <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+            <div className="label">
               {daysToGo >= 0 ? 'Days to go' : 'Days ago'}
             </div>
-            <div className="text-primary font-bold text-[22px] tabular leading-none mt-1">{Math.abs(daysToGo)}</div>
+            <div className="text-primary font-bold t-22 tabular leading-none mt-1">{Math.abs(daysToGo)}</div>
           </div>
           <button
             type="button"
@@ -258,25 +258,25 @@ export function EventPlanDetailScreen() {
                   background: 'var(--summary-pill-bg)',
                   border: '1px solid var(--summary-pill-border)',
                 }}>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Allocated</span>
-                  <span className="font-bold text-[15px] tabular" style={{ color: spentColor }}>{fmtBDT(summary.planned)}</span>
-                  <span className="text-[12px] text-muted">/ {fmtBDT(summary.budget)}</span>
+                  <span className="label-sm">Allocated</span>
+                  <span className="font-bold t-15 tabular" style={{ color: spentColor }}>{fmtBDT(summary.planned)}</span>
+                  <span className="t-12 text-muted">/ {fmtBDT(summary.budget)}</span>
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
                   background: 'var(--summary-pill-bg)',
                   border: '1px solid var(--summary-pill-border)',
                 }}>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Paid</span>
-                  <span className="font-bold text-[15px] tabular" style={{ color: paidColor }}>{fmtBDT(paid)}</span>
+                  <span className="label-sm">Paid</span>
+                  <span className="font-bold t-15 tabular" style={{ color: paidColor }}>{fmtBDT(paid)}</span>
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-pill" style={{
                   background: 'var(--summary-pill-bg)',
                   border: '1px solid var(--summary-pill-border)',
                 }}>
-                  <span className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">
+                  <span className="label-sm">
                     {daysToGo >= 0 ? 'Days to go' : 'Days ago'}
                   </span>
-                  <span className="font-bold text-[15px] tabular text-primary">{Math.abs(daysToGo)}</span>
+                  <span className="font-bold t-15 tabular text-primary">{Math.abs(daysToGo)}</span>
                 </span>
               </>
             );
@@ -309,20 +309,20 @@ export function EventPlanDetailScreen() {
                 className="w-10 h-10 rounded-input inline-flex items-center justify-center shrink-0 bg-surface-2 text-muted"
               ><span aria-hidden>🎉</span></span>
               <div>
-                <div className="font-bold text-[15px] text-ink leading-tight">Event completed</div>
-                <div className="text-[12.5px] text-muted mt-0.5">
+                <div className="font-bold t-15 text-ink leading-tight">Event completed</div>
+                <div className="t-12 text-muted mt-0.5">
                   Every line item is paid. {plan.name} is wrapped up.
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-5 ml-auto">
               <div className="flex flex-col items-end">
-                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Spent</div>
-                <div className="font-bold text-[18px] tabular text-ink leading-tight">{fmtBDT(summary.planned)}</div>
+                <div className="label-sm">Spent</div>
+                <div className="font-bold t-18 tabular text-ink leading-tight">{fmtBDT(summary.planned)}</div>
               </div>
               <div className="flex flex-col items-end">
-                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Paid</div>
-                <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--success-title)' }}>
+                <div className="label-sm">Paid</div>
+                <div className="font-bold t-18 tabular leading-tight" style={{ color: 'var(--success-title)' }}>
                   {fmtBDT(summary.paidSoFar)}
                 </div>
               </div>
@@ -365,33 +365,33 @@ export function EventPlanDetailScreen() {
             <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="w-9 h-9 rounded-full inline-flex items-center justify-center text-lg shrink-0"
+                className="w-9 h-9 rounded-full inline-flex items-center justify-center t-18 shrink-0"
                 style={{
                   background: 'color-mix(in srgb, var(--danger) 18%, transparent)',
                   color: 'var(--danger-title)',
                 }}
               ><Warn className="w-5 h-5" /></span>
               <div>
-                <div className="font-bold text-[15px] text-ink leading-tight">{headline}</div>
-                <div className="text-[12.5px] text-muted mt-0.5 max-w-[60ch]">
+                <div className="font-bold t-15 text-ink leading-tight">{headline}</div>
+                <div className="t-12 text-muted mt-0.5 max-w-[60ch]">
                   {message}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-5 ml-auto">
               <div className="flex flex-col items-end">
-                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Budget</div>
-                <div className="font-bold text-[18px] tabular text-ink leading-tight">{fmtBDT(summary.budget)}</div>
+                <div className="label-sm">Budget</div>
+                <div className="font-bold t-18 tabular text-ink leading-tight">{fmtBDT(summary.budget)}</div>
               </div>
               <div className="flex flex-col items-end">
-                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Allocated</div>
-                <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
+                <div className="label-sm">Allocated</div>
+                <div className="font-bold t-18 tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
                   {fmtBDT(summary.planned)}
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <div className="text-[10.5px] uppercase tracking-[0.08em] font-semibold text-muted">Over by</div>
-                <div className="font-bold text-[18px] tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
+                <div className="label-sm">Over by</div>
+                <div className="font-bold t-18 tabular leading-tight" style={{ color: 'var(--danger-title)' }}>
                   {fmtBDT(overflow)}
                 </div>
               </div>
@@ -437,7 +437,7 @@ export function EventPlanDetailScreen() {
             <button
               type="button"
               onClick={startNewCategory}
-              className="card-flat border border-dashed border-border rounded-card bg-transparent text-muted text-[13px] font-semibold p-6 hover:border-primary hover:text-primary transition"
+              className="card-flat border border-dashed border-border rounded-card bg-transparent text-muted t-13 font-semibold p-6 hover:border-primary hover:text-primary transition"
             >
               + New category
             </button>
@@ -445,7 +445,7 @@ export function EventPlanDetailScreen() {
         </div>
       </div>
 
-      <div className="text-xs text-muted text-center">
+      <div className="t-12 text-muted text-center">
         ⓘ Tap a category card to edit it in a pop-up. Use <b className="text-ink">Browse presets</b> above to drop in starter categories. Every edit saves automatically.
       </div>
 
@@ -507,7 +507,7 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
   // without shifting.
   return (
     <div className="card h-fit">
-      <div className="text-[12px] text-muted uppercase tracking-[0.08em] font-semibold mb-4">{eventLabel}</div>
+      <div className="label t-12 mb-4">{eventLabel}</div>
       <div className="relative flex flex-col gap-3.5">
         {/* Rail — runs the full height of the rows container so it
             threads through every marker's centre. */}
@@ -526,7 +526,7 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
                   className="w-[26px] h-[26px] flex items-center justify-center shrink-0 z-[1]"
                 >
                   <span
-                    className="w-5 h-5 rounded-md border-2 inline-flex items-center justify-center text-[10px]"
+                    className="w-5 h-5 rounded-md border-2 inline-flex items-center justify-center t-10"
                     style={{
                       background: eventSoft,
                       borderColor: eventColor,
@@ -535,14 +535,14 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
                     }}
                     title={m.fill === 'green' ? 'Event completed' : 'Event date'}
                   >
-                    <span className="text-[10px] leading-none" aria-hidden>{m.emoji || '📅'}</span>
+                    <span className="t-10 leading-none" aria-hidden>{m.emoji || '📅'}</span>
                   </span>
                 </span>
                 <div className="flex flex-col">
-                  <div className="text-[10.5px] uppercase tracking-[0.08em] font-bold" style={{ color: eventColor }}>
+                  <div className="label-sm" style={{ color: eventColor }}>
                     Event · {relativeDay(m.date, todayISO)} · {fmtDateShort(m.date)}
                   </div>
-                  <div className="text-[13px] font-bold text-ink">{m.label}</div>
+                  <div className="t-13 font-bold text-ink">{m.label}</div>
                 </div>
               </div>
             );
@@ -571,11 +571,11 @@ function Timeline({ marks, todayISO, eventLabel }: { marks: Mark[]; todayISO: st
                 />
               </span>
               <div className="flex flex-col">
-                <div className="text-[11px] text-muted uppercase tracking-[0.04em] font-semibold">
+                <div className="t-11 text-muted uppercase tracking-narrow font-semibold">
                   {m.kind === 'undated' ? 'No due date' : `${relativeDay(m.date, todayISO)} · ${fmtDateShort(m.date)}`}
                 </div>
-                <div className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
-                  <span className="text-base leading-none" aria-hidden>{m.emoji || '📅'}</span>
+                <div className="t-13 font-semibold text-ink flex items-center gap-1.5">
+                  <span className="t-13 leading-none" aria-hidden>{m.emoji || '📅'}</span>
                   {m.label}
                 </div>
               </div>
@@ -630,7 +630,7 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
   // surface uninterrupted.
   if (paid) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 t-10 font-bold uppercase tracking-narrow px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--success)', color: 'var(--success-title)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--success-title)' }} />
@@ -639,7 +639,7 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
   );
   else if (dueDays !== null && dueDays < 0) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 t-10 font-bold uppercase tracking-narrow px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--danger)', color: 'var(--danger-title)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--danger-title)' }} />
@@ -648,7 +648,7 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
   );
   else if (dueDays !== null && dueDays <= 7) chip = (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border"
+      className="inline-flex items-center gap-1 t-10 font-bold uppercase tracking-narrow px-2 py-[3px] rounded-pill border"
       style={{ borderColor: 'var(--warn)', color: 'var(--warn)' }}
     >
       <span aria-hidden className="w-1 h-1 rounded-full" style={{ background: 'var(--warn)' }} />
@@ -656,7 +656,7 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
     </span>
   );
   else if (cat.dueDate) chip = (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-[3px] rounded-pill border border-border text-muted">
+    <span className="inline-flex items-center gap-1 t-10 font-bold uppercase tracking-narrow px-2 py-[3px] rounded-pill border border-border text-muted">
       <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
       {fmtDateShort(cat.dueDate)}
     </span>
@@ -676,10 +676,10 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
         {/* Title row — emoji + name left, status chip right */}
         <div className="flex justify-between items-center gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2 text-xl leading-none" aria-hidden>
+            <span className="w-10 h-10 rounded-input flex items-center justify-center shrink-0 bg-surface-2 t-18 leading-none" aria-hidden>
               {cat.emoji}
             </span>
-            <span className="font-semibold text-[18px] tracking-tight text-ink truncate">{cat.name}</span>
+            <span className="font-semibold t-18 tracking-tight text-ink truncate">{cat.name}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">{chip}</div>
         </div>
@@ -701,13 +701,13 @@ function CategoryCard({ cat, todayISO, animationDelay = 0, onSelect }: {
             amounts use the same primary/secondary split as before, so
             big number reads at a glance and the /budget is a quieter
             neighbour. */}
-        <div className="flex justify-between items-baseline text-[12.5px] gap-3 flex-wrap">
+        <div className="flex justify-between items-baseline t-12 gap-3 flex-wrap">
           <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-[16px] tabular text-ink leading-none">{fmtBDT(spent)}</span>
+            <span className="font-bold t-15 tabular text-ink leading-none">{fmtBDT(spent)}</span>
             <span className="text-muted tabular">/ {fmtBDT(budget)}</span>
           </div>
           <span
-            className="px-2 py-[3px] rounded-pill inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em] whitespace-nowrap text-ink border border-border"
+            className="px-2 py-[3px] rounded-pill inline-flex items-center gap-1 t-10 font-bold uppercase tracking-narrow whitespace-nowrap text-ink border border-border"
           >
             <span aria-hidden className="w-1 h-1 rounded-full bg-muted" />
             <span>
@@ -858,10 +858,10 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
         <div className="flex items-start justify-between gap-3 mb-2 pr-8">
           <div>
             <h3 id="cat-editor-title" className="heading h3-modal m-0 flex items-center gap-2">
-              <span className="text-xl leading-none" aria-hidden>{cat.emoji}</span>
+              <span className="t-18 leading-none" aria-hidden>{cat.emoji}</span>
               {cat.name}
             </h3>
-            <div className="text-muted text-[12.5px] mt-1">
+            <div className="text-muted t-12 mt-1">
               Budget · spent (sum of line items) · due date.
             </div>
           </div>
@@ -885,7 +885,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
             return (
               <span
                 className={[
-                  'text-[10px] font-bold uppercase tracking-[0.06em] px-2 py-[3px] rounded-pill whitespace-nowrap inline-flex items-center gap-1.5 border',
+                  't-10 font-bold uppercase tracking-narrow px-2 py-[3px] rounded-pill whitespace-nowrap inline-flex items-center gap-1.5 border',
                   isBudgetZero ? 'bg-surface-2/60' : '',
                 ].join(' ')}
                 style={{
@@ -941,8 +941,8 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
 
         <div className="pt-3 mt-1 border-t border-border">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">Line items</h3>
-            <div className="text-[11.5px] text-muted">{paid} of {cat.items.length} done</div>
+            <h3 className="label">Line items</h3>
+            <div className="t-11 text-muted">{paid} of {cat.items.length} done</div>
           </div>
           {/* Empty-amount hint banner. Originally fired only for the
               "Main cost" seed from custom-category creation, but the
@@ -954,7 +954,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
           {cat.items.length === 1
             && cat.items[0].amount === 0
             && !cat.items[0].done && (
-            <div className="text-[12px] text-muted mb-2 flex items-center gap-2">
+            <div className="t-12 text-muted mb-2 flex items-center gap-2">
               <span
                 aria-hidden
                 className="w-1.5 h-1.5 rounded-full"
@@ -985,12 +985,12 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                   <input
                     value={it.label}
                     onChange={e => onUpdateItem(it.id, { label: e.target.value })}
-                    // text-sm matches the composer's label input so
+                    // t-13 matches the composer's label input so
                     // both rows read at the same size — without it,
                     // the row label inherits the Field default and
                     // reads visually bigger than "Add a line —" below.
                     className={[
-                      'bg-transparent border-0 py-1 text-sm focus:outline-none focus:text-primary',
+                      'bg-transparent border-0 py-1 t-13 focus:outline-none focus:text-primary',
                       it.done ? 'text-muted line-through' : 'text-ink',
                     ].join(' ')}
                     style={{ textDecorationColor: 'var(--border)' }}
@@ -1023,7 +1023,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 onChange={e => setNewLabel(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
                 placeholder="Add a line — e.g. Deposit, Tickets"
-                className="bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary"
+                className="bg-transparent border-0 border-b border-dashed border-border py-1 t-13 text-muted placeholder:text-muted focus:outline-none focus:text-ink focus:border-primary"
               />
               <input
                 type="number"
@@ -1033,7 +1033,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
                 onChange={e => setNewAmount(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitNewItem(); } }}
                 placeholder="Amount"
-                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 text-sm text-muted placeholder:italic placeholder:opacity-70 focus:outline-none focus:text-ink focus:border-primary tabular"
+                className="text-right bg-transparent border-0 border-b border-dashed border-border py-1 t-13 text-muted placeholder:italic placeholder:opacity-70 focus:outline-none focus:text-ink focus:border-primary tabular"
               />
               <button
                 type="button"
@@ -1079,7 +1079,7 @@ function CategoryEditorModal({ cat, onUpdate, onRemove, onAddItem, onUpdateItem,
 
         {/* Danger zone — visually separated so users don't hit Remove by accident. */}
         <div
-          className="mt-4 pt-3 flex justify-between items-center text-[12px]"
+          className="mt-4 pt-3 flex justify-between items-center t-12"
           style={{
             borderTop: '1px dashed var(--border)',
           }}
@@ -1170,13 +1170,13 @@ function LineItemAmount({
       // value or users will read it as static row content. Italic +
       // reduced font-weight + lower opacity is enough to break the
       // visual equivalence and read as "instruction" not "data".
-      // `text-sm` (14px) matches the new-line composer's amount input
+      // `t-13` (14px) matches the new-line composer's amount input
       // exactly — without it, the LineItemAmount inherits the Field's
       // default 16px and the seeded "Enter cost" placeholder reads
       // visually larger than the composer row's "Amount" beside it,
       // making the column feel uneven.
       className={[
-        'text-right bg-transparent border-0 py-1 text-sm font-semibold tabular focus:outline-none focus:text-primary',
+        'text-right bg-transparent border-0 py-1 t-13 font-semibold tabular focus:outline-none focus:text-primary',
         'placeholder:italic placeholder:font-normal placeholder:opacity-70',
         showPlaceholder ? 'text-muted placeholder:text-muted' : '',
       ].join(' ')}
@@ -1267,7 +1267,7 @@ function EditEventModal({
           <h3 id="edit-event-title" className="heading h3-modal m-0">
             Edit event date
           </h3>
-          <div className="text-muted text-[12.5px] mt-1">
+          <div className="text-muted t-12 mt-1">
             The event's total budget is the sum of category budgets — edit a category to adjust the total.
           </div>
         </div>
@@ -1280,7 +1280,7 @@ function EditEventModal({
               onChange={e => setDateDraft(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && dirty) { e.preventDefault(); commit(); } }}
               aria-label="Event date"
-              className="!text-[16px] !font-semibold tabular"
+              className="!t-15 !font-semibold tabular"
             />
           </Field>
         </div>

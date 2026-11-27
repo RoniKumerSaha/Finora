@@ -21,7 +21,7 @@
  * IMPORTANT — the e2e page object locates a row's parts by class, so
  * the row's inner elements keep their class hooks:
  *   - the title    is `div.font-semibold span.min-w-0`
- *   - the subtitle is `div.text-xs.text-muted`
+ *   - the subtitle is `div.t-12.text-muted`
  *   - the amount   is `div.font-bold.tabular`
  * The book's own styling is layered on top of those hooks rather than
  * replacing them.
@@ -326,7 +326,7 @@ export function TransactionsListScreen() {
       <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <h1 className="heading h1-screen">Transactions</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">
+          <div className="text-muted t-13 mt-1.5 tabular">
             {filter === 'all' && !activeId
               ? `${txs.length} entries`
               : `${rows.length} of ${txs.length} entries`}
@@ -334,10 +334,10 @@ export function TransactionsListScreen() {
         </div>
         <Link
           to="/transactions/new"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           style={{ background: 'var(--primary)' }}
         >
-          <span className="text-base leading-none">+</span>
+          <span className="t-13 leading-none">+</span>
           <span>Add</span>
         </Link>
       </div>
@@ -362,7 +362,7 @@ export function TransactionsListScreen() {
               type="button"
               onClick={() => setFilter(active ? 'all' : f.key)}
               className={[
-                'px-3 py-1.5 rounded-pill text-[12px] font-semibold transition border',
+                'px-3 py-1.5 rounded-pill t-12 font-semibold transition border',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 active
                   ? 'bg-primary-soft text-primary border-transparent'
@@ -494,7 +494,7 @@ export function TransactionsListScreen() {
 
           {/* ---- the rows ------------------------------------------ */}
           {rows.length === 0 ? (
-            <div className="py-10 text-center text-muted text-sm px-5">
+            <div className="py-10 text-center text-muted t-13 px-5">
               No transactions match this filter. Try a different filter, or add a new transaction.
             </div>
           ) : filter === 'all' ? (
@@ -640,18 +640,18 @@ function TxRow({
           {/* The title keeps the e2e page object's hook —
               `div.font-semibold span.min-w-0` — and the book's type
               comes from the `.txname` rule layered on top. */}
-          <div className="txname font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
+          <div className="txname font-semibold t-13 leading-tight tracking-tight flex items-center gap-2 flex-wrap">
             <span className="min-w-0 truncate grow">{tx.note || cat?.name || tx.type}</span>
             <TransactionTag tx={tx} debtDirection={linkedDebt?.direction} />
           </div>
           {/* Two sibling subtitle elements, each carrying exactly one
               string — CSS shows one and hides the other per breakpoint.
-              The `.tx-sub-inline` one keeps the `text-xs text-muted`
+              The `.tx-sub-inline` one keeps the `t-12 text-muted`
               classes the e2e subtitle locator looks for; `.tx-sub-col`
               must NOT, or it would be picked up as a second subtitle
               and trip Playwright's strict-mode violation. It is styled
               wholly from the `.tx-sub-col` rule in app.css. */}
-          <div className="text-xs text-muted leading-tight mt-1 truncate tx-sub-inline">
+          <div className="t-12 text-muted leading-tight mt-1 truncate tx-sub-inline">
             {subInline}
           </div>
           <div className="tx-sub-col">{subCategory}</div>

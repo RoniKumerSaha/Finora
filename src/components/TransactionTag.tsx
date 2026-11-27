@@ -117,7 +117,7 @@ export function TransactionTag({ tx, debtDirection }: FullProps) {
   // row line-height stable when a tag is present.
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill text-[9.5px] font-bold uppercase tracking-[0.06em] leading-[1.5] ${style.className}`}
+      className={`inline-flex items-center px-1.5 py-[1px] rounded-pill t-10 font-bold uppercase tracking-narrow leading-[1.5] ${style.className}`}
       aria-label={`category: ${style.label.toLowerCase()}`}
     >
       {style.label}

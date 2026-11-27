@@ -215,7 +215,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="flex-1 flex items-center justify-center gap-2.5">
           <FinoraLogo size={22} />
           <div
-            className="finora-brand text-[17px] font-extrabold tracking-tight leading-none"
+            className="finora-brand t-18 font-extrabold tracking-tight leading-none"
             style={{
               background: 'linear-gradient(90deg, var(--info), var(--primary))',
               WebkitBackgroundClip: 'text',
@@ -271,7 +271,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3 px-2 pb-4 mb-2" style={{ borderBottom: '1px solid var(--border-2)' }}>
             <FinoraLogo size={26} />
             <div
-              className="finora-brand text-[20px] font-extrabold tracking-tight leading-none grow"
+              className="finora-brand t-18 font-extrabold tracking-tight leading-none grow"
               style={{
                 background: 'linear-gradient(90deg, var(--info), var(--primary))',
                 WebkitBackgroundClip: 'text',
@@ -306,10 +306,10 @@ export function Shell({ children }: { children: ReactNode }) {
           {!hideAddTx && (
             <NavLink
               to="/transactions/new"
-              className="inline-flex items-center justify-center gap-2 text-primary-on px-4 py-2.5 rounded-btn font-bold text-[13px] hover:opacity-95 active:translate-y-px transition"
+              className="inline-flex items-center justify-center gap-2 text-primary-on px-4 py-2.5 rounded-btn font-bold t-13 hover:opacity-95 active:translate-y-px transition"
               style={{ background: 'var(--primary)' }}
             >
-              <span className="text-base leading-none">+</span>
+              <span className="t-13 leading-none">+</span>
               <span>Add transaction</span>
             </NavLink>
           )}
@@ -335,7 +335,7 @@ function NavItem({ to, label, Icon }: NavDef) {
       to={to}
       className={({ isActive }) =>
         [
-          'group relative flex items-center gap-3 px-3 py-2 rounded-btn text-[13.5px] font-medium transition-colors',
+          'group relative flex items-center gap-3 px-3 py-2 rounded-btn t-13 font-medium transition-colors',
           isActive
             ? 'bg-primary-soft text-primary'
             : 'text-muted hover:bg-surface-2 hover:text-ink',

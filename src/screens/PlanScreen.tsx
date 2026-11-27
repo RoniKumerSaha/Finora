@@ -81,7 +81,7 @@ export function PlanScreen() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="heading h1-screen">Plan</h1>
-        <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+        <div className="text-muted t-13 mt-1.5 max-w-prose">
           Scratchpads for what you intend to spend. Nothing here is recorded in your ledger — it's a way to think ahead.
         </div>
       </header>
@@ -96,6 +96,7 @@ export function PlanScreen() {
           empty={investmentPlans.length === 0 ? 'No plans yet' : undefined}
           tallyLabel="Projected at maturity"
           tallyValue={investmentPlans.length > 0 ? fmtBDT(invProjected) : '—'}
+          hideTally={investmentPlans.length === 1}
         >
           {investmentPlans.map(plan => (
             <div className="plan-paper__line" key={plan.id}>
@@ -121,6 +122,7 @@ export function PlanScreen() {
           empty={savedLoans.length === 0 ? 'No projections yet' : undefined}
           tallyLabel="Monthly EMI"
           tallyValue={savedLoans.length > 0 ? fmtBDT(loanEmi) : '—'}
+          hideTally={savedLoans.length === 1}
         >
           {savedLoans.map(plan => (
             <div className="plan-paper__line" key={plan.id}>
@@ -146,6 +148,7 @@ export function PlanScreen() {
           empty={monthItems.length === 0 ? 'Nothing planned yet' : undefined}
           tallyLabel="Budgeted"
           tallyValue={monthItems.length > 0 ? fmtBDT(monthBudget) : '—'}
+          hideTally={monthItems.length === 1}
         >
           {monthItems.map(cat => (
             <div className="plan-paper__line" key={cat.id}>
@@ -189,7 +192,7 @@ export function PlanScreen() {
         </PlanPaper>
       </div>
 
-      <div className="text-xs text-muted text-center mt-2">
+      <div className="t-12 text-muted text-center mt-2">
         ⓘ Plans are pure scratch — switch tabs, swap emoji, abandon mid-edit. Nothing here touches your real accounts or transactions.
       </div>
     </div>
@@ -199,7 +202,7 @@ export function PlanScreen() {
 /* ── The sheet ─────────────────────────────────────────────────── */
 
 function PlanPaper({
-  to, name, serial, tone, empty, tallyLabel, tallyValue, children,
+  to, name, serial, tone, empty, tallyLabel, tallyValue, hideTally, children,
 }: {
   to: string;
   name: string;
@@ -209,6 +212,8 @@ function PlanPaper({
   empty?: string;
   tallyLabel: string;
   tallyValue: string;
+  /** Drop the tally when it would only repeat the single line above. */
+  hideTally?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -236,13 +241,23 @@ function PlanPaper({
 
         {/* The tally sits BELOW the lines whether or not there are
             any, so an empty planner still states its one number as a
-            dash rather than collapsing the sheet to a caption. */}
-        <div className="plan-paper__tally">
-          <span className="k">{tallyLabel}</span>
-          <span className={`v plan-paper__tally-value plan-paper__v--${tone}`}>
-            {tallyValue}
-          </span>
-        </div>
+            dash rather than collapsing the sheet to a caption.
+
+            But it is dropped when the board holds exactly ONE item:
+            the tally is a sum across the lines, so with a single line
+            it repeats that line's own figure verbatim — the same
+            number printed twice on one card, which is exactly the
+            redundancy the rest of the app was cleaned of. The tally
+            earns its place only once it adds something the lines
+            do not already say. */}
+        {!hideTally && (
+          <div className="plan-paper__tally">
+            <span className="k">{tallyLabel}</span>
+            <span className={`v plan-paper__tally-value plan-paper__v--${tone}`}>
+              {tallyValue}
+            </span>
+          </div>
+        )}
       </Link>
     </section>
   );

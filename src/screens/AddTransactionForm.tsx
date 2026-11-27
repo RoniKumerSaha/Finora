@@ -439,7 +439,7 @@ export function AddTransactionForm({ type: initialType }: AddTransactionFormProp
         )}
 
         {payoutMismatch && (
-          <div className="mt-4 text-[13px] text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
+          <div className="mt-4 t-13 text-warn bg-warn-soft border border-warn rounded-lg px-3 py-2">
             <strong>Heads up:</strong> payout account for <span className="font-semibold">{linkedInv?.name}</span> is{' '}
             <span className="font-semibold">{payoutAccName}</span>. You're sending this income to{' '}
             <span className="font-semibold">{selectedAccName}</span>. Saving will record the payout as Income to{' '}
@@ -573,7 +573,7 @@ function EmptyCategoryState({ type }: { type: 'income' | 'expense' }) {
 
   return (
     <div className="rounded-btn border border-warn/40 bg-warn-soft px-4 py-3 flex flex-col gap-2">
-      <div className="text-[13px] text-ink">
+      <div className="t-13 text-ink">
         No <span className="font-semibold">{type === 'income' ? 'income' : 'expense'}</span> categories available.
         Your saved data is safe — only the category list needs restoring.
       </div>

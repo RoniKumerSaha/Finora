@@ -35,10 +35,10 @@ export function Chip({
     <div
       className={`flex-1 min-w-[120px] rounded-btn px-3 py-2 border border-border flex flex-col gap-0.5 ${className}`}
     >
-      <div className="text-[10px] text-muted uppercase tracking-[0.08em] font-semibold">
+      <div className="label-sm">
         {label}
       </div>
-      <div className={`text-[14px] font-bold tabular leading-tight ${TONE_CLASS[tone]}`}>
+      <div className={`t-13 font-bold tabular leading-tight ${TONE_CLASS[tone]}`}>
         {value}
       </div>
     </div>

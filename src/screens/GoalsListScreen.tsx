@@ -113,14 +113,14 @@ export function GoalsListScreen() {
       <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <h1 className="heading h1-screen">Goals</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{gs.length} total</div>
+          <div className="text-muted t-13 mt-1.5 tabular">{gs.length} total</div>
         </div>
         <Link
           to="/goals/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           style={{ background: 'var(--primary)' }}
         >
-          <span className="text-base leading-none">+</span>
+          <span className="t-13 leading-none">+</span>
           <span>Add</span>
         </Link>
       </div>

@@ -102,13 +102,13 @@ function ConfirmDialog({ opts, onAnswer }: { opts: ConfirmOptions; onAnswer: (v:
           {opts.title}
         </h3>
         {opts.body && (
-          <div className="text-[13.5px] text-muted leading-relaxed m-0 mb-4">
+          <div className="t-13 text-muted leading-relaxed m-0 mb-4">
             {opts.body}
           </div>
         )}
         {opts.dangerText && (
           <div
-            className="text-[13px] text-ink rounded-btn px-3.5 py-2.5 mb-5"
+            className="t-13 text-ink rounded-btn px-3.5 py-2.5 mb-5"
             style={{
               background: 'var(--danger-callout-bg)',
               border: '1px solid var(--danger)',

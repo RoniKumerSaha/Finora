@@ -99,14 +99,14 @@ export function InvestmentsListScreen() {
       <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <h1 className="heading h1-screen">Investments</h1>
-          <div className="text-muted text-[13px] mt-1.5 tabular">{invs.length} total</div>
+          <div className="text-muted t-13 mt-1.5 tabular">{invs.length} total</div>
         </div>
         <Link
           to="/investments/add"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           style={{ background: 'var(--primary)' }}
         >
-          <span className="text-base leading-none">+</span>
+          <span className="t-13 leading-none">+</span>
           <span>Add</span>
         </Link>
       </div>
@@ -114,7 +114,7 @@ export function InvestmentsListScreen() {
       {invs.length === 0 ? (
         <section className="card">
           <div className="py-10 text-center text-muted">
-            <div className="text-[14px] font-semibold text-ink">No investments yet.</div>
+            <div className="t-13 font-semibold text-ink">No investments yet.</div>
           </div>
         </section>
       ) : (
@@ -132,7 +132,7 @@ export function InvestmentsListScreen() {
               ))}
               {closed.length > 0 && (
                 <section className="flex flex-col gap-3">
-                  <h2 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0">
+                  <h2 className="label m-0">
                     Closed {MIDDOT} {closed.length}
                   </h2>
                   <div className="grid grid-cols-1 gap-4">
@@ -189,10 +189,7 @@ export function InvestmentsListScreen() {
                 </div>
 
                 <div className="inv-cert__note">
-                  <strong className="text-ink">Value today</strong> is what the
-                  banks would pay out now. <strong className="text-ink">At maturity</strong>{' '}
-                  is what you collect when every term ends. Record a payout as
-                  Income to bring the money back to your account.
+                  Record a payout as Income to bring the money back to your account.
                 </div>
               </article>
             </section>

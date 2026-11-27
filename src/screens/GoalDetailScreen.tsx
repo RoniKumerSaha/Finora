@@ -287,7 +287,7 @@ export function GoalDetailScreen() {
         <button
           type="button"
           onClick={() => navigate('/goals')}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Goals</button>
       </div>
 
@@ -295,7 +295,7 @@ export function GoalDetailScreen() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
         <div>
           <h1 className="heading h1-screen">{goal.name}</h1>
-          <div className="text-muted text-[13px] mt-1.5">
+          <div className="text-muted t-13 mt-1.5">
             A plan-only scratchpad. Contributions here never touch your accounts.
           </div>
         </div>
@@ -305,7 +305,7 @@ export function GoalDetailScreen() {
               <button
                 type="button"
                 onClick={() => setShowContributeForm(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold text-[13px] text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn font-bold t-13 text-primary-on hover:opacity-95 active:translate-y-px transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 style={{ background: 'var(--primary)' }}
               >
                 + Add a contribution
@@ -493,7 +493,7 @@ export function GoalDetailScreen() {
             }}
           >
             <h2 className="heading h3-modal mb-2" style={{ color: 'var(--danger-title)' }}>Danger zone</h2>
-            <p className="text-[13px] text-muted mb-4">
+            <p className="t-13 text-muted mb-4">
               Removes the goal and its {contributions.length} contribution {contributions.length === 1 ? 'entry' : 'entries'}. Your accounts and transactions are not touched.
             </p>
             <Button variant="outlined-danger" onClick={onDelete}>Delete goal</Button>
@@ -642,7 +642,7 @@ function ContributeModal({
         className="relative bg-surface border border-border rounded-card p-7 w-[420px] max-w-[90vw] shadow-modal flex flex-col gap-5"
       >
         <h3 id="goal-contribute-title" className="heading h3-modal m-0">Add a contribution</h3>
-        <p className="text-[13px] text-muted m-0 -mt-3">
+        <p className="t-13 text-muted m-0 -mt-3">
           Records the amount you've set aside toward this goal. Your account balance is not changed.
         </p>
         <Field label="Amount" error={amountInvalid ? POSITIVE_MONEY_ERROR : undefined}>

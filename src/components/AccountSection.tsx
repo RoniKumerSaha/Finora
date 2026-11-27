@@ -56,7 +56,7 @@ export function AccountSection() {
           </Pill>
         </div>
         <div
-          className="text-[13px] text-muted rounded-btn px-3.5 py-2.5"
+          className="t-13 text-muted rounded-btn px-3.5 py-2.5"
           style={{ background: 'var(--surface-2)' }}
         >
           Cloud sync is disabled in this build. Set <code>BASE_URL</code> and
@@ -114,16 +114,16 @@ export function AccountSection() {
       {signedIn ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+            <div className="label">
               Signed in as
             </div>
-            <div className="text-[14px] text-ink">{email ?? '(unknown email)'}</div>
+            <div className="t-13 text-ink">{email ?? '(unknown email)'}</div>
           </div>
           <div className="flex flex-col gap-1">
-            <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+            <div className="label">
               Last synced
             </div>
-            <div className="text-[14px] text-ink">{relativeTime(lastSynced)}</div>
+            <div className="t-13 text-ink">{relativeTime(lastSynced)}</div>
           </div>
           <div className="flex gap-2 flex-wrap pt-1">
             <Button variant="primary" onClick={onForceSync} disabled={busy}>
@@ -139,7 +139,7 @@ export function AccountSection() {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <p className="text-[13px] text-muted leading-relaxed">
+          <p className="t-13 text-muted leading-relaxed">
             Sync your data across devices with end-to-end RLS-scoped storage. Optional —
             Finora works fine without it. Your cloud copy is preserved when you sign out,
             so signing back in pulls the latest snapshot.

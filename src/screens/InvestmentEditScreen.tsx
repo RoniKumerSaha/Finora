@@ -205,12 +205,12 @@ export function InvestmentEditScreen() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
       <div className="flex items-center gap-3">
-        <Link to={`/investments/${inv!.id}`} className="text-muted text-sm hover:text-ink transition">{'\u2190'} Investments</Link>
+        <Link to={`/investments/${inv!.id}`} className="text-muted t-13 hover:text-ink transition">{'\u2190'} Investments</Link>
       </div>
 
       <header>
         <h1 className="heading h1-screen">Edit investment</h1>
-        <div className="text-muted text-[13px] mt-1.5">
+        <div className="text-muted t-13 mt-1.5">
           Rate, term, and payout destination can change. Past contributions stay as they are.
         </div>
       </header>
@@ -235,7 +235,11 @@ export function InvestmentEditScreen() {
               </div>
             </div>
 
-            <div className="inv-cert__fields">
+            {/* The engraved terms. The rate is NOT one of them — it
+                lives in the seal above, exactly as on the detail
+                screen. Printing it here too meant the same number
+                appeared twice on one certificate. */}
+            <div className="inv-cert__fields inv-cert__fields--pair">
               {type === 'dps' ? (
                 <>
                   <div className="inv-cert__f">
@@ -247,11 +251,7 @@ export function InvestmentEditScreen() {
                     <div className="v">
                       {Number(termMonths) > 0 ? formatDuration(Number(termMonths)) : '\u2014'}
                     </div>
-                  </div>
-                  <div className="inv-cert__f">
-                    <div className="k">Rate</div>
-                    <div className="v">{Number(rate) || 0}% / yr</div>
-                  </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -268,11 +268,7 @@ export function InvestmentEditScreen() {
                           ? formatDuration(Number(termMonths))
                           : '\u2014'}
                     </div>
-                  </div>
-                  <div className="inv-cert__f">
-                    <div className="k">Rate</div>
-                    <div className="v">{Number(rate) || 0}% / yr</div>
-                  </div>
+                  </div>
                 </>
               )}
             </div>
@@ -286,7 +282,7 @@ export function InvestmentEditScreen() {
             <div className="inv-cert__vals">
               <div className="inv-cert__v inv-cert__v--now">
                 <div className="k">Maturity date</div>
-                <div className="n" style={{ fontSize: 15 }}>{preview.matLabel}</div>
+                <div className="n">{preview.matLabel}</div>
               </div>
               <div className="inv-cert__v inv-cert__v--mat">
                 <div className="k">Maturity value</div>
@@ -441,7 +437,7 @@ export function InvestmentEditScreen() {
                   </div>
                   <div>
                     <div className="flex flex-col gap-2">
-                      <label className="flex items-center gap-2 text-[13px] text-muted">
+                      <label className="flex items-center gap-2 t-13 text-muted">
                         <input
                           type="checkbox"
                           checked={useDays}
@@ -604,10 +600,6 @@ export function InvestmentEditScreen() {
               </div>
             </div>
 
-            <div className="debt-cert__note" style={{ marginTop: 12 }}>
-              These figures are a preview. Nothing is written until you press Save
-              changes, and past contributions are never altered.
-            </div>
           </section>
         </div>
       </div>

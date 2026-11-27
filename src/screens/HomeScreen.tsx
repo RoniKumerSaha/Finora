@@ -137,7 +137,7 @@ export function HomeScreen() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="heading h1-screen">Where is my money?</h1>
-          <div className="text-muted text-[13px] mt-1.5">
+          <div className="text-muted t-13 mt-1.5">
             {`Net worth · ${accList.length === 1 ? 'across 1 account' : `across ${accList.length} accounts`} · updated just now`}
           </div>
         </div>
@@ -160,10 +160,10 @@ export function HomeScreen() {
           the bar and the board.
 
           The e2e page object's locators still resolve:
-            - `netWorthFigure` keys on `div.text-[44px]` — the headline
+            - `netWorthFigure` keys on `div.t-30` — the headline
               figure keeps that size.
             - `stripValue` / `stripHint` key on the LABEL's parent,
-              looking for `div.text-[20px]` / `div.text-[11.5px]`
+              looking for `div.t-18` / `div.t-11`
               siblings. The stat cells render label / value / hint as
               three siblings, so they stay reachable.
             - `recentActivityCard` keys on `section.card` — the board
@@ -182,29 +182,29 @@ export function HomeScreen() {
                 'linear-gradient(160deg, rgba(245,185,77,0.10), transparent 70%)',
             }}
           >
-            <div className="text-[11px] text-muted uppercase tracking-[0.14em] font-semibold">
+            <div className="t-11 text-muted uppercase tracking-wide font-semibold">
               Net worth
             </div>
             <div
-              className={`mt-2 text-[44px] font-extrabold tracking-[-0.03em] tabular leading-[1] whitespace-nowrap ${currentNetWorth < 0 ? 'text-danger' : 'text-accent'}`}
+              className={`mt-2 t-30 font-extrabold tracking-[-0.03em] tabular leading-[1] whitespace-nowrap ${currentNetWorth < 0 ? 'text-danger' : 'text-accent'}`}
             >
               {currentNetWorth < 0 ? '\u2212' + fmtBDT(Math.abs(currentNetWorth)) : fmtBDT(currentNetWorth)}
             </div>
             {!deltaIsZero && (
-              <div className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1.5 tabular ${deltaUp ? 'text-primary' : 'text-danger'}`}>
+              <div className={`mt-3 t-13 font-semibold inline-flex items-center gap-1.5 tabular ${deltaUp ? 'text-primary' : 'text-danger'}`}>
                 <span aria-hidden>{deltaUp ? '\u25B2' : '\u25BC'}</span>
                 <span>{`${deltaUp ? '+' : '\u2212'}${fmtBDT(deltaAbs)}`}</span>
                 <span className="text-muted font-normal">vs last month</span>
               </div>
             )}
-            <div className="text-[12px] text-muted mt-1.5">
+            <div className="t-12 text-muted mt-1.5">
               {currentNetWorth < 0 ? 'Liabilities exceed assets' : 'Assets minus liabilities'}
             </div>
 
             {/* The six-month net-worth line, so the headline figure
                 arrives with its own history. */}
             <TrendChart points={trends.netWorth} tone="accent" height={52} />
-            <div className="flex justify-between text-[10px] text-muted tabular mt-1 px-px">
+            <div className="flex justify-between t-10 text-muted tabular mt-1 px-px">
               {trends.netWorth.map(p => <span key={`${p.year}-${p.month}`}>{p.label}</span>)}
             </div>
           </div>
@@ -263,8 +263,8 @@ export function HomeScreen() {
       <section className="card p-0 overflow-hidden">
         <div className="flex justify-between items-center px-5 pt-4 pb-3">
           <div>
-            <h2 className="text-[13px] font-semibold tracking-tight m-0">Recent activity</h2>
-            <div className="text-[10.5px] text-muted uppercase tracking-[0.09em] font-bold mt-1">
+            <h2 className="heading h4-item m-0">Recent activity</h2>
+            <div className="label-sm mt-1">
               Last {recentTx.length} transactions
             </div>
           </div>
@@ -281,7 +281,7 @@ export function HomeScreen() {
           : <>
               <div className="overflow-x-auto">
                 <div className="min-w-[640px]">
-                  <div className="grid grid-cols-[minmax(0,1.4fr)_92px_120px_110px_110px] gap-3 px-5 py-2 bg-surface-2 border-y border-border text-[10.5px] uppercase tracking-[0.09em] font-bold text-muted">
+                  <div className="label-sm grid grid-cols-[minmax(0,1.4fr)_92px_120px_110px_110px] gap-3 px-5 py-2 bg-surface-2 border-y border-border">
                     <div>Transaction</div>
                     <div>Date</div>
                     <div>Account</div>
@@ -299,7 +299,7 @@ export function HomeScreen() {
       <div className="flex justify-end mt-2">
         <Link
           to="/insights"
-          className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2"
+          className="text-primary t-12 font-semibold hover:underline underline-offset-2"
         >
           See full Insights {'\u2192'}
         </Link>
@@ -401,14 +401,14 @@ function StatusCell({
     : 'text-ink';
   return (
     <div className={`px-[22px] py-5 min-w-0 border-t border-border lg:border-l lg:border-border flex flex-col justify-center ${odd ? 'border-l-0 lg:border-l' : ''}`}>
-      <div className="text-[10.5px] text-muted uppercase tracking-[0.08em] font-bold">
+      <div className="label-sm">
         {label}
       </div>
-      <div className={`mt-2 text-[20px] sm:text-[22px] font-extrabold tabular tracking-tight leading-none whitespace-nowrap ${valueColor}`}>
+      <div className={`mt-2 t-18 sm:t-22 font-extrabold tabular tracking-tight leading-none whitespace-nowrap ${valueColor}`}>
         {value}
       </div>
       {hint && (
-        <div className="text-[11.5px] text-muted mt-1.5">
+        <div className="t-11 text-muted mt-1.5">
           {hint}
         </div>
       )}
@@ -424,7 +424,7 @@ function StatusCell({
  * becomes a five-column board (Transaction · Date · Account · Category
  * · Amount). The e2e page object's `activityRow` keys on `div.group`,
  * `activityAmount` on `div.font-bold.tabular` and `activitySubtitle`
- * on `div.text-xs.text-muted` — all three classes are preserved.
+ * on `div.t-12.text-muted` — all three classes are preserved.
  */
 function BoardRow({ tx, state }: { tx: any; state: any }) {
   const acc = state.accounts.find((a: any) => a.id === tx.accountId || a.id === tx.fromAccountId);
@@ -452,28 +452,28 @@ function BoardRow({ tx, state }: { tx: any; state: any }) {
           </span>
         </div>
         <div className="min-w-0">
-          <div className="font-semibold text-[14px] leading-tight tracking-tight flex items-center gap-2 flex-wrap">
+          <div className="font-semibold t-13 leading-tight tracking-tight flex items-center gap-2 flex-wrap">
             <span className="min-w-0 truncate">{tx.note || cat?.name || tx.type}</span>
             <TransactionTag
               tx={tx}
               debtDirection={tx.linkedDebtId ? state.debts.find((d: any) => d.id === tx.linkedDebtId)?.direction : undefined}
             />
           </div>
-          <div className="text-xs text-muted leading-tight mt-1 truncate">
+          <div className="t-12 text-muted leading-tight mt-1 truncate">
             {fmtRelative(tx.date)} {acc ? `· ${acc.name}` : ''}
           </div>
         </div>
       </div>
-      <div className="text-[12.5px] text-muted tabular">
+      <div className="t-12 text-muted tabular">
         {fmtRelative(tx.date)}
       </div>
-      <div className="text-[12.5px] text-muted truncate">
+      <div className="t-12 text-muted truncate">
         {acc ? acc.name : '—'}
       </div>
-      <div className="text-[12.5px] text-muted truncate">
+      <div className="t-12 text-muted truncate">
         {cat ? cat.name : tx.type}
       </div>
-      <div className={`text-right font-bold tabular text-[14px] ${amtColor}`}>
+      <div className={`text-right font-bold tabular t-13 ${amtColor}`}>
         {fmtBDTSigned(tx.amount, direction)}
       </div>
     </div>
@@ -486,7 +486,7 @@ function BoardRow({ tx, state }: { tx: any; state: any }) {
 
 function ManageLink({ to, label = 'Manage \u2192' }: { to: string; label?: string }) {
   return (
-    <Link to={to} className="text-primary text-[12.5px] font-semibold hover:underline underline-offset-2">
+    <Link to={to} className="text-primary t-12 font-semibold hover:underline underline-offset-2">
       {label}
     </Link>
   );
@@ -515,7 +515,7 @@ function DemoBanner() {
   if (!show) return null;
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 text-[13px] text-muted rounded-card"
+      className="flex items-center gap-3 px-4 py-3 t-13 text-muted rounded-card"
       style={{
         background: 'var(--surface-2)',
         border: '1px dashed var(--border)',

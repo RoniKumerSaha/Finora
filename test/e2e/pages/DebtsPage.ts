@@ -129,7 +129,7 @@ export class DebtsPage extends BasePage {
    * the div is the unit that carries both halves of the phrase.
    */
   cardLoanTerms(name: string): Locator {
-    return this.card(name).locator('div.text-\\[12px\\].tabular').filter({ hasText: '% APR' });
+    return this.card(name).locator('div.t-12.tabular').filter({ hasText: '% APR' });
   }
 
   /**
@@ -256,14 +256,14 @@ export class DebtsPage extends BasePage {
    * The account field's error line — "Pick an account."
    *
    * `Field` renders the error as the wrapper's own
-   * `div.text-xs.text-danger` child; the hint is hidden while an
+   * `div.t-12.text-danger` child; the hint is hidden while an
    * error is present.
    */
   get accountHintText(): Locator {
     return this.page
       .locator(`label:text-is("Cash goes into"), label:text-is("Cash goes from")`)
       .locator('..')
-      .locator('div.text-xs.text-danger');
+      .locator('div.t-12.text-danger');
   }
 
   get personInput(): Locator {

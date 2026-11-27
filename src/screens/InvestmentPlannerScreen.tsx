@@ -65,13 +65,13 @@ export function InvestmentPlannerScreen() {
         <button
           type="button"
           onClick={() => navigate('/plan')}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Plans</button>
       </div>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="heading h1-screen">Investment Planner</h1>
-          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+          <div className="text-muted t-13 mt-1.5 max-w-prose">
             Sketch a DPS, FDR, or savings certificate. Nothing here moves real money — it's a sandbox for "what if I opened a 1-year FDR at 9%?".
           </div>
         </div>
@@ -91,10 +91,10 @@ export function InvestmentPlannerScreen() {
       {plans.length === 0 ? (
         <section className="card flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <div className="text-[18px] font-bold tracking-tight text-ink">
+            <div className="t-18 font-bold tracking-tight text-ink">
               How much could a 1-year FDR at 9% earn you?
             </div>
-            <p className="text-sm text-muted leading-relaxed max-w-prose">
+            <p className="t-13 text-muted leading-relaxed max-w-prose">
               Pick a starter kit to see the projection. Nothing moves real money — it's a sandbox.
             </p>
           </div>
@@ -123,16 +123,16 @@ export function InvestmentPlannerScreen() {
                     aria-hidden
                     className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
                   />
-                  <span className="text-[28px] leading-none">
+                  <span className="t-30 leading-none">
                     <InvestTile size={28} type={kit.id} />
                   </span>
-                  <div className="text-[13.5px] font-semibold text-ink">{kit.name}</div>
+                  <div className="t-13 font-semibold text-ink">{kit.name}</div>
                   <div
-                    className={`text-[12.5px] font-bold tabular leading-tight ${toneTextClass(cardTone)}`}
+                    className={`t-12 font-bold tabular leading-tight ${toneTextClass(cardTone)}`}
                   >
                     → {fmtBDT(projected)} <span className="font-normal text-muted">in {termLabel}</span>
                   </div>
-                  <p className="text-[11.5px] text-muted leading-relaxed">{kit.description}</p>
+                  <p className="t-11 text-muted leading-relaxed">{kit.description}</p>
                 </button>
               );
             })}
@@ -260,11 +260,7 @@ function PlannerSummary({
         </div>
 
         <div className="inv-cert__note">
-          <strong className="text-ink">Committed</strong> is the money
-          you would put in across every plan.{' '}
-          <strong className="text-ink">At maturity</strong> is what you
-          would collect if every term ended. Nothing here moves real
-          money.
+          Nothing here moves real money.
         </div>
       </article>
     </section>
@@ -453,10 +449,14 @@ function InvestmentPlanCard({
         </div>
 
         {/* A dirty plan has unsaved edits — the DRAFT chip rides below
-            the footer so it never crowds the title. */}
+            the footer so it never crowds the title. It wears the
+            STAMP treatment, the same miniature rubber stamp the
+            LOAN chip uses on the debt card: a hairline rule in the
+            warn tone, square corners, the wide tracking of an
+            engraved label. */}
         {plan.dirty && (
           <div className="mt-2">
-            <Pill tone="warn" variant="soft">Draft</Pill>
+            <Pill tone="warn" variant="stamp">Draft</Pill>
           </div>
         )}
       </article>

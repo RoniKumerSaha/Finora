@@ -110,7 +110,7 @@ export function InvestmentPlannerDetailScreen() {
 
   if (!plan) {
     return (
-      <div className="card text-sm text-muted">
+      <div className="card t-13 text-muted">
         Plan not found.
         <div className="mt-3">
           <Button variant="ghost" onClick={() => navigate('/plan/invest')}>Back to planner</Button>
@@ -288,13 +288,13 @@ export function InvestmentPlannerDetailScreen() {
             }
             navigate('/plan/invest');
           }}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Investment Planner</button>
       </div>
 
       <header>
         <h1 className="heading h1-screen">Plan</h1>
-        <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+        <div className="text-muted t-13 mt-1.5 max-w-prose">
           Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
         </div>
       </header>
@@ -447,30 +447,22 @@ export function InvestmentPlannerDetailScreen() {
           <div className="inv-cert__v inv-cert__v--mat">
             <div className="k">At maturity</div>
             <div className="n">{fmtBDT(matValue)}</div>
+            <div className="c">
+              {isDps
+                ? 'if every installment is paid on time'
+                : 'for the full term, on the principal you lock in'}
+            </div>
           </div>
         </div>
 
-        {/* The footnote — the formula, spelled out, so the number is
-            never a black box. */}
+        {/* The one line that is genuinely additive: this is a
+            PROJECTION, and the bank is not bound by it. Everything
+            else the old note said — what the number is, how it is
+            computed, what goes in and what comes out — was already
+            on the certificate as figures, and repeating it in prose
+            made the reader match a sentence to a number they had
+            already read. */}
         <div className="inv-cert__note">
-          <strong>At maturity:</strong> {fmtBDT(matValue)} — you would put in{' '}
-          {fmtBDT(totalContributed)} and the bank would add {fmtBDT(interest)}{' '}
-          <em>
-            {isDps
-              ? '(projection if every installment is paid on time)'
-              : '(projection for the full term, on the principal you lock in)'}
-          </em>.{' '}
-          {isDps ? (
-            <>
-              Maturity uses annuity-due: {fmtBDT(Number(monthlyContribution) || 0)} ×
-              ((1 + r)^T − 1) / r × (1 + r) where r = {Number(rate) || 0}%/12 and
-              T = {Number(termMonths) || 0} months.
-            </>
-          ) : (
-            <>
-              Maturity uses simple interest: principal × (1 + rate × years). No compounding.
-            </>
-          )}{' '}
           <strong>Actual bank payouts may differ.</strong>
         </div>
       </section>
@@ -672,9 +664,9 @@ export function InvestmentPlannerDetailScreen() {
         </div>
 
         <div className="inv-cert__note">
-          <strong>A plan, not a holding.</strong> Nothing on this sheet reaches
-          your ledger &mdash; no account is opened, no transaction is recorded,
-          and no money moves. Save it to keep the projection on your planner.
+          <strong>A plan, not a holding.</strong> Nothing here reaches your ledger
+          &mdash; no account is opened, no transaction is recorded, and no money
+          moves.
         </div>
       </section>
 
@@ -712,7 +704,7 @@ export function InvestmentPlannerDetailScreen() {
         />
       </div>
 
-      <section className="text-[11px] text-muted text-center">
+      <section className="t-11 text-muted text-center">
         Plans never touch your ledger.
       </section>
 

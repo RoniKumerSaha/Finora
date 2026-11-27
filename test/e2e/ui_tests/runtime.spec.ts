@@ -562,9 +562,9 @@ test.describe('Runtime', () => {
       expect(banner.fix).toBeTruthy();
 
       // The banner's three stacked lines are three direct children.
-      await expect(feedback.banner.locator('div.font-semibold.text-\\[14px\\]')).toHaveCount(1);
-      await expect(feedback.banner.locator('div.text-\\[12\\.5px\\].text-muted')).toHaveCount(1);
-      await expect(feedback.banner.locator('div.text-\\[12\\.5px\\].text-ink')).toHaveCount(1);
+      await expect(feedback.banner.locator('div.font-semibold.t-13')).toHaveCount(1);
+      await expect(feedback.banner.locator('div.t-12.text-muted')).toHaveCount(1);
+      await expect(feedback.banner.locator('div.t-12.text-ink')).toHaveCount(1);
 
       // The dismiss button.
       await expect(feedback.dismissButton).toBeVisible();

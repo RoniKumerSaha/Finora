@@ -820,7 +820,7 @@ A first-time user should not need external documentation to understand the form 
 **Acceptance criteria:**
 
 - Every screen listed in the copy tables shows its replacement copy in a build of the app.
-- `Field.hint` is used; no hand-rolled `<div className="text-xs text-muted">` blocks under fields.
+- `Field.hint` is used; no hand-rolled `<div className="t-12 text-muted">` blocks under fields.
 - Every projected amount (current-vs-mature DPS rows, net worth projection, AddTransactionForm balance preview, Investment maturity "Review" block) carries a visible "projection" suffix or label.
 - Jargon (DPS / FDR / payout / rollover / maturity) either is spelled out on first appearance in the user flow or is paired with a one-line glossary hint at that spot.
 - No help text begins with the words "Pro tip", "Just", "Try to", "Did you know", or "Make sure".

@@ -69,8 +69,8 @@ export function TypePicker({
             style={isSel ? { boxShadow: 'var(--shadow-card), inset 0 0 0 1px var(--primary)' } : { boxShadow: 'var(--shadow-card)' }}
           >
             <Icon className={`w-11 h-11 sm:w-12 sm:h-12 mx-auto mb-2 ${it.glyphColor}`} strokeWidth={1.75} />
-            <div className="font-bold text-[15px] tracking-tight">{it.label}</div>
-            <div className="text-xs text-muted mt-1">{it.hint}</div>
+            <div className="font-bold t-15 tracking-tight">{it.label}</div>
+            <div className="t-12 text-muted mt-1">{it.hint}</div>
           </button>
         );
       })}
@@ -125,7 +125,7 @@ function CategoryTile({
         }
       }}
       className={[
-        'inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-[13px] font-medium',
+        'inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 t-13 font-medium',
         'transition cursor-pointer select-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         selected
@@ -150,7 +150,7 @@ export function CategoryGrid({
   // Add Transaction starts fresh.
   const [showAll, setShowAll] = useState(false);
   if (categories.length === 0) {
-    return <div className="text-muted text-sm">No categories yet.</div>;
+    return <div className="text-muted t-13">No categories yet.</div>;
   }
   const selected = categories.find(c => c.id === selectedId);
   const flat = variant === 'flat';
@@ -162,10 +162,10 @@ export function CategoryGrid({
           affordance. */}
       {selected && (
         <div className="flex items-center gap-2 min-h-[28px]">
-          <span className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
+          <span className="label">
             Selected
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-primary-hi text-primary text-[13px] font-semibold">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill bg-primary-hi text-primary t-13 font-semibold">
             {selected.name}
           </span>
           <button
@@ -268,7 +268,7 @@ function GroupedList({
       <div className="flex flex-col gap-4">
         {visibleGroups.map(g => (
           <div key={g.key}>
-            <h4 className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold m-0 mb-2">
+            <h4 className="label m-0 mb-2">
               {g.label}
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -290,7 +290,7 @@ function GroupedList({
             <button
               type="button"
               onClick={() => setShowAll(false)}
-              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 text-[13px] font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 t-13 font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <Close className="w-3.5 h-3.5" strokeWidth={2} />
               Hide list
@@ -301,7 +301,7 @@ function GroupedList({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 text-[13px] font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="inline-flex items-center gap-1.5 rounded-pill border border-primary/40 bg-primary-hi px-3.5 py-2 t-13 font-semibold text-primary hover:bg-primary/15 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               Show all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}
             </button>
@@ -324,7 +324,7 @@ export function PresetChips({
           key={n}
           type="button"
           onClick={() => onPick(n)}
-          className="px-[14px] py-1.5 rounded-pill bg-surface border border-border text-[13px] text-muted hover:text-ink hover:border-primary/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="px-[14px] py-1.5 rounded-pill bg-surface border border-border t-13 text-muted hover:text-ink hover:border-primary/40 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           {currencyPrefix}{n.toLocaleString('en-IN')}
         </button>

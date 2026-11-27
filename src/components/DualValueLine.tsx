@@ -49,11 +49,11 @@ export function DualValueLine({
   const tone = TONE_CLASS[currentTone];
   return (
     <>
-      <div className={['text-[13px] font-bold tabular', tone, className ?? ''].join(' ').trim()}>
+      <div className={['t-13 font-bold tabular', tone, className ?? ''].join(' ').trim()}>
         {headlinePrefix ? `${headlinePrefix} ` : ''}{fmtBDT(current)}
       </div>
       {showProjection && (
-        <div className="text-[11.5px] text-muted mt-0.5 tabular">
+        <div className="t-11 text-muted mt-0.5 tabular">
           {projectionLabel ?? `${fmtBDT(projected)} at maturity`}{' '}
           <span className="opacity-70">(projection)</span>
         </div>

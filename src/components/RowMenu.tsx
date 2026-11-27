@@ -96,7 +96,7 @@ export function RowMenu({ items, ariaLabel = 'Row actions' }: { items: RowMenuIt
         aria-label={ariaLabel}
         className="w-7 h-7 inline-flex items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
-        <span aria-hidden="true" className="text-base leading-none">{'\u22EF'}</span>
+        <span aria-hidden="true" className="t-13 leading-none">{'\u22EF'}</span>
       </button>
       {open && pos && createPortal(
         <div
@@ -122,7 +122,7 @@ function MenuItem({ item, onPick }: { item: RowMenuItem; onPick: () => void }) {
       role="menuitem"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onSelect(); onPick(); }}
       className={[
-        'block w-full text-left px-3.5 py-2 text-[13px] transition',
+        'block w-full text-left px-3.5 py-2 t-13 transition',
         item.tone === 'danger'
           ? 'text-danger hover:bg-danger-soft'
           : 'text-ink hover:bg-surface-2',

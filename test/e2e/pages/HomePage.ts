@@ -47,7 +47,7 @@ export class HomePage extends BasePage {
 
   /** The hero's net-worth figure. */
   get netWorthFigure(): Locator {
-    return this.page.locator('div.text-\\[44px\\], div.text-\\[52px\\]').first();
+    return this.page.locator('div.t-30').first();
   }
 
   /**
@@ -151,9 +151,17 @@ export class HomePage extends BasePage {
     return this.activityRow(title).locator('div.font-bold.tabular');
   }
 
-  /** A recent-activity row's relative-date + account line. */
+  /**
+   * A recent-activity row's relative-date + account line.
+   *
+   * ⚠️ The board is five columns wide, and four of them render a
+   * `t-12 text-muted` cell — the subtitle, the Date, the Account and
+   * the Category. `leading-tight` is the discriminator: only the
+   * subtitle carries it (the title above it carries `font-semibold`,
+   * so it never matches `text-muted`).
+   */
   activitySubtitle(title: string): Locator {
-    return this.activityRow(title).locator('div.text-xs.text-muted');
+    return this.activityRow(title).locator('div.t-12.text-muted.leading-tight');
   }
 
   /** Every recent-activity row. */
@@ -164,12 +172,12 @@ export class HomePage extends BasePage {
   /**
    * The empty-state title inside a Home card.
    *
-   * The shared `EmptyState` renders its title in a `text-[15px]`
+   * The shared `EmptyState` renders its title in a `heading h4-item`
    * block. Scoping on that class disambiguates the title from a strip
    * hint that happens to carry the same copy ("No accounts yet").
    */
   emptyStateTitle(title: string): Locator {
-    return this.page.locator('div.text-\\[15px\\].font-semibold.text-ink').filter({
+    return this.page.locator('div.heading.h4-item.text-ink').filter({
       hasText: title,
     });
   }
@@ -188,7 +196,7 @@ export class HomePage extends BasePage {
     return this.page
       .getByText(label, { exact: true })
       .locator('..')
-      .locator('div.text-\\[20px\\], div.text-\\[22px\\]');
+      .locator('div.t-18');
   }
 
   /**
@@ -202,7 +210,7 @@ export class HomePage extends BasePage {
     return this.page
       .getByText(label, { exact: true })
       .locator('..')
-      .locator('div.text-\\[11\\.5px\\]');
+      .locator('div.t-11');
   }
 
   /** Go to the Home screen. */

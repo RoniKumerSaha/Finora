@@ -212,7 +212,7 @@ export function ResetPasswordDialog({ open, onClose }: Props) {
         <h3 id="reset-password-title" className="heading h3-modal m-0 mb-2">
           Set a new password
         </h3>
-        <p className="text-[13px] text-muted leading-relaxed mb-5">
+        <p className="t-13 text-muted leading-relaxed mb-5">
           Choose a new password for your account. Use at least 8 characters.
         </p>
 

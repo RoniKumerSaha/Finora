@@ -54,7 +54,7 @@ export function SelectionModeToggle({
       onClick={onToggle}
       aria-pressed={selectionMode}
       className={[
-        'inline-flex items-center gap-2 px-3 py-2 rounded-pill text-[12.5px] font-semibold transition',
+        'inline-flex items-center gap-2 px-3 py-2 rounded-pill t-12 font-semibold transition',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         selectionMode
           ? 'bg-primary text-primary-on border border-primary'
@@ -141,7 +141,7 @@ export function BatchFloatingBar({
           <span
             aria-hidden
             className={[
-              'inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-pill text-[11px] font-bold tabular',
+              'inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-pill t-11 font-bold tabular',
               nothingSelected
                 ? 'bg-surface-2 text-muted border border-border'
                 : 'bg-primary text-primary-on border border-primary',
@@ -149,7 +149,7 @@ export function BatchFloatingBar({
           >
             {selectedCount}
           </span>
-          <span className="text-[12.5px] text-ink font-semibold">
+          <span className="t-12 text-ink font-semibold">
             {nothingSelected
               ? 'Tap cards to select'
               : selectedCount === 1
@@ -168,7 +168,7 @@ export function BatchFloatingBar({
               onClick={onSelectAll}
               disabled={totalCount === 0}
               className={[
-                'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn text-[12px] font-semibold transition',
+                'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn t-12 font-semibold transition',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 totalCount === 0
                   ? 'bg-surface-2 text-muted border border-border cursor-not-allowed'
@@ -187,7 +187,7 @@ export function BatchFloatingBar({
                 onClick={onSelectAll}
                 disabled={allSelected}
                 className={[
-                  'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn text-[12px] font-semibold transition',
+                  'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn t-12 font-semibold transition',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   allSelected
                     ? 'bg-surface-2 text-muted border border-border cursor-not-allowed'
@@ -199,7 +199,7 @@ export function BatchFloatingBar({
               <button
                 type="button"
                 onClick={onClearSelection}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn text-[12px] font-semibold text-muted hover:text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-btn t-12 font-semibold text-muted hover:text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 Clear
               </button>
@@ -213,7 +213,7 @@ export function BatchFloatingBar({
             onClick={onOpenEditor}
             disabled={nothingSelected}
             className={[
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-bold transition',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn t-12 font-bold transition',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               nothingSelected
                 ? 'bg-surface-2 text-muted border border-border cursor-not-allowed'
@@ -315,14 +315,14 @@ export function BatchEditorControls({
           }}
         >
           <h3 id="batch-editor-title" className="heading h3-modal m-0">Batch update budget</h3>
-          <div className="text-muted text-[12.5px] mt-2">
+          <div className="text-muted t-12 mt-2">
             Nothing is selected. Pick a few cards first, then come back here.
           </div>
           <div className="flex justify-end mt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="px-3 py-2 rounded-btn text-[12.5px] font-semibold text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="px-3 py-2 rounded-btn t-12 font-semibold text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >Close</button>
           </div>
         </div>
@@ -460,7 +460,7 @@ export function BatchEditorControls({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
             <h3 id="batch-editor-title" className="heading h3-modal m-0">Batch update budget</h3>
-            <div className="text-muted text-[12.5px] mt-1">
+            <div className="text-muted t-12 mt-1">
               {selectedIds.length} card{selectedIds.length === 1 ? '' : 's'} selected. Pick a mode and apply.
             </div>
           </div>
@@ -491,7 +491,7 @@ export function BatchEditorControls({
               aria-selected={mode === k}
               onClick={() => setMode(k)}
               className={[
-                'px-3 py-1.5 text-[12.5px] font-semibold rounded-input transition',
+                'px-3 py-1.5 t-12 font-semibold rounded-input transition',
                 mode === k ? 'bg-primary text-primary-on' : 'text-muted hover:text-ink',
               ].join(' ')}
             >{label}</button>
@@ -506,12 +506,12 @@ export function BatchEditorControls({
             onChange={(id, text) => setCustomDrafts(prev => ({ ...prev, [id]: text }))}
           />
         ) : mode === 'clear' ? (
-          <div className="text-[12.5px] text-muted">
+          <div className="t-12 text-muted">
             All selected cards will be set to <b className="text-ink">৳0</b>. You can edit them back afterwards.
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            {mode === 'apply' && <span className="text-[13px] text-muted">৳</span>}
+            {mode === 'apply' && <span className="t-13 text-muted">৳</span>}
             <input
               type="number"
               inputMode="decimal"
@@ -522,15 +522,15 @@ export function BatchEditorControls({
               aria-label={mode === 'percent' ? 'Percentage change' : 'New budget'}
               className="bg-surface-2 border border-border rounded-input px-3 py-2 text-right font-semibold text-ink tabular w-full focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
-            {mode === 'percent' && <span className="text-[13px] text-muted">%</span>}
+            {mode === 'percent' && <span className="t-13 text-muted">%</span>}
           </div>
         )}
 
         {/* Footer summary for non-custom modes */}
         {previewRows.length > 0 && mode !== 'custom' && (
           <div className="mt-3 rounded-input border border-border bg-surface-2">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[12.5px] px-2.5 py-2">
-              <span className="text-ink uppercase tracking-[0.06em] font-bold text-[10.5px]">Total</span>
+            <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 t-12 px-2.5 py-2">
+              <span className="text-ink uppercase tracking-narrow font-bold t-10">Total</span>
               <span className="text-muted tabular text-right whitespace-nowrap">{fmtBDT(totalCurrent)}</span>
               <span className="text-ink tabular font-bold text-right whitespace-nowrap">
                 {fmtBDT(totalNext)}{delta !== 0 && (
@@ -548,14 +548,14 @@ export function BatchEditorControls({
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-2 rounded-btn text-[12.5px] font-semibold text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="px-3 py-2 rounded-btn t-12 font-semibold text-ink hover:bg-surface-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >Cancel</button>
           <button
             type="button"
             onClick={apply}
             disabled={selectedIds.length === 0 || dirty}
             className={[
-              'inline-flex items-center gap-1.5 px-3 py-2 rounded-btn text-[12.5px] font-semibold transition',
+              'inline-flex items-center gap-1.5 px-3 py-2 rounded-btn t-12 font-semibold transition',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               selectedIds.length === 0 || dirty
                 ? 'bg-surface-2 text-muted border border-border cursor-not-allowed'
@@ -610,7 +610,7 @@ function CustomAmountInputs({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-[12px] text-muted">
+        <div className="t-12 text-muted">
           Type a new budget for each card. Leave blank to skip that card.
         </div>
         <BulkFillButtons
@@ -623,10 +623,10 @@ function CustomAmountInputs({
         />
       </div>
       <div className="rounded-input border border-border bg-surface-2 overflow-hidden">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 text-[12px] px-3 py-2 sticky top-0 bg-surface-2 border-b border-border z-10">
-          <span className="text-muted uppercase tracking-[0.06em] font-semibold text-[10.5px]">Card</span>
-          <span className="text-muted uppercase tracking-[0.06em] font-semibold text-[10.5px] text-right tabular">Current</span>
-          <span className="text-muted uppercase tracking-[0.06em] font-semibold text-[10.5px] text-right tabular">New</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 t-12 px-3 py-2 sticky top-0 bg-surface-2 border-b border-border z-10">
+          <span className="text-muted uppercase tracking-narrow font-semibold t-10">Card</span>
+          <span className="text-muted uppercase tracking-narrow font-semibold t-10 text-right tabular">Current</span>
+          <span className="text-muted uppercase tracking-narrow font-semibold t-10 text-right tabular">New</span>
         </div>
         <div className="max-h-[260px] overflow-y-auto">
           {liveRows.map((r, idx) => {
@@ -634,7 +634,7 @@ function CustomAmountInputs({
             return (
               <div
                 key={r.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 items-center text-[12.5px] px-3 py-2 border-b border-border last:border-b-0"
+                className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 items-center t-12 px-3 py-2 border-b border-border last:border-b-0"
               >
                 <span className="truncate flex items-center gap-1.5 min-w-0">
                   <span aria-hidden className="shrink-0">
@@ -644,7 +644,7 @@ function CustomAmountInputs({
                 </span>
                 <span className="text-muted tabular text-right whitespace-nowrap">{fmtBDT(r.current)}</span>
                 <span className="inline-flex items-center gap-1 bg-surface rounded-input border border-border px-2 py-1 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30 w-[120px]">
-                  <span className="text-[11.5px] text-muted">�</span>
+                  <span className="t-11 text-muted">�</span>
                   <input
                     ref={idx === 0 ? firstInputRef : undefined}
                     type="number"
@@ -659,15 +659,15 @@ function CustomAmountInputs({
                         (e.target as HTMLInputElement).blur();
                       }
                     }}
-                    className="bg-transparent border-0 outline-none tabular text-right font-semibold text-ink w-full text-[12.5px]"
+                    className="bg-transparent border-0 outline-none tabular text-right font-semibold text-ink w-full t-12"
                   />
                 </span>
               </div>
             );
           })}
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 text-[12.5px] px-3 py-2 border-t border-border bg-surface">
-          <span className="text-ink uppercase tracking-[0.06em] font-bold text-[10.5px]">Total</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 t-12 px-3 py-2 border-t border-border bg-surface">
+          <span className="text-ink uppercase tracking-narrow font-bold t-10">Total</span>
           <span className="text-muted tabular text-right whitespace-nowrap">{fmtBDT(totalCurrent)}</span>
           <span className="text-ink tabular font-bold text-right whitespace-nowrap">
             {fmtBDT(totalNext)}{delta !== 0 && (
@@ -705,14 +705,14 @@ function BulkFillButtons({
         <button
           type="button"
           onClick={onClearAll}
-          className="text-[11.5px] text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+          className="t-11 text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
         >
           Clear all
         </button>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-[11.5px] text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+          className="t-11 text-muted hover:text-ink font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
         >
           Fill all with…
         </button>
@@ -721,7 +721,7 @@ function BulkFillButtons({
   }
   return (
     <div className="flex items-center gap-1.5 shrink-0">
-      <span className="text-[11.5px] text-muted">৳</span>
+      <span className="t-11 text-muted">৳</span>
       <input
         type="number"
         inputMode="decimal"
@@ -733,7 +733,7 @@ function BulkFillButtons({
         placeholder="5000"
         aria-label="Fill all with"
         autoFocus
-        className="bg-surface border border-border rounded-input px-2 py-1 text-right font-semibold text-ink tabular w-[90px] text-[12px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+        className="bg-surface border border-border rounded-input px-2 py-1 text-right font-semibold text-ink tabular w-[90px] t-12 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
       />
     </div>
   );

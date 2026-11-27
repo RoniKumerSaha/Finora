@@ -222,7 +222,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
             </svg>
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-[14.5px] text-ink flex items-center gap-2 flex-wrap">
+            <div className="font-semibold t-15 text-ink flex items-center gap-2 flex-wrap">
               <span>
                 {expanded
                   ? 'Quick start'
@@ -231,12 +231,12 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                     : `${missingCount} preset${missingCount === 1 ? '' : 's'} ready to add`}
               </span>
               {addedCount > 0 && !expanded && (
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-pill bg-primary/15 text-[11px] font-bold tabular text-primary border border-primary/30">
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-pill bg-primary/15 t-11 font-bold tabular text-primary border border-primary/30">
                   {addedCount} in plan
                 </span>
               )}
             </div>
-            <div className="text-[12px] text-muted mt-0.5 truncate">
+            <div className="t-12 text-muted mt-0.5 truncate">
               {expanded
                 ? 'Pick a kit, tap tiles to add. Dates suggested relative to the event.'
                 : allAdded
@@ -252,7 +252,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                 type="button"
                 onClick={addAll}
                 title={`Add every missing ${EVENT_KIT_LABELS[activeKit]} preset`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-semibold transition bg-surface border border-border text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn t-12 font-semibold transition bg-surface border border-border text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
                   <path d="M2 6 L5 9 L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -272,7 +272,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                     type="button"
                     onClick={addAllAcrossKits}
                     title={`Add ${missingOtherKits.length} more preset${missingOtherKits.length === 1 ? '' : 's'} from other kits`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-medium transition bg-surface border border-border text-muted hover:text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn t-12 font-medium transition bg-surface border border-border text-muted hover:text-ink hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     + Add all kits ({missingOtherKits.length})
                   </button>
@@ -284,7 +284,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
             <button
               type="button"
               onClick={removeAllPresets}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-semibold transition bg-surface border border-border text-muted hover:text-danger hover:border-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn t-12 font-semibold transition bg-surface border border-border text-muted hover:text-danger hover:border-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
                 <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -297,7 +297,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
             onClick={() => setExpanded(v => !v)}
             aria-expanded={expanded}
             className={[
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-[12px] font-semibold transition',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn t-12 font-semibold transition',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               expanded
                 ? 'bg-surface border border-border text-ink hover:border-primary'
@@ -350,7 +350,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                   aria-selected={isActive}
                   onClick={() => setActiveKit(kit)}
                   className={[
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-[12px] font-semibold border transition',
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill t-12 font-semibold border transition',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     isActive
                       ? 'bg-primary text-primary-on border-primary shadow-sm'
@@ -360,7 +360,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                   <span>{EVENT_KIT_LABELS[kit]}</span>
                   <span
                     className={[
-                      'text-[10.5px] tabular px-1 py-px rounded-pill',
+                      't-10 tabular px-1 py-px rounded-pill',
                       isActive
                         ? 'bg-primary-on/15 text-primary-on'
                         : 'bg-surface-2 text-muted',
@@ -378,13 +378,13 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
               so it doesn't compete with the tiles for attention. */}
           {addedCount > 0 && (
             <div className="flex items-center justify-between gap-2 pt-1">
-              <div className="text-[11.5px] text-muted">
+              <div className="t-11 text-muted">
                 <b className="text-ink">{addedCount}</b> of {totalAcrossKits} added
               </div>
               <button
                 type="button"
                 onClick={removeAllPresets}
-                className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-muted hover:text-danger transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 rounded-sm underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-1.5 t-11 font-semibold text-muted hover:text-danger transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 rounded-sm underline-offset-2 hover:underline"
               >
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
                   <path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -426,14 +426,14 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
                       : 'bg-surface border-border hover:border-primary hover:-translate-y-0.5',
                   ].join(' ')}
                 >
-                  <span className="shrink-0 text-lg leading-none" aria-hidden>
+                  <span className="shrink-0 t-18 leading-none" aria-hidden>
                     {tile.emoji}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-semibold text-ink truncate">
+                    <span className="block t-13 font-semibold text-ink truncate">
                       {tile.name}
                     </span>
-                    <span className="block text-[10.5px] text-muted truncate">
+                    <span className="block t-10 text-muted truncate">
                       {added ? 'Tap to remove' : tile.hint}
                     </span>
                   </span>
@@ -470,7 +470,7 @@ export function PresetEventCategories({ plan }: { plan: EventPlan }) {
               seeding rule (so they know what to expect). Drawn AFTER
               the grid so the first thing in the panel is "what can I
               add", and the last thing is "what just happened". */}
-          <div className="text-[11.5px] text-muted pt-2 border-t border-border/60 flex flex-wrap gap-x-4 gap-y-1">
+          <div className="t-11 text-muted pt-2 border-t border-border/60 flex flex-wrap gap-x-4 gap-y-1">
             <span>
               <b className="text-ink">{EVENT_KIT_LABELS[activeKit]}</b> kit
               {tiles.length > 0 ? ` · ${tiles.length} preset${tiles.length === 1 ? '' : 's'}` : ''}

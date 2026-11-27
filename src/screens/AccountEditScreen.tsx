@@ -153,7 +153,7 @@ export function AccountEditScreen() {
     <form onSubmit={onSubmit} className="flex flex-col gap-6 max-w-2xl">
       <header>
         <h1 className="heading h1-screen">Edit account</h1>
-        <div className="text-muted text-[13px] mt-1.5">Changes apply to this account only.</div>
+        <div className="text-muted t-13 mt-1.5">Changes apply to this account only.</div>
       </header>
 
       <section
@@ -253,11 +253,15 @@ export function AccountEditScreen() {
           </div>
         </div>
 
+        {/* The one thing a reader of this form cannot work out for
+            themselves: the opening balance MOVES the current balance,
+            and the history stays put. The old note led with "Opening
+            balance is where the ledger starts" — but that is what
+            the field label and its hint already said, two inches
+            above. */}
         <div className="acct-cert__note">
-          <strong>Opening balance</strong> is where the ledger starts. The current balance is
-          the opening balance plus everything recorded since — so changing the opening
-          balance moves the current balance by the same amount, and <em>every historical
-          figure on this account stays exactly where it was</em>.
+          Changing the opening balance moves the current balance by the same amount, and{' '}
+          <em>every historical figure on this account stays exactly where it was</em>.
         </div>
 
         <div className="flex gap-2 mt-[18px]">

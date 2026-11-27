@@ -135,20 +135,20 @@ export function EventPlanScreen() {
         <button
           type="button"
           onClick={() => navigate('/plan')}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Plans</button>
       </div>
       <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="heading h1-screen">Plan an event</h1>
-          <div className="text-muted text-[13px] mt-1.5">
+          <div className="text-muted t-13 mt-1.5">
             Weddings, trips, Eid, anything with a date and a budget. Each event is its own scratchpad.
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {!creating && (
             <Button variant="primary" onClick={startCreate}>
-              <span className="text-base leading-none">+</span>
+              <span className="t-13 leading-none">+</span>
               <span>New event</span>
             </Button>
           )}
@@ -190,10 +190,10 @@ export function EventPlanScreen() {
         <section className="card">
           <div className="py-10 text-center text-muted">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-surface-2 text-primary mb-2.5">
-              <span className="text-3xl leading-none" aria-hidden>📅</span>
+              <span className="t-30 leading-none" aria-hidden>📅</span>
             </div>
-            <div className="text-[15px] font-semibold text-ink">Plan your first event</div>
-            <p className="mt-2 text-sm">Set a date. Add categories with their own budgets — the event's total is the sum of category budgets.</p>
+            <div className="t-15 font-semibold text-ink">Plan your first event</div>
+            <p className="mt-2 t-13">Set a date. Add categories with their own budgets — the event's total is the sum of category budgets.</p>
             <Button variant="primary" onClick={startCreate} className="mt-4">+ New event</Button>
           </div>
         </section>
@@ -281,10 +281,10 @@ function EventPlanCard({
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: fill.color }}
             />
-            <span className="shrink-0 text-primary text-xl leading-none" aria-hidden>{ev.emoji || '📅'}</span>
-            <div className="font-semibold text-[15px] tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
+            <span className="shrink-0 text-primary t-18 leading-none" aria-hidden>{ev.emoji || '📅'}</span>
+            <div className="font-semibold t-15 tracking-tight truncate group-hover:text-primary transition">{ev.name}</div>
           </div>
-          <div className="text-xs text-muted mt-1.5 tabular ml-[26px]">
+          <div className="t-12 text-muted mt-1.5 tabular ml-[26px]">
             {fmtDate(ev.eventDate)} · {days >= 0 ? `${days} days to go` : `${Math.abs(days)} days ago`}
           </div>
         </div>
@@ -293,14 +293,14 @@ function EventPlanCard({
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(ev.id); }}
-          className="relative z-10 text-xs text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
+          className="relative z-10 t-12 text-muted hover:text-danger transition px-2 py-1 rounded-btn hover:bg-surface-2"
           aria-label={`Delete ${ev.name}`}
         >
           Delete
         </button>
       </div>
       <ProgressBar value={summary.budget > 0 ? Math.min(100, pct) : 0} height={8} tone={overflow ? 'overflow' : 'normal'} animateOnMount animationDelay={animDelay} />
-      <div className="flex justify-between items-center text-xs tabular gap-2">
+      <div className="flex justify-between items-center t-12 tabular gap-2">
         <span
           className="px-2 py-0.5 rounded-pill text-ink"
           style={frostedPillStyle()}
@@ -323,7 +323,7 @@ function EventPlanCard({
           )}
         </span>
       </div>
-      <div className="flex justify-between text-xs text-muted tabular">
+      <div className="flex justify-between t-12 text-muted tabular">
         <span>
           {summary.overdueCount > 0
             ? <span className="text-danger">{summary.overdueCount} overdue</span>

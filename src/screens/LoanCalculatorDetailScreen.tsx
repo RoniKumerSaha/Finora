@@ -93,7 +93,7 @@ export function LoanCalculatorDetailScreen() {
   // with.
   if (!plan) {
     return (
-      <div className="card text-sm text-muted">
+      <div className="card t-13 text-muted">
         Plan not found.
         <div className="mt-3">
           <Button variant="ghost" onClick={() => navigate('/plan/loan')}>Back to calculator</Button>
@@ -181,12 +181,12 @@ export function LoanCalculatorDetailScreen() {
             }
             navigate('/plan/loan');
           }}
-          className="text-muted text-sm hover:text-ink transition"
+          className="text-muted t-13 hover:text-ink transition"
         >{'\u2190'} Loan Calculator</button>
       </div>
       <header>
         <h1 className="heading h1-screen">Loan projection</h1>
-        <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+        <div className="text-muted t-13 mt-1.5 max-w-prose">
           Edit the four inputs — principal, rate, term, start date — and watch the EMI and amortization table update.
         </div>
       </header>
@@ -413,7 +413,7 @@ export function LoanCalculatorDetailScreen() {
             </div>
 
             {rows.length === 0 ? (
-              <div className="text-sm text-muted">Enter a principal and term to see the breakdown.</div>
+              <div className="t-13 text-muted">Enter a principal and term to see the breakdown.</div>
             ) : (
               <>
                 <div className="ledger-sheet__scroll">
@@ -483,11 +483,18 @@ export function LoanCalculatorDetailScreen() {
 
             <div className="debt-cert__rule" />
 
+            {/* The statement carries only what the instrument card
+                beside it does NOT. The card already engraves the
+                loan amount, the monthly EMI and the interest, and the
+                donut already splits principal from interest — so
+                those lines repeated the same numbers a few inches
+                away.
+
+                What the card genuinely lacks is the rate and the
+                term: they live in the input fields below the fold,
+                and on a projection document they are the terms a
+                borrower reads first. */}
             <div className="debt-cert__lines">
-              <div className="debt-cert__line">
-                <span className="k">Principal</span>
-                <span className="v">{fmtBDT(principalValue)}</span>
-              </div>
               <div className="debt-cert__line">
                 <span className="k">Rate</span>
                 <span className="v">{rateValue}% APR</span>
@@ -497,55 +504,50 @@ export function LoanCalculatorDetailScreen() {
                 <span className="v">{termValue} months</span>
               </div>
               <div className="debt-cert__line">
-                <span className="k">Total interest across all</span>
-                <span className="v v--danger">{fmtBDT(interestPart)}</span>
+                <span className="k">Principal</span>
+                <span className="v">{fmtBDT(principalValue)}</span>
               </div>
             </div>
 
+            {/* The closing figure of the whole repayment — the one
+                number the instrument card's fields do not state. */}
             <div className="debt-cert__vals">
-              <div className="debt-cert__v debt-cert__v--now">
-                <div className="k">Monthly EMI</div>
-                <div className="n">{summary.emi > 0 ? fmtBDT(summary.emi) : '\u2014'}</div>
-              </div>
-              <div className="debt-cert__v debt-cert__v--mat">
-                <div className="k">Total you pay</div>
-                <div className="n">{fmtBDT(totalPaid)}</div>
+              <div className="debt-cert__v debt-cert__v--wide">
+                <span className="k">Total you pay</span>
+                <span className="n">{fmtBDT(totalPaid)}</span>
               </div>
             </div>
 
+            {/* The one insight the schedule itself cannot state: the
+                EMI never moves, but what it BUYS does. Without this
+                a reader sees a constant ৳ figure for 60 months and
+                concludes the loan costs the same every month. The
+                old note's last sentence — "the table on the left
+                shows that split row by row" — just pointed at the
+                columns, so it went. */}
             <div className="debt-cert__note">
-              <strong>How it works:</strong> the EMI is fixed for the whole term. Early in the
-              schedule most of each payment is <em>interest</em>; by the last installment it is
-              almost all <em>principal</em>. The table on the left shows that split row by row.
+              The EMI is fixed for the whole term. Early on most of each payment is
+              {' '}<em>interest</em>; by the last installment it is almost all <em>principal</em>.
             </div>
           </section>
 
-          <div
-            className="text-[12px] leading-relaxed rounded-btn px-3.5 py-3"
-            style={{
-              background: 'var(--success-callout-bg)',
-              border: '1px solid var(--success)',
-              color: 'var(--ink)',
-            }}
-          >
-            <strong style={{ color: 'var(--success-title)' }}>The stamp is the point.</strong> A
-            projection is a promise, not a receipt — so the word <b>Planned</b> is stamped across
-            it in grey, with a dashed border so it reads as an annotation rather than an official
-            mark.
-          </div>
+          {/* The one caveat worth stating in prose — and it is stated
+              quietly, matching the Investment Planner's detail screen.
+              The two loud callout boxes this replaces were doing two
+              jobs, neither of them the user's:
 
-          <div
-            className="text-[12px] leading-relaxed rounded-btn px-3.5 py-3"
-            style={{
-              background: 'var(--warn-soft)',
-              border: '1px solid var(--warn)',
-              color: 'var(--ink)',
-            }}
-          >
-            <strong style={{ color: 'var(--warn)' }}>Projections never touch your ledger.</strong>{' '}
-            Nothing here becomes a transaction, and no account balance moves until you take a real
-            loan and record it yourself.
-          </div>
+                - one explained the DESIGN ("the word Planned is
+                  stamped across it in grey, with a dashed border so
+                  it reads as an annotation") — commentary about the
+                  visual language, which the stamp already shows;
+                - the other repeated the caveat the PLANNED stamp's
+                  tooltip and the Summary note already carry.
+
+              One quiet line says the thing that is actually useful:
+              a projection is not a transaction. */}
+          <section className="t-11 text-muted text-center">
+            Projections never touch your ledger.
+          </section>
         </div>
       </div>
 

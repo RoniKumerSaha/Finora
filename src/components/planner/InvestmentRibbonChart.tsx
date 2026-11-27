@@ -199,7 +199,7 @@ export function InvestmentRibbonLegend({
   interestColor?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11.5px]">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 t-11">
       <LegendSwatch color={investedColor} label={investedLabel} dashed />
       <LegendSwatch color={interestColor} label={interestLabel} />
     </div>

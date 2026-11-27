@@ -29,11 +29,11 @@ export function InvestmentTypeBadge({
 }) {
   const m = META[type];
   const sizing = size === 'md'
-    ? 'px-3 py-1.5 text-[13px]'
-    : 'px-2.5 py-1 text-[11px]';
+    ? 'px-3 py-1.5 t-13'
+    : 'px-2.5 py-1 t-11';
   return (
     <span
-      className={`inline-flex items-center rounded-pill border border-border ${sizing} font-semibold uppercase tracking-[0.04em] whitespace-nowrap`}
+      className={`inline-flex items-center rounded-pill border border-border ${sizing} font-semibold uppercase tracking-narrow whitespace-nowrap`}
       style={{ background: m.soft, color: m.color }}
     >
       <span>{m.label}</span>

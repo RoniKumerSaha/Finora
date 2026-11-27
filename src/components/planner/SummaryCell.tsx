@@ -26,8 +26,8 @@ export function SummaryCell({
         right ? 'text-right' : '',
       ].join(' ')}
     >
-      <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">{label}</div>
-      <div className="font-bold text-[22px] tabular mt-1">{value}</div>
+      <div className="label">{label}</div>
+      <div className="font-bold t-22 tabular mt-1">{value}</div>
     </div>
   );
 }

@@ -195,7 +195,7 @@ export class AccountsPage extends BasePage {
   /** A Home empty-card title — "No accounts yet", "No transactions yet". */
   homeEmptyTitle(text: string): Locator {
     return this.page
-      .locator('div.text-\\[15px\\].font-semibold')
+      .locator('div.heading.h4-item')
       .filter({ hasText: text });
   }
 

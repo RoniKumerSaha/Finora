@@ -26,7 +26,7 @@
  */
 import { create } from 'zustand';
 import type { State, Banner, Toast } from './types';
-import { load, save, clear, DEFAULT_STATE } from './persistence';
+import { load, save, clear, DEFAULT_STATE, normaliseState } from './persistence';
 import { recomputeDerived } from './recompute';
 import * as plans from './plans';
 import * as investmentPlans from './investmentPlans';
@@ -174,13 +174,7 @@ export const useStore = create<Store>((set, get) => ({
     // Fill with empty arrays so consumers can rely on them existing.
     // Investment + loan scratchpads (added 2026-08-30) follow the same
     // back-compat pattern.
-    const normalised: State = {
-      ...next,
-      monthPlans: next.monthPlans ?? [],
-      eventPlans: next.eventPlans ?? [],
-      investmentPlans: next.investmentPlans ?? [],
-      loanPlans: next.loanPlans ?? [],
-    };
+    const normalised = normaliseState(next);
     const recomputed = recomputeDerived(normalised);
     set({ state: recomputed });
     // Persist immediately. Without this, the imported data only lives in

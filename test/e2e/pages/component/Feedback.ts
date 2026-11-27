@@ -32,12 +32,12 @@ export class Feedback {
 
   /** The toast's headline (the `what` line). */
   get toastTitle(): Locator {
-    return this.toast.locator('div.text-\\[13px\\]');
+    return this.toast.locator('div.t-13.font-semibold');
   }
 
   /** The toast's detail (the `why` line). */
   get toastBody(): Locator {
-    return this.toast.locator('div.text-\\[12px\\]');
+    return this.toast.locator('div.t-12.text-muted');
   }
 
   /** The sticky banner surface. */
@@ -49,21 +49,21 @@ export class Feedback {
    * The banner's headline (the `what` line).
    *
    * `RoleAlertBanner` renders the three parts as sibling divs: the
-   * `what` line is `font-semibold text-[14px]`, the `why` line is
-   * `text-muted`, and the `fix` line is `text-ink`.
+   * `what` line is `font-semibold t-13`, the `why` line is
+   * `t-12 text-muted`, and the `fix` line is `t-12 text-ink`.
    */
   get bannerTitle(): Locator {
-    return this.banner.locator('div.font-semibold.text-\\[14px\\]');
+    return this.banner.locator('div.font-semibold.t-13');
   }
 
   /** The banner's detail (the `why` line). */
   get bannerBody(): Locator {
-    return this.banner.locator('div.text-\\[12\\.5px\\].text-muted');
+    return this.banner.locator('div.t-12.text-muted');
   }
 
   /** The banner's remedy (the `fix` line). */
   get bannerFix(): Locator {
-    return this.banner.locator('div.text-\\[12\\.5px\\].text-ink');
+    return this.banner.locator('div.t-12.text-ink');
   }
 
   /** The banner's dismiss button. `exact` matters — see the class note. */

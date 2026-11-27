@@ -125,7 +125,7 @@ export class InvestmentPlannerPage extends BasePage {
 
   /** The hero card's maturity figure. */
   get maturityValue(): Locator {
-    return this.page.locator('div.text-\\[36px\\]');
+    return this.page.locator('div.inv-cert__v--mat .n');
   }
 
   /** The hero card's "At maturity (projection)" caption. */
