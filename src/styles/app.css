@@ -103,6 +103,41 @@ input::placeholder, textarea::placeholder {
 .row-hover { transition: background-color 120ms ease; }
 .row-hover:hover { background: var(--surface-2); }
 
+/* ---- the sticky bar ---------------------------------------------
+   The planner screens park their Save/Delete toolbar at the bottom
+   of the viewport so the user can commit without scrolling back up.
+   But a bar that just FLOATS over the form hides whatever is under
+   it — and on a long form that "whatever" is usually a field label,
+   which is the one thing the user was reading.
+
+   So the bar gets a proper backdrop: a fade above it that dissolves
+   the content underneath into the surface, so the bar reads as a
+   separate shelf rather than a rectangle pasted over the page. The
+   page also gets bottom padding, so the LAST field can always be
+   scrolled clear of the bar. */
+.sticky-bar {
+  position: sticky;
+  bottom: 8px;
+  z-index: 10;
+  padding-bottom: 4px;
+}
+.sticky-bar::before {
+  content: '';
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  bottom: -4px;
+  height: 88px;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    to top,
+    var(--bg) 42%,
+    color-mix(in srgb, var(--bg) 78%, transparent) 70%,
+    transparent 100%
+  );
+}
+
 /* ============================================================
    Transaction row — "1d" desktop ledger column (2026-11-24).
 
@@ -1793,6 +1828,46 @@ main > * {
   white-space: nowrap;
 }
 
+/* The deposits bar — how far through the schedule the payments have
+   got. It sits directly under the "DEPOSITS · 34 OF 60 PAID" head,
+   so the number and the bar say the same thing twice: once in
+   figures, once in shape. A DPS is a long marathon of monthly
+   payments, and the shape of that is what the eye wants. */
+/* The deposits bar — the same bar as the debt rail: one shape
+   everywhere. The track carries a hairline so an empty bar still
+   reads as a bar, not as nothing. */
+.inv-cert__deposits {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin: -2px 0 8px;
+}
+.inv-cert__deposits > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tone, var(--primary));
+  box-shadow: 0 0 0 1px var(--tone, var(--primary));
+  transition: width 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* The note under the deposits bar — the sentence that says what the
+   bar's numbers mean in money and in time. It is the same role the
+   railhint plays on the debt certificate: the figures on the line
+   above, the meaning on the line below. */
+.inv-cert__ledger-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.inv-cert__ledger-note b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 /* A dated line — the label, the date, the amount. */
 .inv-cert__dline {
   display: grid;
@@ -1883,6 +1958,13 @@ main > * {
   letter-spacing: -0.03em;
   margin-top: 3px;
   font-variant-numeric: tabular-nums;
+  /* A money figure NEVER wraps. "৳ 60,000" breaking across two
+     lines reads as two numbers, and the label above it no longer
+     belongs to the figure below it. The figure shrinks to fit its
+     column instead. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .inv-cert__v--now .n { color: var(--tone); }
 .inv-cert__v--mat .n { font-size: 15px; color: var(--ink); }
@@ -1910,6 +1992,29 @@ main > * {
   white-space: nowrap;
 }
 
+/* Three money figures cannot share one narrow row — at 340px of
+   content width each column is ~110px, and a 22px "৳ 60,000" does
+   not fit. So the footer drops to two columns and the interest
+   between them takes the full width beneath, which is exactly the
+   shape the summary certificate already uses. */
+@media (max-width: 560px) {
+  .inv-cert__vals {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 14px;
+  }
+  .inv-cert__grow {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: 9px;
+    border-top: 1px dashed var(--divider);
+  }
+  .inv-cert__grow .gk { order: 1; }
+  .inv-cert__grow .gn { order: 2; font-size: 13px; }
+}
+
 /* ============================================================
    THE MATURITY RAIL (.maturity)
    ============================================================
@@ -1926,41 +2031,9 @@ main > * {
 .maturity {
   position: relative;
   padding: 6px 0 2px;
-  /* The rail sits below the engraved field row, never across it —
-     the fields row draws its own rule, and the rail would read as a
-     strike-through of the term and rate. */
+  /* The dates sit below the engraved field row, never across it —
+     the fields row draws its own rule. */
   margin-top: 14px;
-}
-.maturity__rail {
-  position: relative;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.34);
-  border: 1px solid var(--border);
-  overflow: visible;
-}
-/* The elapsed portion of the term. */
-.maturity__fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--tone, var(--accent));
-}
-/* Today's marker — a stud riding the rail.
-   The stud is 12px wide, so at 0% or 100% it would overhang the
-   rail's end. The clamp keeps it ON the rail: the effective left
-   position never falls below 6px or rises above the rail's width
-   minus 6px. */
-.maturity__mark {
-  position: absolute;
-  top: 50%;
-  left: clamp(6px, var(--mark, 0%), calc(100% - 6px));
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--tone, var(--accent));
-  border: 2px solid #101614;
 }
 /* The two bookends — when it started and when it ends. */
 .maturity__ends {
@@ -1975,6 +2048,13 @@ main > * {
   color: var(--ink);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* The note under the dates — where today sits inside the promise. */
+.maturity__note {
+  font-size: 10.5px;
+  color: var(--muted-2);
+  margin-top: 5px;
+  letter-spacing: 0.03em;
 }
 
 /* ============================================================
@@ -2374,19 +2454,29 @@ main > * {
 .debt-cert__f .v--danger { color: var(--danger); }
 .debt-cert__f .v--primary { color: var(--primary); }
 
-/* The RAIL — the share already settled, as a punched track. */
+/* The RAIL — the share already settled, as a punched track.
+   The track must be VISIBLE when it is empty: a pending item draws
+   a rail at 0%, and if the track vanishes into the sheet the caption
+   ("Nothing paid yet") ends up floating with nothing above it. So the
+   track carries its own hairline edge and sits a step lighter than
+   the sheet it is stamped on. */
 .debt-cert__rail {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
   overflow: hidden;
   margin-top: 14px;
 }
+/* The filled part — the record's own tone. The hairline is dropped
+   on the fill so the bar reads as one solid stroke, not a shape
+   inside a shape. */
 .debt-cert__rail > i {
   display: block;
   height: 100%;
   border-radius: 999px;
   background: var(--tone, var(--primary));
+  box-shadow: 0 0 0 1px var(--tone, var(--primary));
 }
 .debt-cert__railhint {
   font-size: 10.5px;
@@ -3037,6 +3127,655 @@ main > * {
 }
 @media (max-width: 560px) {
   .subblock { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   THE ADD SLIP (.slip)
+   ============================================================
+   The certificate family covers what you HOLD. The add screens
+   cover what you MAKE, and a creation screen has a different job:
+   it has to make you fill in the blanks of a document AND show you
+   the document as it fills in.
+
+   The first attempt did that with two documents — a form on the
+   left, a live certificate on the right — and the cost was a gap
+   to look across every time you wanted to check a number.
+
+   So the add screens get ONE document instead:
+
+     .slip     — the record, drawn at full width, blanks open
+     .stamp    — the one big decision, pressed not selected
+     .blank    — a labelled rule waiting for ink
+     .clause   — the consequence, written INSIDE the document
+
+   The amount is the headline of the slip, not a field among
+   fields: it is the one thing you always know the moment you open
+   the screen, so it gets the biggest type on the page.
+
+   The consequence lives in a clause rather than a banner because it
+   is not a notification — it is a clause OF the record, and it
+   belongs four lines below the fields that caused it, not below
+   the fold.
+
+   The `--tone` custom property is set inline per record (expense →
+   danger, income → primary, transfer → info, debt → danger, and so
+   on) so the wash, the stamp, the amount and the clause all share
+   one colour identity.
+   ============================================================ */
+
+.slip {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, .05), transparent 46%),
+    linear-gradient(rgba(0, 0, 0, .18), rgba(0, 0, 0, .18)),
+    var(--surface-3);
+  padding: 0 24px 24px;
+  --tone: var(--primary);
+}
+/* The perforated edge — the same torn-paper bite the certificates
+   use, so a slip and a certificate read as the same family. */
+.slip::before,
+.slip::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 9px;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle at 7px 4.5px, var(--bg) 3.4px, transparent 3.6px),
+    radial-gradient(circle at 7px 4.5px, transparent 2.6px, rgba(0, 0, 0, .55) 3.4px, transparent 4.2px);
+  background-size: 14px 9px, 14px 9px;
+}
+.slip::before { top: 0; }
+.slip::after { bottom: 0; }
+
+/* A faint wash in the record's own tone, so the slip knows what
+   kind of thing it is before you read a word of it. */
+.slip__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--tone) 11%, transparent),
+    transparent 58%
+  );
+}
+
+/* ---- the head: what kind of record ---------------------------- */
+.slip__head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 0 16px;
+  border-bottom: 1px dashed var(--divider);
+}
+.slip__what {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+.slip__title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin-top: 5px;
+}
+.slip__sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.5;
+  max-width: 62ch;
+  font-family: var(--font-body);
+}
+
+/* ---- the stamp: the one big decision ------------------------- */
+/* A dropdown hides the other options. A stamp shows every option
+   at once, so you always see the alternative you are not choosing
+   — which is the whole point when the choice changes everything
+   downstream (income vs expense vs transfer, I-owe vs owed-to-me). */
+.stamps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  position: relative;
+  margin-top: 16px;
+}
+.stamps--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stamps--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stamp {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: inherit;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  min-width: 0;
+}
+.stamp:hover {
+  border-color: color-mix(in srgb, var(--tone, var(--primary)) 55%, var(--border));
+}
+.stamp:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone, var(--primary)) 38%, transparent);
+}
+.stamp__ico {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.22);
+  transition: color 0.15s, background 0.15s;
+}
+.stamp__ico svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+/* Solid pictograms (the account types) carry their own `fill:
+   currentColor` and no stroke — the rule above would erase them. */
+.stamp__ico svg[fill='currentColor'] {
+  fill: currentColor;
+  stroke: none;
+}
+.stamp__t {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.stamp__s {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.3;
+}
+/* The text column must be allowed to shrink, or a long title pushes
+   the glyph off the row. */
+.stamp > span:last-child { min-width: 0; }
+/* The chosen stamp gets a wash, a coloured border and a coloured
+   glyph — three signals, so the state survives a glance. */
+.stamp.on {
+  border-color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 13%, var(--surface-2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone, var(--primary)) 32%, transparent);
+}
+.stamp.on .stamp__ico {
+  color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 18%, transparent);
+}
+.stamp.on .stamp__t { color: var(--tone, var(--primary)); }
+
+/* ---- the amount: the headline --------------------------------- */
+.slip__amount {
+  position: relative;
+  padding: 22px 0 20px;
+  border-bottom: 1px dashed var(--divider);
+}
+.slip__amount-l {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+.slip__amount-v {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+.slip__cur {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+}
+.slip__amount-v input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--divider);
+  color: var(--tone, var(--primary));
+  font-family: var(--font-body);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  padding: 0 0 8px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 0;
+  transition: border-color 0.15s;
+}
+.slip__amount-v input:focus {
+  outline: none;
+  border-bottom-color: var(--tone, var(--primary));
+}
+.slip__amount-v input::placeholder { color: var(--muted-2); }
+.slip__amount-v input:disabled { opacity: 0.5; }
+
+/* ---- the blanks: labelled rules waiting for ink ---------------- */
+/* The label is ENGRAVED — it looks printed on the paper. The rule
+   beside it is where your answer goes. A blank that is still empty
+   shows its rule dashed, so "not yet filled" is visible at a
+   glance without the label having to say it. */
+.blank {
+  position: relative;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 18px;
+  align-items: baseline;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border-2);
+}
+.blank:last-child { border-bottom: 0; }
+.blank__k {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 3px;
+  font-family: var(--font-body);
+}
+.blank__hint {
+  font-size: 11.5px;
+  color: var(--muted-2);
+  line-height: 1.45;
+  margin-top: 5px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.blank__v {
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+/* `Select` renders a wrapper div around the <select>, so the WRAPPER
+   is the flex child — it has to grow for the control's rule to reach
+   the full width of the blank. */
+.blank__v > div { flex: 1 1 auto; min-width: 0; }
+/* A `Field` wrapper (the DurationField's bare mode) nests one level
+   deeper — the input inside it still has to sit on the rule, right
+   aligned like every other value in the blank. `Field` renders a flex
+   COLUMN by default, so it becomes a row here and the input grows.
+   The `:has()` keeps the rule off the unit toggle, which is a sibling
+   of the `Field` inside the same wrapper. */
+.blank__v > div > div:has(> input) {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+.blank__v > div > div:has(> input) > input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+}
+.blank__v input,
+.blank__v select,
+.blank__v textarea {
+  width: 100%;
+  /* `.blank__v` is a flex row, so the control needs to GROW to fill
+     it — otherwise a number input collapses to its intrinsic width
+     and the rule under it stops short of the label. */
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  /* `--border` is nearly invisible on the slip's surface — a rule
+     you are meant to write ON has to be visible. `--divider` is the
+     same token the amount headline uses. */
+  border-bottom: 1px solid var(--divider);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 2px 0 6px;
+  text-align: right;
+  border-radius: 0;
+  /* The shared `Field` inputs carry an inset shadow for their "recessed"
+     box look. On a slip there is no box — just a rule — so the shadow
+     has to go, or it draws a dark rectangle around the value. */
+  box-shadow: none;
+  transition: border-color 0.15s;
+}
+/* The `Select` wrapper carries no box of its own, but it must not
+   clip the control's rule either. */
+.blank__v > div { background: transparent; border: none; box-shadow: none; }
+/* The spin buttons would sit on top of the rule — the keyboard and
+   the mobile keypad are the way in. */
+.blank__v input[type='number']::-webkit-outer-spin-button,
+.blank__v input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.blank__v input[type='number'] { -moz-appearance: textfield; }
+.blank__v select {
+  appearance: none;
+  cursor: pointer;
+  /* Room for the `Select` component's caret, which sits at right-3. */
+  padding-right: 26px;
+}
+/* `Select` draws its own caret in an absolutely-positioned span, so
+   the control must not paint a second one. */
+.blank__v > div > select { background-image: none; }
+/* The dropdown PANEL is painted by the browser, not the page — but it
+   does honour the option's own colours, so give the options the app's
+   surfaces rather than letting the OS decide. */
+.blank__v select option {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.blank__v select option:checked {
+  background: var(--primary);
+  color: var(--primary-on);
+}
+.blank__v input:focus,
+.blank__v select:focus,
+.blank__v textarea:focus {
+  outline: none;
+  border-bottom-color: var(--primary);
+}
+.blank__v input::placeholder { color: var(--muted-2); font-weight: 400; }
+/* A right-aligned rule reads as "written" — so an EMPTY field shows
+   its placeholder on the LEFT, where the ink would land, and the
+   right edge stays blank until there is something to put there. */
+.blank__v input::placeholder,
+.blank__v textarea::placeholder { text-align: left; }
+/* A note is prose, not a figure — right-aligned wrapped text is
+   unreadable, so the whole textarea stays left-aligned. */
+.blank__v textarea { text-align: left; }
+.blank__v input[type='date'] { color-scheme: dark; }
+.blank__v input[aria-invalid='true'] { color: var(--danger); }
+/* A blank whose value is still empty shows the rule in the
+   "waiting" grey rather than the "written" grey. */
+.blank--empty .blank__v input,
+.blank--empty .blank__v select {
+  color: var(--muted-2);
+  border-bottom-style: dashed;
+}
+/* A blank that carries a chip set rather than a single value. */
+.blank--stack { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.blank--stack .blank__k { padding-top: 0; }
+
+@media (max-width: 700px) {
+  .blank { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .blank__v { justify-content: stretch; }
+  .blank__v input,
+  .blank__v select { text-align: left; }
+  .slip { padding: 0 18px 20px; }
+  /* A 40px "৳ 2,41,110" is wider than a phone's content column,
+     so the headline steps down rather than overflowing. */
+  .slip__amount-v input { font-size: 32px; }
+  .slip__cur { font-size: 21px; }
+}
+
+/* ---- the chip set --------------------------------------------- */
+.chipset { display: flex; flex-wrap: wrap; gap: 7px; }
+.chipset__c {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: 0.15s;
+}
+.chipset__c:hover { color: var(--ink); border-color: var(--muted-2); }
+.chipset__c.on {
+  background: color-mix(in srgb, var(--tone, var(--primary)) 16%, transparent);
+  border-color: var(--tone, var(--primary));
+  color: var(--tone, var(--primary));
+  font-weight: 700;
+}
+.chipset__c:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tone, var(--primary)) 40%, transparent);
+}
+
+/* ---- the clause ------------------------------------------------ */
+/* The consequence of the record, written inside the document. On
+   the other add screens this restates a balance; on goals it does
+   the arithmetic that decides whether the plan works. */
+.clause {
+  position: relative;
+  margin-top: 18px;
+  padding: 13px 15px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--tone, var(--primary)) 8%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--tone, var(--primary)) 28%, var(--border));
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.clause__ico {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tone, var(--primary));
+  background: color-mix(in srgb, var(--tone, var(--primary)) 16%, transparent);
+}
+.clause__ico svg {
+  width: 13px; height: 13px;
+  fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.clause__t {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  font-family: var(--font-body);
+}
+.clause__t b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the two-account transfer --------------------------------- */
+/* For a transfer the consequence is two balances. It gets its own
+   ruled strip rather than a sentence, because two numbers side by
+   side read faster than a sentence about two numbers. */
+.effects {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.effects__side { min-width: 0; }
+.effects__l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+.effects__n {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The AFTER balance is the headline — it is where the money ends up —
+   so it gets the big type. The "was" line underneath is struck by its
+   own wording and can stay small. */
+.effects__move {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 7px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.effects__was {
+  font-size: 11.5px;
+  color: var(--muted-2);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.effects__arrow {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tone, var(--info));
+  background: color-mix(in srgb, var(--tone, var(--info)) 16%, transparent);
+}
+.effects__arrow svg {
+  width: 15px; height: 15px;
+  fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (max-width: 620px) {
+  .effects { grid-template-columns: minmax(0, 1fr); }
+  .effects__arrow { transform: rotate(90deg); justify-self: start; }
+}
+
+/* ---- the foot -------------------------------------------------- */
+.slip__foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--divider);
+}
+.slip__foot-note {
+  font-size: 11.5px;
+  color: var(--muted-2);
+  line-height: 1.5;
+  max-width: 62ch;
+  font-family: var(--font-body);
+}
+.slip__foot-note b { color: var(--muted); font-weight: 600; }
+
+/* ---- the summary rail (the side column) ----------------------- */
+/* Every add screen also shows a compact "what this becomes" strip
+   at the side. It is a SUMMARY, not a second form — one row of
+   figures, no controls, so it can never disagree with the slip. */
+.recap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+}
+.recap__h {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 11px;
+  font-family: var(--font-body);
+}
+.recap__rows { display: flex; flex-direction: column; }
+.recap__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-2);
+  font-size: 12.5px;
+  color: var(--muted);
+  font-family: var(--font-body);
+}
+.recap__row:last-child { border-bottom: 0; }
+.recap__row b {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.recap__row--total {
+  border-top: 1px dashed var(--divider);
+  border-bottom: 0;
+  margin-top: 7px;
+  padding-top: 9px;
+}
+.recap__row--total b { font-size: 17px; }
+
+/* ---- the two-column page -------------------------------------- */
+.addpage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1040px) {
+  .addpage { grid-template-columns: minmax(0, 1fr); }
+}
+.addpage__side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---- narrow screens ------------------------------------------- */
+/* Three stamps across a phone is three columns of ~110px, and the
+   titles wrap to three lines each — the row stops reading as three
+   choices and starts reading as a wall of fragments. So below the
+   breakpoint the stamps stack, one per row. */
+@media (max-width: 620px) {
+  .stamps,
+  .stamps--2,
+  .stamps--4 { grid-template-columns: minmax(0, 1fr); }
+  .stamp { padding: 11px 12px; }
 }
 
 /* ============================================================

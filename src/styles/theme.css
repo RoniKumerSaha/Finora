@@ -131,6 +131,12 @@
 }
 
 [data-theme="dark"] {
+  /* Dark is the ONLY mode, so tell the browser. Without this the
+     native widgets it paints — the `<select>` popup, scrollbars,
+     the date picker — render in the OS's light scheme, which flashes
+     a white panel over a dark app the moment you open a dropdown. */
+  color-scheme: dark;
+
   /* Card top-edge highlight (dark mode): subtle warm light from above. */
   --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   /* Card shadow (dark): two-layer ambient.

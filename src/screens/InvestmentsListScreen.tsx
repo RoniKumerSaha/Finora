@@ -352,6 +352,12 @@ function InvCard({
   // The DPS ledger — the two dated lines the certificate shows.
   const ledger = isDps ? dpsLedger(inv, transactions) : null;
 
+  // The deposits bar's percentage — how much of the schedule has been
+  // paid in. A term of zero months has no schedule, so no bar.
+  const depositsPct = isDps && inv.termMonths > 0
+    ? Math.min(100, Math.round(((ledger?.installmentsPaid ?? 0) / inv.termMonths) * 100))
+    : 0;
+
   // A lump sum's second ledger line is its MATURITY date; a DPS's is
   // the NEXT installment due. Same shape, so the card's height never
   // grows with the term.
@@ -413,6 +419,30 @@ function InvCard({
                 : '1 lump sum'}
             </span>
           </div>
+
+          {/* The deposits bar — how far through the schedule the
+              deposits have got. A DPS is a marathon of monthly
+              payments, and "34 of 60 paid" is a number the reader
+              has to do arithmetic on; the bar says it at a glance.
+
+              A lump sum has no schedule, so it gets no bar — an
+              always-full bar next to "1 lump sum" would be noise. */}
+          {isDps && (
+            <div
+              className="inv-cert__deposits"
+              role="progressbar"
+              aria-valuenow={depositsPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${inv.name} deposits made`}
+            >
+              {/* An empty bar paints no fill — a zero-width fill with a
+                  hairline edge still shows as a speck at the start of
+                  the track, which reads as a stray mark rather than as
+                  "no deposits yet". */}
+              {depositsPct > 0 && <i style={{ width: `${depositsPct}%` }} />}
+            </div>
+          )}
 
           {isDps ? (
             <>

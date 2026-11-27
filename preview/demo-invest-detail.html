@@ -102,18 +102,18 @@
 <body>
 
 <div class="page-head">
-  <h1>Investment detail — the bank certificate, and its maturity</h1>
+  <h1>Investment detail — the bank certificate, and its deposits</h1>
   <p>
     An investment is a <b>bank certificate</b>: engraved terms, a serial number, a rate seal
-    and a maturity date. What the old detail screen lacked was a sense of <b>time</b> — so
-    the certificate now carries a maturity rail, the numbers move from "what I put in" to
-    "what I'll get out", and the activity ledger tracks every contribution and payout.
+    and a maturity date. The certificate carries <b>one</b> progress bar — the deposits, with
+    the count printed beside it — the numbers move from "what I put in" to "what I'll get out",
+    and the activity ledger tracks every contribution and payout.
   </p>
   <div class="legend">
     <span class="lg">Investment certificate</span>
     <span class="lg">Rate seal</span>
-    <span class="lg">Maturity rail</span>
-    <span class="lg on">Activity ledger</span>
+    <span class="lg on">Deposits bar</span>
+    <span class="lg">Activity ledger</span>
   </div>
 </div>
 
@@ -125,6 +125,7 @@
     <a href="demo-loan-detail.html">Loan detail</a>
     <a href="demo-debt-detail.html">Debt detail</a>
     <a href="demo-invest-detail.html" class="on">Invest detail</a>
+    <a href="demo-progress-trace.html">Progress bars</a>
     <a href="demo-transactions.html">Transactions</a>
   </div>
 </div>
@@ -197,17 +198,25 @@
             </div>
           </div>
 
-          <div class="inv-cert__tally tabular">
-            <span class="pip"></span>Contributed <b>৳ 85,000</b> of ৳ 3,00,000 · 14 of 60 installments
+          <!-- The deposits bar — one bar, one meaning. The head line
+               says the count; the rail draws the same fact. A DPS is
+               an ACTUAL item — money goes in every month — so it
+               gets the bar. -->
+          <div class="inv-cert__ledger">
+            <div class="inv-cert__ledger-head">
+              <span class="t">Deposits</span>
+              <span class="n">14 of 60 paid</span>
+            </div>
+            <div class="inv-cert__deposits" role="progressbar" aria-valuenow="23" aria-valuemin="0" aria-valuemax="100">
+              <i style="width:23%"></i>
+            </div>
+            <div class="inv-cert__ledger-note">
+              <b>৳ 85,000</b> of ৳ 3,00,000 in · next due <b>05 Feb 2027</b>
+            </div>
           </div>
 
-          <!-- The maturity rail -->
-          <div class="timeline" style="--tone:var(--accent)">
-            <div class="tl-rail"><i style="width:92%"></i><b style="left:92%"></b></div>
-            <div class="tl-ends">
-              <span>Started <b>05 Jan 2022</b></span>
-              <span>Matures <b>05 Jan 2027</b></span>
-            </div>
+          <div class="inv-cert__tally tabular">
+            <span class="pip"></span>Started <b>05 Jan 2022</b> — matures <b>05 Jan 2027</b>
           </div>
 
           <div class="inv-cert__vals">

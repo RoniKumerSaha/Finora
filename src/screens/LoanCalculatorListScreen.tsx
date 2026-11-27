@@ -115,18 +115,25 @@ export function LoanCalculatorListScreen() {
   }
 
   // Aggregate totals for the sidebar summary statement.
+  //
+  // DRAFTS COUNT. The cards below show a draft's numbers as plainly
+  // as a saved one's, so the summary that sits beside them has to
+  // aggregate the same set — otherwise the page contradicts itself,
+  // with a card reading "৳ 1,00,000 borrowed" next to a sidebar
+  // reading "৳ 0". A draft is a projection the user has not
+  // committed yet, but it is still on the board.
   let totalMonthly = 0;
   let totalPaid = 0;
   let totalPrincipal = 0;
   let totalInterest = 0;
-  for (const plan of saved) {
+  for (const plan of ordered) {
     const s = summariseLoanPlan(plan);
     totalMonthly += s.emi;
     totalPaid += s.totalPaid;
     totalPrincipal += Math.max(0, Number(plan.principal) || 0);
     totalInterest += Math.max(0, s.totalInterest);
   }
-  const count = saved.length;
+  const count = ordered.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -292,11 +299,12 @@ function LoanProjectionCard({
   const rate = Number(plan.rate) || 0;
   const lastDate = lastPaymentDate(plan);
 
-  // How much of the term has already elapsed. A plan that has not
-  // started yet sits at zero, so its rail reads empty — which is
-  // exactly right: nothing has been paid and nothing has passed.
-  const elapsed = Math.max(0, Math.min(term, monthsElapsed(plan.startDate)));
-  const pct = term > 0 ? Math.round((elapsed / term) * 100) : 0;
+  // The INTEREST share of the total repayment — the cost of the
+  // loan. On a projection this is the only honest thing a bar can
+  // report, because no money has been repaid yet.
+  const interestPct = s.totalPaid > 0
+    ? Math.round((Math.max(0, s.totalInterest) / s.totalPaid) * 100)
+    : 0;
 
   // A loan projection is a cost, so it carries the danger tone — the
   // same ink the real loan card uses.
@@ -372,28 +380,34 @@ function LoanProjectionCard({
         </div>
       </div>
 
-      {/* The rail — the share of the term already elapsed. */}
-      <div
-        className="debt-cert__rail"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${plan.name || 'Untitled loan'} term elapsed`}
-      >
-        <i style={{ width: `${pct}%` }} />
-      </div>
-      <div className="debt-cert__railhint">
-        {term > 0 ? `${pct}% of term elapsed` : '—'}
-      </div>
+      {/* The SCHEDULE — a projection has made no payments, so there
+          is no progress to report, and a bar that can only ever be
+          empty is noise on a LIST card. The plan's own page carries
+          the bar; here the schedule is stated in words.
 
-      {/* The tally — the numbers the other lines cannot carry: the
-          first and the last payment dates, and the count. */}
+          A projection has made no payments, so "3 of 3 installments
+          paid" would be a lie; the true statement is the total and
+          the interest riding inside it. */}
       <div className="debt-cert__tally tabular">
         <span className="pip" aria-hidden />
         <span>
-          {term} of {term} installments {MIDDOT}{' '}
-          <b>{fmtBDT(s.totalPaid)}</b> paid in full
+          {term > 0 ? (
+            <>
+              <b>Nothing paid yet</b> {MIDDOT} <b>{term}</b> installments {MIDDOT}{' '}
+              <b>{interestPct}%</b> of what you repay is interest
+            </>
+          ) : (
+            <>Set a term to see the schedule.</>
+          )}
+        </span>
+      </div>
+
+      {/* The tally — what the whole loan costs. */}
+      <div className="debt-cert__tally tabular">
+        <span className="pip" aria-hidden />
+        <span>
+          <b>{fmtBDT(s.totalInterest)}</b> interest on <b>{fmtBDT(principal)}</b> borrowed
+          {MIDDOT} <b>{fmtBDT(s.totalPaid)}</b> repaid in all
         </span>
       </div>
 
@@ -417,23 +431,5 @@ function LoanProjectionCard({
         </span>
       </div>
     </div>
-  );
-}
-
-/**
- * How many whole months have passed since the first payment date.
- *
- * Negative before the start (the plan has not begun), and never more
- * than the plan's own term.
- */
-function monthsElapsed(startDate: string): number {
-  if (!startDate) return 0;
-  const d = new Date(startDate);
-  if (Number.isNaN(d.getTime())) return 0;
-  const now = new Date();
-  if (now < d) return 0;
-  return (
-    (now.getFullYear() - d.getFullYear()) * 12 +
-    (now.getMonth() - d.getMonth())
   );
 }

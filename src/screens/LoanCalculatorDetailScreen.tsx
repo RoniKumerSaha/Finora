@@ -2,10 +2,12 @@
  * LoanCalculatorDetailScreen — edit a loan projection + amortisation table.
  *
  * A loan plan is a PROJECTION, so it wears the debt certificate's
- * instrument shell — the same red paper, the same engraved fields, the
- * same rail — with one difference: the PLANNED stamp, printed dashed
- * and greyed, because no money has actually moved. The amortisation
- * table below it is a LEDGER SHEET: a ruled page of the same paper.
+ * instrument shell — the same red paper, the same engraved fields —
+ * with one difference: the PLANNED stamp, printed dashed and greyed,
+ * because no money has actually moved. It carries NO progress bar: a
+ * plan has paid nothing, so its rail could only ever be empty, and the
+ * schedule is stated in words instead. The amortisation table below it
+ * is a LEDGER SHEET: a ruled page of the same paper.
  *
  * Layout:
  *   1. Back link + heading
@@ -160,7 +162,7 @@ export function LoanCalculatorDetailScreen() {
   const planName = trimmedName || 'Untitled projection';
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 pb-24">
       {/* Top-row back link — same arrow text-link used by every
           "planner" / "goal" surface across the app. Goes back to the
           immediate parent (the calculator list, not the Plan hub) so
@@ -216,7 +218,12 @@ export function LoanCalculatorDetailScreen() {
               </span>
             </div>
 
-            {/* The composition donut — principal vs interest. */}
+            {/* The composition donut — principal vs interest.
+                Principal is what comes back to the borrower, so it
+                wears the app's GOOD colour; interest is the lender's
+                share, the cost of borrowing, so it wears the DANGER
+                colour. The reader reads the ring the way the money
+                reads: green is yours, red is theirs. */}
             {totalPaid > 0 && (
               <div className="donut-wrap" style={{ marginTop: 16 }}>
                 <div className="donut">
@@ -227,13 +234,13 @@ export function LoanCalculatorDetailScreen() {
                     />
                     <circle
                       cx="59" cy="59" r={RING_R} fill="none"
-                      stroke="var(--danger)" strokeWidth="15"
+                      stroke="var(--primary)" strokeWidth="15"
                       strokeDasharray={`${principalLen.toFixed(2)} ${(CIRC - principalLen).toFixed(2)}`}
                       strokeLinecap="butt"
                     />
                     <circle
                       cx="59" cy="59" r={RING_R} fill="none"
-                      stroke="var(--accent)" strokeWidth="15"
+                      stroke="var(--danger)" strokeWidth="15"
                       strokeDasharray={`${interestLen.toFixed(2)} ${(CIRC - interestLen).toFixed(2)}`}
                       strokeDashoffset={(-principalLen).toFixed(2)}
                       strokeLinecap="butt"
@@ -244,18 +251,18 @@ export function LoanCalculatorDetailScreen() {
                         the interest slice's own colour — a reader should
                         be able to match the number to the arc without
                         consulting the key. */}
-                    <div className="v" style={{ color: 'var(--accent)' }}>{interestPct}%</div>
+                    <div className="v" style={{ color: 'var(--danger)' }}>{interestPct}%</div>
                     <div className="l">Interest</div>
                   </div>
                 </div>
                 <div className="donut-key">
                   <div className="donut-key__row">
-                    <span className="donut-key__sw" style={{ background: 'var(--danger)' }} />
+                    <span className="donut-key__sw" style={{ background: 'var(--primary)' }} />
                     Principal
                     <span className="donut-key__v">{fmtBDT(principalPart)}</span>
                   </div>
                   <div className="donut-key__row">
-                    <span className="donut-key__sw" style={{ background: 'var(--accent)' }} />
+                    <span className="donut-key__sw" style={{ background: 'var(--danger)' }} />
                     Interest
                     <span className="donut-key__v">{fmtBDT(interestPart)}</span>
                   </div>
@@ -284,21 +291,30 @@ export function LoanCalculatorDetailScreen() {
               </div>
             </div>
 
-            {/* The rail — the share of the term already elapsed. A
-                projection has made no payments, so the rail starts
-                empty: nothing of this loan has happened yet. */}
-            <div
-              className="debt-cert__rail"
-              role="progressbar"
-              aria-valuenow={0}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${planName} term elapsed`}
-            >
-              <i style={{ width: '0%' }} />
-            </div>
-            <div className="debt-cert__railhint">
-              0% of term elapsed {MIDDOT} {rows.length} of {rows.length} installments due
+            {/* The SCHEDULE — what a PROJECTION can honestly show.
+
+                A projection has made no payments, so there is NO
+                progress bar here: a bar reading "40% settled" would
+                be a lie, and an empty rail is noise on a plan. The
+                schedule is stated in words — how many payments this
+                costs, and when the first lands.
+
+                The interest share lives in the donut above. */}
+            <div className="debt-cert__tally tabular">
+              <span className="pip" aria-hidden />
+              <span>
+                {termValue > 0 ? (
+                  <>
+                    <b>Nothing paid yet</b>
+                    {MIDDOT} <b>{rows.length}</b> installments to pay
+                    {rows.length > 0 ? (
+                      <> {MIDDOT} first due <b>{fmtDate(rows[0].dueDate)}</b></>
+                    ) : null}
+                  </>
+                ) : (
+                  <>Set a term to see the schedule.</>
+                )}
+              </span>
             </div>
 
             {/* The tally — the schedule's two bookends. */}
@@ -540,7 +556,7 @@ export function LoanCalculatorDetailScreen() {
          "planner" surfaces share one shape. After Save, the user
          is taken back to the list. Delete is the destructive
          action that removes the plan regardless of save state. */}
-      <div className="sticky bottom-2 z-10">
+      <div className="sticky-bar">
         <SaveResetBar
           dirty={plan.dirty}
           canSave={canSave}

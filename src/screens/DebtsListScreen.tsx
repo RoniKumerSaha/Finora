@@ -40,6 +40,7 @@ import { loanEMI, loanPaymentSplit } from '../domain/math';
 import { DebtPaymentModal } from './DebtPaymentModal';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { debtTone } from '../lib/cardSurface';
+import { ProgressRail } from '../components/planner/ProgressRail';
 import type { CardTone } from '../lib/cardSurface';
 
 const MIDDOT = '\u00B7';
@@ -280,11 +281,36 @@ function DebtCard({ debt: d, animDelay = 0 }: { debt: any; animDelay?: number })
         </>
       )}
 
-      {/* The rail — the share already settled. */}
-      <div className="debt-cert__rail" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${d.name} settled`}>
-        <i style={{ width: `${pct}%`, animationDelay: `${animDelay}ms` }} />
-      </div>
-      <div className="debt-cert__railhint">{pct}% paid</div>
+      {/* The rail — the share of the PRINCIPAL already retired.
+          For a loan this is not the same as "paid": every payment
+          also carried interest, so a bar reading gross-paid-over-total
+          would run ahead of the truth and could read 100% while
+          principal was still outstanding. So the bar shows principal,
+          and the CAPTION says so — "principal settled", not "paid".
+          On a flat debt the two are the same thing, so the caption
+          drops the qualifier. */}
+      <ProgressRail
+        value={pct}
+        state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
+        measure={isLoan ? 'principal settled' : 'debt settled'}
+        label={`${d.name} settled`}
+        animDelay={animDelay}
+        caption={
+          pct <= 0 ? (
+            // Nothing paid yet — say so. "0%" is a number pretending to
+            // be a fact; "nothing paid yet" is the fact.
+            <>Nothing paid yet</>
+          ) : isLoan ? (
+            <>
+              <b className="text-ink font-semibold">{pct}%</b> of the principal settled
+            </>
+          ) : (
+            <>
+              <b className="text-ink font-semibold">{pct}%</b> paid
+            </>
+          )
+        }
+      />
 
       {/* The loan's tally — the split of everything paid so far into
           interest (money paid to the lender) and principal (money

@@ -7,11 +7,17 @@
  *
  * The page wears the debt certificate's shell: an IOU SLIP with the
  * counterparty's tear-off stub down the left edge, the amount and the
- * rate engraved on the face, a rail showing the share already
- * retired, and the closing figures. Below it, the "Terms" edit pass
- * writes the changes straight onto the slip — one ruled line per
- * field. The right column is the ACTIVITY LEDGER: the running account
- * of every payment against this debt.
+ * rate engraved on the face, and the closing figures. Below it, the
+ * "Terms" edit pass writes the changes straight onto the slip — one
+ * ruled line per field. The right column is the ACTIVITY LEDGER: the
+ * running account of every payment against this debt.
+ *
+ * There is deliberately NO progress bar in the EDIT FORM below. This
+ * page is for EDITING the terms, and a bar there invites the reader
+ * to think the number is editable — it is not, because progress comes
+ * from transactions, not from typing. The certificate ABOVE does carry
+ * the same rail the debts list card carries, because a certificate is
+ * a statement of fact, not a field to fill in.
  *
  * Note: paidSoFar is not editable here — it's derived from linked
  * transactions (R7). To change the paid amount, record an expense (for
@@ -30,6 +36,7 @@ import { fmtBDT, fmtDate } from '../lib/format';
 import { Button } from '../components/Button';
 import { Field, Input, Select } from '../components/Field';
 import { useConfirm } from '../components/ConfirmDialog';
+import { ProgressRail } from '../components/planner/ProgressRail';
 import { isPositiveMoney, POSITIVE_MONEY_ERROR, POSITIVE_RATE_ERROR, POSITIVE_TERM_ERROR } from '../lib/validation';
 import type { DebtDirection, DebtKind } from '../domain/types';
 
@@ -493,22 +500,35 @@ export function DebtEditScreen() {
               )}
             </div>
 
-            {/* The rail — the share already retired. */}
-            <div
-              className="debt-cert__rail"
-              role="progressbar"
-              aria-valuenow={pct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${debt.name} settled`}
-            >
-              <i style={{ width: `${pct}%` }} />
-            </div>
-            <div className="debt-cert__railhint">
-              {debtIsLoan
-                ? `${pct}% of principal repaid ${MIDDOT} ${matchingTx.length} of ${term > 0 ? term : matchingTx.length} payments made`
-                : `${pct}% of the total repaid ${MIDDOT} ${matchingTx.length} payment${matchingTx.length === 1 ? '' : 's'} made`}
-            </div>
+            {/* The rail — the share of the PRINCIPAL already retired.
+                It is the same bar the debts list card carries, and it
+                measures the same thing: on a loan every payment also
+                carried interest, so gross-paid-over-total would run
+                ahead of the truth and could read 100% while principal
+                was still outstanding. The bar shows principal, and the
+                caption says so. */}
+            <ProgressRail
+              value={pct}
+              state={pct >= 100 ? 'done' : pct > 0 ? 'active' : 'pending'}
+              measure={debtIsLoan ? 'principal settled' : 'debt settled'}
+              label={`${debt.name} settled`}
+              caption={
+                pct <= 0 ? (
+                  // Nothing paid yet — say so. "0%" is a number
+                  // pretending to be a fact; "nothing paid yet" is the
+                  // fact.
+                  <>Nothing paid yet</>
+                ) : debtIsLoan ? (
+                  <>
+                    <b className="text-ink font-semibold">{pct}%</b> of the principal settled
+                  </>
+                ) : (
+                  <>
+                    <b className="text-ink font-semibold">{pct}%</b> paid
+                  </>
+                )
+              }
+            />
 
             {/* The tally — the next payment the slip expects. */}
             {!isFullyPaid && nextPayment > 0 && (

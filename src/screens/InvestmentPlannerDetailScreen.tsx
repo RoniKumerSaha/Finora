@@ -1,25 +1,37 @@
 /**
- * InvestmentPlannerDetailScreen — edit a single mock investment plan.
+ * InvestmentPlannerDetailScreen — a plan, read as a PROJECTED
+ * certificate.
  *
- * 2026-08-30 polish: the "Projection" card is now a *hero card* —
- * big maturity value, an inline sparkline of month-by-month balance
- * growth (curved for DPS, linear for FDR/savings), and a chip row
- * summarising "you put in / you earn / matures". The form stays
- * below.
+ * A plan is a PROMISE, not a contract, so this screen is the same
+ * document family as the real Investments screen (`.inv-cert`) with
+ * two differences that matter:
  *
- * Auto-close: Save plan now navigates back to the list (the user
- * confirmed the values, the next action is "see what else I have").
- * Reset already navigated; no change there.
+ *   - the rate SEAL is replaced by a PLANNED stamp, because there is
+ *     no bank on the other side of this piece of paper yet;
+ *   - there is no deposit ledger, because nothing has been paid. What
+ *     the certificate carries instead is the SCHEDULE — the plan for
+ *     what would happen, month by month, if every installment were
+ *     paid on time;
+ *   - there is NO progress bar. A plan has paid nothing, so its rail
+ *     could only ever measure elapsed time — and elapsed time is not
+ *     progress. The plan's timing is stated in words: when it starts,
+ *     when it matures, and how far today sits from that end.
  *
- * Layout (top to bottom):
- *   1. Header (title + Delete + Back)
- *   2. Hero projection card (sparkline + chip row)
- *   3. Form card (name, type, principal / installment, rate, term, dates)
- *   4. Save / Delete toolbar (sticky-bottom so the user can
- *      commit without scrolling back up — the form is taller than one
- *      screen on most devices and "scroll-up to save" was the main UX
- *      papercut).
- *   5. Delete affordance lives inside the toolbar (with confirmation)
+ * The screen is both a document and an editor: the certificate sits
+ * on top and re-renders on every keystroke, so the user watches the
+ * projection answer back as they type. The form is below it.
+ *
+ * Layout:
+ *   1. Back link + header
+ *   2. THE PROJECTED CERTIFICATE
+ *        - head: name, serial, PLANNED stamp
+ *        - engraved terms: monthly / principal, term, rate
+ *        - the dates: starts, matures, and where today sits
+ *        - the three values: committed, interest, at maturity
+ *        - the SCHEDULE: what you would pay, and when it lands
+ *        - the footnote: the formula, spelled out
+ *   3. THE FORM (name, type, amount, rate, term, dates)
+ *   4. The sticky Save / Delete bar
  */
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -28,18 +40,59 @@ import {
   investmentPlanInterest,
   investmentPlanMaturityValue,
   investmentPlanTotalContributed,
+  projectionBreakdown,
+  projectionSeries,
 } from '../domain/investmentPlans';
 import { Button } from '../components/Button';
 import { useConfirm } from '../components/ConfirmDialog';
-import { Field, Input, Select } from '../components/Field';
+import { Field, Input } from '../components/Field';
 import { DurationField } from '../components/DurationField';
 import { SaveResetBar } from '../components/planner/SaveResetBar';
-import { InvestmentDonut } from '../components/planner/InvestmentDonut';
-import { InvestmentTypeBadge } from '../components/planner/InvestmentTypeBadge';
 import { fmtBDT, fmtDate } from '../lib/format';
 import { formatDuration } from '../domain/duration';
-import { cardSurfaceStyle, investmentTone, leftBarClass, toneTextClass } from '../lib/cardSurface';
+import { investmentTone } from '../lib/cardSurface';
+import { daysBetween, today } from '../domain/math';
 import type { InvestmentType } from '../domain/types';
+
+const MIDDOT = '\u00B7';
+
+/** The document's serial number — a stable hash of the plan's id. */
+function serialFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) % 999999;
+  }
+  return String(hash).padStart(6, '0');
+}
+
+/** The type as the document names it. */
+function typeLabel(type: InvestmentType): string {
+  return type === 'dps' ? 'DPS' : type === 'fdr' ? 'FDR' : 'SAVINGS';
+}
+
+/** Each investment type wears its own tone. */
+function toneFor(type: InvestmentType): string {
+  return type === 'dps' ? 'var(--primary)' : type === 'fdr' ? 'var(--accent)' : 'var(--info)';
+}
+
+/** The three kinds of instrument, and what each one is for. */
+const TYPES: { id: InvestmentType; name: string; sub: string }[] = [
+  { id: 'dps', name: 'DPS', sub: 'Monthly' },
+  { id: 'fdr', name: 'FDR', sub: 'Lump-sum' },
+  { id: 'savings', name: 'Savings', sub: 'Interest-bearing' },
+];
+
+/**
+ * How long is left, in the unit a reader would use. Mirrors the real
+ * investment certificate — years for a term measured in years, but
+ * days and months for the short ones.
+ */
+function remainingLabel(days: number): string {
+  const left = Math.abs(Math.round(days));
+  if (left >= 365) return `~${(left / 365).toFixed(1)}Y`;
+  if (left >= 60) return `~${Math.round(left / 30)}MO`;
+  return `~${left}D`;
+}
 
 export function InvestmentPlannerDetailScreen() {
   const navigate = useNavigate();
@@ -88,7 +141,6 @@ export function InvestmentPlannerDetailScreen() {
 
   // Save is gated on name + amount. "Amount" depends on the plan
   // type — DPS uses monthly contribution, FDR / savings use principal.
-  // The Save button stays disabled until both are non-empty.
   const trimmedName = name.trim();
   const amountValue = type === 'dps'
     ? Number(monthlyContribution)
@@ -106,8 +158,8 @@ export function InvestmentPlannerDetailScreen() {
     updateInvestmentPlan(plan!.id, p as Parameters<typeof updateInvestmentPlan>[1]);
   }
 
-  // Compute projection against the live form values, not just the
-  // stored plan — so the sparkline re-renders on every keystroke.
+  // Compute the projection against the LIVE form values, not just the
+  // stored plan — so the certificate re-renders on every keystroke.
   const livePlan = {
     ...plan,
     name, type,
@@ -120,14 +172,20 @@ export function InvestmentPlannerDetailScreen() {
   const matValue = investmentPlanMaturityValue(livePlan);
   const totalContributed = investmentPlanTotalContributed(livePlan);
   const interest = investmentPlanInterest(livePlan);
-  // Per-category tone — DPS / FDR / Savings each carry one color
-  // family. Used for wash + bar + hero figure.
+  const isDps = type === 'dps';
+
+  // Per-type tone — DPS / FDR / Savings each carry one colour family,
+  // exactly as on the real certificate.
   const cardTone = investmentTone(type);
-  const matDateISO = (() => {
+  const toneVar = `var(--${cardTone})`;
+
+  // ── The maturity date ──────────────────────────────────────────
+  // `investmentPlanMaturityDate` reads the STORED plan, but the form
+  // may have moved ahead of it — so the date is derived from the live
+  // values instead, the same way the value is.
+  const matDate = (() => {
     const term = Number(termMonths) || 0;
     if (!startDate || term <= 0) return null;
-    // Reuse the existing plan's maturity date when the inputs match
-    // the saved plan; otherwise derive from inputs.
     const start = new Date(startDate + 'T00:00:00Z');
     if (isNaN(start.getTime())) return null;
     const targetMonth = start.getUTCMonth() + term;
@@ -136,11 +194,82 @@ export function InvestmentPlannerDetailScreen() {
     const year = start.getUTCFullYear() + yearShift;
     const lastDay = new Date(Date.UTC(year, normalizedMonth + 1, 0)).getUTCDate();
     const day = Math.min(start.getUTCDate(), lastDay);
-    return new Date(Date.UTC(year, normalizedMonth, day)).toISOString().slice(0, 10);
+    return new Date(Date.UTC(year, normalizedMonth, day));
+  })();
+  const matDateISO = matDate ? matDate.toISOString().slice(0, 10) : null;
+
+  // ── The timing ─────────────────────────────────────────────────
+  // The promise in time: the day the plan starts, the day it would
+  // mature, and how far today sits from that end. A plan is a
+  // projection, so there is NO rail here — a bar on a plan could only
+  // measure elapsed time, and elapsed time is not progress. The facts
+  // are stated in words instead.
+  const todayISO = today().toISOString().slice(0, 10);
+  const daysLeft = matDateISO
+    ? daysBetween(todayISO, matDateISO)
+    : 0;
+
+  // ── The schedule ───────────────────────────────────────────────
+  // The month-by-month plan. For a DPS this is the installment
+  // ledger — what you would pay each month, what the balance would
+  // be, and how much of it is interest. For a lump sum it is a
+  // single line: the deposit lands on day one and the interest
+  // accrues behind it.
+  const schedule = (() => {
+    const total = projectionSeries(livePlan);
+    const { interest: intSeries } = projectionBreakdown(livePlan);
+    const months = Math.max(0, Math.floor(Number(termMonths) || 0));
+    const rows: Array<{
+      month: number;
+      dateISO: string | null;
+      paid: number;
+      value: number;
+      earned: number;
+    }> = [];
+
+    const monthDate = (n: number): string | null => {
+      if (!startDate) return null;
+      const s = new Date(startDate + 'T00:00:00Z');
+      if (isNaN(s.getTime())) return null;
+      const target = s.getUTCMonth() + n;
+      const yearShift = Math.floor(target / 12);
+      const normalized = ((target % 12) + 12) % 12;
+      const year = s.getUTCFullYear() + yearShift;
+      const lastDay = new Date(Date.UTC(year, normalized + 1, 0)).getUTCDate();
+      const day = Math.min(s.getUTCDate(), lastDay);
+      return new Date(Date.UTC(year, normalized, day)).toISOString().slice(0, 10);
+    };
+
+    if (isDps) {
+      // The FIRST installment lands on the start date; installment n
+      // lands n−1 months later. The balance is read at month n, so
+      // `projectionSeries` index n corresponds to installment n.
+      for (let m = 1; m <= months; m += 1) {
+        rows.push({
+          month: m,
+          dateISO: monthDate(m - 1),
+          paid: Number(monthlyContribution) || 0,
+          value: total[m] ?? 0,
+          earned: intSeries[m] ?? 0,
+        });
+      }
+    } else {
+      rows.push({
+        month: 0,
+        dateISO: startDate || null,
+        paid: Number(principal) || 0,
+        value: total[0] ?? 0,
+        earned: intSeries[0] ?? 0,
+      });
+    }
+    return rows;
   })();
 
+  const firstScheduleDate = schedule[0]?.dateISO ?? null;
+  const lastScheduleDate = schedule[schedule.length - 1]?.dateISO ?? null;
+
   return (
-    <div className="flex flex-col gap-5 max-w-2xl">
+    <div className="flex flex-col gap-5 max-w-4xl pb-24">
       {/* Top-row back link — same arrow text-link used by every
           "planner" / "goal" surface across the app. Goes back to the
           immediate parent (the planner list, not the Plan hub) so
@@ -162,175 +291,390 @@ export function InvestmentPlannerDetailScreen() {
           className="text-muted text-sm hover:text-ink transition"
         >{'\u2190'} Investment Planner</button>
       </div>
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="heading h1-screen">Plan</h1>
-          <div className="text-muted text-[13px] mt-1.5 max-w-prose">
-            Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
-          </div>
+
+      <header>
+        <h1 className="heading h1-screen">Plan</h1>
+        <div className="text-muted text-[13px] mt-1.5 max-w-prose">
+          Projections only. Nothing is recorded in your ledger — no payout account, no linked transactions.
         </div>
       </header>
 
-      {/* Hero projection card. Always renders — even with 0 inputs —
-         so the user sees the projection react in real time as they
-         type. When inputs are missing the sparkline is a flat line
-         and the maturity value reads ৳0. The 3px accent bar + wash
-         match the planned card on the list screen so detail and list
-         read as one product. */}
-      <section
-        className="card relative overflow-hidden flex flex-col gap-4"
-        style={cardSurfaceStyle(cardTone)}
-      >
-        {/* Left accent bar — shared 3px tone-coloured stripe, matched
-            to the plan's category. */}
-        <span
-          aria-hidden
-          className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full pointer-events-none ${leftBarClass(cardTone)}`}
-        />
-        <div className="flex items-start justify-between gap-3">
-          <div className="text-[11px] text-muted uppercase tracking-[0.08em] font-semibold">
-            Projection
+      {/* ═══ THE PROJECTED CERTIFICATE ═══════════════════════════ */}
+      <section className="inv-cert" style={{ ['--tone' as string]: toneVar }}>
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">{trimmedName || 'Untitled plan'}</div>
+            <div className="inv-cert__serial">
+              {[
+                `NO. ${serialFor(plan.id)}`,
+                typeLabel(type),
+                institution.trim() ? institution.trim().toUpperCase() : null,
+                matDateISO ? `MATURES IN ${remainingLabel(daysLeft)}` : null,
+              ].filter(Boolean).join(` ${MIDDOT} `)}
+            </div>
           </div>
-          <InvestmentTypeBadge type={type} />
-        </div>
-
-        {/* Hero number */}
-        <div>
-          <div className={`text-[36px] sm:text-[40px] font-extrabold tracking-[-0.02em] tabular leading-none ${toneTextClass(cardTone)}`}>
-            {fmtBDT(matValue)}
-          </div>
-          <div className="text-[11.5px] text-muted mt-2 uppercase tracking-[0.04em] font-semibold">
-            At maturity (projection)
+          {/* The PLANNED stamp — the planner's stand-in for the real
+              card's rate seal. A plan is a promise, not a contract,
+              so it prints with a dashed border. The WORD stays grey;
+              the border carries the plan's tone. */}
+          <div
+            className="inv-cert__stamp inv-cert__stamp--planned"
+            style={{ ['--tone' as string]: toneVar }}
+            title="This is a projection — no real money is involved."
+          >
+            Planned
           </div>
         </div>
 
-        {/* Donut + summary. The donut shows the composition of the
-            maturity value: the dark ring is your money, the bright
-            arc is interest earned. Honest about the 9% FDR case
-            where a line chart would have been a flat lie. */}
-        <div className="grid grid-cols-[auto_1fr] items-center gap-5">
-          <InvestmentDonut
-            total={matValue}
-            invested={totalContributed}
-            interest={interest}
-            investedColor="var(--primary)"
-            interestColor="var(--accent)"
-            size={128}
-            strokeWidth={18}
-            ariaLabel={
-              type === 'dps'
-                ? `DPS projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${formatDuration(Number(termMonths) || 0)}`
-                : `${type.toUpperCase()} projection: ${fmtBDT(totalContributed)} of your money, ${fmtBDT(interest)} of interest, total ${fmtBDT(matValue)} over ${formatDuration(Number(termMonths) || 0)}`
-            }
-          />
-          <div className="flex flex-col gap-2.5 min-w-0">
-            <LegendRow
-              swatch="var(--primary)"
-              label="Your money"
-              value={fmtBDT(totalContributed)}
-              pct={matValue > 0 ? Math.round((totalContributed / matValue) * 100) : 0}
-            />
-            <LegendRow
-              swatch="var(--accent)"
-              label="Interest earned"
-              value={fmtBDT(interest)}
-              pct={matValue > 0 ? Math.round((interest / matValue) * 100) : 0}
-              valueClass="text-accent"
-            />
-            <div className="text-[11px] text-muted mt-0.5">
-              Composition at maturity, over {formatDuration(Number(termMonths) || 0)}
+        {/* The engraved terms — the same three fields the real
+            certificate carries, so the two read as one family. A
+            DPS's money arrives as a monthly installment, so its
+            first field names the installment instead of mislabelling
+            it as a principal. */}
+        <div className="inv-cert__fields">
+          <div className="inv-cert__f">
+            <div className="k">{isDps ? 'Monthly' : 'Principal'}</div>
+            <div className="v">
+              {fmtBDT(isDps ? Number(monthlyContribution) || 0 : Number(principal) || 0)}
+            </div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Term</div>
+            <div className="v">{formatDuration(Number(termMonths) || 0)}</div>
+          </div>
+          <div className="inv-cert__f">
+            <div className="k">Rate</div>
+            <div className="v">{Number(rate) || 0}% / yr</div>
+          </div>
+        </div>
+
+        {/* The dates — the promise, in words. A plan is a PROJECTION,
+            so it gets NO progress bar: a plan has paid nothing, and a
+            rail could only ever measure time elapsed, which is not
+            progress. The span is stated as two dates and a count of
+            days, which is the whole truth about a plan's timing. */}
+        <div className="maturity maturity--plan" style={{ ['--tone' as string]: toneVar }}>
+          <div className="maturity__ends">
+            <span>Starts <b>{startDate ? fmtDate(startDate) : '—'}</b></span>
+            <span>
+              Matures <b>{matDateISO ? fmtDate(matDateISO) : '—'}</b>
+            </span>
+          </div>
+          <div className="maturity__note">
+            {daysLeft > 0
+              ? `Today sits ${daysLeft} day${daysLeft === 1 ? '' : 's'} before maturity`
+              : daysLeft === 0
+                ? 'Matures today'
+                : `Matured ${Math.abs(daysLeft)} day${Math.abs(daysLeft) === 1 ? '' : 's'} ago`}
+          </div>
+        </div>
+
+        {/* The ledger — a plan has no deposits on record, so what it
+            carries is the SCHEDULE: what would be paid, when it
+            would land, and what the balance would be. */}
+        {schedule.length > 0 && (
+          <div className="inv-cert__ledger">
+            <div className="inv-cert__ledger-head">
+              <span className="t">Schedule</span>
+              <span className="n">
+                {isDps ? `${schedule.length} installments` : '1 lump sum'}
+              </span>
+            </div>
+
+            {/* The bounded ledger — the shape of the schedule, not
+                every row of it. A 60-month DPS cannot print 60 lines
+                here, so the certificate states the facts instead: when
+                the money first lands, when the last one lands, and
+                what the balance becomes.
+
+                A lump sum has only ONE deposit, so it gets two lines
+                — the deposit and the maturity. Printing a third line
+                would repeat the maturity date with the principal
+                beside it, which says nothing. */}
+            <div className="inv-cert__dline">
+              <span className="inv-cert__dk">{isDps ? '1st' : 'Deposit'}</span>
+              <span className="inv-cert__dd">
+                {firstScheduleDate ? fmtDate(firstScheduleDate) : '—'}
+              </span>
+              <span className="inv-cert__da">{fmtBDT(schedule[0].paid)}</span>
+            </div>
+            {isDps && schedule.length > 1 && (
+              <div className="inv-cert__dline">
+                <span className="inv-cert__dk">Last</span>
+                <span className="inv-cert__dd">
+                  {lastScheduleDate ? fmtDate(lastScheduleDate) : '—'}
+                </span>
+                <span className="inv-cert__da">{fmtBDT(schedule[schedule.length - 1].paid)}</span>
+              </div>
+            )}
+            <div className="inv-cert__dline inv-cert__dline--next">
+              <span className="inv-cert__dk">At maturity</span>
+              <span className="inv-cert__dd">
+                {matDateISO ? fmtDate(matDateISO) : '—'}
+              </span>
+              <span className="inv-cert__da">{fmtBDT(matValue)}</span>
+            </div>
+
+            {/* The tally — the numbers the date lines cannot carry. */}
+            <div className="inv-cert__tally">
+              <span className="pip" aria-hidden />
+              <span>
+                {isDps ? (
+                  <>
+                    <b>{fmtBDT(totalContributed)}</b> over the full term {MIDDOT}{' '}
+                    <b>{fmtBDT(interest)}</b> interest
+                  </>
+                ) : (
+                  <>
+                    Lump sum {MIDDOT} <b>{fmtBDT(totalContributed)}</b> locked in at start
+                  </>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* The footer — the same three-figure form the real card uses. */}
+        <div className="inv-cert__vals">
+          <div className="inv-cert__v inv-cert__v--now">
+            <div className="k">Committed</div>
+            <div className="n">{fmtBDT(totalContributed)}</div>
+          </div>
+          <div className="inv-cert__grow">
+            <div className="gk">Interest</div>
+            <div className="gn">{fmtBDT(interest)}</div>
+          </div>
+          <div className="inv-cert__v inv-cert__v--mat">
+            <div className="k">At maturity</div>
+            <div className="n">{fmtBDT(matValue)}</div>
+          </div>
+        </div>
+
+        {/* The footnote — the formula, spelled out, so the number is
+            never a black box. */}
+        <div className="inv-cert__note">
+          <strong>At maturity:</strong> {fmtBDT(matValue)} — you would put in{' '}
+          {fmtBDT(totalContributed)} and the bank would add {fmtBDT(interest)}{' '}
+          <em>
+            {isDps
+              ? '(projection if every installment is paid on time)'
+              : '(projection for the full term, on the principal you lock in)'}
+          </em>.{' '}
+          {isDps ? (
+            <>
+              Maturity uses annuity-due: {fmtBDT(Number(monthlyContribution) || 0)} ×
+              ((1 + r)^T − 1) / r × (1 + r) where r = {Number(rate) || 0}%/12 and
+              T = {Number(termMonths) || 0} months.
+            </>
+          ) : (
+            <>
+              Maturity uses simple interest: principal × (1 + rate × years). No compounding.
+            </>
+          )}{' '}
+          <strong>Actual bank payouts may differ.</strong>
+        </div>
+      </section>
+
+      {/* ═══ THE AMENDMENT SHEET ════════════════════════════════ */}
+      {/* The form is the SAME document as the certificate above it,
+          written on. Each term gets its own ruled line — a small
+          uppercase label on the left, the control on the right — so
+          editing reads as filling in a form rather than filling in
+          a web form. The type is a PICKER rather than a dropdown:
+          three instruments, each with its own tone, and the reader
+          sees all three at once instead of one word at a time. */}
+      <section className="inv-cert" style={{ ['--tone' as string]: 'var(--warn)' }}>
+        <div className="inv-cert__head">
+          <div className="min-w-0">
+            <div className="inv-cert__name">Plan terms</div>
+            <div className="inv-cert__serial">
+              {[
+                `NO. ${serialFor(plan.id)}`,
+                'AMENDMENTS',
+                plan.dirty ? 'UNSAVED' : 'IN FORCE',
+              ].join(` ${MIDDOT} `)}
+            </div>
+          </div>
+          <div
+            className="inv-cert__stamp inv-cert__stamp--planned"
+            style={{ ['--tone' as string]: 'var(--warn)' }}
+            title="Nothing here is written to your ledger."
+          >
+            Editing
+          </div>
+        </div>
+
+        <div className="dform" style={{ marginTop: 14 }}>
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Name</div>
+              <div className="dfline__hint">
+                What you call this plan. Try &ldquo;DBBL 1-year FDR&rdquo;.
+              </div>
+            </div>
+            <div>
+              <Field label="Name" hideLabel>
+                <Input
+                  value={name}
+                  onChange={e => { setName(e.target.value); patch({ name: e.target.value }); }}
+                  placeholder="DBBL 1-year FDR"
+                />
+              </Field>
+            </div>
+          </div>
+
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Type</div>
+              <div className="dfline__hint">
+                The scheme you are planning. Switching reshapes the terms below.
+              </div>
+            </div>
+            <div>
+              <Field label="Type" hideLabel>
+                <div className="typepick" role="radiogroup" aria-label="Type">
+                  {TYPES.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={type === t.id}
+                      className={`typeopt${type === t.id ? ' on' : ''}`}
+                      style={{ ['--tone' as string]: toneFor(t.id) }}
+                      onClick={() => { setType(t.id); patch({ type: t.id }); }}
+                    >
+                      <span className="tt">{t.name}</span>
+                      <span className="ts">{t.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            </div>
+          </div>
+
+          {type === 'dps' ? (
+            <div className="dfline">
+              <div>
+                <div className="dfline__label">Installment</div>
+                <div className="dfline__hint">
+                  What you would deposit each month into this scheme.
+                </div>
+              </div>
+              <div>
+                <Field label="Monthly installment" hideLabel>
+                  <Input
+                    type="number" inputMode="decimal"
+                    value={monthlyContribution}
+                    onChange={e => { setMonthlyContribution(e.target.value); patch({ monthlyContribution: Number(e.target.value) || 0 }); }}
+                    placeholder="5000"
+                  />
+                </Field>
+              </div>
+            </div>
+          ) : (
+            <div className="dfline">
+              <div>
+                <div className="dfline__label">Principal</div>
+                <div className="dfline__hint">
+                  The lump sum you would lock into the deposit.
+                </div>
+              </div>
+              <div>
+                <Field label="Principal" hideLabel>
+                  <Input
+                    type="number" inputMode="decimal"
+                    value={principal}
+                    onChange={e => { setPrincipal(e.target.value); patch({ principal: Number(e.target.value) || 0 }); }}
+                    placeholder="100000"
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
+
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Rate</div>
+              <div className="dfline__hint">
+                Annual rate. Compounded monthly for a DPS, simple interest for a
+                lump sum.
+              </div>
+            </div>
+            <div>
+              <Field label="Annual rate (%)" hideLabel>
+                <Input
+                  type="number" inputMode="decimal"
+                  value={rate}
+                  onChange={e => { setRate(e.target.value); patch({ rate: Number(e.target.value) || 0 }); }}
+                  placeholder="8.5"
+                />
+              </Field>
+            </div>
+          </div>
+
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Term</div>
+              <div className="dfline__hint">
+                Use the same term as your bank contract. Months or years.
+              </div>
+            </div>
+            <div>
+              {/* `DurationField` renders its own `Field`, so its label
+                  is hidden — the ruled line's left column already
+                  names the field. */}
+              <DurationField
+                months={Math.max(0, Math.floor(Number(termMonths) || 0))}
+                onChange={m => {
+                  setTermMonths(String(m));
+                  patch({ termMonths: m });
+                }}
+                hideLabel
+              />
+            </div>
+          </div>
+
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Start date</div>
+              <div className="dfline__hint">
+                The day the first deposit would land.
+              </div>
+            </div>
+            <div>
+              <Field label="Start date" hideLabel>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={e => { setStartDate(e.target.value); patch({ startDate: e.target.value }); }}
+                />
+              </Field>
+            </div>
+          </div>
+
+          <div className="dfline">
+            <div>
+              <div className="dfline__label">Institution</div>
+              <div className="dfline__hint">
+                The bank or NBFI that would hold the money.
+              </div>
+            </div>
+            <div>
+              <Field label="Institution (optional)" hideLabel>
+                <Input
+                  value={institution}
+                  onChange={e => { setInstitution(e.target.value); patch({ institution: e.target.value }); }}
+                  placeholder="DBBL"
+                />
+              </Field>
             </div>
           </div>
         </div>
 
-        {/* Chip row: you put in / you earn / matures */}
-        <div className="flex flex-wrap gap-2">
-          <Chip label="You put in" value={fmtBDT(totalContributed)} tone="neutral" />
-          <Chip label="You earn" value={fmtBDT(interest)} tone="accent" />
-          <Chip
-            label="Matures"
-            value={matDateISO ? fmtDate(matDateISO) : '—'}
-            tone="neutral"
-          />
-        </div>
-
-        <div className="text-[11px] text-warn pt-1">
-          ⓘ This is a projection. Actual bank payouts may differ.
-        </div>
-      </section>
-
-      <section className="card flex flex-col gap-5">
-        <Field label="Name" hint={'Free text. Try "DBBL 1-year FDR" or "BRAC DPS plan".'}>
-          <Input
-            value={name}
-            onChange={e => { setName(e.target.value); patch({ name: e.target.value }); }}
-            placeholder="DBBL 1-year FDR"
-          />
-        </Field>
-        <Field label="Type" hint="Pick the scheme you want to plan.">
-          <Select
-            value={type}
-            onChange={e => { const v = e.target.value as InvestmentType; setType(v); patch({ type: v }); }}
-          >
-            <option value="dps">DPS — monthly deposit scheme</option>
-            <option value="fdr">FDR — fixed deposit receipt</option>
-            <option value="savings">Other (savings certificate / term deposit)</option>
-          </Select>
-        </Field>
-
-        {type === 'dps' ? (
-          <Field label="Monthly installment" hint="How much you plan to deposit each month.">
-            <Input
-              type="number" inputMode="decimal"
-              value={monthlyContribution}
-              onChange={e => { setMonthlyContribution(e.target.value); patch({ monthlyContribution: Number(e.target.value) || 0 }); }}
-              placeholder="5000"
-            />
-          </Field>
-        ) : (
-          <Field label="Principal" hint="Total lump sum you'd lock into the deposit.">
-            <Input
-              type="number" inputMode="decimal"
-              value={principal}
-              onChange={e => { setPrincipal(e.target.value); patch({ principal: Number(e.target.value) || 0 }); }}
-              placeholder="100000"
-            />
-          </Field>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Annual rate (%)" hint="Annual interest rate. Capped at 0–100%.">
-            <Input
-              type="number" inputMode="decimal"
-              value={rate}
-              onChange={e => { setRate(e.target.value); patch({ rate: Number(e.target.value) || 0 }); }}
-              placeholder="8.5"
-            />
-          </Field>
-          <DurationField
-            months={Math.max(0, Math.floor(Number(termMonths) || 0))}
-            onChange={m => {
-              setTermMonths(String(m));
-              patch({ termMonths: m });
-            }}
-            hint="Use the same term as your bank contract. Enter it in months or years."
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Start date" hint="When the deposit would land.">
-            <Input
-              type="date"
-              value={startDate}
-              onChange={e => { setStartDate(e.target.value); patch({ startDate: e.target.value }); }}
-            />
-          </Field>
-          <Field label="Institution" hint="Bank or NBFI holding this investment (optional).">
-            <Input
-              value={institution}
-              onChange={e => { setInstitution(e.target.value); patch({ institution: e.target.value }); }}
-              placeholder="DBBL"
-            />
-          </Field>
+        <div className="inv-cert__note">
+          <strong>A plan, not a holding.</strong> Nothing on this sheet reaches
+          your ledger &mdash; no account is opened, no transaction is recorded,
+          and no money moves. Save it to keep the projection on your planner.
         </div>
       </section>
 
@@ -341,7 +685,7 @@ export function InvestmentPlannerDetailScreen() {
          present (see `canSave` above); Delete is the destructive
          action that removes the plan regardless of save state. After
          Save, the user is taken back to the list. */}
-      <div className="sticky bottom-2 z-10">
+      <div className="sticky-bar">
         <SaveResetBar
           dirty={plan.dirty}
           canSave={canSave}
@@ -373,57 +717,6 @@ export function InvestmentPlannerDetailScreen() {
       </section>
 
       {dialog}
-    </div>
-  );
-}
-
-/* ── Tiny presentational atoms ──────────────────────────────────── */
-
-function LegendRow({
-  swatch, label, value, pct, valueClass = 'text-ink',
-}: {
-  swatch: string;
-  label: string;
-  value: string;
-  pct: number;
-  valueClass?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 min-w-0">
-      <span
-        aria-hidden
-        className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-        style={{ background: swatch }}
-      />
-      <div className="flex-1 min-w-0 flex items-baseline justify-between gap-3">
-        <span className="text-[12.5px] text-muted truncate">{label}</span>
-        <span className={`text-[13px] font-semibold tabular shrink-0 ${valueClass}`}>
-          {value}{' '}
-          <span className="text-muted font-normal">· {pct}%</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Chip({ label, value, tone }: { label: string; value: string; tone: 'neutral' | 'accent' }) {
-  const isAccent = tone === 'accent';
-  return (
-    <div
-      className="flex-1 min-w-[120px] rounded-btn px-3 py-2 border border-border flex flex-col gap-0.5"
-      style={{
-        background: isAccent ? 'var(--accent-soft)' : 'var(--surface-2)',
-      }}
-    >
-      <div className="text-[10px] text-muted uppercase tracking-[0.08em] font-semibold">
-        {label}
-      </div>
-      <div
-        className="text-[14px] font-bold tabular leading-tight"
-        style={{ color: isAccent ? 'var(--accent)' : 'var(--ink)' }}
-      >
-        {value}
-      </div>
     </div>
   );
 }

@@ -37,6 +37,7 @@ import {
   investmentMaturityDate,
   investmentMaturityValueTyped,
   dpsContributedSoFar,
+  dpsLedger,
   dpsPaidOutSoFar,
   dpsCurrentValue,
   dpsMaturityValue,
@@ -131,32 +132,27 @@ export function InvestmentDetailScreen() {
   const payoutAcc = accs.find(a => a.id === inv.payoutAccountId);
   const tone = toneFor(inv);
 
-  // ── The maturity rail ──────────────────────────────────────────
-  // The rail's marker sits at today's position in the term, so the
-  // reader can see how much of the promise is already spent.
-  //
-  // The rail is measured in REAL days between the start and the
-  // maturity date, not in months-times-30 — a 60-month term is 1826
-  // days, and a rail that stretched it to 1800 would put the marker
-  // a fortnight early.
-  const startMs = Date.parse(inv.startDate);
-  const matMs = mat ? mat.getTime() : NaN;
-  const spanDays = Number.isFinite(startMs) && Number.isFinite(matMs)
-    ? Math.max(1, Math.round((matMs - startMs) / 86400000))
-    : 0;
-  const elapsedDays = spanDays > 0
-    ? Math.max(0, Math.min(spanDays, spanDays - days))
-    : 0;
-  const elapsedPct = spanDays > 0
-    ? Math.round((elapsedDays / spanDays) * 100)
-    : 0;
-
   // ── The contribution tally ─────────────────────────────────────
   // "Contributed ৳ 85,000 of ৳ 3,00,000 · 14 of 60 installments" —
   // how much has gone in, and how much of the schedule that is.
   const totalDue = isDps
     ? (Number(inv.monthlyContribution) || 0) * (Number(inv.termMonths) || 0)
     : (Number(inv.principal) || 0);
+
+  // ── The ledger ─────────────────────────────────────────────────
+  // The deposits schedule: how many installments are paid, when
+  // the next one is due, and how much has gone in.
+  const ledger = isDps ? dpsLedger(inv, state.transactions) : null;
+
+  // The share of the schedule that has been paid in. This is the
+  // one number the bar on the certificate reports.
+  const depositsPct = isDps && (Number(inv.termMonths) || 0) > 0
+    ? Math.max(0, Math.min(100, Math.round((contribs.length / (Number(inv.termMonths) || 0)) * 100)))
+    : 0;
+
+  // Whether the lump sum has gone in. On an FDR the money goes in
+  // once, so this is the whole story.
+  const deposited = !isDps && (Number(inv.principal) || 0) > 0;
 
   async function onContribute(e: React.FormEvent) {
     e.preventDefault();
@@ -393,28 +389,72 @@ export function InvestmentDetailScreen() {
               )}
             </div>
 
-            {/* The contribution tally — how much has gone in, and how
-                much of the schedule that is. */}
-            {isDps && (
-              <div className="inv-cert__tally tabular">
-                <span className="pip" aria-hidden />
-                Contributed <b>{fmtBDT(contributed)}</b> of {fmtBDT(totalDue)}
-                {' '}{MIDDOT} {contribs.length} of {inv.termMonths} installments
-              </div>
-            )}
+            {/* ═══ THE DEPOSIT FACTS ═══════════════════════════
+                NO progress bar on this page.
 
-            {/* The maturity rail — the promise, in time. */}
-            <div className="maturity" style={{ ['--tone' as string]: 'var(--accent)' }}>
-              <div className="maturity__rail">
-                <i className="maturity__fill" style={{ width: `${elapsedPct}%` }} />
-                <b className="maturity__mark" style={{ ['--mark' as string]: `${elapsedPct}%` }} />
-              </div>
-              <div className="maturity__ends">
-                <span>Started <b>{fmtDate(inv.startDate)}</b></span>
-                <span>
-                  {status === 'active' ? 'Matures' : 'Ended'}{' '}
-                  <b>{mat ? fmtDate(mat.toISOString().slice(0, 10)) : '—'}</b>
+                The certificate used to carry TWO bars stacked on top
+                of each other with nothing to tell them apart, and
+                that was genuinely confusing: the reader saw two
+                amber lines and had no way to know which was the money
+                and which was the clock. The second one — the term —
+                is gone entirely, and then so is the first.
+
+                The rule is simple: a progress bar belongs on a
+                LIVE item's own page — the loan, the debt, the DPS.
+                Those are the things where money keeps moving, so a
+                bar tracking them tracks something that actually
+                changes. An FDR or a savings account is not live: the
+                money goes in ONCE, on day one, and then it simply
+                waits. A bar there would be a bar stuck at 0% or 100%
+                forever — a decoration pretending to be a
+                measurement. So a lump sum gets its deposit stated as
+                a FACT, in words, with no bar at all. */}
+            <div className="inv-cert__ledger">
+              <div className="inv-cert__ledger-head">
+                <span className="t">{isDps ? 'Deposits' : 'Deposit'}</span>
+                <span className="n">
+                  {isDps
+                    ? `${contribs.length} of ${inv.termMonths} paid`
+                    : deposited ? '1 lump sum' : 'Nothing yet'}
                 </span>
+              </div>
+              {isDps && (
+                <div
+                  className="inv-cert__deposits"
+                  role="progressbar"
+                  aria-valuenow={depositsPct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${inv.name} deposits made`}
+                >
+                  {/* An empty bar paints no fill — a zero-width fill with a
+                      hairline edge still shows as a speck at the start of
+                      the track, which reads as a stray mark rather than as
+                      "no deposits yet". */}
+                  {depositsPct > 0 && <i style={{ width: `${depositsPct}%` }} />}
+                </div>
+              )}
+              <div className="inv-cert__ledger-note">
+                {isDps ? (
+                  <>
+                    <b>{fmtBDT(contributed)}</b> of {fmtBDT(totalDue)} in
+                    {contribs.length > 0 && ledger?.nextDueDate ? (
+                      <> {MIDDOT} next due <b>{fmtDate(ledger.nextDueDate)}</b></>
+                    ) : null}
+                  </>
+                ) : deposited ? (
+                  <>
+                    <b>{fmtBDT(Number(inv.principal) || 0)}</b> deposited
+                    {MIDDOT} matures{' '}
+                    <b>{mat ? fmtDate(mat.toISOString().slice(0, 10)) : '—'}</b>
+                  </>
+                ) : (
+                  <>
+                    <b>Nothing deposited yet</b>
+                    {MIDDOT} matures{' '}
+                    <b>{mat ? fmtDate(mat.toISOString().slice(0, 10)) : '—'}</b>
+                  </>
+                )}
               </div>
             </div>
 

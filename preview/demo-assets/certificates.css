@@ -407,6 +407,39 @@
   white-space: nowrap;
 }
 
+/* The deposits bar — how far through the schedule the payments have
+   got. It sits directly under the "DEPOSITS · 34 OF 60 PAID" head,
+   so the number and the bar say the same thing twice: once in
+   figures, once in shape. */
+.inv-cert__deposits {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin: -2px 0 8px;
+}
+.inv-cert__deposits > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tone, var(--primary));
+  box-shadow: 0 0 0 1px var(--tone, var(--primary));
+  transition: width 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* The note under the bar — what the numbers mean in money and time. */
+.inv-cert__ledger-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.inv-cert__ledger-note b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 /* A dated line — the label, the date, the amount. */
 .inv-cert__dline {
   display: grid;
@@ -860,11 +893,15 @@
 .debt-cert__f .v--danger { color: var(--danger); }
 .debt-cert__f .v--primary { color: var(--primary); }
 
-/* The RAIL — the share already settled, as a punched track. */
+/* The RAIL — the share already settled, as a punched track.
+   The track must be VISIBLE when it is empty: a pending item draws
+   a rail at 0%, and if the track vanishes into the sheet the caption
+   ("Nothing paid yet") ends up floating with nothing above it. */
 .debt-cert__rail {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
   overflow: hidden;
   margin-top: 14px;
 }
@@ -873,6 +910,7 @@
   height: 100%;
   border-radius: 999px;
   background: var(--tone, var(--primary));
+  box-shadow: 0 0 0 1px var(--tone, var(--primary));
 }
 .debt-cert__railhint {
   font-size: 10.5px;
